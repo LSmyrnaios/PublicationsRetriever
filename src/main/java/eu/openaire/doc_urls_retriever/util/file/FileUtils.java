@@ -112,7 +112,10 @@ public class FileUtils
 	 */
 	public static void writeToFile()
 	{
-		logger.debug("WRITING TO DISK.. " + outputEntries.size() + " set(s)");
+		if ( FileUtils.fileIndex == 0 ) // If we haven't started reading the inputFile yet..
+			logger.debug("Writing headings (\"SourceUrls\", \"DocUrls\") to outputFile.. ");
+		else
+			logger.debug("Writing to outputFile.. " + outputEntries.size() + " set(s)");
 		
 		// If later we want to make the StringBuilder member of this class.. and we use multithreaded environment, we should use "StringBuffer" instead, as the last one is thread-safe.
 		StringBuilder strB = new StringBuilder(groupCount * 300);	// 300: the maximum expected length for a source-doc-mime triple..
