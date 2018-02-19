@@ -31,7 +31,7 @@ public class PageCrawler extends WebCrawler
 		String urlStr = curURL.toString();
 
 		// Handle "elsevier.com" urls which contain javaScriptRedirect..
-		// TODO - We also have to deal with docLinks been only showd with javaScript.
+		// TODO - We also have to deal with docLinks been only shown with javaScript.
 		if ( urlStr.contains("elsevier.com") ) {
 			String retUrl = null;
 			if ( (retUrl = silentRedirectElsevierToScienseRedirect(urlStr)) != null) {
@@ -84,9 +84,9 @@ public class PageCrawler extends WebCrawler
 		
 		HttpUtils.lastConnectedHost = currentPageDomain;	// The crawler opened a connection to download it's data.
 		
-	    // Check if we can find the docUrl based on previous runs.
-    	if ( UrlUtils.guessInnerDocUrl(pageUrl) )	// If we were able to find the right path.. and hit a docUrl successfully.. return.
-    		return;
+	    // Check if we can find the docUrl based on previous runs. (Still in experimental stage)
+/*    	if ( UrlUtils.guessInnerDocUrl(pageUrl) )	// If we were able to find the right path.. and hit a docUrl successfully.. return.
+    		return;*/
         
 	    if (page.getParseData() instanceof HtmlParseData)	// If the page is crawlable..
 	    {

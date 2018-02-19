@@ -155,6 +155,7 @@ public class UrlUtils
 	 * This method uses previous success cases to predict the docUrl of a page, if this page gives us the ID of the document.
 	 * The idea is that we might get a url which shows info about the publication and as the same ID with the wanted docUrl, but ut just happens to be in a different directory (path).
 	 * So, before going and checking each and every one of the inner links, we should check if by using known paths that gave docUrls before (for the current spesific domain), we are able to take the docUrl immediately.
+	 * Disclaimer: This is still in experimental stage.
 	 * @param pageUrl
 	 * @return true / false
 	 * @throws RuntimeException
