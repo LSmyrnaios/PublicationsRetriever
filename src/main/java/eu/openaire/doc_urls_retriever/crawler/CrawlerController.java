@@ -59,7 +59,7 @@ public class CrawlerController
 			UrlUtils.loadAndCheckUrls();
 	        
 	        // After loading, there were some urls that did not matched a docUrl, we can still try to retrieve docUrl by crawling the non-docUrls.
-	        urlsReachedCrawler = controller.getFrontier().getQueueLength();	// For statistics.
+			CrawlerController.urlsReachedCrawler = controller.getFrontier().getQueueLength();	// For statistics, in the end.
 	        //logger.debug("The number of urls that reached the crawling stage is: " + urlsReachedCrawler);	// DEBUG!
         	
 	        // Start crawling and wait until finished.

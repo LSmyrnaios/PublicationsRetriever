@@ -30,20 +30,20 @@ public class DocUrlsRetriever
 		
 		try {
 			new CrawlerController();
-		} catch (RuntimeException e) {
-			throw new RuntimeException(e);
+		} catch (RuntimeException e) {  // In case there was no input, or on other errors, there will be thrown a RuntimeException, after logging the cause.
+			System.exit(-1);
 		}
 
 		// Show statistics.
 		long inputUrlNum = 0;
 		if ( FileUtils.skipFirstRow )
-			inputUrlNum = FileUtils.getFileIndex() -1; // -1 to exclude the first line
+			inputUrlNum = FileUtils.getFileIndex() - FileUtils.emptyInputLines -1; // -1 to exclude the first line
 		else
-			inputUrlNum = FileUtils.getFileIndex();
+			inputUrlNum = FileUtils.getFileIndex() - FileUtils.emptyInputLines;
 
     	if ( inputUrlNum <= 0 ) {
-    		logger.error("No urls were loaded from the input file!! Exiting..");
-    		System.exit(-1);
+    		logger.error("File indexer is unexpectedly reporting that no urls were retrieved from input file. Exiting..");
+    		System.exit(-2);
     	}
 
 		// Currently the below statistics need re-thinking.. they don't work so well.
@@ -51,20 +51,22 @@ public class DocUrlsRetriever
     	logger.info("From which, the: " + CrawlerController.urlsReachedCrawler + " reached the crawling stage.");
     	logger.info("Total docs found: " + UrlUtils.sumOfDocsFound + " That's about: " + UrlUtils.sumOfDocsFound * 100 / inputUrlNum + "%");
     	logger.info("There were: " + UrlUtils.inputDuplicatesNum + " duplicates in the input file." + " That's about: " + UrlUtils.inputDuplicatesNum * 100 / inputUrlNum + "%");
-    	
-    	// DO A DEBUG PRINT OF ALL THE PATHS OF THE DOMAINS.
-    	logger.debug("Succesful paths of domains are: ");
-    	Set<String> domains = UrlUtils.successDomainPathsMultiMap.keySet();
-    	
-    	for ( String domain : domains ) {
-    	    logger.debug("Domain: " + domain);
-    	    Collection<String> paths = UrlUtils.successDomainPathsMultiMap.get(domain);
-    	    for ( String path : paths ) {
-    	    	logger.debug("Path: " + path);
-    	    }
-    	    logger.debug("\n");
-    	}
-    	
+
+
+    	// Debug print of all the docPaths grouped by their domains.
+/*		if ( !UrlUtils.successDomainPathsMultiMap.isEmpty() )
+		{
+			logger.debug("Succesful docPaths grouped by their domains are: ");
+			for ( String domain : UrlUtils.successDomainPathsMultiMap.keySet() ) {
+				logger.debug("Domain: " + domain);
+				Collection<String> paths = UrlUtils.successDomainPathsMultiMap.get(domain);
+				for ( String path : paths ) {
+					logger.debug("Path: " + path);
+				}
+				logger.debug("\n");
+			}
+		}*/
+
 		long endTime = System.nanoTime();
 		long elapsedTime = endTime - startTime;
 		
