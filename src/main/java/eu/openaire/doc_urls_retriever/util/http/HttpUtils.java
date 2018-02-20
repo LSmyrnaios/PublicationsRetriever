@@ -194,12 +194,9 @@ public class HttpUtils
 						logger.debug("Target: " + targetUrlStr + "\n");*/
 					//}
 					
-					if ( domainStr != null )
-						if ( !targetUrlStr.contains(domainStr) )	// If the next page is not in the same domain, we have to find the domain again inside "openHttpConnection()" method.
-							domainStr = null;						// Note that this check only works as long as we redirect in the same domain from the 1st redirect..
-																	// as the only way to keep the last domainStr value will be to add a new static field, which I will update inside "openHttpConnection()"
-																		// but then ofcource this will make sence only for single thread excecution...(multiple threads targeting differ domains at the same time.. will not have mush use for only one domain among them..)
-																					// except again if we make this "lastDomainStr" as a member of a thread so that every thread will store there its own value..;-)
+					if ( !targetUrlStr.contains(HttpUtils.lastConnectedHost) )	// If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
+						domainStr = null;
+					
 					conn.disconnect();
 					
 					conn = HttpUtils.openHttpConnection(targetUrlStr, domainStr);

@@ -13,10 +13,10 @@ import org.apache.logging.log4j.Logger;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 
-import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
+
 
 
 public class UrlUtils
@@ -27,50 +27,47 @@ public class UrlUtils
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
 	public static final Pattern URL_DIRECTORY_FILTER = Pattern.compile(".+\\/(?:login|join|subscr|register|announcement|feed|about|citation|faq|wiki|support|error|notfound|contribute|subscription|advertisers|authors|license|disclaimer"
-																	+ "|policies|policy|privacy|terms|sitemap|account|search|statistics|cookie|help|law|contact|survey|wallet|template|logo|image|photo).*");
+																	+ "|policies|policy|privacy|terms|sitemap|account|search|statistics|cookie|application|help|law|permission|contact|survey|wallet|template|logo|image|photo).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects.
-	
-	//public static final Pattern PAGE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:php|php2|php3|php4|php5|phtml|htm|html|shtml|xht|xhtm|xhtml|xml|aspx|asp|jsp)(?:\\?.+=.+)?$");
-	
+
 	public static final Pattern PAGE_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|pt|mso|dtl)(?:\\?.+=.+)?$");
 	
-    public static final Pattern INNER_LINKS_FILE_EXTENSION_FILTER = Pattern.compile(".+:\\/\\/.+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|pt|"
-    																							+ "php|php2|php3|php4|php5|phtml|htm|html|shtml|xht|xhtm|xhtml|xml|aspx|asp|jsp|mso|dtl)(?:\\?.+=.+)?$");
+    public static final Pattern INNER_LINKS_FILE_EXTENSION_FILTER = Pattern.compile(".+:\\/\\/.+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|pt|xml|mso|dtl)(?:\\?.+=.+)?$");
+    // Here don't include .php and relative extensions, since even this can be a docUrl. For example: https://www.dovepress.com/getfile.php?fileID=5337
+	// So, we make a new REGEX for these extensions, this time, without a potential argument in the end (?id=XXX..)
+	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:php|php2|php3|php4|php5|phtml|htm|html|shtml|xht|xhtm|xhtml|xml|aspx|asp|jsp)$");
+
+	public static final Pattern INNER_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+:\\/\\/.+format=(?:xml|htm|html|shtml|xht|xhtm|xhtml).*");
     
-    public static final Pattern INNER_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+:\\/\\/.+format=(?:xml|htm|html|shtml|xht|xhtm|xhtml).*");
-    
-    public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile(".+:\\/\\/.*(?:google|goo.gl|gstatic|facebook|twitter|youtube|linkedin|wordpress|s.w.org|ebay|bing|amazon|wikipedia|myspace|yahoo|mail|pinterest|reddit|blog|tumblr|evernote|skype|microsoft|adobe|buffer"
-    																				+ "|digg|stumbleupon|addthis|delicious|dailymotion|gostats|blogger|friendfeed|newsvine|telegram|getpocket|flipboard|instapaper|line.me|telegram|vk|ok.ru"
-    																				+ "|douban|baidu|qzone|xing|renren|weibo).*\\/.*");
+    public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile(".+:\\/\\/.*(?:google|goo.gl|gstatic|facebook|twitter|youtube|linkedin|wordpress|s.w.org|ebay|bing|amazon|wikipedia|myspace|yahoo|mail|pinterest|reddit|blog|tumblr"
+																					+ "|evernote|skype|microsoft|adobe|buffer|digg|stumbleupon|addthis|delicious|dailymotion|gostats|blogger|copyright|friendfeed|newsvine|telegram|getpocket"
+																					+ "|flipboard|instapaper|line.me|telegram|vk|ok.rudouban|baidu|qzone|xing|renren|weibo).*\\/.*");
     
     public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile(".+:\\/\\/[\\w.:-]+(?:\\/)?$");	// Exclude plain domains' urls.
-    public static final Pattern PLAIN_FIRST_LEVEL_DIRECTORY_FILTER = Pattern.compile(".+:\\/\\/[\\w\\.\\:\\-]+\\/[\\w\\-\\.]+(?:\\/)?$");	// Exclude plain first level directories.
-    
+
     public static final Pattern JSESSIONID_FILTER = Pattern.compile(".+:\\/\\/.+(;(?:JSESSIONID|jsessionid)=.*[?\\w\\W]+$)");
-    public static final Pattern ENDING_WITH_GENERAL_EXTENSION_FILTER = Pattern.compile(".+:\\/\\/.+(?:\\.[\\w]+)$");
-    
-    //public static final Pattern ENDING_WITH_DOC_EXTENSION_FILTER = Pattern.compile(".+(?:\\.(?:pdf))(?:\\?.+=.+)?$");	// TODO - Add more doc extensions when decided.
-    
-    //public static final Pattern STAT_REPORT_FILTER = Pattern.compile(".+(statistic[s]*[al]*[\\-\\_]*report[s]*).*");
-    
-    public static final Pattern DOC_URL_FILTER = Pattern.compile(".+:\\/\\/.+(pdf|download|doc|file|fulltext|attachment|paper|cgi/viewcontent.cgi?|viewfile|viewdoc|/get).*");
+
+    public static final Pattern DOC_URL_FILTER = Pattern.compile(".+:\\/\\/.+(pdf|download|doc|file|/fulltext|attachment|paper|cgi/viewcontent.cgi?|viewfile|viewdoc|/get).*");
     // Works for lowerCase Strings (we make sure they are in lowerCase before we check).
-    // Note that we still need to check  if it's an alive link and if it's actually a docUrl (though it's mimeType).
+    // Note that we still need to check if it's an alive link and if it's actually a docUrl (though it's mimeType).
     
     public static int sumOfDocsFound = 0;	// Change it back to simple int if finally in singleThread mode
 	public static long inputDuplicatesNum = 0;
 	
 	public static HashSet<String> duplicateUrls = new HashSet<String>();
 	public static SetMultimap<String, String> successDomainPathsMultiMap = HashMultimap.create();	// Holds multiple values for any key, if a domain(key) has many different paths (values) for doc links.
-	private static HashSet<String> loadedUrlGroup = new HashSet<String>();
 	public static HashSet<String> docUrls = new HashSet<String>();
 	public static HashSet<String> knownDocTypes = new HashSet<String>();
-	
+
+	public static int elsevierLinks = 0;
+	public static int doajResultPageLinks = 0;
+
 	static {
 			logger.debug("Setting knownDocTypes. Currently testing only \".pdf\" type.");
 			knownDocTypes.add("application/pdf");	// For the moment we care only for the pdf type.
 	}
-	
+
+
 	
 	/**
 	 * This method loads the urls from the input file in memory and check their type.
@@ -79,6 +76,8 @@ public class UrlUtils
 	 */
 	public static void loadAndCheckUrls() throws RuntimeException
 	{
+		HashSet<String> loadedUrlGroup = new HashSet<String>();
+
 		boolean firstRun = true;
 		
 		// Start loading and checking urls.
@@ -92,13 +91,12 @@ public class UrlUtils
 	        		throw new RuntimeException();
 	        	}
 	        	else {
-	        		logger.debug("Done loading urls from the inputFile.");	// DEBUG!
+	        		logger.debug("Done loading " + FileUtils.getFileIndex() + " urls from the inputFile.");	// DEBUG!
 	        		break;	// No more urls to load and check, just start Crawling.
 	        	}
 	        }
 
 			firstRun = false;
-	        String canonicalizedUrl = null;
 	        
 			for ( String retrievedUrl : loadedUrlGroup )
 			{
@@ -126,26 +124,15 @@ public class UrlUtils
 	        	}
 	        	
 	        	// If this url is of a certain unwanted type, blacklist itand move on.
-				if ( UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() )
+				if ( UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches()
+						|| UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches())
 				{
 					UrlUtils.logUrl(retrievedUrl, "unreachable");
 					continue;	// If this link matches certain blackListed criteria, move on..
 				}
-	        	
-				if ( (canonicalizedUrl = URLCanonicalizer.getCanonicalURL(retrievedUrl) ) == null ) {	// Fix potential encoding problems.
-					logger.debug("Could not cannonicalize url: " + retrievedUrl);
-					UrlUtils.logUrl(retrievedUrl, "unreachable");	// We log the "retrieved", so that we have the initial url that we retrieved from the inputFile.
-					continue;	// Could not canonicalize this url! Move on..
-				}
-				
-	    		// Check if it's already a docURL.
-	        	try {
-	        		UrlUtils.checkIfDocMimeType(canonicalizedUrl, canonicalizedUrl, null, true);
-	        		// Note that if it's "true", then we have already add it in the outPut links inside "checkIfDocMimeType()".
-	        		// And if it's false, the we have added it in the Crawler inside the "checkIfDocMimeType()", to make sure we don't repeat the redirects.
-	        	} catch (RuntimeException e) {
-	        		UrlUtils.logUrl(retrievedUrl, "unreachable");	// If there was a connection problem, log it as "unreachable".
-	        	}
+
+				CrawlerController.controller.addSeed(retrievedUrl);
+
 			}// end for-loop
         }// end while-loop
 	}
@@ -211,10 +198,10 @@ public class UrlUtils
 				try {
 					logger.debug("Going to check guessedDocUrl: " + guessedDocUrl +"\", made out from initialUrl: \"" + pageUrl + "\"");
 					
-					if ( checkIfDocMimeType(pageUrl, guessedDocUrl, domainStr, false) ) {
+					if ( checkIfDocMimeType(pageUrl, guessedDocUrl, domainStr) ) {
 						logger.debug("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
-						// TODO - Maybe it will be interesting also to count (with an AtomicInteger, if in multithread) the handled urls with this algorithm.
-						return true;	// Note that we have already add it in the outPut links inside "checkIfDocMimeType()".
+						// TODO - Maybe it will be interesting (when ready) to also count (with an AtomicInteger, if in multithread) the handled urls with this algorithm.
+						return true;	// Note that we have already add it in the output links inside "checkIfDocMimeType()".
 					}
 				} catch (Exception e) {
 					// No special handling here, neither logging.. since it's expected that some checks will fail.
@@ -224,7 +211,7 @@ public class UrlUtils
 			}// end for-loop
 		}// end if
 		
-		return false;	// We can't find its docUrl.. so we return false and continue with crawling this page.
+		return false;	// We can't find its docUrl.. so we return false and continue by crawling this page.
 	}
 	
 	
@@ -275,7 +262,6 @@ public class UrlUtils
 			}
 			
 			docUrls.add(finalDocUrl);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
-			
 		}
 		else if ( !finalDocUrl.equals("duplicate") )	{// Else if this url is not a docUrl and has not been processed before..
 			duplicateUrls.add(sourceUrl);	 // Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future..
@@ -298,7 +284,7 @@ public class UrlUtils
 	 * @return True, if it's a pdfMimeType. False, if it has a different mimeType.
 	 * @throws RuntimeException (when there was a network error).
 	 */
-	public static boolean checkIfDocMimeType(String currentPage, String resourceURL, String domainStr, boolean calledFromLoading) throws RuntimeException
+	public static boolean checkIfDocMimeType(String currentPage, String resourceURL, String domainStr) throws RuntimeException
 	{	
 		HttpURLConnection conn = null;
 		try {
@@ -326,17 +312,6 @@ public class UrlUtils
 	        	logUrl(currentPage, conn.getURL().toString());	// we send the urls, before and after potential redirections.
 	        	return true;
 	        }
-	        else if ( calledFromLoading ) {
-	        	// If it's called at loading time, then add it here in the Crawler..
-	        	// because the final url produced here is the one that has already passed any potential redirects.
-	        	// If it's not called from loading.. then don't add it in the crawler.. as it will be 
-	        	
-	        	String finalUrl = conn.getURL().toString();
-	        	
-	        	CrawlerController.controller.addSeed(finalUrl);
-	        	
-	        	//logger.debug("Mime type for \"" + finalUrl + "\" is: " + mimeType);
-	        }// Else, it returns "false".
 		} catch (Exception e) {
 			if ( currentPage.equals(resourceURL) )	// Log this error only for urls checked at loading time.
         		logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
@@ -380,8 +355,13 @@ public class UrlUtils
 		
 		return domainStr.toLowerCase();	// We return it in lowerCase as we don't want to store double domains. (it doesn't play any part in connectivity, only the rest of the url in case Sensitive.)
 	}
-	
-	
+
+
+	/**
+	 * This method is responsible for removing the "jsessionid" part of a url.
+	 * @param urlStr
+	 * @return
+	 */
 	public static String removeJsessionId(String urlStr)
 	{
 		String finalUrl = urlStr;
@@ -402,28 +382,6 @@ public class UrlUtils
 			logger.warn("Unexpected \"JSESSIONID_FILTER\" mismatch for url: \"" + urlStr + "\" !");
 		
 		return finalUrl;
-	}
-	
-	
-	/**
-	 * This method adds a slash character "/" in the end of the input urlStr, if the given urlStr does not already end with a slash or does not end with a file extension.
-	 * This tactic aims to avoid pointless redirections from non-slash-ending urls to slash-ending ones. But, it may cause connection problems for others.
-	 * If the input url is not ending with an extension and is not already ending with a shlash, it adds a slash and return it, otherwise it returns the input itself.
-	 * It returns null in the input is either null or an empty String.
-	 * @param urlStr
-	 * @return a slash-ending String or null if wrong input
-	 */
-	public static String checkAndAddEndingSlash(String urlStr)
-	{
-		if ( !urlStr.endsWith("/") )
-		{
-			Matcher matcherExtention = ENDING_WITH_GENERAL_EXTENSION_FILTER.matcher(urlStr);
-			
-			if ( !matcherExtention.matches() ) {	// If the input url is not ending with an extension.
-				return (urlStr + "/");
-			}
-		}
-		return urlStr;
 	}
 	
 }

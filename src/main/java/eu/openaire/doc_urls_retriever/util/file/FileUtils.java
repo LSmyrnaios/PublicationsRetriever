@@ -14,7 +14,6 @@ import org.apache.logging.log4j.Logger;
 
 
 
-@SuppressWarnings("ALL")
 public class FileUtils
 {
 	private static final Logger logger = LogManager.getLogger(FileUtils.class);
@@ -24,8 +23,7 @@ public class FileUtils
 	private static File inputFile;
 	private static File outputFile;
 	public static HashMap<String,String> outputEntries = new HashMap<String,String>();
-	//private static long fileIndex = 0;	// Index in the input file
-	private static long fileIndex = 0;
+	private static long fileIndex = 0;	// Index in the input file
 	public static boolean skipFirstRow = false;
 	private static FileWriter writer;
 	private static String outputDelimiter = "\t";
@@ -113,9 +111,9 @@ public class FileUtils
 	public static void writeToFile()
 	{
 		if ( FileUtils.fileIndex == 0 ) // If we haven't started reading the inputFile yet..
-			logger.debug("Writing headings (\"SourceUrls\", \"DocUrls\") to outputFile.. ");
+			logger.debug("Writing headings (\"SourceUrls\", \"DocUrls\") to the outputFile.. ");
 		else
-			logger.debug("Writing to outputFile.. " + outputEntries.size() + " set(s)");
+			logger.debug("Writing to the outputFile.. " + outputEntries.size() + " set(s) of (\"SourceUrl\", \"DocUrl\")");
 		
 		// If later we want to make the StringBuilder member of this class.. and we use multithreaded environment, we should use "StringBuffer" instead, as the last one is thread-safe.
 		StringBuilder strB = new StringBuilder(groupCount * 300);	// 300: the maximum expected length for a source-doc-mime triple..

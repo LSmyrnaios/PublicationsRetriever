@@ -19,50 +19,43 @@ import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 
 
 
-@SuppressWarnings("ALL")
 public class PageCrawler extends WebCrawler
 {
 	private static final Logger logger = LogManager.getLogger(PageCrawler.class);
 
 
 	@Override
-	protected WebURL handleUrlBeforeProcess(WebURL curURL)
-	{
-		String urlStr = curURL.toString();
-
-		// Handle "elsevier.com" urls which contain javaScriptRedirect..
-		// TODO - We also have to deal with docLinks been only shown with javaScript.
-		if ( urlStr.contains("elsevier.com") ) {
-			String retUrl = null;
-			if ( (retUrl = silentRedirectElsevierToScienseRedirect(urlStr)) != null) {
-				WebURL url = new WebURL();
-				url.setURL(retUrl);
-				curURL = url;
-			}
-		}
-		return curURL;
-	}
-	
-	@Override
 	public boolean shouldVisit(Page referringPage, WebURL url)
 	{
 		String lowerCaseUrlStr = url.toString().toLowerCase();
-		
-		return !UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrlStr).matches()
-				&& !UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrlStr).matches() && !UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrlStr).matches();
+
+		if ( lowerCaseUrlStr.contains("elsevier.com") ) {   // Avoid this JavaScript site with non accesible dynamic links.
+            UrlUtils.elsevierLinks ++;
+            return false;
+		}
+		else if ( lowerCaseUrlStr.contains("doaj.org/toc/") ) {
+			UrlUtils.doajResultPageLinks ++;
+			return false;
+		}
+		else
+            return	!UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrlStr).matches()
+                    && !UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrlStr).matches()
+					&& !UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrlStr).matches();
 	}
 	
 	
 	public boolean shouldNotCheckInnerLink(String referringPageDomain, String linkStr)
 	{
 		String lowerCaseLink = linkStr.toLowerCase();
-		
+
 		return	!lowerCaseLink.contains(referringPageDomain)	// Don't check this link if it belongs in a different domain than the referringPage's one.
-				|| lowerCaseLink.contains("citation") || lowerCaseLink.contains("mailto:") || lowerCaseLink.contains("instruction") || lowerCaseLink.contains("manual")
-				|| lowerCaseLink.contains("://doi.org/")	// Plain doi.org links are not docUrl by themselves.. (we still accept them to be crawled (if given at loading time), but we don't need to check if they are docUrls themselves)
-				|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseLink).matches() || UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
-				|| UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseLink).matches() || UrlUtils.PLAIN_FIRST_LEVEL_DIRECTORY_FILTER.matcher(lowerCaseLink).matches()
-				|| UrlUtils.INNER_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseLink).matches() || UrlUtils.INNER_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseLink).matches();
+				|| lowerCaseLink.contains("citation") || lowerCaseLink.contains("mailto:")
+				|| UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
+				|| UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
+				|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseLink).matches()
+				|| UrlUtils.INNER_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseLink).matches()
+				|| UrlUtils.INNER_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseLink).matches()
+				|| UrlUtils.PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseLink).matches();
 	}
 	
 	
@@ -75,15 +68,29 @@ public class PageCrawler extends WebCrawler
 	
 	@Override
 	public void visit(Page page)
-	{	
-	    // No need to check if this page itself is a docUrl since we have already checked it when we were loading the urls from the inputFile.
-	    
+	{
 		String pageUrl = page.getWebURL().getURL();
+
+		if ( pageUrl.contains("doaj.org/toc/") ) {	// Re-check here for these resultPages, as it seems that Crawler4j has a bug.
+			logger.debug("Not visiting: " + pageUrl + " as per your \"shouldVisit\" policy (used a workaround for Crawler4j bug)");
+			UrlUtils.doajResultPageLinks ++;
+			return;
+		}
+
+		if ( UrlUtils.knownDocTypes.contains(page.getContentType()) ) {
+			UrlUtils.logUrl(pageUrl, pageUrl);
+			return;
+		}
 		
 		String currentPageDomain = UrlUtils.getDomainStr(pageUrl);
 		
-		HttpUtils.lastConnectedHost = currentPageDomain;	// The crawler opened a connection to download it's data.
-		
+		HttpUtils.lastConnectedHost = currentPageDomain;	// The crawler opened a connection to download this page.
+
+		if ( HttpUtils.blacklistedDomains.contains(currentPageDomain) ) {	// Check if it has been blackListed after running inner links' checks.
+			logger.debug("Avoid crawling blackListed domain: \"" + currentPageDomain + "\"");
+			return;
+		}
+
 	    // Check if we can find the docUrl based on previous runs. (Still in experimental stage)
 /*    	if ( UrlUtils.guessInnerDocUrl(pageUrl) )	// If we were able to find the right path.. and hit a docUrl successfully.. return.
     		return;*/
@@ -95,22 +102,27 @@ public class PageCrawler extends WebCrawler
 	        Set<WebURL> currentPageLinks = htmlParseData.getOutgoingUrls();
 		    
 	        HashSet<String> curLinksStr = new HashSet<String>();	// HashSet to store the String version of each link.
-	        
-	        String lowerCaseLink = null;
+
 	        String urlToCheck = null;
 	        
 	        
-	        // Check if urls inside this page, match to a docUrl regex, if they do, try connecting with them and see if they truly are docUrls.
+	        // Check if urls inside this page, match to a docUrl regex, if they do, try connecting with them and see if they truly are docUrls. If they are, return.
 		    for ( WebURL link : currentPageLinks )
 		    {
-		    	// Produce fully functional inner links, NOT inner paths. (Make sure that Crawler4j doesn't handle that already..)
-				try {
+		    	try {
+					// Produce fully functional inner links, NOT inner paths. (Make sure that Crawler4j doesn't handle that already..)
 					URL base = new URL(pageUrl);
 					URL targetUrl = new URL(base, link.toString());	// Combine base (domain) and resource (inner link), to produce the final link.
 					String currentLink  = targetUrl.toString();
-					
-			    	if ( UrlUtils.duplicateUrls.contains(urlToCheck) )
-			    		continue;
+
+					if ( UrlUtils.duplicateUrls.contains(currentLink) )
+						continue;
+
+					if ( shouldNotCheckInnerLink(currentPageDomain, currentLink) ) {	// If this link matches certain blackListed criteria, move on..
+						//logger.debug("Avoided link: " + currentLink );
+                        UrlUtils.duplicateUrls.add(currentLink);
+						continue;
+					}
 			    	
 					if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink) ) == null ) {	// Fix potential encoding problems.
 						logger.debug("Could not cannonicalize inner url: " + currentLink);
@@ -124,14 +136,12 @@ public class PageCrawler extends WebCrawler
 			    		return;
 			    	}
 			    	
-			    	curLinksStr.add(urlToCheck);	// Add keep the string version of this link, useful for later.
-			    	
-			    	lowerCaseLink = urlToCheck.toLowerCase();
-			    	
-			    	Matcher docUrlMatcher = UrlUtils.DOC_URL_FILTER.matcher(lowerCaseLink);
-			    	if ( docUrlMatcher.matches() && !lowerCaseLink.contains("citation") )// If matches the "DOC_URL_FILTER" and it's not a citation url, go check if it's
+			    	curLinksStr.add(urlToCheck);	// Keep the string version of this link, in order not to make the transformation later..
+
+			    	Matcher docUrlMatcher = UrlUtils.DOC_URL_FILTER.matcher(urlToCheck.toLowerCase());
+			    	if ( docUrlMatcher.matches() )
 			    	{
-						if ( UrlUtils.checkIfDocMimeType(pageUrl, urlToCheck, null, false) ) {
+						if ( UrlUtils.checkIfDocMimeType(pageUrl, urlToCheck, null) ) {
 							//logger.debug("\"DOC_URL_FILTER\" revealed a docUrl in pageUrl: \"" + pageUrl + "\", after matching to: \"" + docUrlMatcher.group(1) + "\"");
 							return;
 						}
@@ -142,38 +152,33 @@ public class PageCrawler extends WebCrawler
 					logger.warn(me);
 				}
 		    }// end for-loop
-		    
-	    	
+
 		    // If we reached here, it means that we couldn't find a docUrl the quick way.. so we have to check some (we exclude lots of them) of the inner links one by one.
-	        
-	        
+
 	        //logger.debug("Num of links in \"" + pageUrl + "\" is: " + currentPageLinks.size());
 	        
 			for ( String currentLink : curLinksStr )
 			{
-				if ( shouldNotCheckInnerLink(currentPageDomain, currentLink) )	// If this link matches certain blackListed criteria, move on..
-					continue;
-				
+				if ( UrlUtils.duplicateUrls.contains(currentLink) )
+					continue;	// Don't check already seen links.
+
 				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink) ) == null ) {	// Fix potential encoding problems.
 					logger.debug("Could not cannonicalize inner url: " + currentLink);
 					UrlUtils.duplicateUrls.add(currentLink);
 					continue;	// Could not canonicalize this url! Move on..
 				}
-				
-		    	if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
-		    		UrlUtils.logUrl(pageUrl, currentLink);
-		    		logger.debug("Re-crossing the already found url: \"" +  urlToCheck + "\"");
-		    		return;
-		    	}
-				
-				if ( UrlUtils.duplicateUrls.contains(urlToCheck) )
-					continue;	// Don't check already seen links.
-				
+
+				if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
+					logger.debug("Re-crossing a previously found docUrl: \"" +  urlToCheck + "\"");
+					UrlUtils.logUrl(pageUrl, currentLink);
+					return;
+				}
+
 				try {
-					if ( UrlUtils.checkIfDocMimeType(pageUrl, urlToCheck, null, false) )
+					if ( UrlUtils.checkIfDocMimeType(pageUrl, urlToCheck, null) )
 						return;
 				} catch (RuntimeException e) {
-					// No special handling here.. or logging..
+					// No special handling here.. nor logging..
 				}
 			}	// end for-loop
 			
@@ -186,34 +191,4 @@ public class PageCrawler extends WebCrawler
 	    }
 	}
 
-
-	/**
-	 * This method recieves a url from "elsevier.com" and returns it's matched url in "sciencedirect.com".
-	 * We do this because the "elsevier.com" urls have a javaScript redirect inside which we are not able to handle without doing html scraping.
-	 * If there is any error this method returns the string it first recieved.
-	 * @param elsevierUrl
-	 * @return
-	 */
-	public static String silentRedirectElsevierToScienseRedirect(String elsevierUrl)
-	{
-		if ( !elsevierUrl.contains("elsevier.com") ) // If this method was called for the wrong url, then just return it.
-			return elsevierUrl;
-
-		String idStr = null;
-		Matcher matcher = UrlUtils.URL_TRIPLE.matcher(elsevierUrl);
-		if ( matcher.matches() ) {
-			idStr = matcher.group(3);
-			if ( idStr == null || idStr.isEmpty() ) {
-				logger.warn("Unexpected id-missing case for: " + elsevierUrl);
-				return elsevierUrl;
-			}
-		}
-		else {
-			logger.warn("Unexpected \"URL_TRIPLE\" mismatch for: " + elsevierUrl);
-			return elsevierUrl;
-		}
-
-		return ("https://www.sciencedirect.com/science/article/pii/" + idStr);
-	}
-    
 }
