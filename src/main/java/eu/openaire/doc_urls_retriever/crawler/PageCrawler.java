@@ -26,20 +26,32 @@ public class PageCrawler extends WebCrawler
 	@Override
 	public boolean shouldVisit(Page referringPage, WebURL url)
 	{
-		String lowerCaseUrlStr = url.toString().toLowerCase();
+		String urlStr = url.toString();
+		String lowerCaseUrlStr = urlStr.toLowerCase();
 
 		if ( lowerCaseUrlStr.contains("elsevier.com") ) {   // Avoid this JavaScript site with non accesible dynamic links.
             UrlUtils.elsevierLinks ++;
+			UrlUtils.logUrl(urlStr, "unreachable");
             return false;
 		}
-		else if ( lowerCaseUrlStr.contains("doaj.org/toc/") ) {
+		else if ( lowerCaseUrlStr.contains("doaj.org/toc/") ) {	// Avoid resultPages.
 			UrlUtils.doajResultPageLinks ++;
+			UrlUtils.logUrl(urlStr, "unreachable");
+			return false;
+		}
+		else if ( lowerCaseUrlStr.contains("dlib.org") ) {    // Avoid HTML docUrls.
+			UrlUtils.logUrl(urlStr, "unreachable");
+			return false;
+		}
+		else if ( UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrlStr).matches()
+					|| UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrlStr).matches()
+					||UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrlStr).matches() )
+		{
+			UrlUtils.logUrl(urlStr, "unreachable");
 			return false;
 		}
 		else
-            return	!UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrlStr).matches()
-                    && !UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrlStr).matches()
-					&& !UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrlStr).matches();
+			return true;
 	}
 	
 	
@@ -191,6 +203,46 @@ public class PageCrawler extends WebCrawler
 
 		// If we get here it means that this pageUrl is not a docUrl nor it contains a docUrl..
 		UrlUtils.logUrl(pageUrl, "unreachable");
+	}
+
+
+	@Override
+	public void onUnexpectedStatusCode(String urlStr, int statusCode, String contentType, String description)
+	{
+		// Call our general statusCode-handling method (it will also find the domainStr).
+		HttpUtils.onErrorStatusCode(urlStr, null, statusCode);
+		UrlUtils.logUrl(urlStr, "unreachable");
+	}
+
+
+	@Override
+	public void onContentFetchError(WebURL webUrl)
+	{
+		String urlStr = webUrl.toString();
+		logger.warn("Can't fetch content of: \"" + urlStr + "\"");
+		UrlUtils.logUrl(urlStr, "unreachable");
+	}
+
+
+	@Override
+	protected void onParseError(WebURL webUrl)
+	{
+		String urlStr = webUrl.toString();
+		logger.warn("Parsing error of: \"" + urlStr + "\"" );
+		UrlUtils.logUrl(urlStr, "unreachable");
+	}
+
+
+	@Override
+	public void onUnhandledException(WebURL webUrl, Throwable e)
+	{
+		if ( webUrl != null )
+		{
+			String urlStr = webUrl.toString();
+			logger.warn("Unhandled exception while fetching: \"" + urlStr + "\"" );
+			UrlUtils.logUrl(urlStr, "unreachable");
+		}
+		logger.warn(e);
 	}
 
 }

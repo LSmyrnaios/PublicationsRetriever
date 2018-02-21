@@ -51,7 +51,7 @@ public class FileUtils
     	
 		try {
 			FileUtils.inputFile = new File(inputFileName);
-			FileUtils.inputScanner = new Scanner(inputFile,"utf-8");
+			FileUtils.inputScanner = new Scanner(FileUtils.inputFile /*System.in*/);
 			FileUtils.outputFile = new File(outputFileName);
 			FileUtils.writer = new FileWriter(outputFile);
 
@@ -111,7 +111,7 @@ public class FileUtils
 	public static void writeToFile()
 	{
 		if ( FileUtils.fileIndex == 0 ) // If we haven't started reading the inputFile yet..
-			logger.debug("Writing headings (\"SourceUrls\", \"DocUrls\") to the outputFile.. ");
+			logger.debug("Writing headings (\"SourceUrls\", \"DocUrls\") to the outputFile.");
 		else
 			logger.debug("Writing to the outputFile.. " + outputEntries.size() + " set(s) of (\"SourceUrl\", \"DocUrl\")");
 		
@@ -126,7 +126,11 @@ public class FileUtils
 				strB.append(entry.getValue());
 				strB.append(endOfLine);
 		    }
-		    
+
+		    // Print in System.out
+		    /*System.out.print(strB.toString());
+		    System.out.flush();*/
+
 			writer.write(strB.toString());
 			writer.flush();
 		} catch (IOException e) {

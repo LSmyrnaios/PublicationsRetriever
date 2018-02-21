@@ -1,18 +1,16 @@
 package eu.openaire.doc_urls_retriever.util.http;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.SocketTimeoutException;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.HashSet;
-
+import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
+import javax.net.ssl.SSLProtocolException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.HashSet;
 
 
 
@@ -24,9 +22,8 @@ public class HttpUtils
 	public static HashSet<String> blacklistedDomains = new HashSet<String>();	// Domains with which we don't want to connect again.
 	public static HashMap<String, Integer> domainsReturned403 = new HashMap<String, Integer>();	// Domains that have returned 403 responce, and the amount of times they did.
 	public static HashMap<String, Integer> domainsWithTimeoutEx = new HashMap<String, Integer>();
-	
 
-    public static String lastConnectedHost = "";
+	public static String lastConnectedHost = "";
     public static int politenessDelay = 250;	// Time to wait before connecting to the same host again.
 	public static int maxConnWaitingTime = 15000;	// Max time (in ms) to wait for a connection.
     private static int maxRedirects = 5;	// It's not worth waiting for more than 3, in general.. except if we turn out missing a lot of them.. test every case and decide.. 
@@ -48,15 +45,14 @@ public class HttpUtils
 	{
 		HttpURLConnection conn = null;
 		try {
-
-			if ( domainStr == null )	// No info about dominStr from the calling method.. we have to find it here.
-				if ( (domainStr = UrlUtils.getDomainStr(resourceURL)) == null )
+			if ( domainStr == null )	// No info about domainStr from the calling method.. we have to find it here.
+				if ( (domainStr = UrlUtils.getDomainStr(resourceURL) ) == null)
 					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
 
 			conn = HttpUtils.openHttpConnection(resourceURL, domainStr);
 
-			int responceCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
-			if ( responceCode < 200 || responceCode > 299)	// If not an "HTTP SUCCESS"..
+			int responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
+			if ( responceCode < 200 || responceCode > 299 )    // If not an "HTTP SUCCESS"..
 			{
 				conn = HttpUtils.handleRedirects(conn, responceCode, domainStr);	// Take care of redirects, as well as some connectivity problems.
 			}
@@ -75,7 +71,7 @@ public class HttpUtils
 				return true;
 			}
 		} catch (Exception e) {
-			if ( currentPage.equals(resourceURL) )	// Log this error only for urls checked at loading time.
+			if ( currentPage.equals(resourceURL) )	// Log this error only for docPages.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
 			throw new RuntimeException(e);
 		} finally {
@@ -168,6 +164,12 @@ public class HttpUtils
 			blacklistedDomains.add(domainStr);	//Log it to never try connecting with it again.
 			conn.disconnect();
 			throw new RuntimeException();
+		} catch ( SSLProtocolException spe ) {
+			logger.warn(spe + " For url: " + conn.getURL().toString());
+			// Just log it and move on for now.. until we are sure about this handling..
+			//blacklistedDomains.add(domainStr);
+			conn.disconnect();
+			throw new RuntimeException(spe);
 		} catch (SocketTimeoutException ste) {
 			logger.debug("Url: \"" + resourceURL + "\" failed to respond on time!");
 			onTimeoutException(domainStr);
@@ -186,56 +188,51 @@ public class HttpUtils
     
 	
     /**
-     * This method takes an open connection and determines if there is a need for redirections.
-     * If there is, then it opens a new connection every time, up to the point we reach a certain number of redirections.
+     * This method takes an open connection for which there is a need for redirections.
+     * It opens a new connection every time, up to the point we reach a certain number of redirections defined by "HttpUtils.maxRedirects".
      * 
      * @param conn
      * @return Last open connection. If there was any problem, it returns "null".
-     * @throws IOException
-     * @throws MalformedURLException
-     * @throws InterruptedException
+     * @throws RuntimeException
      */
-	public static HttpURLConnection handleRedirects(HttpURLConnection conn, int responceCode, String domainStr)
+	public static HttpURLConnection handleRedirects(HttpURLConnection conn, int responceCode, String domainStr) throws RuntimeException
 	{
-		boolean redirect;
 		int redirectsNum = 0;
 		String initialUrl = conn.getURL().toString();	// Used to have the initialUrl to run tests on redirections (number, path etc..)
 		
 		try {
-			do {
-				redirect = false;
-				
+			 while (true)
+			 {
 				// Check if there was a previous redirection in which we were redirected to a different domain.
 				if ( domainStr == null ) {	// If this is the case, get the new dom
 					if ( (domainStr = UrlUtils.getDomainStr(conn.getURL().toString())) == null )
 						throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
 				}
-				
+
 				if ( responceCode >= 300 && responceCode <= 307 && responceCode != 306 && responceCode != 304 )	// Redirect code.
 				{
-					redirect = true;
 					redirectsNum ++;
-					
+
 					if ( redirectsNum > HttpUtils.maxRedirects ) {
 						logger.warn("Redirects exceeded their limit (" + HttpUtils.maxRedirects + ") for \"" + initialUrl + "\"");
 						throw new RuntimeException();
 					}
-					
+
 					String location = conn.getHeaderField("Location");
 					if ( location == null ) {
 						logger.warn("No \"Location\" field was found in the HTTP Header of \"" + conn.getURL().toString() + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 						throw new RuntimeException();
 					}
-					else if ( location.contains("gateway/error") || location.contains("/error/") || location.contains("/sorryserver") ) {	// TODO - Investigate and add more error cases. 
+					else if ( location.contains("gateway/error") || location.contains("/error/") || location.contains("/sorryserver") ) {	// TODO - Investigate and add more error cases.
 						logger.warn("Url: \"" + initialUrl +  "\" was prevented to redirect to error page: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 						throw new RuntimeException();
 					}
-					
+
 					URL base = conn.getURL();
 					URL target = new URL(base, location);
-					
+
 					String targetUrlStr = target.toString();
-					
+
 					// FOR DEBUG -> Check to see what's happening with the redirect urls (location field types, as well as potential error redirects).
 					// Some domains use only the target-ending-path in their location field, while others use full target url.
 					//if ( conn.getURL().toString().contains("plos.org") ) {	// Debug a certain domain.
@@ -246,42 +243,27 @@ public class HttpUtils
 						logger.debug("Location: " + location);
 						logger.debug("Target: " + targetUrlStr + "\n");*/
 					//}
-					
+
 					if ( !targetUrlStr.contains(HttpUtils.lastConnectedHost) )	// If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
 						domainStr = null;
-					
+
 					conn.disconnect();
-					
+
 					conn = HttpUtils.openHttpConnection(targetUrlStr, domainStr);
-					
+
 					responceCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
+
 					if ( (responceCode >= 200) && (responceCode <= 299) )
-                        return conn;	// It's an "HTTP SUCCESS", return immediately.
+					{
+						return conn;	// It's an "HTTP SUCCESS", return immediately.
+					}
 				}
-				else if ( responceCode >= 500 ) {	// Server Error.
-		        	logger.debug("Url: \""+ conn.getURL().toString() +"\" seems to be unreachable. Recieved: HTTP " + responceCode + " Server Error.");
-		        	
-		        	// Blacklist this domain..
-		        	blacklistedDomains.add(conn.getURL().toString());
-		        	
-		        	throw new RuntimeException();
-		        }
-		        else if ( responceCode >= 400 ) {	// Client Error.
-		        	logger.debug("Url: \""+ conn.getURL().toString() +"\" seems to be unreachable. Recieved: HTTP " + responceCode + " Client Error");
-		        	
-		        	// If a domain keeps returning 403 for different urls (they will be, as we don't allow duplicates) after a pre-defined number of times, we should block it.
-		        	if ( responceCode == 403)
-		        		on403ResponceCode(domainStr);
-		        	
-		        	throw new RuntimeException();
-		        }
-		        else {
-		        	logger.warn("Unexpected responce code recieved: \"HTTP " + responceCode + "\", for url: \"" + conn.getURL().toString() + "\"" );
-		        	throw new RuntimeException();
-		        }
-				
-			} while (redirect);
-			
+				else {
+					onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
+					throw new RuntimeException();
+				}
+			}//while-loop.
+
 		} catch (RuntimeException re) {	// We already logged the right messages.
 			conn.disconnect();
 			throw new RuntimeException();
@@ -292,18 +274,48 @@ public class HttpUtils
 		}
 		
 		
-	// Here is a DEBUG section in which we can retrieve statistics about redirections of certain domains.
-/*		if ( initialUrl.contains("www.ncbi.nlm.nih.gov") )	// DEBUG
-			logger.info("\"" + initialUrl + "\" DID: " + redirectsNum + " redirect(s)!");	// DEBUG!
+		// Here is a DEBUG section in which we can retrieve statistics about redirections of certain domains.
+		/*	if ( initialUrl.contains("www.ncbi.nlm.nih.gov") )	// DEBUG
+				logger.info("\"" + initialUrl + "\" DID: " + redirectsNum + " redirect(s)!");	// DEBUG!
+
+			if ( initialUrl.contains("doi.org/") )	// Check how many redirection are done for doi.org urls..
+				if ( redirectsNum == maxRedirects ) {
+					logger.info("DOI.ORG: \"" + initialUrl + "\" DID: " + redirectsNum + " redirect(s)!");	// DEBUG!
+					logger.info("Final link is: \"" + conn.getURL().toString() + "\"");	// DEBUG!
+				}
+		*/
+	}
+
+
+	/**
+	 * This method is called on errorStatusCode only. Meaning any status code not belogging in 2XX or 3XX.
+	 * @param urlStr
+	 * @param domainStr
+	 * @param errorStatusCode
+	 */
+	public static void onErrorStatusCode(String urlStr, String domainStr, int errorStatusCode)
+	{
+		if ( domainStr == null )	// No info about domainStr from the calling method, we have to find it here.
+			domainStr = UrlUtils.getDomainStr(urlStr);	// It may still be null if there was some problem retrieving the domainStr.
 		
-		if ( initialUrl.contains("doi.org/") )	// Check how many redirection are done for doi.org urls..
-			if ( redirectsNum == maxRedirects ) {
-				logger.info("DOI.ORG: \"" + initialUrl + "\" DID: " + redirectsNum + " redirect(s)!");	// DEBUG!
-				logger.info("Final link is: \"" + conn.getURL().toString() + "\"");	// DEBUG!
-			}
-*/
-		
-		return conn;	// Returns the "conn" as it is (not disconnected), as it will be used by the calling function. 
+		if ( (errorStatusCode >= 400) && (errorStatusCode <= 499) )	// Client Error.
+		{
+			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Client Error.");
+			if ( errorStatusCode == 403 )
+				if ( domainStr != null )
+					on403ErrorCode(domainStr);
+		}
+		else if ( (errorStatusCode >= 500) && (errorStatusCode <= 599) )	// Server Error.
+		{
+			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved unexpected responceCode: " + errorStatusCode);
+			if ( domainStr != null )
+				blacklistedDomains.add(domainStr);
+		}
+		else {	// Unknown Error.
+			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved unexpected responceCode: " + errorStatusCode);
+			if ( domainStr != null )
+				blacklistedDomains.add(domainStr);
+		}
 	}
 	
 	
@@ -314,7 +326,7 @@ public class HttpUtils
 	}
 	
 	
-	public static void on403ResponceCode(String domainStr)
+	public static void on403ErrorCode(String domainStr)
 	{
 		if ( blockDomainTypeAfterTimes(domainsReturned403, domainStr, timesToReturn403BeforeBlocked) )
 			logger.debug("Domain: \"" + domainStr + "\" was blocked after returning HTTP 403 " + timesToReturn403BeforeBlocked + " times.");
@@ -327,7 +339,7 @@ public class HttpUtils
      * @param domainsHashSet
      * @param domainStr
      * @param timesBeforeBlock
-     * @return
+     * @return true/false
      */
 	public static boolean blockDomainTypeAfterTimes(HashMap<String, Integer> domainsHashSet, String domainStr, int timesBeforeBlock)
 	{
