@@ -1,6 +1,5 @@
 package eu.openaire.doc_urls_retriever.util.url;
 
-import java.net.HttpURLConnection;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.regex.Matcher;
@@ -26,8 +25,8 @@ public class UrlUtils
 	public final static Pattern URL_TRIPLE = Pattern.compile("(.+:\\/\\/(?:www(?:(?:\\w+)?\\.)?)?([\\w\\.\\-]+)(?:[\\:\\d]+)?\\/(?:.+\\/)?(?:[\\w.-]*[^\\.pdf]\\?[\\w.-]+[^site]=)?)(.+)?");
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
-	public static final Pattern URL_DIRECTORY_FILTER = Pattern.compile(".+\\/(?:login|join|subscr|register|announcement|feed|about|citation|faq|wiki|support|error|notfound|contribute|subscription|advertisers|authors|license|disclaimer"
-																	+ "|policies|policy|privacy|terms|sitemap|account|search|statistics|cookie|application|help|law|permission|contact|survey|wallet|template|logo|image|photo).*");
+	public static final Pattern URL_DIRECTORY_FILTER = Pattern.compile(".+\\/(?:login|join|subscr|register|announcement|feed|about|citation|faq|wiki|support|error|notfound|contribute|subscription|advertisers|author|editor|license|disclaimer"
+																	+ "|policies|policy|privacy|terms|sitemap|account|search|statistics|cookie|application|help|law|permission|ethic|contact|survey|wallet|template|logo|image|photo).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects.
 
 	public static final Pattern PAGE_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|pt|mso|dtl)(?:\\?.+=.+)?$");
@@ -76,7 +75,7 @@ public class UrlUtils
 	 */
 	public static void loadAndCheckUrls() throws RuntimeException
 	{
-		HashSet<String> loadedUrlGroup = new HashSet<String>();
+		HashSet<String> loadedUrlGroup;
 
 		boolean firstRun = true;
 		
@@ -124,8 +123,8 @@ public class UrlUtils
 	        	}
 	        	
 	        	// If this url is of a certain unwanted type, blacklist itand move on.
-				if ( UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches()
-						|| UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches())
+				if ( UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() ||UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
+					|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches())
 				{
 					UrlUtils.logUrl(retrievedUrl, "unreachable");
 					continue;	// If this link matches certain blackListed criteria, move on..
@@ -198,10 +197,10 @@ public class UrlUtils
 				try {
 					logger.debug("Going to check guessedDocUrl: " + guessedDocUrl +"\", made out from initialUrl: \"" + pageUrl + "\"");
 					
-					if ( checkIfDocMimeType(pageUrl, guessedDocUrl, domainStr) ) {
+					if ( HttpUtils.connectAndCheckMimeType(pageUrl, guessedDocUrl, domainStr) ) {
 						logger.debug("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
 						// TODO - Maybe it will be interesting (when ready) to also count (with an AtomicInteger, if in multithread) the handled urls with this algorithm.
-						return true;	// Note that we have already add it in the output links inside "checkIfDocMimeType()".
+						return true;	// Note that we have already add it in the output links inside "connectAndCheckMimeType()".
 					}
 				} catch (Exception e) {
 					// No special handling here, neither logging.. since it's expected that some checks will fail.
@@ -274,54 +273,18 @@ public class UrlUtils
 		if ( FileUtils.outputEntries.size() == FileUtils.groupCount )	// Write to file every time we have a group of <groupCount> urls' sets.
 			FileUtils.writeToFile();
 	}
-	
-	
-	/**
-	 * This method checks if a certain url can give us its mimeType, as well as if this mimeType is a docMimeType.
-	 * It automatically calls the "logUrl()" method for the valid docUrls, while it doesn't call it for non-success cases, thus allowing calling method to handle the case.
-	 * @param currentPage
-	 * @param resourceURL
-	 * @return True, if it's a pdfMimeType. False, if it has a different mimeType.
-	 * @throws RuntimeException (when there was a network error).
-	 */
-	public static boolean checkIfDocMimeType(String currentPage, String resourceURL, String domainStr) throws RuntimeException
-	{	
-		HttpURLConnection conn = null;
-		try {
-			
-			if ( domainStr == null )	// No info about dominStr from the calling method.. we have to find it here.
-				if ( (domainStr = UrlUtils.getDomainStr(resourceURL)) == null )
-					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
-			
-			conn = HttpUtils.openHttpConnection(resourceURL, domainStr);
-			
-			int responceCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
-			if ( responceCode < 200 || responceCode > 299)	// If not an "HTTP SUCCESS"..
-			{
-				conn = HttpUtils.handleRedirects(conn, responceCode, domainStr);	// Take care of redirects, as well as some connectivity problems.
-			}
-			
-	        // Check if we are able to find the mime type.
-	        String mimeType = null;
-	        if ( (mimeType = conn.getContentType()) == null ) {
-	        	if ( currentPage.equals(resourceURL) )
-	        		logger.warn("Could not find mimeType for " + conn.getURL().toString());
-	        	throw new RuntimeException();
-	        }
-	        else if ( knownDocTypes.contains(mimeType) ) {
-	        	logUrl(currentPage, conn.getURL().toString());	// we send the urls, before and after potential redirections.
-	        	return true;
-	        }
-		} catch (Exception e) {
-			if ( currentPage.equals(resourceURL) )	// Log this error only for urls checked at loading time.
-        		logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
-			throw new RuntimeException(e);
-		} finally {
-			if ( conn != null )
-				conn.disconnect();
-		}
-        
-        return false;
+
+
+	public static boolean checkIfDocMimeType(String linkStr, String mimeType)
+	{
+		if ( knownDocTypes.contains(mimeType) )
+			return true;
+		else if ( mimeType.equals("application/octet-stream") && linkStr.toLowerCase().contains("pdf") )
+		    // This is a special case. (see: "https://kb.iu.edu/d/agtj")
+            // TODO - When we will accept more docTypes, match it against "DOC_URL_FILTER" instead of just "pdf".
+            return true;
+		else
+			return false;
 	}
 	
 	

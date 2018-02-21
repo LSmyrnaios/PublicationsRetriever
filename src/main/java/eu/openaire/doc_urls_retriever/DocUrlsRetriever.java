@@ -20,7 +20,7 @@ public class DocUrlsRetriever
     public static void main( String[] args )
     {
     	// Run this currently for tests... But in the end it should work with standard input and output.
-    	new FileUtils(System.getProperty("user.dir") + "//src//main//resources//testRandomNewList1000.csv", System.getProperty("user.dir") + "//src//main//resources//testOutputFile.tsv");
+    	new FileUtils(System.getProperty("user.dir") + "//src//main//resources//testValidDocPagesList1000.csv", System.getProperty("user.dir") + "//src//main//resources//testOutputFile.tsv");
 
 		try {
 			new CrawlerController();
@@ -41,9 +41,9 @@ public class DocUrlsRetriever
     	}
 
 		logger.info("Total urls number in the input was: " + inputUrlNum);
-    	logger.info("Αbout: " + UrlUtils.elsevierLinks * (float)100 / inputUrlNum + "% (" + UrlUtils.elsevierLinks + " urls) were redirected to the JavaScript site \"elsevier.com\" and were avoided to be crawled.");
+		logger.info("Total docs found: " + UrlUtils.sumOfDocsFound + " That's about: " + UrlUtils.sumOfDocsFound * (float)100 / inputUrlNum + "%");
+		logger.info("Αbout: " + UrlUtils.elsevierLinks * (float)100 / inputUrlNum + "% (" + UrlUtils.elsevierLinks + " urls) were redirected to the JavaScript site \"elsevier.com\" and were avoided to be crawled.");
     	logger.info("Αbout: " + UrlUtils.doajResultPageLinks * (float)100 / inputUrlNum + "% (" + UrlUtils.doajResultPageLinks + " urls) were \"doaj.org/toc/\" urls, which are resultPages, thus being avoided to be crawled.");
-    	logger.info("Total docs found: " + UrlUtils.sumOfDocsFound + " That's about: " + UrlUtils.sumOfDocsFound * (float)100 / inputUrlNum + "%");
     	logger.info("There were: " + UrlUtils.inputDuplicatesNum + " duplicates in the input file." + " That's about: " + UrlUtils.inputDuplicatesNum * (float)100 / inputUrlNum + "%");
 
         // Then... just close the open files (imported and exported content) and exit.

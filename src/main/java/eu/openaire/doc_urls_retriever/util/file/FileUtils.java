@@ -29,7 +29,7 @@ public class FileUtils
 	private static String outputDelimiter = "\t";
 	private static String endOfLine = "\n";
 	public static long emptyInputLines = 0;	// For better statistics in the end.
-	public static int groupCount = 100;	// Just for testing.. TODO -> Later increase it..
+	public static int groupCount = 1000;	// Just for testing.. TODO -> Later increase it..
 
     
 	

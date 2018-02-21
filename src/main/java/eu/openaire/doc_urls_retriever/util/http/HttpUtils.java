@@ -33,8 +33,61 @@ public class HttpUtils
     										// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
     private static int timesToReturn403BeforeBlocked = 10;	// Urls from specific domains are continuously returning 403 responceCode. Unless we find a way around it (handle connectivity differently ?), we should block the domains.
     private static int timesToHaveTimeoutExBeforeBlocked = 3;
-    
-    /**
+
+
+
+	/**
+	 * This method checks if a certain url can give us its mimeType, as well as if this mimeType is a docMimeType.
+	 * It automatically calls the "logUrl()" method for the valid docUrls, while it doesn't call it for non-success cases, thus allowing calling method to handle the case.
+	 * @param currentPage
+	 * @param resourceURL
+	 * @return True, if it's a pdfMimeType. False, if it has a different mimeType.
+	 * @throws RuntimeException (when there was a network error).
+	 */
+	public static boolean connectAndCheckMimeType(String currentPage, String resourceURL, String domainStr) throws RuntimeException
+	{
+		HttpURLConnection conn = null;
+		try {
+
+			if ( domainStr == null )	// No info about dominStr from the calling method.. we have to find it here.
+				if ( (domainStr = UrlUtils.getDomainStr(resourceURL)) == null )
+					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
+
+			conn = HttpUtils.openHttpConnection(resourceURL, domainStr);
+
+			int responceCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
+			if ( responceCode < 200 || responceCode > 299)	// If not an "HTTP SUCCESS"..
+			{
+				conn = HttpUtils.handleRedirects(conn, responceCode, domainStr);	// Take care of redirects, as well as some connectivity problems.
+			}
+
+			// Check if we are able to find the mime type.
+			String mimeType = null;
+			if ( (mimeType = conn.getContentType()) == null ) {
+				if ( currentPage.equals(resourceURL) )
+					logger.warn("Could not find mimeType for " + conn.getURL().toString());
+				throw new RuntimeException();
+			}
+
+			String finalUrlStr = conn.getURL().toString();
+			if ( UrlUtils.checkIfDocMimeType(finalUrlStr, mimeType) ) {
+				UrlUtils.logUrl(currentPage, finalUrlStr);	// we send the urls, before and after potential redirections.
+				return true;
+			}
+		} catch (Exception e) {
+			if ( currentPage.equals(resourceURL) )	// Log this error only for urls checked at loading time.
+				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
+			throw new RuntimeException(e);
+		} finally {
+			if ( conn != null )
+				conn.disconnect();
+		}
+
+		return false;
+	}
+
+
+	/**
      * This method sets up a connection with the given url, using the "HEAD" method. If the server doesn't support "HEAD", it logs it, then it resets the connection and tries again using "GET".
      * The "domainStr" may be either null, if the calling method doesn't know this String (then openHttpConnection() finds it on its own), or an actual "domainStr" String.
      * @param resourceURL

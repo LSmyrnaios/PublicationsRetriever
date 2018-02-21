@@ -23,7 +23,8 @@ public class CrawlerController
 	
 	private String crawlStorageFolder = System.getProperty("user.dir") + "//src//main//resources//crawlerStorage";	// Change slashes later for linux..
 	
-	//public static DocIDServer docIdServer = null;	// Potentially usable when performing checks in urls added in the Crawler.
+	//public static DocIDServer docIdServer = null;	// Potentially useful when performing checks in urls added in the Crawler.
+	//public static Frontier frontier = null;	// Potentially useful to know the number of pages (left to be crawled, are in memory waiting, already prosseced).
 	//public static long urlsReachedCrawler = 0;	// Potentially useful for statistics.
 	
 	
@@ -44,7 +45,11 @@ public class CrawlerController
 												// We don't want to miss any page!
 		
 		config.setPolitenessDelay(HttpUtils.politenessDelay);
-		
+
+		config.setIncludeBinaryContentInCrawling(true);	// Call "visit()" method even on binary content (which is not prohibited by "shouldVisit()" method) to check its contentType.
+		config.setProcessBinaryContentInCrawling(true);	// Process more pages.. like xhtml ones (Crawler4j processes only html-ones unless instructed to process all).
+		// Binary-content-rules in "shouldVisit()" still apply.
+
 		PageFetcher pageFetcher = new PageFetcher(config);
 		RobotstxtConfig robotstxtConfig = new RobotstxtConfig();
 		RobotstxtServer robotstxtServer = new RobotstxtServer(robotstxtConfig, pageFetcher);
@@ -55,10 +60,11 @@ public class CrawlerController
 			controller = new CrawlController(config, pageFetcher, robotstxtServer);
 			
 			//CrawlerController.docIdServer = controller.getDocIdServer();	// Enable this code if we need special urls' check from the crawler.
-			
+			//CrawlerController.frontier = controller.getFrontier();	// Enable this code if we need to check pages' number in the crawler.
+
 			UrlUtils.loadAndCheckUrls();
 
-			//CrawlerController.urlsReachedCrawler = controller.getFrontier().getQueueLength();	// If wanted for statistics, in the end.
+			//CrawlerController.urlsReachedCrawler = CrawlerController.frontier.getNumberOfScheduledPages();	// If wanted for statistics, in the end.
         	
 	        // Start crawling and wait until finished.
 	        controller.start(PageCrawler.class, 1);
