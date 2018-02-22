@@ -40,7 +40,8 @@ public class DocUrlsRetriever
 		logger.info("Total docs found: " + UrlUtils.sumOfDocsFound + " That's about: " + UrlUtils.sumOfDocsFound * (float)100 / inputUrlNum + "%");
 		logger.info("Αbout: " + UrlUtils.elsevierLinks * (float)100 / inputUrlNum + "% (" + UrlUtils.elsevierLinks + " urls) were redirected to the JavaScript site \"elsevier.com\" and were avoided to be crawled.");
     	logger.info("Αbout: " + UrlUtils.doajResultPageLinks * (float)100 / inputUrlNum + "% (" + UrlUtils.doajResultPageLinks + " urls) were \"doaj.org/toc/\" urls, which are resultPages, thus being avoided to be crawled.");
-    	logger.info("There were: " + UrlUtils.inputDuplicatesNum + " duplicates in the input file." + " That's about: " + UrlUtils.inputDuplicatesNum * (float)100 / inputUrlNum + "%");
+		logger.info("Αbout: " + UrlUtils.dlibHtmlDocUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.dlibHtmlDocUrls + " urls) were \"dlib.org\" urls, which are docUrls,but, in HTML, thus being avoided to be crawled.");
+		logger.info("There were: " + UrlUtils.inputDuplicatesNum + " duplicates in the input file." + " That's about: " + UrlUtils.inputDuplicatesNum * (float)100 / inputUrlNum + "%");
 
         // Then... just close the open files (imported and exported content) and exit.
     	FileUtils.closeStreams();

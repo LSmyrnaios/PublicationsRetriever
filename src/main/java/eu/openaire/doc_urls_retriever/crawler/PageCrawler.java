@@ -40,6 +40,7 @@ public class PageCrawler extends WebCrawler
 			return false;
 		}
 		else if ( lowerCaseUrlStr.contains("dlib.org") ) {    // Avoid HTML docUrls.
+			UrlUtils.dlibHtmlDocUrls ++;
 			UrlUtils.logUrl(urlStr, "unreachable");
 			return false;
 		}

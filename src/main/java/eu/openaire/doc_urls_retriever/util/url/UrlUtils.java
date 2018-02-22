@@ -46,8 +46,8 @@ public class UrlUtils
 
     public static final Pattern JSESSIONID_FILTER = Pattern.compile(".+:\\/\\/.+(;(?:JSESSIONID|jsessionid)=.*[?\\w\\W]+$)");
 
-    public static final Pattern DOC_URL_FILTER = Pattern.compile(".+:\\/\\/.+(pdf|download|doc|file|/fulltext|attachment|paper|cgi/viewcontent.cgi?|viewfile|viewdoc|/get).*");
-    // Works for lowerCase Strings (we make sure they are in lowerCase before we check).
+    public static final Pattern DOC_URL_FILTER = Pattern.compile(".+:\\/\\/.+(pdf|download|doc|file|/fulltext|attachment|/paper|cgi/viewcontent.cgi?|viewfile|viewdoc|/get).*");
+    // "DOC_URL_FILTER" works for lowerCase Strings (we make sure they are in lowerCase before we check).
     // Note that we still need to check if it's an alive link and if it's actually a docUrl (though it's mimeType).
     
     public static int sumOfDocsFound = 0;	// Change it back to simple int if finally in singleThread mode
@@ -60,6 +60,7 @@ public class UrlUtils
 
 	public static int elsevierLinks = 0;
 	public static int doajResultPageLinks = 0;
+	public static int dlibHtmlDocUrls = 0;
 
 	static {
 			logger.debug("Setting knownDocTypes. Currently testing only \".pdf\" type.");
