@@ -25,18 +25,14 @@ public class DocUrlsRetriever
 		try {
 			new CrawlerController();
 		} catch (RuntimeException e) {  // In case there was no input, or on other errors, there will be thrown a RuntimeException, after logging the cause.
+			logger.fatal("There was a serious error! Exiting..");
 			System.exit(-1);
 		}
 
 		// Show statistics.
 		long inputUrlNum = 0;
-		if ( FileUtils.skipFirstRow )
-			inputUrlNum = FileUtils.getFileIndex() - FileUtils.emptyInputLines -1; // -1 to exclude the first line
-		else
-			inputUrlNum = FileUtils.getFileIndex() - FileUtils.emptyInputLines;
-
-    	if ( inputUrlNum <= 0 ) {
-    		logger.error("File indexer is unexpectedly reporting that no urls were retrieved from input file. Exiting..");
+    	if ( (inputUrlNum = FileUtils.getCurrentlyLoadedUrls()) <= 0 ) {
+    		logger.error("\"FileUtils.getCurrentlyLoadedUrls()\" is unexpectedly reporting that no urls were retrieved from input file. Exiting..");
     		System.exit(-2);
     	}
 

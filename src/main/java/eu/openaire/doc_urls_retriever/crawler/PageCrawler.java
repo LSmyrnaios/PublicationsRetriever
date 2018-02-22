@@ -93,7 +93,6 @@ public class PageCrawler extends WebCrawler
 		String pageContentType = page.getContentType();
 
 		if ( UrlUtils.checkIfDocMimeType(pageUrl, pageContentType) ) {
-			logger.debug("docUrl found: <" + pageUrl + ">");
 			UrlUtils.logUrl(pageUrl, pageUrl);
 			return;
 		}
@@ -113,9 +112,10 @@ public class PageCrawler extends WebCrawler
         
 	    Set<WebURL> currentPageLinks = page.getParseData().getOutgoingUrls();
 
-		if ( currentPageLinks.isEmpty() )	// If no links were retrieved (e.g. the pageUrl was some kind of non-page binary content)
-		{
-			logger.warn("No links were able to be retrieved from pageUrl: " + pageUrl + ". Its contentType is: " + pageContentType);
+		//logger.debug("Num of links in: \"" + pageUrl + "\" is: " + currentPageLinks.size());
+
+		if ( currentPageLinks.isEmpty() ) {	// If no links were retrieved (e.g. the pageUrl was some kind of non-page binary content)
+			logger.warn("No links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
 			UrlUtils.logUrl(pageUrl, "unreachable");
 			return;
 		}
@@ -123,7 +123,6 @@ public class PageCrawler extends WebCrawler
 		HashSet<String> curLinksStr = new HashSet<String>();	// HashSet to store the String version of each link.
 
 		String urlToCheck = null;
-
 
 		// Check if urls inside this page, match to a docUrl regex, if they do, try connecting with them and see if they truly are docUrls. If they are, return.
 		for ( WebURL link : currentPageLinks )
@@ -164,7 +163,7 @@ public class PageCrawler extends WebCrawler
 						//logger.debug("\"DOC_URL_FILTER\" revealed a docUrl in pageUrl: \"" + pageUrl + "\", after matching to: \"" + docUrlMatcher.group(1) + "\"");
 						return;
 					}
-				}// end if
+				}
 			} catch (RuntimeException re) {
 				UrlUtils.duplicateUrls.add(urlToCheck);	// Don't check it ever again..
 			} catch (MalformedURLException me) {
@@ -173,8 +172,6 @@ public class PageCrawler extends WebCrawler
 		}// end for-loop
 
 		// If we reached here, it means that we couldn't find a docUrl the quick way.. so we have to check some (we exclude lots of them) of the inner links one by one.
-
-		//logger.debug("Num of links in \"" + pageUrl + "\" is: " + currentPageLinks.size());
 
 		for ( String currentLink : curLinksStr )
 		{
@@ -243,6 +240,14 @@ public class PageCrawler extends WebCrawler
 			UrlUtils.logUrl(urlStr, "unreachable");
 		}
 		logger.warn(e);
+	}
+
+
+	@Override
+	public void onPageBiggerThanMaxSize(String urlStr, long pageSize) {
+		logger.warn("Skipping url: \"" + urlStr + "\" which was bigger (" + pageSize +") than max allowed size ("
+																			+ CrawlerController.controller.getConfig().getMaxDownloadSize() + ")");
+		UrlUtils.logUrl(urlStr, "unreachable");
 	}
 
 }

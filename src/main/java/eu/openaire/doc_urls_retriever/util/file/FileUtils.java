@@ -34,13 +34,15 @@ public class FileUtils
     
 	
     /**
-     * This method returns the number of non-empty lines we have read from the inutFile. 
-     * @return
+     * This method returns the number of (non-heading, non-empty) lines we have read from the inputFile.
+     * @return loadedUrls
      */
-	public static long getFileIndex()	// In the end, it gives the total number of urls we have processed.
+	public static long getCurrentlyLoadedUrls()	// In the end, it gives the total number of urls we have processed.
 	{
-		//logger.debug("FileUtils.fileIndex when asked to return its value: " + FileUtils.fileIndex);
-		return FileUtils.fileIndex;
+		if ( FileUtils.skipFirstRow )
+			return FileUtils.fileIndex - FileUtils.emptyInputLines -1; // -1 to exclude the first line
+		else
+			return FileUtils.fileIndex - FileUtils.emptyInputLines;
 	}
 	
 	
@@ -96,7 +98,7 @@ public class FileUtils
 			}
 
 			urlGroup.add( retrievedString );
-			//logger.debug(retrievedString);	// DEBUG!
+			//logger.debug("Loaded from inputFile: " + retrievedString);	// DEBUG!
 		}
 		//logger.debug("FileUtils.fileIndex after taking urls after " + FileUtils.fileIndex / groupCount + " time(s), from input file: " + FileUtils.fileIndex);	// DEBUG!
 		

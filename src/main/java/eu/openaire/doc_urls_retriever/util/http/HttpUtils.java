@@ -1,5 +1,7 @@
 package eu.openaire.doc_urls_retriever.util.http;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.SetMultimap;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,22 +15,22 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 
-
 public class HttpUtils
 {
 	private static final Logger logger = LogManager.getLogger(HttpUtils.class);
 	
 	public static HashSet<String> domainsWithUnsupportedHeadMethod = new HashSet<String>();
 	public static HashSet<String> blacklistedDomains = new HashSet<String>();	// Domains with which we don't want to connect again.
-	public static HashMap<String, Integer> domainsReturned403 = new HashMap<String, Integer>();	// Domains that have returned 403 responce, and the amount of times they did.
+	public static HashMap<String, Integer> domainsReturned5XX = new HashMap<String, Integer>();	// Domains that have returned 5XX Error Code, and the amount of times they did.
 	public static HashMap<String, Integer> domainsWithTimeoutEx = new HashMap<String, Integer>();
+	public static SetMultimap<String, String> domainsWithPaths403BlackListed = HashMultimap.create();	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
 
 	public static String lastConnectedHost = "";
     public static int politenessDelay = 250;	// Time to wait before connecting to the same host again.
 	public static int maxConnWaitingTime = 15000;	// Max time (in ms) to wait for a connection.
     private static int maxRedirects = 5;	// It's not worth waiting for more than 3, in general.. except if we turn out missing a lot of them.. test every case and decide.. 
     										// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
-    private static int timesToReturn403BeforeBlocked = 10;	// Urls from specific domains are continuously returning 403 responceCode. Unless we find a way around it (handle connectivity differently ?), we should block the domains.
+    private static int timesToHave5XXerrorCodeBeforeBlocked  = 5;
     private static int timesToHaveTimeoutExBeforeBlocked = 3;
 
 
@@ -107,7 +109,12 @@ public class HttpUtils
 		    	logger.warn("Preventing connecting to blacklistedHost: \"" + domainStr + "\"!");
 		    	throw new RuntimeException();
 			}
-			
+
+			if ( checkIfPathIs403BlackListed(resourceURL, domainStr) ) {
+				logger.warn("Preventing reaching 403ErrorCode with url: \"" + resourceURL + "\"!");
+				throw new RuntimeException();
+			}
+
 			url = new URL(resourceURL);
 			
 			conn = (HttpURLConnection) url.openConnection();
@@ -297,19 +304,19 @@ public class HttpUtils
 	{
 		if ( domainStr == null )	// No info about domainStr from the calling method, we have to find it here.
 			domainStr = UrlUtils.getDomainStr(urlStr);	// It may still be null if there was some problem retrieving the domainStr.
-		
+
 		if ( (errorStatusCode >= 400) && (errorStatusCode <= 499) )	// Client Error.
 		{
 			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Client Error.");
 			if ( errorStatusCode == 403 )
 				if ( domainStr != null )
-					on403ErrorCode(domainStr);
+					on403ErrorCode(urlStr, domainStr);
 		}
 		else if ( (errorStatusCode >= 500) && (errorStatusCode <= 599) )	// Server Error.
 		{
-			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved unexpected responceCode: " + errorStatusCode);
+			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Server Error.");
 			if ( domainStr != null )
-				blacklistedDomains.add(domainStr);
+				on5XXerrorCode(domainStr);
 		}
 		else {	// Unknown Error.
 			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved unexpected responceCode: " + errorStatusCode);
@@ -317,19 +324,45 @@ public class HttpUtils
 				blacklistedDomains.add(domainStr);
 		}
 	}
-	
+
+
+	public static void on403ErrorCode(String urlStr, String domainStr)
+	{
+		String pathStr = UrlUtils.getPathStr(urlStr);
+
+		domainsWithPaths403BlackListed.put(domainStr, pathStr);	// Put the new path to be blocked.
+
+		logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code.");
+	}
+
+
+	public static boolean checkIfPathIs403BlackListed(String urlStr, String domainStr)
+	{
+		if ( domainsWithPaths403BlackListed.containsKey(domainStr) )	// If this domain has returned 403 before, check if we have the same path.
+		{
+			String pathStr = UrlUtils.getPathStr(urlStr);
+			if ( pathStr == null )	// If there is a problem retrieving this athStr, return false;
+				return false;
+
+			if ( domainsWithPaths403BlackListed.containsValue(pathStr) )
+				return true;
+		}
+
+		return false;
+	}
+
+
+	public static void on5XXerrorCode(String domainStr)
+	{
+		if ( blockDomainTypeAfterTimes(HttpUtils.domainsReturned5XX, domainStr, HttpUtils.timesToHave5XXerrorCodeBeforeBlocked) )
+			logger.debug("Domain: \"" + domainStr + "\" was blocked after returning 5XX Error Code " + HttpUtils.timesToHave5XXerrorCodeBeforeBlocked + " times.");
+	}
+
 	
 	public static void onTimeoutException(String domainStr)
 	{
-		if ( blockDomainTypeAfterTimes(domainsWithTimeoutEx, domainStr, timesToHaveTimeoutExBeforeBlocked) )
-			logger.debug("Domain: \"" + domainStr + "\" was blocked after causing Timeout Exception " + timesToHaveTimeoutExBeforeBlocked + " times.");
-	}
-	
-	
-	public static void on403ErrorCode(String domainStr)
-	{
-		if ( blockDomainTypeAfterTimes(domainsReturned403, domainStr, timesToReturn403BeforeBlocked) )
-			logger.debug("Domain: \"" + domainStr + "\" was blocked after returning HTTP 403 " + timesToReturn403BeforeBlocked + " times.");
+		if ( blockDomainTypeAfterTimes(HttpUtils.domainsWithTimeoutEx, domainStr, HttpUtils.timesToHaveTimeoutExBeforeBlocked) )
+			logger.debug("Domain: \"" + domainStr + "\" was blocked after causing Timeout Exception " + HttpUtils.timesToHaveTimeoutExBeforeBlocked + " times.");
 	}
 
 

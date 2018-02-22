@@ -25,7 +25,7 @@ public class UrlUtils
 	public final static Pattern URL_TRIPLE = Pattern.compile("(.+:\\/\\/(?:www(?:(?:\\w+)?\\.)?)?([\\w\\.\\-]+)(?:[\\:\\d]+)?\\/(?:.+\\/)?(?:[\\w.-]*[^\\.pdf]\\?[\\w.-]+[^site]=)?)(.+)?");
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
-	public static final Pattern URL_DIRECTORY_FILTER = Pattern.compile(".+\\/(?:login|join|subscr|register|announcement|feed|about|citation|faq|wiki|support|error|notfound|contribute|subscription|advertisers|author|editor|license|disclaimer"
+	public static final Pattern URL_DIRECTORY_FILTER = Pattern.compile(".+\\/(?:login|join|subscr|register|announcement|feed|about|citation|faq|wiki|support|error|misuse|abuse|notfound|contribute|subscription|advertisers|author|editor|license|disclaimer"
 																	+ "|policies|policy|privacy|terms|sitemap|account|search|statistics|cookie|application|help|law|permission|ethic|contact|survey|wallet|template|logo|image|photo).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects.
 
@@ -90,7 +90,7 @@ public class UrlUtils
 	        		throw new RuntimeException();
 	        	}
 	        	else {
-	        		logger.debug("Done loading " + FileUtils.getFileIndex() + " urls from the inputFile.");	// DEBUG!
+	        		logger.debug("Done loading " + FileUtils.getCurrentlyLoadedUrls() + " urls from the inputFile.");	// DEBUG!
 	        		break;	// No more urls to load and check, just start Crawling.
 	        	}
 	        }
@@ -175,7 +175,7 @@ public class UrlUtils
 		    	return false;	// The docUrl can't be guessed in this case.
 		    }
 			
-			paths = successDomainPathsMultiMap.get(domainStr);	// Get all available paths for this domain.
+			paths = successDomainPathsMultiMap.get(domainStr);	// Get all available paths for this domain, to try them along with current ID.
 			
 			for ( String path : paths )
 			{
@@ -312,11 +312,43 @@ public class UrlUtils
 		    }
 		}
 		else {
-			logger.warn("Unexpected matcher's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
+			logger.warn("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
 			return null;
 		}
 		
-		return domainStr.toLowerCase();	// We return it in lowerCase as we don't want to store double domains. (it doesn't play any part in connectivity, only the rest of the url in case Sensitive.)
+		return domainStr.toLowerCase();	// We return it in lowerCase as we don't want to store double domains. (it doesn't play any part in connectivity, only the rest of the url is case-sensitive.)
+	}
+
+
+	/**
+	 * This method returns the path of the given url.
+	 * @param urlStr
+	 * @return pathStr
+	 */
+	public static String getPathStr(String urlStr)
+	{
+		if ( (urlStr == null) || urlStr.isEmpty() ) {
+			logger.error("A null or an empty String was given when called \"getPathStr()\" method!");
+			return null;
+		}
+
+		String pathStr = null;
+		Matcher matcher = URL_TRIPLE.matcher(urlStr);
+
+		if ( matcher.matches() )
+		{
+			pathStr = matcher.group(1);	// Group <1> is the PATH.
+			if ( (pathStr == null) || pathStr.isEmpty() ) {
+				logger.warn("Unexpected null or empty value returned by \"matcher.group(1)\"");
+				return null;
+			}
+		}
+		else {
+			logger.warn("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
+			return null;
+		}
+
+		return pathStr;
 	}
 
 
