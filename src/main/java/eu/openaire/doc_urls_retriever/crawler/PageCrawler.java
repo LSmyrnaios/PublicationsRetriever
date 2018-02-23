@@ -1,7 +1,5 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -129,33 +127,24 @@ public class PageCrawler extends WebCrawler
 		for ( WebURL link : currentPageLinks )
 		{
 			try {
-				// Produce fully functional inner links, NOT inner paths. (Make sure that Crawler4j doesn't handle that already..)
-				URL base = new URL(pageUrl);
-				URL targetUrl = new URL(base, link.toString());	// Combine base (domain) and resource (inner link), to produce the final link.
-				String currentLink  = targetUrl.toString();
-
-				if ( UrlUtils.duplicateUrls.contains(currentLink) )
-					continue;
-
-				if ( shouldNotCheckInnerLink(currentPageDomain, currentLink) ) {	// If this link matches certain blackListed criteria, move on..
-					//logger.debug("Avoided link: " + currentLink );
-					UrlUtils.duplicateUrls.add(currentLink);
-					continue;
-				}
-
-				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink) ) == null ) {	// Fix potential encoding problems.
+				// Produce fully functional inner links, NOT inner paths or non-canonicalized.
+				// (Crawler4j doesn't canonicalize the urls when it takes them, it does this only if it visit them, depending on "shouldFollowLinksIn()" method.)
+				// See "Parser.java" and "Net.java", in Crawler4j files, for more info.
+				String currentLink = link.toString();
+				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl)) == null ) {	// Fix potential encoding problems.
 					logger.debug("Could not cannonicalize inner url: " + currentLink);
 					UrlUtils.duplicateUrls.add(currentLink);
 					continue;
 				}
+
+				if ( UrlUtils.duplicateUrls.contains(urlToCheck) )
+					continue;
 
 				if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
 					UrlUtils.logUrl(pageUrl, urlToCheck);
 					logger.debug("Re-crossing the already found url: \"" +  urlToCheck + "\"");
 					return;
 				}
-
-				curLinksStr.add(urlToCheck);	// Keep the string version of this link, in order not to make the transformation later..
 
 				Matcher docUrlMatcher = UrlUtils.DOC_URL_FILTER.matcher(urlToCheck.toLowerCase());
 				if ( docUrlMatcher.matches() )
@@ -164,35 +153,32 @@ public class PageCrawler extends WebCrawler
 						//logger.debug("\"DOC_URL_FILTER\" revealed a docUrl in pageUrl: \"" + pageUrl + "\", after matching to: \"" + docUrlMatcher.group(1) + "\"");
 						return;
 					}
+					else
+						continue;	// Don't add it in the new set.
 				}
 			} catch (RuntimeException re) {
 				UrlUtils.duplicateUrls.add(urlToCheck);	// Don't check it ever again..
-			} catch (MalformedURLException me) {
-				logger.warn(me);
+				continue;
 			}
+
+			curLinksStr.add(urlToCheck);	// Keep the string version of this link, in order not to make the transformation later..
+
 		}// end for-loop
 
 		// If we reached here, it means that we couldn't find a docUrl the quick way.. so we have to check some (we exclude lots of them) of the inner links one by one.
 
+		currentPageLinks.clear();	// Free-up non-needed memory.
+
 		for ( String currentLink : curLinksStr )
 		{
-			if ( UrlUtils.duplicateUrls.contains(currentLink) )
-				continue;	// Don't check already seen links.
-
-			if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink) ) == null ) {	// Fix potential encoding problems.
-				logger.debug("Could not cannonicalize inner url: " + currentLink);
+			if ( shouldNotCheckInnerLink(currentPageDomain, currentLink) ) {	// If this link matches certain blackListed criteria, move on..
+				//logger.debug("Avoided link: " + currentLink );
 				UrlUtils.duplicateUrls.add(currentLink);
-				continue;	// Could not canonicalize this url! Move on..
-			}
-
-			if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
-				logger.debug("Re-crossing a previously found docUrl: \"" +  urlToCheck + "\"");
-				UrlUtils.logUrl(pageUrl, currentLink);
-				return;
+				continue;
 			}
 
 			try {
-				if ( HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, null) )
+				if ( HttpUtils.connectAndCheckMimeType(pageUrl, currentLink, null) )
 					return;
 			} catch (RuntimeException e) {
 				// No special handling here.. nor logging..
