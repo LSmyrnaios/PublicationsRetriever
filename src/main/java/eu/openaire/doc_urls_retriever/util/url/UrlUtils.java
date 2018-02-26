@@ -76,7 +76,7 @@ public class UrlUtils
 	 */
 	public static void loadAndCheckUrls() throws RuntimeException
 	{
-		HashSet<String> loadedUrlGroup;
+		Collection<String> loadedUrlGroup;
 
 		boolean firstRun = true;
 		
@@ -84,7 +84,8 @@ public class UrlUtils
         while ( true )
         {
 			// Take urls from file.
-        	loadedUrlGroup = FileUtils.getNextUrlGroup();
+        	loadedUrlGroup = FileUtils.getNextUrlGroupFromJson();
+
 	        if ( loadedUrlGroup.isEmpty() ) {
 	        	if ( firstRun ) {
 	        		logger.fatal("Could not retrieve any urls from the inputFile!");
@@ -101,14 +102,14 @@ public class UrlUtils
 			for ( String retrievedUrl : loadedUrlGroup )
 			{
 				String lowerCaseUrl = retrievedUrl.toLowerCase();	// Only for string checking purposes, not supposed to reach any connection.
-				
+
 				// Remove "jsessionid" for urls. Most of them, if not all, will already be expired.
 				if ( lowerCaseUrl.contains("jsessionid") ) {
 					String noJsessinId;
-					if ( (noJsessinId = UrlUtils.removeJsessionId(retrievedUrl)) != null )	// If it returns null we will NOT loose the value of "retrievedUrl".
+					if ( (noJsessinId = UrlUtils.removeJsessionId(retrievedUrl)) != null )	// If it returns null we will NOT lose the value of "retrievedUrl".
 						retrievedUrl = noJsessinId;
 				}
-				
+
 				if ( docUrls.contains(retrievedUrl) ) {	// If it's already a docUrl that we have come across before, log it and continue.
 					logUrl(retrievedUrl, retrievedUrl);
 					logger.debug("Re-crossing the already found url: \"" + retrievedUrl + "\"");
@@ -132,7 +133,7 @@ public class UrlUtils
 				}
 
 				CrawlerController.controller.addSeed(retrievedUrl);
-
+				
 			}// end for-loop
         }// end while-loop
 	}

@@ -3,12 +3,18 @@ package eu.openaire.doc_urls_retriever.util.file;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Scanner;
+import java.util.HashSet;
+import java.util.Collection;
 
-import org.apache.commons.lang.StringUtils;
+import org.json.JSONException;
+import org.json.JSONTokener;
+import org.json.JSONObject;
+
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,13 +28,15 @@ public class FileUtils
 	//private static Scanner inputDataScanner;
 	private static File inputFile;
 	private static File outputFile;
+	public static HashMap<String, String> idAndUrlMappedInput = new HashMap<String, String>();	// Contains the mapped key(id)-value(url) pairs.
 	public static HashMap<String,String> outputEntries = new HashMap<String,String>();
 	private static long fileIndex = 0;	// Index in the input file
 	public static boolean skipFirstRow = false;
+	public static boolean loadFromJason = true;
 	private static FileWriter writer;
 	private static String outputDelimiter = "\t";
 	private static String endOfLine = "\n";
-	public static long emptyInputLines = 0;	// For better statistics in the end.
+	public static long unretrievableInputLines = 0;	// For better statistics in the end.
 	public static int groupCount = 1000;	// Just for testing.. TODO -> Later increase it..
 
     
@@ -40,9 +48,9 @@ public class FileUtils
 	public static long getCurrentlyLoadedUrls()	// In the end, it gives the total number of urls we have processed.
 	{
 		if ( FileUtils.skipFirstRow )
-			return FileUtils.fileIndex - FileUtils.emptyInputLines -1; // -1 to exclude the first line
+			return FileUtils.fileIndex - FileUtils.unretrievableInputLines -1; // -1 to exclude the first line
 		else
-			return FileUtils.fileIndex - FileUtils.emptyInputLines;
+			return FileUtils.fileIndex - FileUtils.unretrievableInputLines;
 	}
 	
 	
@@ -68,41 +76,146 @@ public class FileUtils
 	
 	
 	/**
-	 * Parses a csv file with only one column, which is the url one.
-	 * @return HashSet<String>
+	 * This method parses a testFile and extracts the urls.
+	 * @return Collection<String>
 	 */
-	public static HashSet<String> getNextUrlGroup()
+	public static Collection<String> getNextUrlGroupTest()
 	{
-		HashSet<String> urlGroup = new HashSet<String>();
+		Collection<String> urlGroup = new HashSet<String>();
 		
 		// Take a group of <groupCount> urls from the file..
 		// If we are at the end and there are less than <groupCount>.. take as many as there are..
 		
 		//logger.debug("Retrieving the next group of " + groupCount + " elements from the inputFile.");
-		long curBeggining = FileUtils.fileIndex;
+		long curBeginning = FileUtils.fileIndex;
 
-		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeggining + groupCount)) )
+		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + groupCount)) )
 		{// While (!EOF) iterate through lines.
 
 			// Take each line, remove potential double quotes.
-			String retrievedString = StringUtils.replace(inputScanner.nextLine(), "\"", "");	// Take next line and replace any '\"' in the input..
+			String retrievedLineStr = StringUtils.replace(inputScanner.nextLine(), "\"", "");
 
 			FileUtils.fileIndex ++;
 
-			if ( skipFirstRow && (FileUtils.fileIndex == 0) )
+			if ( (FileUtils.fileIndex == 0) && skipFirstRow )
 				continue;
 
-			if ( retrievedString.isEmpty() ) {
-				FileUtils.emptyInputLines ++;
+			if ( retrievedLineStr.isEmpty() ) {
+				FileUtils.unretrievableInputLines++;
 				continue;
 			}
 
-			urlGroup.add( retrievedString );
-			//logger.debug("Loaded from inputFile: " + retrievedString);	// DEBUG!
+			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
+
+			urlGroup.add(retrievedLineStr);
 		}
-		//logger.debug("FileUtils.fileIndex after taking urls after " + FileUtils.fileIndex / groupCount + " time(s), from input file: " + FileUtils.fileIndex);	// DEBUG!
-		
+		//logger.debug("FileUtils.fileIndex's value after taking urls after " + FileUtils.fileIndex / groupCount + " time(s), from input file: " + FileUtils.fileIndex);	// DEBUG!
+
 		return urlGroup;
+	}
+
+
+	/**
+	 * This method parses a Json file and extracts the urls, along with the IDs.
+	 * @return Collection<String>
+	 */
+	public static Collection<String> getNextUrlGroupFromJson()
+	{
+		HashMap<String, String> inputIdUrlPair;
+		Collection<String> urlGroup = new HashSet<String>();
+
+		long curBeginning = FileUtils.fileIndex;
+
+		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + groupCount)) )// While (!EOF) iterate through lines.
+		{
+			logger.debug("fileIndex: " + FileUtils.fileIndex);	// DEBUG
+
+			// Take each line, remove potential double quotes.
+			String retrievedLineStr = inputScanner.nextLine();
+
+			FileUtils.fileIndex++;
+
+			if ( (FileUtils.fileIndex == 0) && skipFirstRow )
+				continue;
+
+			if (retrievedLineStr.isEmpty()) {
+				FileUtils.unretrievableInputLines++;
+				continue;
+			}
+
+			logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
+
+            inputIdUrlPair = jsonDecoder(retrievedLineStr);
+			if ( inputIdUrlPair == null || inputIdUrlPair.isEmpty() ) {
+				logger.warn("A problematic inputLine found: \"" + retrievedLineStr + "\"");
+				FileUtils.unretrievableInputLines++;
+				continue;
+			}
+			idAndUrlMappedInput.putAll(inputIdUrlPair);    // Keep mapping to be put in the outputFile later..
+
+			urlGroup.addAll(inputIdUrlPair.values());	// Make sure the our returning's source is the temporary collection (other wise we go into an infinite loop).
+		}
+
+		logger.debug("Left the while loop from jason method.");
+
+		return urlGroup;	// Return just the urls to be crawled. We still keep the IDs.
+	}
+
+
+	/**
+	 * This method decodes a Jason String into its members.
+	 * @param jsonLine String
+	 * @return HashMap<String,String>
+	 */
+	public static HashMap<String,String> jsonDecoder(String jsonLine)
+	{
+		HashMap<String, String> returnIdUrlMap = new HashMap<String, String>();
+
+		JSONObject jObj = (JSONObject) new JSONTokener(jsonLine).nextValue();
+
+		// Get ID and url and put them in the HashMap
+		String idStr = null;
+		String urlStr = null;
+		try {
+			idStr = jObj.get("id").toString();
+			urlStr = jObj.get("url").toString();
+
+		} catch (JSONException je) {
+			logger.warn(je);
+			return null;
+		}
+
+		if ( idStr.isEmpty() && urlStr.isEmpty() )	// Allow one of them to be empty but not both of them.
+			return null;
+
+		returnIdUrlMap.put(idStr, urlStr);
+
+		return returnIdUrlMap;
+	}
+
+
+	/**
+	 * This method encodes json members into a Json object.
+	 * @param id String
+	 * @param url String
+	 * @param errorCause String
+	 * @return String
+	 */
+	public static String jsonEncoder(String id, String url, String errorCause)
+	{
+		// TODO - Call this method inside the "writeToFile()" method.
+
+		JSONObject jObj = new JSONObject();
+		jObj.put(id, url);
+
+		//if ( errorCause != null )
+			// TODO - Add also the "errorCause" in the output.
+
+
+		// Here I wll make a JsonObject out of the three String objects (note that the "errorCause" may be null)
+
+
+		return jObj.toString();
 	}
 	
 	

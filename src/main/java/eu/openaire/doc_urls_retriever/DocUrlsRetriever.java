@@ -20,7 +20,7 @@ public class DocUrlsRetriever
     public static void main( String[] args )
     {
     	// Run this currently for tests... But in the end it should work with standard input and output.
-    	new FileUtils(System.getProperty("user.dir") + "//src//main//resources//testValidDocPagesList1000.csv", System.getProperty("user.dir") + "//src//main//resources//testOutputFile.tsv");
+    	new FileUtils(System.getProperty("user.dir") + "//src//main//resources//testUrlsJson5.json", System.getProperty("user.dir") + "//src//main//resources//testOutputFile.tsv");
 
 		try {
 			new CrawlerController();
