@@ -118,7 +118,7 @@ public class FileUtils
 			logger.debug("Writing to the outputFile.. " + outputEntries.size() + " set(s) of (\"SourceUrl\", \"DocUrl\")");
 		
 		// If later we want to make the StringBuilder member of this class.. and we use multithreaded environment, we should use "StringBuffer" instead, as the last one is thread-safe.
-		StringBuilder strB = new StringBuilder(groupCount * 300);	// 300: the maximum expected length for a source-doc-mime triple..
+		StringBuilder strB = new StringBuilder(groupCount * 300);	// 300: the maximum expected length for a source/doc Urls set..
 	    
 		try {
 			for ( Entry<String,String> entry : outputEntries.entrySet() )
