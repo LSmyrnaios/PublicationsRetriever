@@ -32,7 +32,6 @@ public class FileUtils
 	public static HashMap<String,String> outputEntries = new HashMap<String,String>();
 	private static long fileIndex = 0;	// Index in the input file
 	public static boolean skipFirstRow = false;
-	public static boolean loadFromJason = true;
 	private static FileWriter writer;
 	private static String outputDelimiter = "\t";
 	private static String endOfLine = "\n";
@@ -145,7 +144,7 @@ public class FileUtils
 
 			logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
 
-            inputIdUrlPair = jsonDecoder(retrievedLineStr);
+			inputIdUrlPair = jsonDecoder(retrievedLineStr);
 			if ( inputIdUrlPair == null || inputIdUrlPair.isEmpty() ) {
 				logger.warn("A problematic inputLine found: \"" + retrievedLineStr + "\"");
 				FileUtils.unretrievableInputLines++;
@@ -179,14 +178,13 @@ public class FileUtils
 		try {
 			idStr = jObj.get("id").toString();
 			urlStr = jObj.get("url").toString();
-
 		} catch (JSONException je) {
-			logger.warn(je);
+			logger.warn("JSONException caught when tried to retrieve values from jsonLine: \"" + jsonLine + "\"", je);
 			return null;
 		}
 
-		if ( idStr.isEmpty() && urlStr.isEmpty() )	// Allow one of them to be empty but not both of them.
-			return null;
+		if ( idStr.isEmpty() && urlStr.isEmpty() )	// Allow one of them to be empty but not both. If ID is empty, then we still don't lose the URL.
+			return null;	// If url is empty, we will still see the ID in the output and possible find its missing URL later.
 
 		returnIdUrlMap.put(idStr, urlStr);
 
@@ -195,7 +193,7 @@ public class FileUtils
 
 
 	/**
-	 * This method encodes json members into a Json object.
+	 * This method encodes json members into a Json object and returns its String representation..
 	 * @param id String
 	 * @param url String
 	 * @param errorCause String
@@ -203,6 +201,8 @@ public class FileUtils
 	 */
 	public static String jsonEncoder(String id, String url, String errorCause)
 	{
+		// TODO - Here I wll make a JsonObject out of the three String objects (note that the "errorCause" may be null)
+
 		// TODO - Call this method inside the "writeToFile()" method.
 
 		JSONObject jObj = new JSONObject();
@@ -212,10 +212,7 @@ public class FileUtils
 			// TODO - Add also the "errorCause" in the output.
 
 
-		// Here I wll make a JsonObject out of the three String objects (note that the "errorCause" may be null)
-
-
-		return jObj.toString();
+		return jObj.toString();	// Return the jsonLine.
 	}
 	
 	
