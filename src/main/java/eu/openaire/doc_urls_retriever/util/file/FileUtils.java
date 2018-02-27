@@ -10,8 +10,8 @@ import java.util.Scanner;
 import java.util.HashSet;
 import java.util.Collection;
 
+import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONTokener;
 import org.json.JSONObject;
 
 import org.apache.commons.lang3.StringUtils;
@@ -25,7 +25,6 @@ public class FileUtils
 	private static final Logger logger = LogManager.getLogger(FileUtils.class);
 	
 	private static Scanner inputScanner;
-	//private static Scanner inputDataScanner;
 	private static File inputFile;
 	private static File outputFile;
 	public static HashMap<String, String> idAndUrlMappedInput = new HashMap<String, String>();	// Contains the mapped key(id)-value(url) pairs.
@@ -33,13 +32,14 @@ public class FileUtils
 	private static long fileIndex = 0;	// Index in the input file
 	public static boolean skipFirstRow = false;
 	private static FileWriter writer;
-	private static String outputDelimiter = "\t";
+	//private static String outputDelimiter = "\t";
 	private static String endOfLine = "\n";
 	public static long unretrievableInputLines = 0;	// For better statistics in the end.
-	public static int groupCount = 1000;	// Just for testing.. TODO -> Later increase it..
+    public static long unretrievableUrlsOnly = 0;
+    public static int groupCount = 1000;	// Just for testing.. TODO -> Later increase it..
 
-    
-	
+
+
     /**
      * This method returns the number of (non-heading, non-empty) lines we have read from the inputFile.
      * @return loadedUrls
@@ -47,9 +47,9 @@ public class FileUtils
 	public static long getCurrentlyLoadedUrls()	// In the end, it gives the total number of urls we have processed.
 	{
 		if ( FileUtils.skipFirstRow )
-			return FileUtils.fileIndex - FileUtils.unretrievableInputLines -1; // -1 to exclude the first line
+			return FileUtils.fileIndex - FileUtils.unretrievableInputLines - FileUtils.unretrievableUrlsOnly -1; // -1 to exclude the first line
 		else
-			return FileUtils.fileIndex - FileUtils.unretrievableInputLines;
+			return FileUtils.fileIndex - FileUtils.unretrievableInputLines - FileUtils.unretrievableUrlsOnly;
 	}
 	
 	
@@ -63,10 +63,6 @@ public class FileUtils
 			FileUtils.inputScanner = new Scanner(FileUtils.inputFile /*System.in*/);
 			FileUtils.outputFile = new File(outputFileName);
 			FileUtils.writer = new FileWriter(outputFile);
-
-			// Put the Headers in the Hash Tables.
-			FileUtils.outputEntries.put("SourceUrls", "DocUrls");
-			FileUtils.writeToFile();	// Write now to have the headers in the first raw... (There is a bug if we leave it for later.. but retry it)
 		} catch (Exception e) {
 			logger.error(e);
 			throw new RuntimeException(e);	// If any of the files is not found.. we should NOT continue..
@@ -75,7 +71,7 @@ public class FileUtils
 	
 	
 	/**
-	 * This method parses a testFile and extracts the urls.
+	 * This method parses a testFile with one-url-per-line and extracts the urls.
 	 * @return Collection<String>
 	 */
 	public static Collection<String> getNextUrlGroupTest()
@@ -100,7 +96,7 @@ public class FileUtils
 				continue;
 
 			if ( retrievedLineStr.isEmpty() ) {
-				FileUtils.unretrievableInputLines++;
+				FileUtils.unretrievableInputLines ++;
 				continue;
 			}
 
@@ -127,35 +123,33 @@ public class FileUtils
 
 		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + groupCount)) )// While (!EOF) iterate through lines.
 		{
-			logger.debug("fileIndex: " + FileUtils.fileIndex);	// DEBUG
+			//logger.debug("fileIndex: " + FileUtils.fileIndex);	// DEBUG
 
 			// Take each line, remove potential double quotes.
 			String retrievedLineStr = inputScanner.nextLine();
 
-			FileUtils.fileIndex++;
+			logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
+
+			FileUtils.fileIndex ++;
 
 			if ( (FileUtils.fileIndex == 0) && skipFirstRow )
 				continue;
 
 			if (retrievedLineStr.isEmpty()) {
-				FileUtils.unretrievableInputLines++;
+				FileUtils.unretrievableInputLines ++;
 				continue;
 			}
 
-			logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
-
-			inputIdUrlPair = jsonDecoder(retrievedLineStr);
-			if ( inputIdUrlPair == null || inputIdUrlPair.isEmpty() ) {
+			inputIdUrlPair = jsonDecoder(retrievedLineStr); // Decode the jsonLine and take the two attributes.
+			if ( inputIdUrlPair == null ) {
 				logger.warn("A problematic inputLine found: \"" + retrievedLineStr + "\"");
-				FileUtils.unretrievableInputLines++;
+				FileUtils.unretrievableInputLines ++;
 				continue;
 			}
 			idAndUrlMappedInput.putAll(inputIdUrlPair);    // Keep mapping to be put in the outputFile later..
 
 			urlGroup.addAll(inputIdUrlPair.values());	// Make sure the our returning's source is the temporary collection (other wise we go into an infinite loop).
 		}
-
-		logger.debug("Left the while loop from jason method.");
 
 		return urlGroup;	// Return just the urls to be crawled. We still keep the IDs.
 	}
@@ -170,7 +164,7 @@ public class FileUtils
 	{
 		HashMap<String, String> returnIdUrlMap = new HashMap<String, String>();
 
-		JSONObject jObj = (JSONObject) new JSONTokener(jsonLine).nextValue();
+		JSONObject jObj = new JSONObject(jsonLine); // Construct a JSONObject from the retrieved jsonLine.
 
 		// Get ID and url and put them in the HashMap
 		String idStr = null;
@@ -185,6 +179,8 @@ public class FileUtils
 
 		if ( idStr.isEmpty() && urlStr.isEmpty() )	// Allow one of them to be empty but not both. If ID is empty, then we still don't lose the URL.
 			return null;	// If url is empty, we will still see the ID in the output and possible find its missing URL later.
+        else if ( urlStr.isEmpty() )    // Keep track of lines with an id, but, with no url.
+            FileUtils.unretrievableUrlsOnly++;
 
 		returnIdUrlMap.put(idStr, urlStr);
 
@@ -194,25 +190,27 @@ public class FileUtils
 
 	/**
 	 * This method encodes json members into a Json object and returns its String representation..
-	 * @param id String
-	 * @param url String
+	 * @param sourceUrl String
+	 * @param docUrl String
 	 * @param errorCause String
 	 * @return String
 	 */
-	public static String jsonEncoder(String id, String url, String errorCause)
+	public static String jsonEncoder(String sourceUrl, String docUrl, String errorCause)
 	{
-		// TODO - Here I wll make a JsonObject out of the three String objects (note that the "errorCause" may be null)
+		JSONObject firstJsonObject = new JSONObject().put("sourceUrl", sourceUrl);
+        JSONObject secondJsonObject = new JSONObject().put("docUrl", docUrl);
 
-		// TODO - Call this method inside the "writeToFile()" method.
+        // Care about the order of the elements by using a JSONArray (otherwise it's uncertain which one will be first).
+        JSONArray jsonArray = new JSONArray().put(firstJsonObject).put(secondJsonObject);
 
-		JSONObject jObj = new JSONObject();
-		jObj.put(id, url);
+        // TODO - Later add the errorCause, if the docUrl is not found.
+		/*if ( errorCause != null ) {   // It will be null if there is no error.
 
-		//if ( errorCause != null )
-			// TODO - Add also the "errorCause" in the output.
+		    JSONObject thirdJsonObject = new JSONObject().put("errorCause", errorCause);
+		    jsonArray.put(thirdJsonObject);
+		}*/
 
-
-		return jObj.toString();	// Return the jsonLine.
+		return jsonArray.toString();	// Return the jsonLine.
 	}
 	
 	
@@ -222,23 +220,26 @@ public class FileUtils
 	 */
 	public static void writeToFile()
 	{
-		if ( FileUtils.fileIndex == 0 ) // If we haven't started reading the inputFile yet..
-			logger.debug("Writing headings (\"SourceUrls\", \"DocUrls\") to the outputFile.");
-		else
-			logger.debug("Writing to the outputFile.. " + outputEntries.size() + " set(s) of (\"SourceUrl\", \"DocUrl\")");
-		
-		// If later we want to make the StringBuilder member of this class.. and we use multithreaded environment, we should use "StringBuffer" instead, as the last one is thread-safe.
-		StringBuilder strB = new StringBuilder(groupCount * 300);	// 300: the maximum expected length for a source-doc-mime triple..
-	    
-		try {
-			for ( Entry<String,String> entry : outputEntries.entrySet() )
-		    {
-				strB.append(entry.getKey());
-				strB.append(outputDelimiter);
-				strB.append(entry.getValue());
-				strB.append(endOfLine);
-		    }
+		int numberOfEntries = outputEntries.size();
+		logger.debug("Writing to the outputFile.. " + numberOfEntries + " set(s) of (\"SourceUrl\", \"DocUrl\")");
+		StringBuilder strB = new StringBuilder(numberOfEntries * 300);  // 300: the maximum expected length for a source-doc-error triple..
 
+		for ( Entry<String,String> entry : outputEntries.entrySet() )
+		{
+			strB.append(jsonEncoder(entry.getKey(), entry.getValue(), null));
+
+			/*
+			 * For an output in csv/tsv.
+			strB.append(entry.getKey());
+			strB.append(outputDelimiter);
+			strB.append(entry.getValue());*/
+
+			strB.append(endOfLine);
+		}
+
+		strB.deleteCharAt(strB.length() -1);    // Remove the last endOfLine.
+
+		try {
 		    // Print in System.out
 		    /*System.out.print(strB.toString());
 		    System.out.flush();*/

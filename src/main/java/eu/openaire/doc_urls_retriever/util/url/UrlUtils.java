@@ -132,7 +132,7 @@ public class UrlUtils
 					continue;	// If this link matches certain blackListed criteria, move on..
 				}
 
-				CrawlerController.controller.addSeed(retrievedUrl);
+				CrawlerController.controller.addSeed(retrievedUrl);	// If this is not a valid url, Crawler4j will throw it away by itself.
 				
 			}// end for-loop
         }// end while-loop
