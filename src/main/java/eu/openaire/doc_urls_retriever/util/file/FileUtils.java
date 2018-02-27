@@ -79,9 +79,9 @@ public class FileUtils
 		// If we are at the end and there are less than <groupCount>.. take as many as there are..
 		
 		//logger.debug("Retrieving the next group of " + groupCount + " elements from the inputFile.");
-		long curBeggining = FileUtils.fileIndex;
+		long curBeginning = FileUtils.fileIndex;
 
-		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeggining + groupCount)) )
+		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + groupCount)) )
 		{// While (!EOF) iterate through lines.
 
 			// Take each line, remove potential double quotes.
@@ -149,8 +149,8 @@ public class FileUtils
 	 */
 	public static void closeStreams()
 	{
+        inputScanner.close();
 		try {
-			inputScanner.close();
 			writer.close();
 		} catch (IOException e) {
 			logger.error("Unable to close FileWriter!", e);

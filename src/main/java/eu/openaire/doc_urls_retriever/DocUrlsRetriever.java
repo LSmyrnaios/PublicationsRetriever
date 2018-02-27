@@ -24,15 +24,15 @@ public class DocUrlsRetriever
 
 		try {
 			new CrawlerController();
-		} catch (RuntimeException e) {  // In case there was no input, or on other errors, there will be thrown a RuntimeException, after logging the cause.
-			logger.fatal("There was a serious error! Exiting..");
+		} catch (RuntimeException e) {  // In case there was no input, or on Crawler4j's failure to be initialized, there will be thrown a RuntimeException, after logging the cause.
+			logger.fatal("There was a serious error! Output data is affected! Exiting..");
 			System.exit(-1);
 		}
 
 		// Show statistics.
 		long inputUrlNum = 0;
     	if ( (inputUrlNum = FileUtils.getCurrentlyLoadedUrls()) <= 0 ) {
-    		logger.error("\"FileUtils.getCurrentlyLoadedUrls()\" is unexpectedly reporting that no urls were retrieved from input file. Exiting..");
+    		logger.error("\"FileUtils.getCurrentlyLoadedUrls()\" is unexpectedly reporting that no urls were retrieved from input file! Output data may be affected! Exiting..");
     		System.exit(-2);
     	}
 
@@ -44,7 +44,12 @@ public class DocUrlsRetriever
 		logger.info("There were: " + UrlUtils.inputDuplicatesNum + " duplicates in the input file." + " That's about: " + UrlUtils.inputDuplicatesNum * (float)100 / inputUrlNum + "%");
 
         // Then... just close the open files (imported and exported content) and exit.
-    	FileUtils.closeStreams();
+        try {
+            FileUtils.closeStreams();
+        } catch (RuntimeException re) {
+            logger.error("Failed to manually close streams, in the end. Output data is not affected. Exiting..");
+            System.exit(-3);
+        }
     }
 
 }
