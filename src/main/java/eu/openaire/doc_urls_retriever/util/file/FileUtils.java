@@ -260,8 +260,8 @@ public class FileUtils
 	 */
 	public static void closeStreams()
 	{
+        inputScanner.close();
 		try {
-			inputScanner.close();
 			writer.close();
 		} catch (IOException e) {
 			logger.error("Unable to close FileWriter!", e);
