@@ -127,40 +127,40 @@ public class PageCrawler extends WebCrawler
 		// Check if urls inside this page, match to a docUrl regex, if they do, try connecting with them and see if they truly are docUrls. If they are, return.
 		for ( WebURL link : currentPageLinks )
 		{
-			try {
-				// Produce fully functional inner links, NOT inner paths or non-canonicalized.
-				// (Crawler4j doesn't canonicalize the urls when it takes them, it does this only if it visit them, depending on "shouldFollowLinksIn()" method.)
-				// See "Parser.java" and "Net.java", in Crawler4j files, for more info.
-				String currentLink = link.toString();
-				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl)) == null ) {	// Fix potential encoding problems.
-					logger.debug("Could not cannonicalize inner url: " + currentLink);
-					UrlUtils.duplicateUrls.add(currentLink);
-					continue;
-				}
+            // Produce fully functional inner links, NOT inner paths or non-canonicalized.
+            // (Crawler4j doesn't canonicalize the urls when it takes them, it does this only if it visit them, depending on "shouldFollowLinksIn()" method.)
+            // See "Parser.java" and "Net.java", in Crawler4j files, for more info.
+            String currentLink = link.toString();
+            if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl)) == null ) {	// Fix potential encoding problems.
+                logger.debug("Could not cannonicalize inner url: " + currentLink);
+                UrlUtils.duplicateUrls.add(currentLink);
+                continue;
+            }
 
-				if ( UrlUtils.duplicateUrls.contains(urlToCheck) )
-					continue;
+            if ( UrlUtils.duplicateUrls.contains(urlToCheck) )
+                continue;
 
-				if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
-					UrlUtils.logUrl(pageUrl, urlToCheck);
-					logger.debug("Re-crossing the already found url: \"" +  urlToCheck + "\"");
-					return;
-				}
+            if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
+                UrlUtils.logUrl(pageUrl, urlToCheck);
+                logger.debug("Re-crossing the already found url: \"" +  urlToCheck + "\"");
+                return;
+            }
 
-				Matcher docUrlMatcher = UrlUtils.DOC_URL_FILTER.matcher(urlToCheck.toLowerCase());
-				if ( docUrlMatcher.matches() )
-				{
-					if ( HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, null) ) {
-						//logger.debug("\"DOC_URL_FILTER\" revealed a docUrl in pageUrl: \"" + pageUrl + "\", after matching to: \"" + docUrlMatcher.group(1) + "\"");
-						return;
-					}
-					else
-						continue;	// Don't add it in the new set.
-				}
-			} catch (RuntimeException re) {
-				UrlUtils.duplicateUrls.add(urlToCheck);	// Don't check it ever again..
-				continue;
-			}
+            Matcher docUrlMatcher = UrlUtils.DOC_URL_FILTER.matcher(urlToCheck.toLowerCase());
+            if ( docUrlMatcher.matches() )
+            {
+                try {
+                    if ( HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, null) ) {
+                        //logger.debug("\"DOC_URL_FILTER\" revealed a docUrl in pageUrl: \"" + pageUrl + "\", after matching to: \"" + docUrlMatcher.group(1) + "\"");
+                        return;
+                    }
+                    else
+                        continue;	// Don't add it in the new set.
+                } catch (RuntimeException re) {
+                    UrlUtils.duplicateUrls.add(urlToCheck);	// Don't check it ever again..
+                    continue;
+                }
+            }
 
 			curLinksStr.add(urlToCheck);	// Keep the string version of this link, in order not to make the transformation later..
 
