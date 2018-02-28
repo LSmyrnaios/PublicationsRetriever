@@ -217,7 +217,7 @@ public class UrlUtils
 	
 	
 	/**
-	 * This method logs the ouputEntry to be written, as well as the docUrlPath (if non-empty String) and adds entries in the blackList.
+	 * This method logs the outputEntry to be written, as well as the docUrlPath (if non-empty String) and adds entries in the blackList.
 	 * @param sourceUrl
 	 * @param initialDocUrl
 	 */
@@ -277,7 +277,13 @@ public class UrlUtils
 	}
 
 
-	public static boolean checkIfDocMimeType(String linkStr, String mimeType)
+	/**
+	 * This method takes a url and its mimeType and checks if it's a document mimeType or not.
+	 * @param linkStr
+	 * @param mimeType
+	 * @return boolean
+	 */
+	public static boolean hasDocMimeType(String linkStr, String mimeType)
 	{
 		if ( knownDocTypes.contains(mimeType) )
 			return true;

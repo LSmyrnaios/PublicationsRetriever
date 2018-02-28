@@ -68,7 +68,7 @@ public class HttpUtils
 			}
 
 			String finalUrlStr = conn.getURL().toString();
-			if ( UrlUtils.checkIfDocMimeType(finalUrlStr, mimeType) ) {
+			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType) ) {
 				UrlUtils.logUrl(currentPage, finalUrlStr);	// we send the urls, before and after potential redirections.
 				return true;
 			}
@@ -150,7 +150,6 @@ public class HttpUtils
 				domainsWithUnsupportedHeadMethod.add(domainStr);
 				
 				conn.disconnect();
-				conn = null;
 				
 				conn = (HttpURLConnection) url.openConnection();
 				
@@ -172,7 +171,7 @@ public class HttpUtils
 			conn.disconnect();
 			throw new RuntimeException();
 		} catch ( SSLProtocolException spe ) {
-			logger.warn(spe + " For url: " + conn.getURL().toString());
+			logger.warn(spe + " for url: " + conn.getURL().toString());
 			// Just log it and move on for now.. until we are sure about this handling..
 			//blacklistedDomains.add(domainStr);
 			conn.disconnect();
@@ -183,7 +182,7 @@ public class HttpUtils
 			conn.disconnect();
 			throw new RuntimeException();
     	} catch (Exception e) {
-    		if ( !(e instanceof RuntimeException) )	// If it's an instance then it's already logged.
+    		if ( !(e instanceof RuntimeException) )	// If it's an instance of R.E. then it's already logged.
     			logger.warn(e);
 			if ( conn != null )
 				conn.disconnect();
@@ -295,7 +294,7 @@ public class HttpUtils
 
 
 	/**
-	 * This method is called on errorStatusCode only. Meaning any status code not belogging in 2XX or 3XX.
+	 * This method is called on errorStatusCode only. Meaning any status code not belonging in 2XX or 3XX.
 	 * @param urlStr
 	 * @param domainStr
 	 * @param errorStatusCode
@@ -326,6 +325,12 @@ public class HttpUtils
 	}
 
 
+	/**
+	 * This method handles the HTTP 403 Error Code.
+	 * When a connection returns 403, we take the path of the url and we block it, as the directory which we are trying to connect to, is forbidden to be accessed.
+	 * @param urlStr
+	 * @param domainStr
+	 */
 	public static void on403ErrorCode(String urlStr, String domainStr)
 	{
 		String pathStr = UrlUtils.getPathStr(urlStr);
@@ -336,6 +341,15 @@ public class HttpUtils
 	}
 
 
+	/**
+	 * This method check if there was ever a url from the given/current domain, which returned an HTTP 403 Eroor Code.
+	 * If there was, it retrieves the directory path of the given/current url and checks if it caused an 403 Error Code before.
+	 * It returns "true" if the given/current path is already blocked,
+	 * otherwise, if it's not blocked, or if there was a problem retrieving this path from this url, it returns "false".
+	 * @param urlStr
+	 * @param domainStr
+	 * @return boolean
+	 */
 	public static boolean checkIfPathIs403BlackListed(String urlStr, String domainStr)
 	{
 		if ( domainsWithPaths403BlackListed.containsKey(domainStr) )	// If this domain has returned 403 before, check if we have the same path.
@@ -347,7 +361,6 @@ public class HttpUtils
 			if ( domainsWithPaths403BlackListed.containsValue(pathStr) )
 				return true;
 		}
-
 		return false;
 	}
 
@@ -368,11 +381,12 @@ public class HttpUtils
 
     /**
      * This method handles domains which are reaching cases were they can be blocked.
-     * To be blocked they have to never have provided a docUrl.
+     * To be blocked they have to never have provided a docUrl (<-- this might need a change).
+	 * It returns "true", if this domain was blocked, otherwise, "false".
      * @param domainsHashSet
      * @param domainStr
      * @param timesBeforeBlock
-     * @return true/false
+     * @return boolean
      */
 	public static boolean blockDomainTypeAfterTimes(HashMap<String, Integer> domainsHashSet, String domainStr, int timesBeforeBlock)
 	{

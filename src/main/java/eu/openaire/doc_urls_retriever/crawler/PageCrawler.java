@@ -59,7 +59,7 @@ public class PageCrawler extends WebCrawler
 		String lowerCaseLink = linkStr.toLowerCase();
 
 		return	!lowerCaseLink.contains(referringPageDomain)	// Don't check this link if it belongs in a different domain than the referringPage's one.
-				|| lowerCaseLink.contains("citation") || lowerCaseLink.contains("mailto:")
+				|| lowerCaseLink.contains("mailto:")
 				|| UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseLink).matches()
@@ -86,12 +86,13 @@ public class PageCrawler extends WebCrawler
 		if ( pageUrl.contains("doaj.org/toc/") ) {	// Re-check here for these resultPages, as it seems that Crawler4j has a bug in handling "shouldVisit()" method.
 			logger.debug("Not visiting: " + pageUrl + " as per your \"shouldVisit\" policy (used a workaround for Crawler4j bug)");
 			UrlUtils.doajResultPageLinks ++;
+			UrlUtils.logUrl(pageUrl, "unreachable");
 			return;
 		}
 
 		String pageContentType = page.getContentType();
 
-		if ( UrlUtils.checkIfDocMimeType(pageUrl, pageContentType) ) {
+		if ( UrlUtils.hasDocMimeType(pageUrl, pageContentType) ) {
 			UrlUtils.logUrl(pageUrl, pageUrl);
 			return;
 		}
@@ -185,7 +186,8 @@ public class PageCrawler extends WebCrawler
 			}
 		}	// end for-loop
 
-		// If we get here it means that this pageUrl is not a docUrl nor it contains a docUrl..
+		// If we get here it means that this pageUrl is not a docUrl itself, nor it contains a docUrl..
+		logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
 		UrlUtils.logUrl(pageUrl, "unreachable");
 	}
 
