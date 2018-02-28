@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import eu.openaire.doc_urls_retriever.crawler.TripleToBeLogged;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -106,22 +107,22 @@ public class UrlUtils
 
 				// Remove "jsessionid" for urls. Most of them, if not all, will already be expired.
 				if ( lowerCaseUrl.contains("jsessionid") ) {
-					String noJsessinId;
-					if ( (noJsessinId = UrlUtils.removeJsessionId(retrievedUrl)) != null )	// If it returns null we will NOT lose the value of "retrievedUrl".
-						retrievedUrl = noJsessinId;
+					String noJsessionid;
+					if ( (noJsessionid = UrlUtils.removeJsessionid(retrievedUrl)) != null )	// If it returns null we will NOT lose the value of "retrievedUrl".
+						retrievedUrl = noJsessionid;
 				}
 
 				if ( docUrls.contains(retrievedUrl) ) {	// If it's already a docUrl that we have come across before, log it and continue.
-					logUrl(retrievedUrl, retrievedUrl);
+					logUrl(retrievedUrl, retrievedUrl, null);   // No errorCause here, we found it anyway..
 					logger.debug("Re-crossing the already found url: \"" + retrievedUrl + "\"");
 				}
 				
-				// Check if it's a duplicate. (if already found before inside or outside the Crawler).
+				// Check if it's a duplicate. (if already found before inside or outside the Crawler4j).
 	        	if ( UrlUtils.duplicateUrls.contains(retrievedUrl) )
 	        	{
 	        		logger.debug("Skipping url: \"" + retrievedUrl + "\" as it has been already seen!");	// DEBUG!
 	        		UrlUtils.inputDuplicatesNum ++;
-	        		UrlUtils.logUrl(retrievedUrl, "duplicate");
+	        		UrlUtils.logUrl(retrievedUrl, "duplicate", "Discarded at loading time, as it's a duplicate.");
 	        		continue;
 	        	}
 	        	
@@ -129,7 +130,7 @@ public class UrlUtils
 				if ( UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() ||UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
 					|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches())
 				{
-					UrlUtils.logUrl(retrievedUrl, "unreachable");
+					UrlUtils.logUrl(retrievedUrl, "unreachable", "Discarded at loading time, after matching to unwantedType-rules.");
 					continue;	// If this link matches certain blackListed criteria, move on..
 				}
 
@@ -191,7 +192,7 @@ public class UrlUtils
 				guessedDocUrl = strB.toString();
 				
 		    	if ( UrlUtils.docUrls.contains(guessedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
-		    		UrlUtils.logUrl(pageUrl, guessedDocUrl);
+		    		UrlUtils.logUrl(pageUrl, guessedDocUrl, null);
 		    		logger.debug("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
 		    		return true;
 		    	}
@@ -219,18 +220,19 @@ public class UrlUtils
 	
 	/**
 	 * This method logs the outputEntry to be written, as well as the docUrlPath (if non-empty String) and adds entries in the blackList.
-	 * @param sourceUrl
-	 * @param initialDocUrl
-	 */
-	public static void logUrl(String sourceUrl, String initialDocUrl)
+     * @param sourceUrl
+     * @param initialDocUrl
+     * @param errorCause
+     */
+	public static void logUrl(String sourceUrl, String initialDocUrl, String errorCause)
 	{
 		String finalDocUrl = initialDocUrl;
 		
 		if ( !finalDocUrl.equals("unreachable") && !finalDocUrl.equals("duplicate") )	// If we have reached a docUrl..
 		{
-			// Remove "jsessionid" for urls for "cleanner" output.
+			// Remove "jsessionid" for urls for "cleaner" output.
 			if ( finalDocUrl.contains("jsessionid") || finalDocUrl.contains("JSESSIONID") )
-				if ( (finalDocUrl = UrlUtils.removeJsessionId(initialDocUrl)) == null )	// If there is problem removing the "jsessionid" and it return "null", reassign the initial value.
+				if ( (finalDocUrl = UrlUtils.removeJsessionid(initialDocUrl)) == null )	// If there is problem removing the "jsessionid" and it return "null", reassign the initial value.
 					finalDocUrl = initialDocUrl;
 			
         	logger.debug("docUrl found: <" + finalDocUrl + ">");
@@ -269,11 +271,11 @@ public class UrlUtils
 			duplicateUrls.add(sourceUrl);	 // Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future..
 		}	// We don't add docUrls here, as we want them to be separate for checking purposes/
 		
-		//logger.debug("docUrl received in logUrl() : "+  docUrl);	// DEBUG!
+		//logger.debug("docUrl received in \"UrlUtils.logUrl()\": "+  docUrl);	// DEBUG!
+
+		FileUtils.tripleToBeLoggedOutputList.add(new TripleToBeLogged(sourceUrl, finalDocUrl, errorCause));	// Log it to be written later.
 		
-		FileUtils.outputEntries.put(sourceUrl, initialDocUrl);	// Log it to be written later.
-		
-		if ( FileUtils.outputEntries.size() == FileUtils.groupCount )	// Write to file every time we have a group of <groupCount> urls' sets.
+		if ( FileUtils.tripleToBeLoggedOutputList.size() == FileUtils.groupCount )	// Write to file every time we have a group of <groupCount> urls' sets.
 			FileUtils.writeToFile();
 	}
 
@@ -366,21 +368,21 @@ public class UrlUtils
 	 * @param urlStr
 	 * @return
 	 */
-	public static String removeJsessionId(String urlStr)
+	public static String removeJsessionid(String urlStr)
 	{
 		String finalUrl = urlStr;
 		
-		String jsessionID = null;
+		String jsessionid = null;
 		
 		Matcher matcher = JSESSIONID_FILTER.matcher(urlStr);
 		if (matcher.matches())
 		{
-			jsessionID = matcher.group(1);	// Take only the 1st part of the urlStr, without the jsessionid.
-		    if ( (jsessionID == null) || jsessionID.isEmpty() ) {
+			jsessionid = matcher.group(1);	// Take only the 1st part of the urlStr, without the jsessionid.
+		    if ( (jsessionid == null) || jsessionid.isEmpty() ) {
 		    	logger.warn("Unexpected null or empty value returned by \"matcher.group(1)\"");
 		    	return null;
 		    }
-		    finalUrl = StringUtils.replace(finalUrl, jsessionID, "");
+		    finalUrl = StringUtils.replace(finalUrl, jsessionid, "");
 		}
 		else
 			logger.warn("Unexpected \"JSESSIONID_FILTER\" mismatch for url: \"" + urlStr + "\" !");

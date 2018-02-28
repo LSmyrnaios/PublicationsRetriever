@@ -58,7 +58,7 @@ public class CrawlerController
 		
 		try {
 			controller = new CrawlController(config, pageFetcher, robotstxtServer);
-			
+
 			//CrawlerController.docIdServer = controller.getDocIdServer();	// Enable this code if we need special urls' check from the crawler.
 			//CrawlerController.frontier = controller.getFrontier();	// Enable this code if we need to check pages' number in the crawler.
 
@@ -70,7 +70,7 @@ public class CrawlerController
 	        controller.start(PageCrawler.class, 1);
 
 	        // Write any remaining urls from memory to disk.
-	        if ( FileUtils.outputEntries.size() > 0 ) {
+	        if ( FileUtils.tripleToBeLoggedOutputList.size() > 0 ) {
 	        	logger.debug("Writing last set(s) of (\"SourceUrl\", \"DocUrl\"), to disk.");
 	        	FileUtils.writeToFile();
 	        }

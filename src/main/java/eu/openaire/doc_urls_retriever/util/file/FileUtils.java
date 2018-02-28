@@ -4,12 +4,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.Scanner;
-import java.util.HashSet;
-import java.util.Collection;
+import java.util.*;
 
+import eu.openaire.doc_urls_retriever.crawler.TripleToBeLogged;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -23,12 +20,11 @@ import org.apache.logging.log4j.Logger;
 public class FileUtils
 {
 	private static final Logger logger = LogManager.getLogger(FileUtils.class);
-	
+
 	private static Scanner inputScanner;
 	private static File inputFile;
 	private static File outputFile;
 	public static HashMap<String, String> idAndUrlMappedInput = new HashMap<String, String>();	// Contains the mapped key(id)-value(url) pairs.
-	public static HashMap<String,String> outputEntries = new HashMap<String,String>();
 	private static long fileIndex = 0;	// Index in the input file
 	public static boolean skipFirstRow = false;
 	private static FileWriter writer;
@@ -38,6 +34,7 @@ public class FileUtils
     public static long unretrievableUrlsOnly = 0;
     public static int groupCount = 1000;	// Just for testing.. TODO -> Later increase it..
 
+	public static List<TripleToBeLogged> tripleToBeLoggedOutputList = new ArrayList<>();
 
 
     /**
@@ -205,11 +202,10 @@ public class FileUtils
 			// Care about the order of the elements by using a JSONArray (otherwise it's uncertain which one will be first).
 			jsonArray = new JSONArray().put(firstJsonObject).put(secondJsonObject);
 
-			// TODO - Later add the errorCause, if the docUrl is not found.
-			/*if ( errorCause != null ) {   // It will be null if there is no error.
+			if ( errorCause != null ) {   // It will be null if there is no error.
 				JSONObject thirdJsonObject = new JSONObject().put("errorCause", errorCause);
 				jsonArray.put(thirdJsonObject);
-			}*/
+			}
 		} catch (Exception e) {	// If there was an encoding problem.
 			logger.error("Failed to encode jsonLine!", e);
 			return null;
@@ -225,19 +221,19 @@ public class FileUtils
 	 */
 	public static void writeToFile()
 	{
-		int numberOfEntries = outputEntries.size();
-		logger.debug("Writing to the outputFile.. " + numberOfEntries + " set(s) of (\"SourceUrl\", \"DocUrl\")");
-		StringBuilder strB = new StringBuilder(numberOfEntries * 300);  // 300: the maximum expected length for a source-doc-error triple..
+		int numberOfTriples = FileUtils.tripleToBeLoggedOutputList.size();
+		logger.debug("Writing to the outputFile.. " + numberOfTriples + " set(s) of (\"SourceUrl\", \"DocUrl\")");
+		StringBuilder strB = new StringBuilder(numberOfTriples * 350);  // 350: the maximum expected length for a source-doc-error triple..
 
-		String tempJsonLine = null;
+		String tempJsonString = null;
 
-		for ( Entry<String,String> entry : outputEntries.entrySet() )
+		for ( TripleToBeLogged triple : FileUtils.tripleToBeLoggedOutputList)
 		{
-			tempJsonLine = jsonEncoder(entry.getKey(), entry.getValue(), null);
-			if ( tempJsonLine == null )	// If there was an encoding error, move on..
+            tempJsonString = triple.toJsonString();
+			if ( tempJsonString == null )	// If there was an encoding error, move on..
 				continue;
 
-			strB.append(tempJsonLine);
+			strB.append(tempJsonString);
 			/*
 			 * For an output in csv/tsv.
 			strB.append(entry.getKey());
@@ -259,7 +255,7 @@ public class FileUtils
 			logger.warn(e);
 			throw new RuntimeException(e);
 		} finally {
-			FileUtils.outputEntries.clear();	// Clear to keep in memory only <groupCount> values at a time.
+			FileUtils.tripleToBeLoggedOutputList.clear();	// Clear to keep in memory only <groupCount> values at a time.
 		}
 	}
 	

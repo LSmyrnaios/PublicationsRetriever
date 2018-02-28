@@ -29,24 +29,24 @@ public class PageCrawler extends WebCrawler
 
 		if ( lowerCaseUrlStr.contains("elsevier.com") ) {   // Avoid this JavaScript site with non accesible dynamic links.
             UrlUtils.elsevierLinks ++;
-			UrlUtils.logUrl(urlStr, "unreachable");
+			UrlUtils.logUrl(urlStr, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after matching to the JavaScript site: \"elsevier.com\".");
             return false;
 		}
 		else if ( lowerCaseUrlStr.contains("doaj.org/toc/") ) {	// Avoid resultPages.
 			UrlUtils.doajResultPageLinks ++;
-			UrlUtils.logUrl(urlStr, "unreachable");
+			UrlUtils.logUrl(urlStr, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after matching to the Results-directory: \"doaj.org/toc/\".");
 			return false;
 		}
 		else if ( lowerCaseUrlStr.contains("dlib.org") ) {    // Avoid HTML docUrls.
 			UrlUtils.dlibHtmlDocUrls ++;
-			UrlUtils.logUrl(urlStr, "unreachable");
+			UrlUtils.logUrl(urlStr, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after matching to the HTML-docUrls site: \"dlib.org\".");
 			return false;
 		}
 		else if ( UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrlStr).matches()
 					|| UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrlStr).matches()
 					||UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrlStr).matches() )
 		{
-			UrlUtils.logUrl(urlStr, "unreachable");
+			UrlUtils.logUrl(urlStr, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after matching to unwantedType-rules.");
 			return false;
 		}
 		else
@@ -86,14 +86,14 @@ public class PageCrawler extends WebCrawler
 		if ( pageUrl.contains("doaj.org/toc/") ) {	// Re-check here for these resultPages, as it seems that Crawler4j has a bug in handling "shouldVisit()" method.
 			logger.debug("Not visiting: " + pageUrl + " as per your \"shouldVisit\" policy (used a workaround for Crawler4j bug)");
 			UrlUtils.doajResultPageLinks ++;
-			UrlUtils.logUrl(pageUrl, "unreachable");
+			UrlUtils.logUrl(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, after matching to the Results-directory: \"doaj.org/toc/\".");
 			return;
 		}
 
 		String pageContentType = page.getContentType();
 
 		if ( UrlUtils.hasDocMimeType(pageUrl, pageContentType) ) {
-			UrlUtils.logUrl(pageUrl, pageUrl);
+			UrlUtils.logUrl(pageUrl, pageUrl, null);
 			return;
 		}
 		
@@ -103,6 +103,7 @@ public class PageCrawler extends WebCrawler
 
 		if ( HttpUtils.blacklistedDomains.contains(currentPageDomain) ) {	// Check if it has been blackListed after running inner links' checks.
 			logger.debug("Avoid crawling blackListed domain: \"" + currentPageDomain + "\"");
+			UrlUtils.logUrl(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, as its domain was found blackListed.");
 			return;
 		}
 
@@ -116,7 +117,7 @@ public class PageCrawler extends WebCrawler
 
 		if ( currentPageLinks.isEmpty() ) {	// If no links were retrieved (e.g. the pageUrl was some kind of non-page binary content)
 			logger.warn("No links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
-			UrlUtils.logUrl(pageUrl, "unreachable");
+			UrlUtils.logUrl(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, as no links were able to be retrieved from it. Its contentType is: \"" + pageContentType + "\"");
 			return;
 		}
 
@@ -141,8 +142,8 @@ public class PageCrawler extends WebCrawler
                 continue;
 
             if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
-                UrlUtils.logUrl(pageUrl, urlToCheck);
-                logger.debug("Re-crossing the already found url: \"" +  urlToCheck + "\"");
+				logger.debug("Re-crossing the already found url: \"" +  urlToCheck + "\"");
+                UrlUtils.logUrl(pageUrl, urlToCheck, null);	// No error here.
                 return;
             }
 
@@ -188,7 +189,7 @@ public class PageCrawler extends WebCrawler
 
 		// If we get here it means that this pageUrl is not a docUrl itself, nor it contains a docUrl..
 		logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
-		UrlUtils.logUrl(pageUrl, "unreachable");
+		UrlUtils.logUrl(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as no docUrl was found inside.");
 	}
 
 
@@ -197,7 +198,7 @@ public class PageCrawler extends WebCrawler
 	{
 		// Call our general statusCode-handling method (it will also find the domainStr).
 		HttpUtils.onErrorStatusCode(urlStr, null, statusCode);
-		UrlUtils.logUrl(urlStr, "unreachable");
+		UrlUtils.logUrl(urlStr, "unreachable", "Logged in PageCrawler.onUnexpectedStatusCode() method, after returning: " + statusCode + " errorCode.");
 	}
 
 
@@ -206,7 +207,7 @@ public class PageCrawler extends WebCrawler
 	{
 		String urlStr = webUrl.toString();
 		logger.warn("Can't fetch content of: \"" + urlStr + "\"");
-		UrlUtils.logUrl(urlStr, "unreachable");
+		UrlUtils.logUrl(urlStr, "unreachable", "Logged in PageCrawler.onContentFetchError() method, as no content was able to be fetched for this page.");
 	}
 
 
@@ -215,7 +216,7 @@ public class PageCrawler extends WebCrawler
 	{
 		String urlStr = webUrl.toString();
 		logger.warn("Parsing error of: \"" + urlStr + "\"" );
-		UrlUtils.logUrl(urlStr, "unreachable");
+		UrlUtils.logUrl(urlStr, "unreachable", "Logged in PageCrawler.onParseError(() method, as there was a problem parsing this page.");
 	}
 
 
@@ -226,17 +227,18 @@ public class PageCrawler extends WebCrawler
 		{
 			String urlStr = webUrl.toString();
 			logger.warn("Unhandled exception while fetching: \"" + urlStr + "\"" );
-			UrlUtils.logUrl(urlStr, "unreachable");
+			UrlUtils.logUrl(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an unhandled exception with this url: " + e);
 		}
 		logger.warn(e);
 	}
 
 
 	@Override
-	public void onPageBiggerThanMaxSize(String urlStr, long pageSize) {
-		logger.warn("Skipping url: \"" + urlStr + "\" which was bigger (" + pageSize +") than max allowed size ("
-																			+ CrawlerController.controller.getConfig().getMaxDownloadSize() + ")");
-		UrlUtils.logUrl(urlStr, "unreachable");
+	public void onPageBiggerThanMaxSize(String urlStr, long pageSize)
+	{
+		long generalPageSizeLimit = CrawlerController.controller.getConfig().getMaxDownloadSize();
+		logger.warn("Skipping url: \"" + urlStr + "\" which was bigger (" + pageSize +") than max allowed size (" + generalPageSizeLimit + ")");
+		UrlUtils.logUrl(urlStr, "unreachable", "Logged in PageCrawler.onPageBiggerThanMaxSize() method, as this page's size was over the limit (" + generalPageSizeLimit + ").");
 	}
 
 }

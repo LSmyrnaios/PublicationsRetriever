@@ -69,7 +69,7 @@ public class HttpUtils
 
 			String finalUrlStr = conn.getURL().toString();
 			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType) ) {
-				UrlUtils.logUrl(currentPage, finalUrlStr);	// we send the urls, before and after potential redirections.
+				UrlUtils.logUrl(currentPage, finalUrlStr, null);	// we send the urls, before and after potential redirections.
 				return true;
 			}
 		} catch (Exception e) {
