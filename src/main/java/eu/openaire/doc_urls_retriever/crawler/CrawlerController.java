@@ -71,7 +71,7 @@ public class CrawlerController
 
 	        // Write any remaining urls from memory to disk.
 	        if ( FileUtils.outputEntries.size() > 0 ) {
-	        	logger.debug("Writing last set(s) of (\"SourceUrl\", \"DocUrl\"), to disk");
+	        	logger.debug("Writing last set(s) of (\"SourceUrl\", \"DocUrl\"), to disk.");
 	        	FileUtils.writeToFile();
 	        }
 	        

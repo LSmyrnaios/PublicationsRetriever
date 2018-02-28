@@ -148,7 +148,7 @@ public class FileUtils
 			}
 			idAndUrlMappedInput.putAll(inputIdUrlPair);    // Keep mapping to be put in the outputFile later..
 
-			urlGroup.addAll(inputIdUrlPair.values());	// Make sure the our returning's source is the temporary collection (other wise we go into an infinite loop).
+			urlGroup.addAll(inputIdUrlPair.values());	// Make sure that our returning's source is the temporary collection (otherwise we go into an infinite loop).
 		}
 
 		return urlGroup;	// Return just the urls to be crawled. We still keep the IDs.
@@ -193,22 +193,27 @@ public class FileUtils
 	 * @param sourceUrl String
 	 * @param docUrl String
 	 * @param errorCause String
-	 * @return String
+	 * @return jsonString
 	 */
 	public static String jsonEncoder(String sourceUrl, String docUrl, String errorCause)
 	{
-		JSONObject firstJsonObject = new JSONObject().put("sourceUrl", sourceUrl);
-        JSONObject secondJsonObject = new JSONObject().put("docUrl", docUrl);
+		JSONArray jsonArray;
+		try {
+			JSONObject firstJsonObject = new JSONObject().put("sourceUrl", sourceUrl);
+			JSONObject secondJsonObject = new JSONObject().put("docUrl", docUrl);
 
-        // Care about the order of the elements by using a JSONArray (otherwise it's uncertain which one will be first).
-        JSONArray jsonArray = new JSONArray().put(firstJsonObject).put(secondJsonObject);
+			// Care about the order of the elements by using a JSONArray (otherwise it's uncertain which one will be first).
+			jsonArray = new JSONArray().put(firstJsonObject).put(secondJsonObject);
 
-        // TODO - Later add the errorCause, if the docUrl is not found.
-		/*if ( errorCause != null ) {   // It will be null if there is no error.
-
-		    JSONObject thirdJsonObject = new JSONObject().put("errorCause", errorCause);
-		    jsonArray.put(thirdJsonObject);
-		}*/
+			// TODO - Later add the errorCause, if the docUrl is not found.
+			/*if ( errorCause != null ) {   // It will be null if there is no error.
+				JSONObject thirdJsonObject = new JSONObject().put("errorCause", errorCause);
+				jsonArray.put(thirdJsonObject);
+			}*/
+		} catch (Exception e) {	// If there was an encoding problem.
+			logger.error("Failed to encode jsonLine!", e);
+			return null;
+		}
 
 		return jsonArray.toString();	// Return the jsonLine.
 	}
@@ -224,26 +229,30 @@ public class FileUtils
 		logger.debug("Writing to the outputFile.. " + numberOfEntries + " set(s) of (\"SourceUrl\", \"DocUrl\")");
 		StringBuilder strB = new StringBuilder(numberOfEntries * 300);  // 300: the maximum expected length for a source-doc-error triple..
 
+		String tempJsonLine = null;
+
 		for ( Entry<String,String> entry : outputEntries.entrySet() )
 		{
-			strB.append(jsonEncoder(entry.getKey(), entry.getValue(), null));
+			tempJsonLine = jsonEncoder(entry.getKey(), entry.getValue(), null);
+			if ( tempJsonLine == null )	// If there was an encoding error, move on..
+				continue;
 
+			strB.append(tempJsonLine);
 			/*
 			 * For an output in csv/tsv.
 			strB.append(entry.getKey());
 			strB.append(outputDelimiter);
-			strB.append(entry.getValue());*/
-
+			strB.append(entry.getValue());
+			*/
 			strB.append(endOfLine);
 		}
 
-		strB.deleteCharAt(strB.length() -1);    // Remove the last endOfLine.
-
 		try {
-		    // Print in System.out
-		    /*System.out.print(strB.toString());
-		    System.out.flush();*/
-
+			/*
+			 * Print in System.out
+		    System.out.print(strB.toString());	// Without an extra "endOfLine".
+		    System.out.flush();
+		    */
 			writer.write(strB.toString());
 			writer.flush();
 		} catch (IOException e) {
