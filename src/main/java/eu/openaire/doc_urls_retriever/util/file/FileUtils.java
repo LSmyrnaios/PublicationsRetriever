@@ -198,14 +198,10 @@ public class FileUtils
 		try {
 			JSONObject firstJsonObject = new JSONObject().put("sourceUrl", sourceUrl);
 			JSONObject secondJsonObject = new JSONObject().put("docUrl", docUrl);
+			JSONObject thirdJsonObject = new JSONObject().put("errorCause", errorCause);	// The errorCause will be empty, if there is no error.
 
-			// Care about the order of the elements by using a JSONArray (otherwise it's uncertain which one will be first).
-			jsonArray = new JSONArray().put(firstJsonObject).put(secondJsonObject);
-
-			if ( errorCause != null ) {   // It will be null if there is no error.
-				JSONObject thirdJsonObject = new JSONObject().put("errorCause", errorCause);
-				jsonArray.put(thirdJsonObject);
-			}
+			// Care about the order of the elements by using a JSONArray (otherwise it's uncertain which one will be where).
+			jsonArray = new JSONArray().put(firstJsonObject).put(secondJsonObject).put(thirdJsonObject);
 		} catch (Exception e) {	// If there was an encoding problem.
 			logger.error("Failed to encode jsonLine!", e);
 			return null;

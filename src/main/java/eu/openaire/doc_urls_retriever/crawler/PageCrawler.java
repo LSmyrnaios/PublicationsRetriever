@@ -93,7 +93,7 @@ public class PageCrawler extends WebCrawler
 		String pageContentType = page.getContentType();
 
 		if ( UrlUtils.hasDocMimeType(pageUrl, pageContentType) ) {
-			UrlUtils.logUrl(pageUrl, pageUrl, null);
+			UrlUtils.logUrl(pageUrl, pageUrl, "");
 			return;
 		}
 		
@@ -143,7 +143,7 @@ public class PageCrawler extends WebCrawler
 
             if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
 				logger.debug("Re-crossing the already found url: \"" +  urlToCheck + "\"");
-                UrlUtils.logUrl(pageUrl, urlToCheck, null);	// No error here.
+                UrlUtils.logUrl(pageUrl, urlToCheck, "");	// No error here.
                 return;
             }
 
@@ -151,7 +151,7 @@ public class PageCrawler extends WebCrawler
             if ( docUrlMatcher.matches() )
             {
                 try {
-                    if ( HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, null) ) {
+                    if ( HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, null) ) {		// We log the docUrl inside this method.
                         //logger.debug("\"DOC_URL_FILTER\" revealed a docUrl in pageUrl: \"" + pageUrl + "\", after matching to: \"" + docUrlMatcher.group(1) + "\"");
                         return;
                     }
@@ -180,7 +180,7 @@ public class PageCrawler extends WebCrawler
 			}
 
 			try {
-				if ( HttpUtils.connectAndCheckMimeType(pageUrl, currentLink, null) )
+				if ( HttpUtils.connectAndCheckMimeType(pageUrl, currentLink, null) )	// We log the docUrl inside this method.
 					return;
 			} catch (RuntimeException e) {
 				// No special handling here.. nor logging..

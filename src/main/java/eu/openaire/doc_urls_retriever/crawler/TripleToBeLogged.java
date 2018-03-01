@@ -10,7 +10,7 @@ public class TripleToBeLogged
 {
     private String sourceUrl;
     private String docUrl;
-    private String errorCause = null;   // It will be null unless there is an error causing the docUrl to be unreachable.
+    private String errorCause;   // This will be an emptyString, unless there is an error causing the docUrl to be unreachable.
 
 
     public TripleToBeLogged(String sourceUrl, String docUrl, String errorCause)

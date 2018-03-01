@@ -112,15 +112,9 @@ public class UrlUtils
 						retrievedUrl = noJsessionid;
 				}
 
-				if ( docUrls.contains(retrievedUrl) ) {	// If it's already a docUrl that we have come across before, log it and continue.
-					logUrl(retrievedUrl, retrievedUrl, null);   // No errorCause here, we found it anyway..
-					logger.debug("Re-crossing the already found url: \"" + retrievedUrl + "\"");
-				}
-				
 				// Check if it's a duplicate. (if already found before inside or outside the Crawler4j).
-	        	if ( UrlUtils.duplicateUrls.contains(retrievedUrl) )
-	        	{
-	        		logger.debug("Skipping url: \"" + retrievedUrl + "\" as it has been already seen!");	// DEBUG!
+	        	if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
+	        		logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already been seen!");	// DEBUG!
 	        		UrlUtils.inputDuplicatesNum ++;
 	        		UrlUtils.logUrl(retrievedUrl, "duplicate", "Discarded at loading time, as it's a duplicate.");
 	        		continue;
@@ -192,7 +186,7 @@ public class UrlUtils
 				guessedDocUrl = strB.toString();
 				
 		    	if ( UrlUtils.docUrls.contains(guessedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
-		    		UrlUtils.logUrl(pageUrl, guessedDocUrl, null);
+		    		UrlUtils.logUrl(pageUrl, guessedDocUrl, "");
 		    		logger.debug("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
 		    		return true;
 		    	}
