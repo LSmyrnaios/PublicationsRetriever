@@ -19,7 +19,7 @@ import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 public class PageCrawler extends WebCrawler
 {
 	private static final Logger logger = LogManager.getLogger(PageCrawler.class);
-
+	public static long totalPagesReachedCrawling = 0;	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their innerLinks checked.
 
 	@Override
 	public boolean shouldVisit(Page referringPage, WebURL url)
@@ -40,6 +40,10 @@ public class PageCrawler extends WebCrawler
 		else if ( lowerCaseUrlStr.contains("dlib.org") ) {    // Avoid HTML docUrls.
 			UrlUtils.dlibHtmlDocUrls ++;
 			UrlUtils.logUrl(urlStr, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after matching to the HTML-docUrls site: \"dlib.org\".");
+			return false;
+		}
+		else if ( lowerCaseUrlStr.contains("ojs.ifnmu.edu.ua") ) {	// Avoid crawling in larger depth.
+			UrlUtils.logUrl(urlStr, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after matching to the increasedCrawlingDepth-site: \"ojs.ifnmu.edu.ua\".");
 			return false;
 		}
 		else if ( UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrlStr).matches()
@@ -82,7 +86,10 @@ public class PageCrawler extends WebCrawler
 		String pageUrl = page.getWebURL().getURL();
 
 		logger.debug("Checking pageUrl: \"" + pageUrl + "\".");
-
+		
+		String currentPageDomain = UrlUtils.getDomainStr(pageUrl);
+		HttpUtils.lastConnectedHost = currentPageDomain;	// The crawler opened a connection to download this page.
+		
 		if ( pageUrl.contains("doaj.org/toc/") ) {	// Re-check here for these resultPages, as it seems that Crawler4j has a bug in handling "shouldVisit()" method.
 			logger.debug("Not visiting: " + pageUrl + " as per your \"shouldVisit\" policy (used a workaround for Crawler4j bug)");
 			UrlUtils.doajResultPageLinks ++;
@@ -97,20 +104,19 @@ public class PageCrawler extends WebCrawler
 			return;
 		}
 		
-		String currentPageDomain = UrlUtils.getDomainStr(pageUrl);
-		
-		HttpUtils.lastConnectedHost = currentPageDomain;	// The crawler opened a connection to download this page.
-
 		if ( HttpUtils.blacklistedDomains.contains(currentPageDomain) ) {	// Check if it has been blackListed after running inner links' checks.
 			logger.debug("Avoid crawling blackListed domain: \"" + currentPageDomain + "\"");
 			UrlUtils.logUrl(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, as its domain was found blackListed.");
 			return;
 		}
+		
+		PageCrawler.totalPagesReachedCrawling ++;	// Used for
 
-	    // Check if we can find the docUrl based on previous runs. (Still in experimental stage)
+	    // Check if we can use AND if we should run, the MLA.
 		if ( UrlUtils.useMLA )
-	    	if ( UrlUtils.guessInnerDocUrl(pageUrl) )	// If we were able to find the right path.. and hit a docUrl successfully.. return.
-    			return;
+			if ( UrlUtils.shouldRunMLA() )
+	    		if ( UrlUtils.guessInnerDocUrl(pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
+    				return;	// If we were able to find the right path.. and hit a docUrl successfully.. return.
         
 	    Set<WebURL> currentPageLinks = page.getParseData().getOutgoingUrls();
 
@@ -227,10 +233,57 @@ public class PageCrawler extends WebCrawler
 		if ( webUrl != null )
 		{
 			String urlStr = webUrl.toString();
-			logger.warn("Unhandled exception while fetching: \"" + urlStr + "\"" );
-			UrlUtils.logUrl(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an unhandled exception with this url: " + e);
+			String exceptionMessage = e.getMessage();
+			
+			int curTreatableException = 0;
+			
+			if (exceptionMessage.contains("UnknownHostException"))
+				curTreatableException = 1;
+			else if (exceptionMessage.contains("SocketTimeoutException"))
+				curTreatableException = 2;
+			else if (exceptionMessage.contains("ConnectException"))    // This is a "Connection Timeout" type of Exception.
+				curTreatableException = 3;
+			
+			if (curTreatableException > 0)	// If there is a treatable Exception.
+			{
+				String domainStr = UrlUtils.getDomainStr(urlStr);
+				
+				if (curTreatableException == 1) {
+					if (domainStr != null)
+						HttpUtils.blacklistedDomains.add(domainStr);
+				}
+				else // TODO - More checks to be added if more exceptions are treated here in the future.
+				{
+					if (domainStr != null)
+						HttpUtils.onTimeoutException(domainStr);
+				}
+				
+				// Log the right messages for these exceptions.
+				switch ( curTreatableException ) {
+					case 1:
+						logger.warn("UnknownHostException was thrown while trying to fetch url: \"" + urlStr + "\".");
+						UrlUtils.logUrl(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an \"UnknownHostException\" for this url.");
+						break;
+					case 2:
+						logger.warn("SocketTimeoutException was thrown while trying to fetch url: \"" + urlStr + "\".");
+						UrlUtils.logUrl(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an \"SocketTimeoutException\" for this url.");
+						break;
+					case 3:
+						logger.warn("ConnectException was thrown while trying to fetch url: \"" + urlStr + "\".");
+						UrlUtils.logUrl(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an \"ConnectException\" for this url.");
+						break;
+					default:
+						logger.error("Undefined value for \"curTreatableException\"! Re-check which exception are treated!");
+						break;
+				}
+			}
+			else {	// If this Exception cannot be treated.
+				logger.warn("Unhandled exception: \"" + e + "\" while fetching url: \"" + urlStr + "\"");
+				UrlUtils.logUrl(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an unhandled exception: " + e);
+			}
 		}
-		logger.warn(e);
+		else // If the url is null.
+			logger.warn(e);
 	}
 
 

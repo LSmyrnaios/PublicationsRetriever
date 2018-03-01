@@ -35,19 +35,7 @@ public class FileUtils
     public static int groupCount = 1000;	// Just for testing.. TODO -> Later increase it..
 
 	public static List<TripleToBeLogged> tripleToBeLoggedOutputList = new ArrayList<>();
-
-
-    /**
-     * This method returns the number of (non-heading, non-empty) lines we have read from the inputFile.
-     * @return loadedUrls
-     */
-	public static long getCurrentlyLoadedUrls()	// In the end, it gives the total number of urls we have processed.
-	{
-		if ( FileUtils.skipFirstRow )
-			return FileUtils.fileIndex - FileUtils.unretrievableInputLines - FileUtils.unretrievableUrlsOnly -1; // -1 to exclude the first line
-		else
-			return FileUtils.fileIndex - FileUtils.unretrievableInputLines - FileUtils.unretrievableUrlsOnly;
-	}
+	
 	
 	
 	public FileUtils(String inputFileName, String outputFileName) throws RuntimeException
@@ -68,42 +56,15 @@ public class FileUtils
 	
 	
 	/**
-	 * This method parses a testFile with one-url-per-line and extracts the urls.
-	 * @return Collection<String>
+	 * This method returns the number of (non-heading, non-empty) lines we have read from the inputFile.
+	 * @return loadedUrls
 	 */
-	public static Collection<String> getNextUrlGroupTest()
+	public static long getCurrentlyLoadedUrls()	// In the end, it gives the total number of urls we have processed.
 	{
-		Collection<String> urlGroup = new HashSet<String>();
-		
-		// Take a group of <groupCount> urls from the file..
-		// If we are at the end and there are less than <groupCount>.. take as many as there are..
-		
-		//logger.debug("Retrieving the next group of " + groupCount + " elements from the inputFile.");
-		long curBeginning = FileUtils.fileIndex;
-
-		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + groupCount)) )
-		{// While (!EOF) iterate through lines.
-
-			// Take each line, remove potential double quotes.
-			String retrievedLineStr = StringUtils.replace(inputScanner.nextLine(), "\"", "");
-
-			FileUtils.fileIndex ++;
-
-			if ( (FileUtils.fileIndex == 0) && skipFirstRow )
-				continue;
-
-			if ( retrievedLineStr.isEmpty() ) {
-				FileUtils.unretrievableInputLines ++;
-				continue;
-			}
-
-			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
-
-			urlGroup.add(retrievedLineStr);
-		}
-		//logger.debug("FileUtils.fileIndex's value after taking urls after " + FileUtils.fileIndex / groupCount + " time(s), from input file: " + FileUtils.fileIndex);	// DEBUG!
-
-		return urlGroup;
+		if ( FileUtils.skipFirstRow )
+			return FileUtils.fileIndex - FileUtils.unretrievableInputLines - FileUtils.unretrievableUrlsOnly -1; // -1 to exclude the first line
+		else
+			return FileUtils.fileIndex - FileUtils.unretrievableInputLines - FileUtils.unretrievableUrlsOnly;
 	}
 
 
@@ -115,28 +76,27 @@ public class FileUtils
 	{
 		HashMap<String, String> inputIdUrlPair;
 		Collection<String> urlGroup = new HashSet<String>();
-
+		
 		long curBeginning = FileUtils.fileIndex;
-
+		
 		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + groupCount)) )// While (!EOF) iterate through lines.
 		{
-			//logger.debug("fileIndex: " + FileUtils.fileIndex);	// DEBUG
-
+			//logger.debug("fileIndex: " + FileUtils.fileIndex);	// DEBUG!
+			
 			// Take each line, remove potential double quotes.
 			String retrievedLineStr = inputScanner.nextLine();
-
-			logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
-
+			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
+			
 			FileUtils.fileIndex ++;
-
+			
 			if ( (FileUtils.fileIndex == 0) && skipFirstRow )
 				continue;
-
+			
 			if (retrievedLineStr.isEmpty()) {
 				FileUtils.unretrievableInputLines ++;
 				continue;
 			}
-
+			
 			inputIdUrlPair = jsonDecoder(retrievedLineStr); // Decode the jsonLine and take the two attributes.
 			if ( inputIdUrlPair == null ) {
 				logger.warn("A problematic inputLine found: \"" + retrievedLineStr + "\"");
@@ -144,10 +104,10 @@ public class FileUtils
 				continue;
 			}
 			idAndUrlMappedInput.putAll(inputIdUrlPair);    // Keep mapping to be put in the outputFile later..
-
+			
 			urlGroup.addAll(inputIdUrlPair.values());	// Make sure that our returning's source is the temporary collection (otherwise we go into an infinite loop).
 		}
-
+		
 		return urlGroup;	// Return just the urls to be crawled. We still keep the IDs.
 	}
 
@@ -268,6 +228,46 @@ public class FileUtils
 			logger.error("Unable to close FileWriter!", e);
 			throw new RuntimeException(e);
 		}
+	}
+	
+	
+	/**
+	 * This method parses a testFile with one-url-per-line and extracts the urls.
+	 * @return Collection<String>
+	 */
+	public static Collection<String> getNextUrlGroupTest()
+	{
+		Collection<String> urlGroup = new HashSet<String>();
+		
+		// Take a group of <groupCount> urls from the file..
+		// If we are at the end and there are less than <groupCount>.. take as many as there are..
+		
+		//logger.debug("Retrieving the next group of " + groupCount + " elements from the inputFile.");
+		long curBeginning = FileUtils.fileIndex;
+		
+		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + groupCount)) )
+		{// While (!EOF) iterate through lines.
+			
+			// Take each line, remove potential double quotes.
+			String retrievedLineStr = StringUtils.replace(inputScanner.nextLine(), "\"", "");
+			
+			FileUtils.fileIndex ++;
+			
+			if ( (FileUtils.fileIndex == 0) && skipFirstRow )
+				continue;
+			
+			if ( retrievedLineStr.isEmpty() ) {
+				FileUtils.unretrievableInputLines ++;
+				continue;
+			}
+			
+			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
+			
+			urlGroup.add(retrievedLineStr);
+		}
+		//logger.debug("FileUtils.fileIndex's value after taking urls after " + FileUtils.fileIndex / groupCount + " time(s), from input file: " + FileUtils.fileIndex);	// DEBUG!
+		
+		return urlGroup;
 	}
 
 }

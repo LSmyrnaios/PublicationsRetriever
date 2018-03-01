@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.crawler.TripleToBeLogged;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -64,8 +65,13 @@ public class UrlUtils
 	public static int doajResultPageLinks = 0;
 	public static int dlibHtmlDocUrls = 0;
 
-	public static boolean useMLA = false;	// Should we try the experimental-M.L.A. ?
-
+	public static boolean useMLA = true;	// Should we try the experimental-M.L.A.? The program may shut it down later, if the success-rate for the current input isn't high.
+	public static long docUrlsFoundByMLA = 0;
+	// If we later want to show statistics, we should take into account only the number of the urls to which the MLA was tested against, not all of the urls in the input.
+	
+	private static float leastSuccessPercentageForMLA = 60;	// The percentage which we want, in order to continue running the MLA.
+	private static int leastNumberOfUrlsToCheck = 1000;	// Least number of URLs to check before deciding if we should continue running it.
+	
 	static {
 			logger.debug("Setting knownDocTypes. Currently testing only \".pdf\" type.");
 			knownDocTypes.add("application/pdf");	// For the moment we care only for the pdf type.
@@ -97,7 +103,7 @@ public class UrlUtils
 	        	}
 	        	else {
 	        		logger.debug("Done loading " + FileUtils.getCurrentlyLoadedUrls() + " urls from the inputFile.");	// DEBUG!
-	        		break;	// No more urls to load and check, just start Crawling.
+	        		break;	// No more urls to load and check, initialize M.L.A. (if wanted) and start Crawling.
 	        	}
 	        }
 
@@ -134,6 +140,15 @@ public class UrlUtils
 				
 			}// end for-loop
         }// end while-loop
+		
+		
+		if ( UrlUtils.useMLA )	// If we want to use the MLA, then set its leastTestingNumber.
+		{
+			long tenPercentOfLoadedUrls = 10 * 100 / FileUtils.getCurrentlyLoadedUrls();
+			
+			if ( leastNumberOfUrlsToCheck > tenPercentOfLoadedUrls )	// Avoid running the MLA for more than 10% of the input.
+				leastNumberOfUrlsToCheck = (int)tenPercentOfLoadedUrls;
+		}
 	}
 
 
@@ -157,7 +172,7 @@ public class UrlUtils
             logger.debug("docUrl found: <" + finalDocUrl + ">");
             sumOfDocsFound ++;
 
-            // Use the following when enabling the M.L.A. for succesfull paths.
+            // Gather data for the MLA, if we, or the program itself, decide so.
             if ( UrlUtils.useMLA )
                 UrlUtils.gatherMLData(finalDocUrl);
 
@@ -193,7 +208,35 @@ public class UrlUtils
         else
             return false;
     }
-
+	
+	
+	/**
+	 * This method checks if we should keep running the MLA.
+	 * Since the MLA is still experimental and it doesn't work on all domains, we take measures to stop running it, if it doesn't succeed.
+	 * It returns "true", either when we don't have reached a specific testing number, or when the MLA was succesfull for most of the previous cases.
+	 * It returns "false", when the MLA failed to have a specific success-rate.
+	 * @return true/false
+	 */
+	public static boolean shouldRunMLA()
+	{
+		if ( PageCrawler.totalPagesReachedCrawling <= UrlUtils.leastNumberOfUrlsToCheck )
+		{
+			return true;	// Always continue in this case, as we don't have enough data to decide otherwise.
+		}
+		else	// Decide depending on successPercentage for all of the urls which reached the crawler until now (this will be the case every time this is called, after we exceed the leastNumber)..
+		{
+			float curSuccessRate = (float)(UrlUtils.docUrlsFoundByMLA * 100) / PageCrawler.totalPagesReachedCrawling;
+			//logger.debug("CurSuccessRate of MLA = " + curSuccessRate);
+			
+			if ( curSuccessRate >= UrlUtils.leastSuccessPercentageForMLA )
+				return true;
+			else {
+				UrlUtils.useMLA = false;	// Avoid checking success-rates again. TODO - Maybe implement re-starting of this process after X urls.
+				return false;
+			}
+		}
+	}
+ 
 
 	/**
 	 * This method gathers domain and path data, for succesfull docUrl-found-cases.
@@ -225,13 +268,12 @@ public class UrlUtils
 		}
 		else {
 			logger.warn("Unexpected matcher's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
-			return;
 		}
 	}
 
 
 	/**
-	 * This method is an M.L.A. (Machine Learning Algorithm), which uses previous success cases to predict the docUrl of a page, if this page gives us the ID of the document.
+	 * This method implements an M.L.A. (Machine Learning Algorithm), which uses previous success cases to predict the docUrl of a page, if this page gives us the ID of the document.
 	 * The idea is that we might get a url which shows info about the publication and as the same ID with the wanted docUrl, but ut just happens to be in a different directory (path).
 	 * So, before going and checking each and every one of the inner links, we should check if by using known paths that gave docUrls before (for the current spesific domain), we are able to take the docUrl immediately.
 	 * Disclaimer: This is still in experimental stage.
@@ -239,34 +281,27 @@ public class UrlUtils
 	 * @return true / false
 	 * @throws RuntimeException
 	 */
-	public static boolean guessInnerDocUrl(String pageUrl)
+	public static boolean guessInnerDocUrl(String pageUrl, String domainStr)
 	{
 		Collection<String> paths;
 		StringBuilder strB = new StringBuilder(150);
 		String guessedDocUrl = null;
-		String domainStr = null;
 		String docIdStr = null;
 		
-		Matcher matcher = URL_TRIPLE.matcher(pageUrl);
-		if ( matcher.matches() ) {
-		    domainStr = matcher.group(2);	// Group <2> is the DOMAIN.
-		    if ( (domainStr == null) || domainStr.isEmpty() ) {
-		    	logger.error("Unexpected null or empty value returned by \"URL_TRIPLE.group(2)\"");
-		    	return false;	// We don't add the empty string here, as we are used to handle this in the calling classes.
-		    }
-		}
-		else {
-			logger.warn("Unexpected matcher's (" + matcher.toString() + ") mismatch for url: \"" + pageUrl + "\"");
-			return false;	// We don't add the empty string here, as we are used to handle this in the calling classes.
-		}
-		
-		if ( successDomainPathsMultiMap.containsKey(domainStr.toLowerCase()) )	// If this domain is already logged go check for previous succesfull paths, if not logged, then return..
+		if ( successDomainPathsMultiMap.containsKey(domainStr) )	// If this domain is already logged go check for previous succesfull paths, if not logged, then return..
 		{
-			docIdStr = matcher.group(3);	// group <3> is the "ID".
-			if ( (docIdStr == null) || docIdStr.isEmpty() ) {
-		    	logger.debug("No available ID information in url: \"" + pageUrl + "\"");
-		    	return false;	// The docUrl can't be guessed in this case.
-		    }
+			Matcher matcher = URL_TRIPLE.matcher(pageUrl);
+			if ( matcher.matches() ) {
+				docIdStr = matcher.group(3);	// group <3> is the "ID".
+				if ( (docIdStr == null) || docIdStr.isEmpty() ) {
+					logger.debug("No available ID information in url: \"" + pageUrl + "\"");
+					return false;	// The docUrl can't be guessed in this case.
+				}
+			}
+			else {
+				logger.warn("Unexpected matcher's (" + matcher.toString() + ") mismatch for url: \"" + pageUrl + "\"");
+				return false;	// We don't add the empty string here, as we are used to handle this in the calling classes.
+			}
 			
 			paths = successDomainPathsMultiMap.get(domainStr);	// Get all available paths for this domain, to try them along with current ID.
 			
@@ -274,7 +309,6 @@ public class UrlUtils
 			{
 				// For every available docPath for this domain construct the expected docLink..
 				strB.append(path);
-
 				strB.append(docIdStr);
 				strB.append(".pdf");
 
@@ -283,7 +317,8 @@ public class UrlUtils
 		    	if ( UrlUtils.docUrls.contains(guessedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
 		    		UrlUtils.logUrl(pageUrl, guessedDocUrl, "");
 		    		logger.debug("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
-		    		return true;
+					UrlUtils.docUrlsFoundByMLA ++;
+					return true;
 		    	}
 				
 				// Check if it's a truly-alive docUrl.
@@ -292,7 +327,7 @@ public class UrlUtils
 					
 					if ( HttpUtils.connectAndCheckMimeType(pageUrl, guessedDocUrl, domainStr) ) {
 						logger.debug("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
-						// TODO - Maybe it will be interesting (when ready) to also count (with an AtomicInteger, if in multithread) the handled urls with this algorithm.
+						UrlUtils.docUrlsFoundByMLA ++;
 						return true;	// Note that we have already add it in the output links inside "connectAndCheckMimeType()".
 					}
 				} catch (Exception e) {
@@ -303,13 +338,15 @@ public class UrlUtils
 
 			}// end for-loop
 		}// end if
-
+		
+		// If we reach here, it means that either there is not available data to guess the docUrl, or that all of the guesses have failed.
+		
 		return false;	// We can't find its docUrl.. so we return false and continue by crawling this page.
 	}
 	
 	
 	/**
-	 * This method returns the domain of the given url.
+	 * This method returns the domain of the given url, in lowerCase (for better comparison).
 	 * @param urlStr
 	 * @return domainStr
 	 */
@@ -351,7 +388,7 @@ public class UrlUtils
 			logger.error("A null or an empty String was given when called \"getPathStr()\" method!");
 			return null;
 		}
-
+		
 		String pathStr = null;
 		Matcher matcher = URL_TRIPLE.matcher(urlStr);
 

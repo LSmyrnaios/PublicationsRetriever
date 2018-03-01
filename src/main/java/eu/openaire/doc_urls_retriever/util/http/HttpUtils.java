@@ -7,10 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.net.ssl.SSLProtocolException;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.*;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -176,7 +173,7 @@ public class HttpUtils
 			//blacklistedDomains.add(domainStr);
 			conn.disconnect();
 			throw new RuntimeException(spe);
-		} catch (SocketTimeoutException ste) {
+		} catch (SocketTimeoutException | ConnectException e) {	// Note that "ConnectException" is a ConnectionTimeout type of Exception.
 			logger.debug("Url: \"" + resourceURL + "\" failed to respond on time!");
 			onTimeoutException(domainStr);
 			conn.disconnect();
