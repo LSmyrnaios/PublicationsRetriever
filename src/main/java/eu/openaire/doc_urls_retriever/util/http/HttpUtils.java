@@ -395,19 +395,17 @@ public class HttpUtils
      */
 	public static boolean blockDomainTypeAfterTimes(HashMap<String, Integer> domainsHashMap, String domainStr, int timesBeforeBlock)
 	{
-        if ( !UrlUtils.successDomainPathsMultiMap.containsKey(domainStr) ) {	// If this domain hasn't give a docUrl yet.
-            int curTimes = 1;
-            if ( domainsHashMap.containsKey(domainStr) )
-                curTimes += domainsHashMap.get(domainStr).intValue();
+		int curTimes = 1;
+		if (domainsHashMap.containsKey(domainStr))
+			curTimes += domainsHashMap.get(domainStr).intValue();
 
-            domainsHashMap.put(domainStr, curTimes);
+		domainsHashMap.put(domainStr, curTimes);
 
-            if ( curTimes > timesBeforeBlock ) {
-                blacklistedDomains.add(domainStr);	// Block this domain.
-                return true;
-            }
+		if (curTimes > timesBeforeBlock) {
+			blacklistedDomains.add(domainStr);    // Block this domain.
+			return true;	// It was blocked.
 		}
-		return false;
+		else
+			return false;	// It wasn't blocked.
 	}
-	
 }

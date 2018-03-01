@@ -108,8 +108,9 @@ public class PageCrawler extends WebCrawler
 		}
 
 	    // Check if we can find the docUrl based on previous runs. (Still in experimental stage)
-/*    	if ( UrlUtils.guessInnerDocUrl(pageUrl) )	// If we were able to find the right path.. and hit a docUrl successfully.. return.
-    		return;*/
+		if ( UrlUtils.useMLA )
+	    	if ( UrlUtils.guessInnerDocUrl(pageUrl) )	// If we were able to find the right path.. and hit a docUrl successfully.. return.
+    			return;
         
 	    Set<WebURL> currentPageLinks = page.getParseData().getOutgoingUrls();
 

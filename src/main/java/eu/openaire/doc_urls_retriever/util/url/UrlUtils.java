@@ -64,6 +64,8 @@ public class UrlUtils
 	public static int doajResultPageLinks = 0;
 	public static int dlibHtmlDocUrls = 0;
 
+	public static boolean useMLA = false;	// Should we try the experimental-M.L.A. ?
+
 	static {
 			logger.debug("Setting knownDocTypes. Currently testing only \".pdf\" type.");
 			knownDocTypes.add("application/pdf");	// For the moment we care only for the pdf type.
@@ -133,10 +135,45 @@ public class UrlUtils
 			}// end for-loop
         }// end while-loop
 	}
-	
-	
+
+
 	/**
-	 * This method uses previous success cases to predict the docUrl of a page, if this page gives us the ID of the document.
+	 * This method gathers domain and path data, for succesfull docUrl-found-cases.
+	 * This data is used by "UrlUtils.guessInnerDocUrl()" M.L.A. (Machine Learning Algorithm).
+	 * @param urlStr
+	 */
+	public static void gatherMLData(String urlStr)
+	{
+		// Get its domain and path and put it inside "successDomainPathsMultiMap".
+		String domainStr = null;
+		String pathStr = null;
+
+		Matcher matcher = URL_TRIPLE.matcher(urlStr);
+		if ( matcher.matches() )
+		{
+			domainStr = matcher.group(2);	// Group <2> is the DOMAIN.
+			if ( (domainStr == null) || domainStr.isEmpty() ) {
+				logger.warn("Unexpected null or empty value returned by \"URL_TRIPLE.group(2)\"");
+				return;
+			}
+
+			pathStr = matcher.group(1);	// group <1> is the PATH.
+			if ( (pathStr == null) || pathStr.isEmpty() ) {
+				logger.warn("Unexpected null or empty value returned by \"URL_TRIPLE.group(1)\"");
+				return;
+			}
+
+			successDomainPathsMultiMap.put(domainStr.toLowerCase(), pathStr);	// Add this pair in "successDomainPathsMultiMap", if the key already exists then it will just add one more value to that key.
+		}
+		else {
+			logger.warn("Unexpected matcher's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
+			return;
+		}
+	}
+
+
+	/**
+	 * This method is an M.L.A. (Machine Learning Algorithm), which uses previous success cases to predict the docUrl of a page, if this page gives us the ID of the document.
 	 * The idea is that we might get a url which shows info about the publication and as the same ID with the wanted docUrl, but ut just happens to be in a different directory (path).
 	 * So, before going and checking each and every one of the inner links, we should check if by using known paths that gave docUrls before (for the current spesific domain), we are able to take the docUrl immediately.
 	 * Disclaimer: This is still in experimental stage.
@@ -202,12 +239,13 @@ public class UrlUtils
 					}
 				} catch (Exception e) {
 					// No special handling here, neither logging.. since it's expected that some checks will fail.
-				} finally {
-					strB.setLength(0);	// Clear the buffer before going to check the next path.
 				}
+
+				strB.setLength(0);	// Clear the buffer before going to check the next path.
+
 			}// end for-loop
 		}// end if
-		
+
 		return false;	// We can't find its docUrl.. so we return false and continue by crawling this page.
 	}
 	
@@ -231,33 +269,10 @@ public class UrlUtils
 			
         	logger.debug("docUrl found: <" + finalDocUrl + ">");
         	sumOfDocsFound ++;
-			
-			// Get its domain and path and put it inside "successDomainPathsMultiMap".
-			String domainStr = null;
-			String pathStr = null;
-			
-			Matcher matcher = URL_TRIPLE.matcher(finalDocUrl);
-			
-			if ( matcher.matches() )
-			{
-			    domainStr = matcher.group(2);	// Group <2> is the DOMAIN.
-			    if ( (domainStr == null) || domainStr.isEmpty() ) {
-			    	logger.warn("Unexpected null or empty value returned by \"URL_TRIPLE.group(2)\"");
-			    	return;
-			    }
-			    
-				pathStr = matcher.group(1);	// group <1> is the PATH.
-			    if ( (pathStr == null) || pathStr.isEmpty() ) {
-			    	logger.warn("Unexpected null or empty value returned by \"URL_TRIPLE.group(1)\"");
-			    	return;
-			    }
-				
-			    successDomainPathsMultiMap.put(domainStr.toLowerCase(), pathStr);	// Add this pair in "successDomainPathsMultiMap", if the key already exists then it will just add one more value to that key.
-			}
-			else {
-				logger.warn("Unexpected matcher's (" + matcher.toString() + ") mismatch for url: \"" + finalDocUrl + "\"");
-				return;
-			}
+
+        	// Use the following when enabling the M.L.A. for succesfull paths.
+			if ( UrlUtils.useMLA )
+				UrlUtils.gatherMLData(finalDocUrl);
 			
 			docUrls.add(finalDocUrl);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
 		}
@@ -383,5 +398,5 @@ public class UrlUtils
 		
 		return finalUrl;
 	}
-	
+
 }
