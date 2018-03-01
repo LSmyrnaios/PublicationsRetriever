@@ -186,7 +186,7 @@ public class UrlUtils
 				guessedDocUrl = strB.toString();
 				
 		    	if ( UrlUtils.docUrls.contains(guessedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
-		    		UrlUtils.logUrl(pageUrl, guessedDocUrl, "");
+		    		UrlUtils.logUrl(pageUrl, guessedDocUrl, );
 		    		logger.debug("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
 		    		return true;
 		    	}

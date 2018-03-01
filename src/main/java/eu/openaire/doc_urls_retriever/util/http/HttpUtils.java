@@ -335,9 +335,10 @@ public class HttpUtils
 	{
 		String pathStr = UrlUtils.getPathStr(urlStr);
 
-		domainsWithPaths403BlackListed.put(domainStr, pathStr);	// Put the new path to be blocked.
-
-		logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code.");
+		if ( pathStr != null ) {
+			domainsWithPaths403BlackListed.put(domainStr, pathStr);    // Put the new path to be blocked.
+			logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code.");
+		}
 	}
 
 
@@ -367,15 +368,19 @@ public class HttpUtils
 
 	public static void on5XXerrorCode(String domainStr)
 	{
-		if ( blockDomainTypeAfterTimes(HttpUtils.domainsReturned5XX, domainStr, HttpUtils.timesToHave5XXerrorCodeBeforeBlocked) )
-			logger.debug("Domain: \"" + domainStr + "\" was blocked after returning 5XX Error Code " + HttpUtils.timesToHave5XXerrorCodeBeforeBlocked + " times.");
+		if ( blockDomainTypeAfterTimes(HttpUtils.domainsReturned5XX, domainStr, HttpUtils.timesToHave5XXerrorCodeBeforeBlocked) ) {
+            logger.debug("Domain: \"" + domainStr + "\" was blocked after returning 5XX Error Code " + HttpUtils.timesToHave5XXerrorCodeBeforeBlocked + " times.");
+            HttpUtils.domainsReturned5XX.remove(domainStr); // No point of holding this domain memory from now on.
+        }
 	}
 
 	
 	public static void onTimeoutException(String domainStr)
 	{
-		if ( blockDomainTypeAfterTimes(HttpUtils.domainsWithTimeoutEx, domainStr, HttpUtils.timesToHaveTimeoutExBeforeBlocked) )
-			logger.debug("Domain: \"" + domainStr + "\" was blocked after causing Timeout Exception " + HttpUtils.timesToHaveTimeoutExBeforeBlocked + " times.");
+		if ( blockDomainTypeAfterTimes(HttpUtils.domainsWithTimeoutEx, domainStr, HttpUtils.timesToHaveTimeoutExBeforeBlocked) ) {
+            logger.debug("Domain: \"" + domainStr + "\" was blocked after causing Timeout Exception " + HttpUtils.timesToHaveTimeoutExBeforeBlocked + " times.");
+            HttpUtils.domainsWithTimeoutEx.remove(domainStr);  // No point of holding this domain memory from now on.
+        }
 	}
 
 
@@ -383,23 +388,23 @@ public class HttpUtils
      * This method handles domains which are reaching cases were they can be blocked.
      * To be blocked they have to never have provided a docUrl (<-- this might need a change).
 	 * It returns "true", if this domain was blocked, otherwise, "false".
-     * @param domainsHashSet
+     * @param domainsHashMap
      * @param domainStr
      * @param timesBeforeBlock
      * @return boolean
      */
-	public static boolean blockDomainTypeAfterTimes(HashMap<String, Integer> domainsHashSet, String domainStr, int timesBeforeBlock)
+	public static boolean blockDomainTypeAfterTimes(HashMap<String, Integer> domainsHashMap, String domainStr, int timesBeforeBlock)
 	{
-        if ( !UrlUtils.successDomainPathsMultiMap.containsKey(domainStr) ) {	// If this domain hasn't give a docUrl yet
+        if ( !UrlUtils.successDomainPathsMultiMap.containsKey(domainStr) ) {	// If this domain hasn't give a docUrl yet.
             int curTimes = 1;
-            if ( domainsHashSet.containsKey(domainStr) )
-                curTimes += domainsHashSet.get(domainStr).intValue();
+            if ( domainsHashMap.containsKey(domainStr) )
+                curTimes += domainsHashMap.get(domainStr).intValue();
 
-            domainsHashSet.put(domainStr, curTimes);
+            domainsHashMap.put(domainStr, curTimes);
 
             if ( curTimes > timesBeforeBlock ) {
-                    blacklistedDomains.add(domainStr);	// Block this domain
-                    return true;
+                blacklistedDomains.add(domainStr);	// Block this domain.
+                return true;
             }
 		}
 		return false;
