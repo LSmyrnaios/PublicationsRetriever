@@ -1,7 +1,7 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import edu.uci.ics.crawler4j.crawler.CrawlConfig;
 import edu.uci.ics.crawler4j.crawler.CrawlController;
@@ -16,7 +16,7 @@ import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 
 public class CrawlerController
 {	
-	private static final Logger logger = LogManager.getLogger(CrawlerController.class);
+	private static final Logger logger = LoggerFactory.getLogger(CrawlerController.class);
 	
 	public static CrawlController controller;
 	private CrawlConfig config = new CrawlConfig();
@@ -76,7 +76,7 @@ public class CrawlerController
 	        }
 	        
 		} catch (Exception e) {
-			logger.fatal(e);
+			logger.error("", e);
 			throw new RuntimeException(e);
 		}
 	}

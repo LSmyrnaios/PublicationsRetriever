@@ -1,0 +1,23 @@
+<configuration debug="false">
+
+    <appender name="File" class="ch.qos.logback.core.FileAppender">
+        <file>logs/DocUrlsRetriever.log</file>
+        <append>true</append>
+        <encoder>
+            <charset>UTF-8</charset>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <charset>UTF-8</charset>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="debug">
+        <appender-ref ref="File" />
+    </root>
+
+</configuration>

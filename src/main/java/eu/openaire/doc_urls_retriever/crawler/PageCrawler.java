@@ -4,21 +4,20 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import edu.uci.ics.crawler4j.crawler.Page;
 import edu.uci.ics.crawler4j.crawler.WebCrawler;
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import edu.uci.ics.crawler4j.url.WebURL;
 import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 
 public class PageCrawler extends WebCrawler
 {
-	private static final Logger logger = LogManager.getLogger(PageCrawler.class);
+	private static final Logger logger = LoggerFactory.getLogger(PageCrawler.class);
 	public static long totalPagesReachedCrawling = 0;	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their innerLinks checked.
 
 	@Override
@@ -283,7 +282,7 @@ public class PageCrawler extends WebCrawler
 			}
 		}
 		else // If the url is null.
-			logger.warn(e);
+			logger.warn("", e);
 	}
 
 

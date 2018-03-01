@@ -8,8 +8,6 @@ import java.util.regex.Pattern;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.crawler.TripleToBeLogged;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
@@ -17,12 +15,14 @@ import com.google.common.collect.SetMultimap;
 import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 
 public class UrlUtils
 {
-	private static final Logger logger = LogManager.getLogger(UrlUtils.class);
+	private static final Logger logger = LoggerFactory.getLogger(UrlUtils.class);
 	
 	public final static Pattern URL_TRIPLE = Pattern.compile("(.+:\\/\\/(?:www(?:(?:\\w+)?\\.)?)?([\\w\\.\\-]+)(?:[\\:\\d]+)?\\/(?:.+\\/)?(?:[\\w.-]*[^\\.pdf]\\?[\\w.-]+[^site]=)?)(.+)?");
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
@@ -98,7 +98,7 @@ public class UrlUtils
 
 	        if ( loadedUrlGroup.isEmpty() ) {
 	        	if ( firstRun ) {
-	        		logger.fatal("Could not retrieve any urls from the inputFile!");
+	        		logger.error("Could not retrieve any urls from the inputFile!");
 	        		throw new RuntimeException();
 	        	}
 	        	else {
@@ -330,6 +330,7 @@ public class UrlUtils
 						UrlUtils.docUrlsFoundByMLA ++;
 						return true;	// Note that we have already add it in the output links inside "connectAndCheckMimeType()".
 					}
+					logger.debug("MLA failed to find a valid docUel for guessedDocUrl: " + guessedDocUrl + "\"");
 				} catch (Exception e) {
 					// No special handling here, neither logging.. since it's expected that some checks will fail.
 				}

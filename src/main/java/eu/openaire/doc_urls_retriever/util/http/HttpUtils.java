@@ -3,8 +3,8 @@ package eu.openaire.doc_urls_retriever.util.http;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLProtocolException;
 import java.net.*;
@@ -12,9 +12,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 
+
 public class HttpUtils
 {
-	private static final Logger logger = LogManager.getLogger(HttpUtils.class);
+	private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
 	
 	public static HashSet<String> domainsWithUnsupportedHeadMethod = new HashSet<String>();
 	public static HashSet<String> blacklistedDomains = new HashSet<String>();	// Domains with which we don't want to connect again.
@@ -180,7 +181,7 @@ public class HttpUtils
 			throw new RuntimeException();
     	} catch (Exception e) {
     		if ( !(e instanceof RuntimeException) )	// If it's an instance of R.E. then it's already logged.
-    			logger.warn(e);
+    			logger.warn("", e);
 			if ( conn != null )
 				conn.disconnect();
 			throw new RuntimeException();
@@ -271,7 +272,7 @@ public class HttpUtils
 			conn.disconnect();
 			throw new RuntimeException();
 		} catch (Exception e) {
-			logger.warn(e);
+			logger.warn("", e);
 			conn.disconnect();
 			throw new RuntimeException();
 		}

@@ -1,8 +1,6 @@
 package eu.openaire.doc_urls_retriever.util.file;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 
 import java.util.*;
 
@@ -12,23 +10,20 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 
 public class FileUtils
 {
-	private static final Logger logger = LogManager.getLogger(FileUtils.class);
+	private static final Logger logger = LoggerFactory.getLogger(FileUtils.class);
 
 	private static Scanner inputScanner;
-	private static File inputFile;
-	private static File outputFile;
+	private static PrintStream printStream;
 	public static HashMap<String, String> idAndUrlMappedInput = new HashMap<String, String>();	// Contains the mapped key(id)-value(url) pairs.
 	private static long fileIndex = 0;	// Index in the input file
 	public static boolean skipFirstRow = false;
-	private static FileWriter writer;
-	//private static String outputDelimiter = "\t";
 	private static String endOfLine = "\n";
 	public static long unretrievableInputLines = 0;	// For better statistics in the end.
     public static long unretrievableUrlsOnly = 0;
@@ -38,18 +33,16 @@ public class FileUtils
 	
 	
 	
-	public FileUtils(String inputFileName, String outputFileName) throws RuntimeException
+	public FileUtils(InputStream input, OutputStream output) throws RuntimeException
 	{
-    	logger.debug("Input file: " + inputFileName);	// DEBUG!
-    	logger.debug("Output file: " + outputFileName);	// DEBUG!
+    	logger.debug("Input: " + input.toString());	// DEBUG!
+    	logger.debug("Output: " + output.toString());	// DEBUG!
     	
 		try {
-			FileUtils.inputFile = new File(inputFileName);
-			FileUtils.inputScanner = new Scanner(FileUtils.inputFile /*System.in*/);
-			FileUtils.outputFile = new File(outputFileName);
-			FileUtils.writer = new FileWriter(outputFile);
+			FileUtils.inputScanner = new Scanner(input);
+			FileUtils.printStream = new PrintStream(output);
 		} catch (Exception e) {
-			logger.error(e);
+			logger.error("", e);
 			throw new RuntimeException(e);	// If any of the files is not found.. we should NOT continue..
 		}
 	}
@@ -188,31 +181,15 @@ public class FileUtils
             tempJsonString = triple.toJsonString();
 			if ( tempJsonString == null )	// If there was an encoding error, move on..
 				continue;
-
+			
 			strB.append(tempJsonString);
-			/*
-			 * For an output in csv/tsv.
-			strB.append(entry.getKey());
-			strB.append(outputDelimiter);
-			strB.append(entry.getValue());
-			*/
 			strB.append(endOfLine);
 		}
-
-		try {
-			/*
-			 * Print in System.out
-		    System.out.print(strB.toString());	// Without an extra "endOfLine".
-		    System.out.flush();
-		    */
-			writer.write(strB.toString());
-			writer.flush();
-		} catch (IOException e) {
-			logger.warn(e);
-			throw new RuntimeException(e);
-		} finally {
-			FileUtils.tripleToBeLoggedOutputList.clear();	// Clear to keep in memory only <groupCount> values at a time.
-		}
+		
+		printStream.print(strB.toString());
+		printStream.flush();
+		
+		FileUtils.tripleToBeLoggedOutputList.clear();	// Clear to keep in memory only <groupCount> values at a time.
 	}
 	
 	
@@ -222,12 +199,7 @@ public class FileUtils
 	public static void closeStreams()
 	{
         inputScanner.close();
-		try {
-			writer.close();
-		} catch (IOException e) {
-			logger.error("Unable to close FileWriter!", e);
-			throw new RuntimeException(e);
-		}
+		printStream.close();
 	}
 	
 	
