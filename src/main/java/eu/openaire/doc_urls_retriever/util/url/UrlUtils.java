@@ -137,6 +137,64 @@ public class UrlUtils
 	}
 
 
+    /**
+     * This method logs the outputEntry to be written, as well as the docUrlPath (if non-empty String) and adds entries in the blackList.
+     * @param sourceUrl
+     * @param initialDocUrl
+     * @param errorCause
+     */
+    public static void logUrl(String sourceUrl, String initialDocUrl, String errorCause)
+    {
+        String finalDocUrl = initialDocUrl;
+
+        if ( !finalDocUrl.equals("unreachable") && !finalDocUrl.equals("duplicate") )	// If we have reached a docUrl..
+        {
+            // Remove "jsessionid" for urls for "cleaner" output.
+            if ( finalDocUrl.contains("jsessionid") || finalDocUrl.contains("JSESSIONID") )
+                if ( (finalDocUrl = UrlUtils.removeJsessionid(initialDocUrl)) == null )	// If there is problem removing the "jsessionid" and it return "null", reassign the initial value.
+                    finalDocUrl = initialDocUrl;
+
+            logger.debug("docUrl found: <" + finalDocUrl + ">");
+            sumOfDocsFound ++;
+
+            // Use the following when enabling the M.L.A. for succesfull paths.
+            if ( UrlUtils.useMLA )
+                UrlUtils.gatherMLData(finalDocUrl);
+
+            docUrls.add(finalDocUrl);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
+        }
+        else if ( !finalDocUrl.equals("duplicate") )	{// Else if this url is not a docUrl and has not been processed before..
+            duplicateUrls.add(sourceUrl);	 // Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future..
+        }	// We don't add docUrls here, as we want them to be separate for checking purposes/
+
+        //logger.debug("docUrl received in \"UrlUtils.logUrl()\": "+  docUrl);	// DEBUG!
+
+        FileUtils.tripleToBeLoggedOutputList.add(new TripleToBeLogged(sourceUrl, finalDocUrl, errorCause));	// Log it to be written later.
+
+        if ( FileUtils.tripleToBeLoggedOutputList.size() == FileUtils.groupCount )	// Write to file every time we have a group of <groupCount> urls' sets.
+            FileUtils.writeToFile();
+    }
+
+
+    /**
+     * This method takes a url and its mimeType and checks if it's a document mimeType or not.
+     * @param linkStr
+     * @param mimeType
+     * @return boolean
+     */
+    public static boolean hasDocMimeType(String linkStr, String mimeType)
+    {
+        if ( knownDocTypes.contains(mimeType) )
+            return true;
+        else if ( mimeType.equals("application/octet-stream") && linkStr.toLowerCase().contains("pdf") )
+            // This is a special case. (see: "https://kb.iu.edu/d/agtj")
+            // TODO - When we will accept more docTypes, match it against "DOC_URL_FILTER" instead of just "pdf".
+            return true;
+        else
+            return false;
+    }
+
+
 	/**
 	 * This method gathers domain and path data, for succesfull docUrl-found-cases.
 	 * This data is used by "UrlUtils.guessInnerDocUrl()" M.L.A. (Machine Learning Algorithm).
@@ -247,64 +305,6 @@ public class UrlUtils
 		}// end if
 
 		return false;	// We can't find its docUrl.. so we return false and continue by crawling this page.
-	}
-	
-	
-	/**
-	 * This method logs the outputEntry to be written, as well as the docUrlPath (if non-empty String) and adds entries in the blackList.
-     * @param sourceUrl
-     * @param initialDocUrl
-     * @param errorCause
-     */
-	public static void logUrl(String sourceUrl, String initialDocUrl, String errorCause)
-	{
-		String finalDocUrl = initialDocUrl;
-		
-		if ( !finalDocUrl.equals("unreachable") && !finalDocUrl.equals("duplicate") )	// If we have reached a docUrl..
-		{
-			// Remove "jsessionid" for urls for "cleaner" output.
-			if ( finalDocUrl.contains("jsessionid") || finalDocUrl.contains("JSESSIONID") )
-				if ( (finalDocUrl = UrlUtils.removeJsessionid(initialDocUrl)) == null )	// If there is problem removing the "jsessionid" and it return "null", reassign the initial value.
-					finalDocUrl = initialDocUrl;
-			
-        	logger.debug("docUrl found: <" + finalDocUrl + ">");
-        	sumOfDocsFound ++;
-
-        	// Use the following when enabling the M.L.A. for succesfull paths.
-			if ( UrlUtils.useMLA )
-				UrlUtils.gatherMLData(finalDocUrl);
-			
-			docUrls.add(finalDocUrl);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
-		}
-		else if ( !finalDocUrl.equals("duplicate") )	{// Else if this url is not a docUrl and has not been processed before..
-			duplicateUrls.add(sourceUrl);	 // Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future..
-		}	// We don't add docUrls here, as we want them to be separate for checking purposes/
-		
-		//logger.debug("docUrl received in \"UrlUtils.logUrl()\": "+  docUrl);	// DEBUG!
-
-		FileUtils.tripleToBeLoggedOutputList.add(new TripleToBeLogged(sourceUrl, finalDocUrl, errorCause));	// Log it to be written later.
-		
-		if ( FileUtils.tripleToBeLoggedOutputList.size() == FileUtils.groupCount )	// Write to file every time we have a group of <groupCount> urls' sets.
-			FileUtils.writeToFile();
-	}
-
-
-	/**
-	 * This method takes a url and its mimeType and checks if it's a document mimeType or not.
-	 * @param linkStr
-	 * @param mimeType
-	 * @return boolean
-	 */
-	public static boolean hasDocMimeType(String linkStr, String mimeType)
-	{
-		if ( knownDocTypes.contains(mimeType) )
-			return true;
-		else if ( mimeType.equals("application/octet-stream") && linkStr.toLowerCase().contains("pdf") )
-		    // This is a special case. (see: "https://kb.iu.edu/d/agtj")
-            // TODO - When we will accept more docTypes, match it against "DOC_URL_FILTER" instead of just "pdf".
-            return true;
-		else
-			return false;
 	}
 	
 	
