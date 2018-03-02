@@ -61,10 +61,12 @@ public class UrlUtils
 	public static HashSet<String> docUrls = new HashSet<String>();
 	public static HashSet<String> knownDocTypes = new HashSet<String>();
 
+	// Counters for certain unwanted domains. We show statistics in the end.
 	public static int elsevierLinks = 0;
 	public static int doajResultPageLinks = 0;
 	public static int dlibHtmlDocUrls = 0;
-
+	public static int ifnmuDeepCrawlingPages = 0;
+	
 	public static boolean useMLA = true;	// Should we try the experimental-M.L.A.? The program may shut it down later, if the success-rate for the current input isn't high.
 	public static long docUrlsFoundByMLA = 0;
 	// If we later want to show statistics, we should take into account only the number of the urls to which the MLA was tested against, not all of the urls in the input.
@@ -93,9 +95,10 @@ public class UrlUtils
 		// Start loading and checking urls.
         while ( true )
         {
-			// Take urls from file.
-        	loadedUrlGroup = FileUtils.getNextUrlGroupFromJson();
-
+        	loadedUrlGroup = FileUtils.getNextUrlGroupFromJson(); // Take urls from jsonFile.
+			
+			//loadedUrlGroup = FileUtils.getNextUrlGroupTest();	// Take urls from single-columned (testing) csvFile.
+			
 	        if ( loadedUrlGroup.isEmpty() ) {
 	        	if ( firstRun ) {
 	        		logger.error("Could not retrieve any urls from the inputFile!");
@@ -330,7 +333,7 @@ public class UrlUtils
 						UrlUtils.docUrlsFoundByMLA ++;
 						return true;	// Note that we have already add it in the output links inside "connectAndCheckMimeType()".
 					}
-					logger.debug("MLA failed to find a valid docUel for guessedDocUrl: " + guessedDocUrl + "\"");
+					logger.debug("MLA failed to find a valid docUrl after trying guessedDocUrl: " + guessedDocUrl + "\"");
 				} catch (Exception e) {
 					// No special handling here, neither logging.. since it's expected that some checks will fail.
 				}

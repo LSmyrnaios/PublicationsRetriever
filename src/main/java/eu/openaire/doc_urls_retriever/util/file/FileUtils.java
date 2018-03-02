@@ -35,16 +35,11 @@ public class FileUtils
 	
 	public FileUtils(InputStream input, OutputStream output) throws RuntimeException
 	{
-    	logger.debug("Input: " + input.toString());	// DEBUG!
-    	logger.debug("Output: " + output.toString());	// DEBUG!
+    	logger.debug("Input: " + input.toString());
+    	logger.debug("Output: " + output.toString());
     	
-		try {
-			FileUtils.inputScanner = new Scanner(input);
-			FileUtils.printStream = new PrintStream(output);
-		} catch (Exception e) {
-			logger.error("", e);
-			throw new RuntimeException(e);	// If any of the files is not found.. we should NOT continue..
-		}
+		FileUtils.inputScanner = new Scanner(input);
+		FileUtils.printStream = new PrintStream(output);
 	}
 	
 	
@@ -96,7 +91,13 @@ public class FileUtils
 				FileUtils.unretrievableInputLines ++;
 				continue;
 			}
-			idAndUrlMappedInput.putAll(inputIdUrlPair);    // Keep mapping to be put in the outputFile later..
+			
+			// TODO - Find a way to keep track of the redirections over the input pages, in order to match the id of the original-input-docPage, with the redirected-final-docPage.
+			// So that the docUrl in the output will match to the ID of the inputDocPage.
+			// Currently there is no control over the correlation of pre-redirected pages and after-redirected ones, as Crawler4j, which handles this process doesn't keep track of such thing.
+			// So the output currently contains the redirected-final-docPages with their docUrls.
+			
+			//idAndUrlMappedInput.putAll(inputIdUrlPair);    // Keep mapping to be put in the outputFile later.
 			
 			urlGroup.addAll(inputIdUrlPair.values());	// Make sure that our returning's source is the temporary collection (otherwise we go into an infinite loop).
 		}

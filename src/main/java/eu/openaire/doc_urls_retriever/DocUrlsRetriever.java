@@ -5,7 +5,13 @@ import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+/*
+ * Used for testing with non-standard input/output.
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+*/
 
 
 /**
@@ -20,7 +26,7 @@ public class DocUrlsRetriever
     {
     	// Use test input/output.
 		/*try {
-			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testUrlsJson6.json")), new FileOutputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testOutputFile.json")));
+			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testRandomNewList100.csv")), new FileOutputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testOutputFile.json")));
 		} catch (FileNotFoundException e) {
 			logger.error("InputFile not found!", e);
 			System.exit(-3);
@@ -48,6 +54,7 @@ public class DocUrlsRetriever
 		logger.info("Αbout: " + UrlUtils.elsevierLinks * (float)100 / inputUrlNum + "% (" + UrlUtils.elsevierLinks + " urls) were redirected to the JavaScript site \"elsevier.com\" and were avoided to be crawled.");
     	logger.info("Αbout: " + UrlUtils.doajResultPageLinks * (float)100 / inputUrlNum + "% (" + UrlUtils.doajResultPageLinks + " urls) were \"doaj.org/toc/\" urls, which are resultPages, thus being avoided to be crawled.");
 		logger.info("Αbout: " + UrlUtils.dlibHtmlDocUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.dlibHtmlDocUrls + " urls) were \"dlib.org\" urls, which are docUrls, but, in HTML, thus being avoided to be crawled.");
+		logger.info("About: " + UrlUtils.ifnmuDeepCrawlingPages * (float)100 / inputUrlNum + "% (" + UrlUtils.ifnmuDeepCrawlingPages + " urls) were \"ojs.ifnmu.edu.ua\" urls, which are docPages with their docUrl being deeper inside the server, thus being currently avoided.");
 		logger.info("There were: " + UrlUtils.inputDuplicatesNum + " duplicates in the input file." + " That's about: " + UrlUtils.inputDuplicatesNum * (float)100 / inputUrlNum + "%");
 		
         // Then... just close the open streams (imported and exported content) and exit.

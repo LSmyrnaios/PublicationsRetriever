@@ -42,6 +42,7 @@ public class PageCrawler extends WebCrawler
 			return false;
 		}
 		else if ( lowerCaseUrlStr.contains("ojs.ifnmu.edu.ua") ) {	// Avoid crawling in larger depth.
+			UrlUtils.ifnmuDeepCrawlingPages ++;
 			UrlUtils.logUrl(urlStr, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after matching to the increasedCrawlingDepth-site: \"ojs.ifnmu.edu.ua\".");
 			return false;
 		}
@@ -93,6 +94,11 @@ public class PageCrawler extends WebCrawler
 			logger.debug("Not visiting: " + pageUrl + " as per your \"shouldVisit\" policy (used a workaround for Crawler4j bug)");
 			UrlUtils.doajResultPageLinks ++;
 			UrlUtils.logUrl(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, after matching to the Results-directory: \"doaj.org/toc/\".");
+			return;
+		}
+		else if ( pageUrl.contains("ojs.ifnmu.edu.ua") ) {	// Re-check here for these deep-crawling docPages.
+			UrlUtils.ifnmuDeepCrawlingPages ++;
+			UrlUtils.logUrl(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, after matching to the increasedCrawlingDepth-site: \"ojs.ifnmu.edu.ua\".");
 			return;
 		}
 		
