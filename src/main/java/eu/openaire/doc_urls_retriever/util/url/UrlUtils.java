@@ -281,7 +281,7 @@ public class UrlUtils
 	 * @return true / false
 	 * @throws RuntimeException
 	 */
-	public static boolean guessInnerDocUrl(String pageUrl, String domainStr)
+	public static boolean guessInnerDocUrlUsingML(String pageUrl, String domainStr)
 	{
 		Collection<String> paths;
 		StringBuilder strB = new StringBuilder(150);

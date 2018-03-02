@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLProtocolException;
 import java.net.*;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -30,6 +31,7 @@ public class HttpUtils
     										// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
     private static int timesToHave5XXerrorCodeBeforeBlocked  = 5;
     private static int timesToHaveTimeoutExBeforeBlocked = 3;
+    private static int numberOf403BlockedPathsBeforeBlocked = 5;
 
 
 
@@ -326,16 +328,25 @@ public class HttpUtils
 	/**
 	 * This method handles the HTTP 403 Error Code.
 	 * When a connection returns 403, we take the path of the url and we block it, as the directory which we are trying to connect to, is forbidden to be accessed.
+	 * If a domain ends up having more paths blocked than a certain number, we block the whole domain itself.
 	 * @param urlStr
 	 * @param domainStr
 	 */
 	public static void on403ErrorCode(String urlStr, String domainStr)
 	{
 		String pathStr = UrlUtils.getPathStr(urlStr);
-
+		
 		if ( pathStr != null ) {
-			domainsWithPaths403BlackListed.put(domainStr, pathStr);    // Put the new path to be blocked.
+			HttpUtils.domainsWithPaths403BlackListed.put(domainStr, pathStr);    // Put the new path to be blocked.
 			logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code.");
+			
+			// Block the whole domain if it has more than a certain number of blocked paths.
+			Collection<String> paths = HttpUtils.domainsWithPaths403BlackListed.get(domainStr);
+			if ( paths.size() > HttpUtils.numberOf403BlockedPathsBeforeBlocked )
+			{
+				HttpUtils.blacklistedDomains.add(domainStr);	// Block the whole domain itself.
+				HttpUtils.domainsWithPaths403BlackListed.removeAll(domainStr);	// No need to keep its paths anymore.
+			}
 		}
 	}
 

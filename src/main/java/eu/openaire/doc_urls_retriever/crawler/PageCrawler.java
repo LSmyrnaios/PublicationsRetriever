@@ -75,7 +75,7 @@ public class PageCrawler extends WebCrawler
 	@Override
 	public boolean shouldFollowLinksIn(WebURL url)
 	{
-		return false;	// We don't want any inner lnks to be followed for crawling.
+		return false;	// We don't want any inner links to be followed for crawling.
 	}
 	
 	
@@ -95,6 +95,12 @@ public class PageCrawler extends WebCrawler
 			UrlUtils.logUrl(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, after matching to the Results-directory: \"doaj.org/toc/\".");
 			return;
 		}
+		
+		if ( UrlUtils.docUrls.contains(pageUrl) ) {	// If we got into an already-found docUrl, log it and return.
+			logger.debug("Re-crossing the already found url: \"" +  pageUrl + "\"");
+			UrlUtils.logUrl(pageUrl, pageUrl, "");	// No error here.
+			return;
+		}
 
 		String pageContentType = page.getContentType();
 
@@ -109,12 +115,12 @@ public class PageCrawler extends WebCrawler
 			return;
 		}
 		
-		PageCrawler.totalPagesReachedCrawling ++;	// Used for
+		PageCrawler.totalPagesReachedCrawling ++;	// Used for M.L.A.'s execution-manipulation.
 
 	    // Check if we can use AND if we should run, the MLA.
 		if ( UrlUtils.useMLA )
 			if ( UrlUtils.shouldRunMLA() )
-	    		if ( UrlUtils.guessInnerDocUrl(pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
+	    		if ( UrlUtils.guessInnerDocUrlUsingML(pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
     				return;	// If we were able to find the right path.. and hit a docUrl successfully.. return.
         
 	    Set<WebURL> currentPageLinks = page.getParseData().getOutgoingUrls();
