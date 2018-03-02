@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLProtocolException;
+import java.io.IOException;
 import java.net.*;
 import java.util.Collection;
 import java.util.HashMap;
@@ -74,10 +75,14 @@ public class HttpUtils
 				UrlUtils.logUrl(currentPage, finalUrlStr, "");	// we send the urls, before and after potential redirections.
 				return true;
 			}
-		} catch (Exception e) {
+		} catch (IOException e) {
 			if ( currentPage.equals(resourceURL) )	// Log this error only for docPages.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
 			throw new RuntimeException(e);
+		} catch (RuntimeException re) {
+			if ( currentPage.equals(resourceURL) )	// Log this error only for docPages.
+				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
+			throw re;
 		} finally {
 			if ( conn != null )
 				conn.disconnect();
@@ -274,7 +279,7 @@ public class HttpUtils
 
 		} catch (RuntimeException re) {	// We already logged the right messages.
 			conn.disconnect();
-			throw new RuntimeException();
+			throw re;
 		} catch (Exception e) {
 			logger.warn("", e);
 			conn.disconnect();

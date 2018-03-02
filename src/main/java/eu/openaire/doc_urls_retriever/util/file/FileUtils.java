@@ -35,7 +35,7 @@ public class FileUtils
 	
 	
 	
-	public FileUtils(InputStream input, OutputStream output) throws RuntimeException
+	public FileUtils(InputStream input, OutputStream output)
 	{
     	logger.debug("Input: " + input.toString());
     	logger.debug("Output: " + output.toString());
