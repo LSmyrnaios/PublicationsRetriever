@@ -17,6 +17,7 @@ import java.io.FileOutputStream;
 /**
  * This class has the responsibility to receive the url(s) from an input file and define from it's header, if it's file-ready-download
  * or, it needs further research with html crawler.
+ * @author Lampros A. Smyrnaios
  */
 public class DocUrlsRetriever
 {

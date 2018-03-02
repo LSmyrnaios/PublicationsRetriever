@@ -14,7 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-
+/**
+ * @author Lampros A. Smyrnaios
+ */
 public class PageCrawler extends WebCrawler
 {
 	private static final Logger logger = LoggerFactory.getLogger(PageCrawler.class);

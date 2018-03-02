@@ -13,7 +13,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 
-
+/**
+ * @author Lampros A. Smyrnaios
+ */
 public class HttpUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);

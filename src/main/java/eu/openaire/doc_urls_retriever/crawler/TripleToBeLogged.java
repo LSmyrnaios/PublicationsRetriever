@@ -6,6 +6,7 @@ import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 
 /**
  * This class is responsible to store the triple <sourceUrl, docUrl, errorCause> for it to be written in the outputFile.
+ * @author Lampros A. Smyrnaios
  */
 public class TripleToBeLogged
 {

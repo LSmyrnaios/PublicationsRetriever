@@ -13,7 +13,9 @@ import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 
 
-
+/**
+ * @author Lampros A. Smyrnaios
+ */
 public class CrawlerController
 {	
 	private static final Logger logger = LoggerFactory.getLogger(CrawlerController.class);

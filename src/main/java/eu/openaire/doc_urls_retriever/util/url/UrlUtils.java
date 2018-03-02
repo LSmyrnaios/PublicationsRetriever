@@ -19,7 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-
+/**
+ * @author Lampros A. Smyrnaios
+ */
 public class UrlUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(UrlUtils.class);
@@ -89,7 +91,7 @@ public class UrlUtils
 	public static void loadAndCheckUrls() throws RuntimeException
 	{
 		Collection<String> loadedUrlGroup;
-
+		
 		boolean firstRun = true;
 		
 		// Start loading and checking urls.
@@ -109,7 +111,7 @@ public class UrlUtils
 	        		break;	// No more urls to load and check, initialize M.L.A. (if wanted) and start Crawling.
 	        	}
 	        }
-
+			
 			firstRun = false;
 	        
 			for ( String retrievedUrl : loadedUrlGroup )
