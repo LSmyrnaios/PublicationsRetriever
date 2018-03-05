@@ -1,5 +1,6 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
+import edu.uci.ics.crawler4j.frontier.Frontier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +27,7 @@ public class CrawlerController
 	private String crawlStorageFolder = System.getProperty("user.dir") + "//src//main//resources//crawlerStorage";	// Change slashes later for linux..
 	
 	//public static DocIDServer docIdServer = null;	// Potentially useful when performing checks in urls added in the Crawler.
-	//public static Frontier frontier = null;	// Potentially useful to know the number of pages (left to be crawled, are in memory waiting, already prosseced).
+	public static Frontier frontier = null;	// Potentially useful to know the number of pages (left to be crawled, are in memory waiting, already prosseced).
 	//public static long urlsReachedCrawler = 0;	// Potentially useful for statistics.
 	
 	
@@ -62,7 +63,7 @@ public class CrawlerController
 			controller = new CrawlController(config, pageFetcher, robotstxtServer);
 
 			//CrawlerController.docIdServer = controller.getDocIdServer();	// Enable this code if we need special urls' check from the crawler.
-			//CrawlerController.frontier = controller.getFrontier();	// Enable this code if we need to check pages' number in the crawler.
+			CrawlerController.frontier = controller.getFrontier();	// Enable this code if we need to check pages' number in the crawler.
 
 			UrlUtils.loadAndCheckUrls();
 

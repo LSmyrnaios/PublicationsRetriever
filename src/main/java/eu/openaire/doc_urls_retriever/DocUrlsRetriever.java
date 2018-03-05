@@ -28,7 +28,7 @@ public class DocUrlsRetriever
     {
     	// Use test input/output.
 		/*try {
-			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testRandomNewList100.csv")),
+			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testUniversalNewList100.csv")),
 							new FileOutputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testOutputFile.json")));
 		} catch (FileNotFoundException e) {
 			logger.error("InputFile not found!", e);
