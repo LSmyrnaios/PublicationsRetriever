@@ -27,26 +27,13 @@ public class PageCrawler extends WebCrawler
 	{
 		String urlStr = url.toString();
 		String lowerCaseUrlStr = urlStr.toLowerCase();
-
+		
+		// Check  redirect-finished-urls for certain unwanted types.
+		// Note that "elsevier.com" is reached after redirections only and that it's an intermediate site itself.. so it isn't found at loading time.
 		if ( lowerCaseUrlStr.contains("elsevier.com") ) {   // Avoid this JavaScript site with non accesible dynamic links.
             UrlUtils.elsevierLinks ++;
 			UrlUtils.logUrl(urlStr, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after matching to the JavaScript site: \"elsevier.com\".");
             return false;
-		}
-		else if ( lowerCaseUrlStr.contains("doaj.org/toc/") ) {	// Avoid resultPages.
-			UrlUtils.doajResultPageLinks ++;
-			UrlUtils.logUrl(urlStr, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after matching to the Results-directory: \"doaj.org/toc/\".");
-			return false;
-		}
-		else if ( lowerCaseUrlStr.contains("dlib.org") ) {    // Avoid HTML docUrls.
-			UrlUtils.dlibHtmlDocUrls ++;
-			UrlUtils.logUrl(urlStr, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after matching to the HTML-docUrls site: \"dlib.org\".");
-			return false;
-		}
-		else if ( lowerCaseUrlStr.contains("ojs.ifnmu.edu.ua") ) {	// Avoid crawling in larger depth.
-			UrlUtils.ifnmuDeepCrawlingPages ++;
-			UrlUtils.logUrl(urlStr, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after matching to the increasedCrawlingDepth-site: \"ojs.ifnmu.edu.ua\".");
-			return false;
 		}
 		else if ( UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrlStr).matches()
 					|| UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrlStr).matches()
@@ -91,18 +78,6 @@ public class PageCrawler extends WebCrawler
 		
 		String currentPageDomain = UrlUtils.getDomainStr(pageUrl);
 		HttpUtils.lastConnectedHost = currentPageDomain;	// The crawler opened a connection to download this page.
-		
-		if ( pageUrl.contains("doaj.org/toc/") ) {	// Re-check here for these resultPages, as it seems that Crawler4j has a bug in handling "shouldVisit()" method.
-			logger.debug("Not visiting: " + pageUrl + " as per your \"shouldVisit\" policy (used a workaround for Crawler4j bug)");
-			UrlUtils.doajResultPageLinks ++;
-			UrlUtils.logUrl(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, after matching to the Results-directory: \"doaj.org/toc/\".");
-			return;
-		}
-		else if ( pageUrl.contains("ojs.ifnmu.edu.ua") ) {	// Re-check here for these deep-crawling docPages.
-			UrlUtils.ifnmuDeepCrawlingPages ++;
-			UrlUtils.logUrl(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, after matching to the increasedCrawlingDepth-site: \"ojs.ifnmu.edu.ua\".");
-			return;
-		}
 		
 		if ( UrlUtils.docUrls.contains(pageUrl) ) {	// If we got into an already-found docUrl, log it and return.
 			logger.debug("Re-crossing the already found url: \"" +  pageUrl + "\"");

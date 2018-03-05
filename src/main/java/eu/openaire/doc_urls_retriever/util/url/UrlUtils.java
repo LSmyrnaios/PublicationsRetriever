@@ -27,16 +27,16 @@ public class UrlUtils
 	
 	public static final Pattern URL_DIRECTORY_FILTER = Pattern.compile(".+\\/(?:login|join|subscr|register|submit|post|import|announcement|feed|about|citation|faq|wiki|support|error|misuse|abuse|notfound|contribute|subscription|advertisers"
 																	+ "|author|editor|license|disclaimer|policies|policy|privacy|terms|sitemap|account|search|statistics|cookie|application|help|law|permission|ethic|contact|survey|wallet"
-																	+ "|template|logo|image|photo).*");
+																	+ "|template|logo|image|photo|profile).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects.
-
+	
 	public static final Pattern PAGE_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|pt|mso|dtl)(?:\\?.+=.+)?$");
 	
     public static final Pattern INNER_LINKS_FILE_EXTENSION_FILTER = Pattern.compile(".+:\\/\\/.+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|pt|xml|mso|dtl)(?:\\?.+=.+)?$");
     // Here don't include .php and relative extensions, since even this can be a docUrl. For example: https://www.dovepress.com/getfile.php?fileID=5337
 	// So, we make a new REGEX for these extensions, this time, without a potential argument in the end (?id=XXX..)
 	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:php|php2|php3|php4|php5|phtml|htm|html|shtml|xht|xhtm|xhtml|xml|aspx|asp|jsp)$");
-
+	
 	public static final Pattern INNER_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+:\\/\\/.+format=(?:xml|htm|html|shtml|xht|xhtm|xhtml).*");
     
     public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile(".+:\\/\\/.*(?:google|goo.gl|gstatic|facebook|twitter|youtube|linkedin|wordpress|s.w.org|ebay|bing|amazon|wikipedia|myspace|yahoo|mail|pinterest|reddit|blog|tumblr"
@@ -44,10 +44,10 @@ public class UrlUtils
 																					+ "|flipboard|instapaper|line.me|telegram|vk|ok.rudouban|baidu|qzone|xing|renren|weibo).*\\/.*");
     
     public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile(".+:\\/\\/[\\w.:-]+(?:\\/)?$");	// Exclude plain domains' urls.
-
+	
     public static final Pattern JSESSIONID_FILTER = Pattern.compile(".+:\\/\\/.+(;(?:JSESSIONID|jsessionid)=.*[?\\w\\W]+$)");
-
-    public static final Pattern DOC_URL_FILTER = Pattern.compile(".+:\\/\\/.+(pdf|download|/doc|document|file|/fulltext|attachment|/paper|cgi/viewcontent.cgi?|viewfile|viewdoc|/get).*");
+	
+    public static final Pattern DOC_URL_FILTER = Pattern.compile(".+:\\/\\/.+(pdf|download|/doc|document|(?:/|[?]|&)file|/fulltext|attachment|/paper|viewfile|viewdoc|/get|cgi/viewcontent.cgi?).*");
     // "DOC_URL_FILTER" works for lowerCase Strings (we make sure they are in lowerCase before we check).
     // Note that we still need to check if it's an alive link and if it's actually a docUrl (though it's mimeType).
     
@@ -57,7 +57,7 @@ public class UrlUtils
 	public static HashSet<String> duplicateUrls = new HashSet<String>();
 	public static HashSet<String> docUrls = new HashSet<String>();
 	public static HashSet<String> knownDocTypes = new HashSet<String>();
-
+	
 	// Counters for certain unwanted domains. We show statistics in the end.
 	public static int elsevierLinks = 0;
 	public static int doajResultPageLinks = 0;
@@ -65,10 +65,9 @@ public class UrlUtils
 	public static int ifnmuDeepCrawlingPages = 0;
 	
 	static {
-			logger.debug("Setting knownDocTypes. Currently testing only \".pdf\" type.");
-			knownDocTypes.add("application/pdf");	// For the moment we care only for the pdf type.
+		logger.debug("Setting knownDocTypes. Currently testing only \".pdf\" type.");
+		knownDocTypes.add("application/pdf");	// For the moment we care only for the pdf type.
 	}
-
 
 	
 	/**
@@ -105,14 +104,17 @@ public class UrlUtils
 			for ( String retrievedUrl : loadedUrlGroup )
 			{
 				String lowerCaseUrl = retrievedUrl.toLowerCase();	// Only for string checking purposes, not supposed to reach any connection.
-
+				
+				if ( matchesCertainUrlTypesAtLoading(retrievedUrl, lowerCaseUrl) )
+					continue;
+				
 				// Remove "jsessionid" for urls. Most of them, if not all, will already be expired.
 				if ( lowerCaseUrl.contains("jsessionid") ) {
 					String noJsessionid;
 					if ( (noJsessionid = UrlUtils.removeJsessionid(retrievedUrl)) != null )	// If it returns null we will NOT lose the value of "retrievedUrl".
 						retrievedUrl = noJsessionid;
 				}
-
+				
 				// Check if it's a duplicate. (if already found before inside or outside the Crawler4j).
 	        	if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
 	        		logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already been seen!");	// DEBUG!
@@ -121,14 +123,6 @@ public class UrlUtils
 	        		continue;
 	        	}
 	        	
-	        	// If this url is of a certain unwanted type, blacklist itand move on.
-				if ( UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() ||UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
-					|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches())
-				{
-					UrlUtils.logUrl(retrievedUrl, "unreachable", "Discarded at loading time, after matching to unwantedType-rules.");
-					continue;	// If this link matches certain blackListed criteria, move on..
-				}
-
 				CrawlerController.controller.addSeed(retrievedUrl);	// If this is not a valid url, Crawler4j will throw it away by itself.
 				
 			}// end for-loop
@@ -138,6 +132,41 @@ public class UrlUtils
 		// If we decide to use the MLA, then initialize it.
 		if ( MachineLearning.useMLA )
 			new MachineLearning();
+	}
+	
+	
+	/**
+	 * This method takes the "retrievedUrl" from the inputFile and the "lowerCaseUrl" that comes out the retrieved one.
+	 * It then checks if the "lowerCaseUrl" matched certain criteria representing the unwanted urls' types. It uses the "retrievedUrl" for proper logging.
+	 * If these criteria match, then it logs the url and returns "true", otherwise, it returns "false".
+	 * @param lowerCaseUrl
+	 * @return true/false
+	 */
+	public static boolean matchesCertainUrlTypesAtLoading(String retrievedUrl, String lowerCaseUrl)
+	{
+		if ( lowerCaseUrl.contains("doaj.org/toc/") ) {	// Avoid resultPages.
+			UrlUtils.doajResultPageLinks ++;
+			UrlUtils.logUrl(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the Results-directory: \"doaj.org/toc/\".");
+			return true;
+		}
+		else if ( lowerCaseUrl.contains("dlib.org") ) {    // Avoid HTML docUrls.
+			UrlUtils.dlibHtmlDocUrls ++;
+			UrlUtils.logUrl(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the HTML-docUrls site: \"dlib.org\".");
+			return true;
+		}
+		else if ( lowerCaseUrl.contains("ojs.ifnmu.edu.ua") ) {	// Avoid crawling in larger depth.
+			UrlUtils.ifnmuDeepCrawlingPages ++;
+			UrlUtils.logUrl(retrievedUrl,"unreachable", "Discarded at loading time, after matching to the increasedCrawlingDepth-site: \"ojs.ifnmu.edu.ua\".");
+			return true;
+		}
+		else if ( UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() ||UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
+				|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches())
+		{
+			UrlUtils.logUrl(retrievedUrl, "unreachable", "Discarded at loading time, after matching to unwantedType-regex-rules.");
+			return true;
+		}
+		else
+			return false;
 	}
 
 
@@ -162,7 +191,7 @@ public class UrlUtils
             sumOfDocsFound ++;
 
             // Gather data for the MLA, if we, or the program itself, decide so.
-            if ( MachineLearning.useMLA )
+            if ( MachineLearning.useMLA )	// TODO - If later we want to enable re-starting of MLA, we would want to ALWAYS collect data.
 				MachineLearning.gatherMLData(finalDocUrl);
 
             docUrls.add(finalDocUrl);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.

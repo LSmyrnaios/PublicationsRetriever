@@ -5,8 +5,9 @@ import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+// Used for testing with non-standard input/output.
 /*
- * Used for testing with non-standard input/output.
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -27,7 +28,8 @@ public class DocUrlsRetriever
     {
     	// Use test input/output.
 		/*try {
-			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testRandomNewList100.csv")), new FileOutputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testOutputFile.json")));
+			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testRandomNewList100.csv")),
+							new FileOutputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testOutputFile.json")));
 		} catch (FileNotFoundException e) {
 			logger.error("InputFile not found!", e);
 			System.exit(-3);
