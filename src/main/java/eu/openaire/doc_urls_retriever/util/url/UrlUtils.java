@@ -50,7 +50,9 @@ public class UrlUtils
     // "DOC_URL_FILTER" works for lowerCase Strings (we make sure they are in lowerCase before we check).
     // Note that we still need to check if it's an alive link and if it's actually a docUrl (though it's mimeType).
 	
-    public static int sumOfDocsFound = 0;	// Change it back to simple int if finally in singleThread mode
+	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("([\\w]+\\/[\\w]+)(?:;[\\s]*[\\w]+\\=.+)?");
+	
+	public static int sumOfDocsFound = 0;	// Change it back to simple int if finally in singleThread mode
 	public static long inputDuplicatesNum = 0;
 	
 	public static HashSet<String> duplicateUrls = new HashSet<String>();
@@ -213,9 +215,22 @@ public class UrlUtils
      */
     public static boolean hasDocMimeType(String linkStr, String mimeType)
     {
-		if ( knownDocTypes.contains(mimeType) )
+		String plainMimeType = mimeType;	// Make sure we don't cause any NPE later on..
+    	if ( mimeType.contains("charset") )
+		{
+			plainMimeType = removeCharsetFromMimeType(mimeType);
+			
+			if ( plainMimeType == null ) {    // If there was any error removing the charset, still try to save any docMimeType (currently pdf-only).
+				if (mimeType.contains("pdf"))
+					return true;
+				else
+					return false;
+			}
+		}
+		
+		if ( knownDocTypes.contains(plainMimeType) )
             return true;
-        else if ( mimeType.equals("application/octet-stream") && linkStr.toLowerCase().contains("pdf") )
+        else if ( plainMimeType.equals("application/octet-stream") && linkStr.toLowerCase().contains("pdf") )
             // This is a special case. (see: "https://kb.iu.edu/d/agtj")
             // TODO - When we will accept more docTypes, match it against "DOC_URL_FILTER" instead of just "pdf".
             return true;
@@ -223,6 +238,34 @@ public class UrlUtils
             return false;
     }
     
+	
+	/**
+	 * This method receives the mimeType and returns it without the "charset" part.
+	 * If there is any error, it returns null.
+	 * @param mimeType
+	 * @return charset-free mimeType
+	 */
+	public static String removeCharsetFromMimeType(String mimeType)
+	{
+		String plainMimeType = null;
+		
+		Matcher mimeMatcher = UrlUtils.MIME_TYPE_FILTER.matcher(mimeType);
+		if ( mimeMatcher.matches() )
+		{
+			plainMimeType = mimeMatcher.group(1);
+			if ( plainMimeType == null || plainMimeType.isEmpty() ) {
+				logger.warn("Unexpected null or empty value returned by \"mimeMatcher.group(1)\" for mimeType: \"" + mimeType + "\".");
+				return null;
+			}
+		}
+		else {
+			logger.warn("Unexpected MIME_TYPE_FILTER's (" + mimeMatcher.toString() + ") mismatch for mimeType: \"" + mimeType + "\"");
+			return null;
+		}
+		
+		return plainMimeType;
+	}
+	
 	
 	/**
 	 * This method returns the domain of the given url, in lowerCase (for better comparison).
