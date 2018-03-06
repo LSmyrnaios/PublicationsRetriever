@@ -1,4 +1,4 @@
-package eu.openaire.doc_urls_retriever.crawler;
+package eu.openaire.doc_urls_retriever.util.url;
 
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 
