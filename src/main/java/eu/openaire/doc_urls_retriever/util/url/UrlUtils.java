@@ -50,7 +50,7 @@ public class UrlUtils
     // "DOC_URL_FILTER" works for lowerCase Strings (we make sure they are in lowerCase before we check).
     // Note that we still need to check if it's an alive link and if it's actually a docUrl (though it's mimeType).
 	
-	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("([\\w]+\\/[\\w]+)(?:;[\\s]*[\\w]+\\=.+)?");
+	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("([\\w]+\\/[\\w\\-\\.]+)(?:;[\\s]*[\\w]+\\=.+)?");
 	
 	public static int sumOfDocsFound = 0;	// Change it back to simple int if finally in singleThread mode
 	public static long inputDuplicatesNum = 0;
@@ -106,7 +106,7 @@ public class UrlUtils
 			{
 				String lowerCaseUrl = retrievedUrl.toLowerCase();	// Only for string checking purposes, not supposed to reach any connection.
 				
-				if ( matchesCertainUrlTypesAtLoading(retrievedUrl, lowerCaseUrl) )
+				if ( matchesUnwantedUrlTypesAtLoading(retrievedUrl, lowerCaseUrl) )
 					continue;
 				
 				// Remove "jsessionid" for urls. Most of them, if not all, will already be expired.
@@ -117,7 +117,7 @@ public class UrlUtils
 	        	if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
 	        		logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already been seen!");	// DEBUG!
 	        		UrlUtils.inputDuplicatesNum ++;
-	        		UrlUtils.logUrl(retrievedUrl, "duplicate", "Discarded at loading time, as it's a duplicate.");
+	        		UrlUtils.logTriple(retrievedUrl, "duplicate", "Discarded at loading time, as it's a duplicate.");
 	        		continue;
 	        	}
 	        	
@@ -140,27 +140,27 @@ public class UrlUtils
 	 * @param lowerCaseUrl
 	 * @return true/false
 	 */
-	public static boolean matchesCertainUrlTypesAtLoading(String retrievedUrl, String lowerCaseUrl)
+	public static boolean matchesUnwantedUrlTypesAtLoading(String retrievedUrl, String lowerCaseUrl)
 	{
 		if ( lowerCaseUrl.contains("doaj.org/toc/") ) {	// Avoid resultPages.
 			UrlUtils.doajResultPageLinks ++;
-			UrlUtils.logUrl(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the Results-directory: \"doaj.org/toc/\".");
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the Results-directory: \"doaj.org/toc/\".");
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("dlib.org") ) {    // Avoid HTML docUrls.
 			UrlUtils.dlibHtmlDocUrls ++;
-			UrlUtils.logUrl(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the HTML-docUrls site: \"dlib.org\".");
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the HTML-docUrls site: \"dlib.org\".");
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("ojs.ifnmu.edu.ua") ) {	// Avoid crawling in larger depth.
 			UrlUtils.ifnmuDeepCrawlingPages ++;
-			UrlUtils.logUrl(retrievedUrl,"unreachable", "Discarded at loading time, after matching to the increasedCrawlingDepth-site: \"ojs.ifnmu.edu.ua\".");
+			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to the increasedCrawlingDepth-site: \"ojs.ifnmu.edu.ua\".");
 			return true;
 		}
 		else if ( UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() ||UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
 				|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches())
 		{
-			UrlUtils.logUrl(retrievedUrl, "unreachable", "Discarded at loading time, after matching to unwantedType-regex-rules.");
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to unwantedType-regex-rules.");
 			return true;
 		}
 		else
@@ -174,18 +174,19 @@ public class UrlUtils
      * @param initialDocUrl
      * @param errorCause
      */
-    public static void logUrl(String sourceUrl, String initialDocUrl, String errorCause)
+    public static void logTriple(String sourceUrl, String initialDocUrl, String errorCause)
     {
         String finalDocUrl = initialDocUrl;
 		
         if ( !finalDocUrl.equals("unreachable") && !finalDocUrl.equals("duplicate") )	// If we have reached a docUrl..
         {
             // Remove "jsessionid" for urls for "cleaner" output.
-            if ( finalDocUrl.contains("jsessionid") || finalDocUrl.contains("JSESSIONID") )
-                if ( (finalDocUrl = UrlUtils.removeJsessionid(initialDocUrl)) == null )	// If there is problem removing the "jsessionid" and it return "null", reassign the initial value.
-                    finalDocUrl = initialDocUrl;
+			String lowerCaseUrl = finalDocUrl.toLowerCase();
+            if ( lowerCaseUrl.contains("jsessionid") )
+                finalDocUrl = UrlUtils.removeJsessionid(initialDocUrl);
 			
             logger.debug("docUrl found: <" + finalDocUrl + ">");
+            
             sumOfDocsFound ++;
 			
             // Gather data for the MLA, if we, or the program itself, decide so.
@@ -196,13 +197,13 @@ public class UrlUtils
         }
         else if ( !finalDocUrl.equals("duplicate") )	{// Else if this url is not a docUrl and has not been processed before..
             duplicateUrls.add(sourceUrl);	 // Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future..
-        }	// We don't add docUrls here, as we want them to be separate for checking purposes/
+        }	// We don't add docUrls here, as we want them to be separate for checking purposes.
 		
         //logger.debug("docUrl received in \"UrlUtils.logUrl()\": "+  docUrl);	// DEBUG!
 		
         FileUtils.tripleToBeLoggedOutputList.add(new TripleToBeLogged(sourceUrl, finalDocUrl, errorCause));	// Log it to be written later.
 		
-        if ( FileUtils.tripleToBeLoggedOutputList.size() == FileUtils.groupCount )	// Write to file every time we have a group of <groupCount> urls' sets.
+        if ( FileUtils.tripleToBeLoggedOutputList.size() == FileUtils.groupCount )	// Write to file every time we have a group of <groupCount> triples.
             FileUtils.writeToFile();
     }
 

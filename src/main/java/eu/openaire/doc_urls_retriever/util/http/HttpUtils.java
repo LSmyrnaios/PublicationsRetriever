@@ -53,15 +53,15 @@ public class HttpUtils
 			if ( domainStr == null )	// No info about domainStr from the calling method.. we have to find it here.
 				if ( (domainStr = UrlUtils.getDomainStr(resourceURL) ) == null)
 					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
-
+			
 			conn = HttpUtils.openHttpConnection(resourceURL, domainStr);
-
+			
 			int responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
 			if ( responceCode < 200 || responceCode > 299 )    // If not an "HTTP SUCCESS"..
 			{
 				conn = HttpUtils.handleRedirects(conn, responceCode, domainStr);	// Take care of redirects, as well as some connectivity problems.
 			}
-
+			
 			// Check if we are able to find the mime type.
 			String mimeType = null;
 			if ( (mimeType = conn.getContentType()) == null ) {
@@ -69,10 +69,10 @@ public class HttpUtils
 					logger.warn("Could not find mimeType for " + conn.getURL().toString());
 				throw new RuntimeException();
 			}
-
+			
 			String finalUrlStr = conn.getURL().toString();
 			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType) ) {
-				UrlUtils.logUrl(currentPage, finalUrlStr, "");	// we send the urls, before and after potential redirections.
+				UrlUtils.logTriple(currentPage, finalUrlStr, "");	// we send the urls, before and after potential redirections.
 				return true;
 			}
 		} catch (IOException e) {
@@ -87,7 +87,7 @@ public class HttpUtils
 			if ( conn != null )
 				conn.disconnect();
 		}
-
+		
 		return false;
 	}
 
