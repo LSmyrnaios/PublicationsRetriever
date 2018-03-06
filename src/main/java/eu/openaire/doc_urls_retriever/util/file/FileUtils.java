@@ -4,7 +4,7 @@ import java.io.*;
 
 import java.util.*;
 
-import eu.openaire.doc_urls_retriever.crawler.TripleToBeLogged;
+import eu.openaire.doc_urls_retriever.util.url.TripleToBeLogged;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

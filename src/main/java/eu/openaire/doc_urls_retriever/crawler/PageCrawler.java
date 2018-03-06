@@ -73,7 +73,7 @@ public class PageCrawler extends WebCrawler
 	public void visit(Page page)
 	{
 		String pageUrl = page.getWebURL().getURL();
-
+		
 		logger.debug("Checking pageUrl: \"" + pageUrl + "\".");
 		
 		String currentPageDomain = UrlUtils.getDomainStr(pageUrl);
@@ -103,7 +103,7 @@ public class PageCrawler extends WebCrawler
 	    // Check if we can use AND if we should run, the MLA.
 		if ( MachineLearning.useMLA )
 			if ( MachineLearning.shouldRunMLA() )
-	    		if (MachineLearning.guessInnerDocUrlUsingML(pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
+	    		if (MachineLearning.guessInnerDocUrlUsingML(pageUrl) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
     				return;	// If we were able to find the right path.. and hit a docUrl successfully.. return.
         
 	    Set<WebURL> currentPageLinks = page.getParseData().getOutgoingUrls();

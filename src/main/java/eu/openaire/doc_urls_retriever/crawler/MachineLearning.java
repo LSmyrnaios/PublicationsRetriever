@@ -21,8 +21,8 @@ public class MachineLearning
 {
 	private static final Logger logger = LoggerFactory.getLogger(MachineLearning.class);
 	
-	public static boolean useMLA = true;	// Should we try the experimental-M.L.A.? This is intended to be like a "global switch", to use or not to use the MLA,  throughout the program's execution.
-	public static SetMultimap<String, String> successDomainPathsMultiMap = HashMultimap.create();	// Holds multiple values for any key, if a domain(key) has many different paths (values) for doc links.
+	public static final boolean useMLA = true;	// Should we try the experimental-M.L.A.? This is intended to be like a "global switch", to use or not to use the MLA,  throughout the program's execution.
+	public static SetMultimap<String, String> successPathsMultiMap = HashMultimap.create();	// Holds multiple values for any key, if a docPagePath(key) has many different docUrlPaths(values) for doc links.
 	public static long docUrlsFoundByMLA = 0;
 	// If we later want to show statistics, we should take into account only the number of the urls to which the MLA was tested against, not all of the urls in the inputFile.
 	
@@ -104,7 +104,7 @@ public class MachineLearning
 			if ( curSuccessRate >= leastSuccessPercentageForMLA )	// After the safe-period, continue as long as the success-rate is high.
 				return true;
 			else {
-				logger.debug("MLA's success rate is lower than the satisfying one (" + leastSuccessPercentageForMLA + "). Entering \"sleepMode\"...");
+				logger.debug("MLA's success-rate is lower than the satisfying one (" + leastSuccessPercentageForMLA + "). Entering \"sleepMode\"...");
 				latestNumOfUrlsBeforePauseMLA = PageCrawler.totalPagesReachedCrawling;
 				isInSleepMode = true;
 				return false;
@@ -133,38 +133,32 @@ public class MachineLearning
 	
 	
 	/**
-	 * This method gathers domain and path data, for succesfull docUrl-found-cases.
-	 * This data is used by "UrlUtils.guessInnerDocUrl()" M.L.A. (Machine Learning Algorithm).
-	 * @param urlStr
+	 * This method gathers docPagePath and docUrlPath data, for succesfull docUrl-found-cases.
+	 * This data is used by "UrlUtils.guessInnerDocUrl()".
+	 * @param docPage
+	 * @param docUrl
 	 */
-	public static void gatherMLData(String urlStr)
+	public static void gatherMLData(String docPage, String docUrl)
 	{
-		// Get its domain and path and put it inside "successDomainPathsMultiMap".
-		String domainStr = null;
-		String pathStr = null;
+		// Get the paths of the docPage and the docUrl and put them inside "successDomainPathsMultiMap".
 		
-		Matcher matcher = UrlUtils.URL_TRIPLE.matcher(urlStr);
-		if ( matcher.matches() )
+		String docPagePath = UrlUtils.getPathStr(docPage);
+		if ( docPagePath == null )
+			return;
+		
+		String docUrlPath = null;
+		if ( docPage.equals(docUrl) )	// It will be equal if the "docPage" is a docUrl itself.
+			docUrlPath = docPagePath;
+		else
 		{
-			domainStr = matcher.group(2);	// Group <2> is the DOMAIN.
-			if ( (domainStr == null) || domainStr.isEmpty() ) {
-				logger.warn("Unexpected null or empty value returned by \"URL_TRIPLE.group(2)\"");
+			docUrlPath = UrlUtils.getPathStr(docPage);
+			if ( docUrlPath == null )
 				return;
-			}
-			
-			pathStr = matcher.group(1);	// group <1> is the PATH.
-			if ( (pathStr == null) || pathStr.isEmpty() ) {
-				logger.warn("Unexpected null or empty value returned by \"URL_TRIPLE.group(1)\"");
-				return;
-			}
-			
-			MachineLearning.timesGatheredData ++;
-			
-			successDomainPathsMultiMap.put(domainStr.toLowerCase(), pathStr);	// Add this pair in "successDomainPathsMultiMap", if the key already exists then it will just add one more value to that key.
 		}
-		else {
-			logger.warn("Unexpected matcher's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
-		}
+		
+		MachineLearning.successPathsMultiMap.put(docPagePath, docUrlPath);	// Add this pair in "successDomainPathsMultiMap", if the key already exists then it will just add one more value to that key.
+		
+		MachineLearning.timesGatheredData ++;
 	}
 	
 	
@@ -175,38 +169,41 @@ public class MachineLearning
 	 * Disclaimer: This is still in experimental stage.
 	 * @param pageUrl
 	 * @return true / false
-	 * @throws RuntimeException
 	 */
-	public static boolean guessInnerDocUrlUsingML(String pageUrl, String domainStr)
+	public static boolean guessInnerDocUrlUsingML(String pageUrl)
 	{
-		Collection<String> knownPaths;
-		StringBuilder strB = new StringBuilder(150);
-		String guessedDocUrl = null;
-		String docIdStr = null;
+		String pagePath = null;
+		Matcher matcher = UrlUtils.URL_TRIPLE.matcher(pageUrl);
+		if ( !matcher.matches() ) {
+			logger.warn("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + pageUrl + "\"");
+			return false;
+		}
 		
-		if ( successDomainPathsMultiMap.containsKey(domainStr) )	// If this domain is already logged go check for previous succesfull paths, if not logged, then return..
+		pagePath = matcher.group(1);	// Group <1> is the PATH.
+		if ( (pagePath == null) || pagePath.isEmpty() ) {
+			logger.warn("Unexpected null or empty value returned by \"matcher.group(1)\"");
+			return false;
+		}
+		
+		if ( successPathsMultiMap.containsKey(pagePath) )	// If this page's path is already logged, go check for previous succesfull docUrl's paths, if not logged, then return..
 		{
-			Matcher matcher = UrlUtils.URL_TRIPLE.matcher(pageUrl);
-			if ( matcher.matches() ) {
-				docIdStr = matcher.group(3);	// group <3> is the "ID".
-				if ( (docIdStr == null) || docIdStr.isEmpty() ) {
-					logger.debug("No available ID information in url: \"" + pageUrl + "\"");
-					return false;	// The docUrl can't be guessed in this case.
-				}
-			}
-			else {
-				logger.warn("Unexpected matcher's (" + matcher.toString() + ") mismatch for url: \"" + pageUrl + "\"");
-				return false;	// We don't add the empty string here, as we are used to handle this in the calling classes.
+			String docIdStr = matcher.group(3);	// Group <3> is the ID.
+			if ( (docIdStr == null) || docIdStr.isEmpty() ) {
+				logger.warn("Unexpected null or empty value returned by \"matcher.group(3)\" for url: \"" + pageUrl + "\".");
+				return false;
 			}
 			
 			//MachineLearning.urlsCheckedWithMLA ++;
 			
-			knownPaths = successDomainPathsMultiMap.get(domainStr);	// Get all available paths for this domain, to try them along with current ID.
+			StringBuilder strB = new StringBuilder(150);
+			String guessedDocUrl = null;
 			
-			for ( String knownPath : knownPaths )
+			Collection<String> knownDocUrlPaths = successPathsMultiMap.get(pagePath);	// Get all available docUrlpaths for this docPagePath, to try them along with current ID.
+			
+			for ( String knownDocUrlPath : knownDocUrlPaths )
 			{
 				// For every available docPath for this domain construct the expected docLink..
-				strB.append(knownPath);
+				strB.append(knownDocUrlPath);
 				strB.append(docIdStr);
 				strB.append(".pdf");
 				
@@ -223,12 +220,12 @@ public class MachineLearning
 				try {
 					logger.debug("Going to check guessedDocUrl: " + guessedDocUrl +"\", made out from initialUrl: \"" + pageUrl + "\"");
 					
-					if ( HttpUtils.connectAndCheckMimeType(pageUrl, guessedDocUrl, domainStr) ) {
+					if ( HttpUtils.connectAndCheckMimeType(pageUrl, guessedDocUrl, null) ) {
 						logger.debug("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
 						MachineLearning.docUrlsFoundByMLA ++;
 						return true;	// Note that we have already add it in the output links inside "connectAndCheckMimeType()".
 					}
-					logger.debug("Not valid docUr after trying guessedDocUrl: " + guessedDocUrl + "\"");
+					logger.debug("Not valid docUrl after trying guessedDocUrl: " + guessedDocUrl + "\"");
 				} catch (Exception e) {
 					// No special handling here, neither logging.. since it's expected that some checks will fail.
 				}

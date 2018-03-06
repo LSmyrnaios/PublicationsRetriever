@@ -6,7 +6,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
-import eu.openaire.doc_urls_retriever.crawler.TripleToBeLogged;
 import org.apache.commons.lang3.StringUtils;
 
 import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
@@ -50,7 +49,7 @@ public class UrlUtils
     public static final Pattern DOC_URL_FILTER = Pattern.compile(".+:\\/\\/.+(pdf|download|/doc|document|(?:/|[?]|&)file|/fulltext|attachment|/paper|viewfile|viewdoc|/get|cgi/viewcontent.cgi?).*");
     // "DOC_URL_FILTER" works for lowerCase Strings (we make sure they are in lowerCase before we check).
     // Note that we still need to check if it's an alive link and if it's actually a docUrl (though it's mimeType).
-    
+	
     public static int sumOfDocsFound = 0;	// Change it back to simple int if finally in singleThread mode
 	public static long inputDuplicatesNum = 0;
 	
@@ -109,11 +108,8 @@ public class UrlUtils
 					continue;
 				
 				// Remove "jsessionid" for urls. Most of them, if not all, will already be expired.
-				if ( lowerCaseUrl.contains("jsessionid") ) {
-					String noJsessionid;
-					if ( (noJsessionid = UrlUtils.removeJsessionid(retrievedUrl)) != null )	// If it returns null we will NOT lose the value of "retrievedUrl".
-						retrievedUrl = noJsessionid;
-				}
+				if ( lowerCaseUrl.contains("jsessionid") )
+					retrievedUrl = UrlUtils.removeJsessionid(retrievedUrl);
 				
 				// Check if it's a duplicate. (if already found before inside or outside the Crawler4j).
 	        	if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
@@ -179,31 +175,31 @@ public class UrlUtils
     public static void logUrl(String sourceUrl, String initialDocUrl, String errorCause)
     {
         String finalDocUrl = initialDocUrl;
-
+		
         if ( !finalDocUrl.equals("unreachable") && !finalDocUrl.equals("duplicate") )	// If we have reached a docUrl..
         {
             // Remove "jsessionid" for urls for "cleaner" output.
             if ( finalDocUrl.contains("jsessionid") || finalDocUrl.contains("JSESSIONID") )
                 if ( (finalDocUrl = UrlUtils.removeJsessionid(initialDocUrl)) == null )	// If there is problem removing the "jsessionid" and it return "null", reassign the initial value.
                     finalDocUrl = initialDocUrl;
-
+			
             logger.debug("docUrl found: <" + finalDocUrl + ">");
             sumOfDocsFound ++;
-
+			
             // Gather data for the MLA, if we, or the program itself, decide so.
-            if ( MachineLearning.useMLA )	// TODO - If later we want to enable re-starting of MLA, we would want to ALWAYS collect data.
-				MachineLearning.gatherMLData(finalDocUrl);
-
+            if ( MachineLearning.useMLA )
+				MachineLearning.gatherMLData(sourceUrl, finalDocUrl);
+			
             docUrls.add(finalDocUrl);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
         }
         else if ( !finalDocUrl.equals("duplicate") )	{// Else if this url is not a docUrl and has not been processed before..
             duplicateUrls.add(sourceUrl);	 // Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future..
         }	// We don't add docUrls here, as we want them to be separate for checking purposes/
-
+		
         //logger.debug("docUrl received in \"UrlUtils.logUrl()\": "+  docUrl);	// DEBUG!
-
+		
         FileUtils.tripleToBeLoggedOutputList.add(new TripleToBeLogged(sourceUrl, finalDocUrl, errorCause));	// Log it to be written later.
-
+		
         if ( FileUtils.tripleToBeLoggedOutputList.size() == FileUtils.groupCount )	// Write to file every time we have a group of <groupCount> urls' sets.
             FileUtils.writeToFile();
     }
@@ -217,7 +213,7 @@ public class UrlUtils
      */
     public static boolean hasDocMimeType(String linkStr, String mimeType)
     {
-        if ( knownDocTypes.contains(mimeType) )
+		if ( knownDocTypes.contains(mimeType) )
             return true;
         else if ( mimeType.equals("application/octet-stream") && linkStr.toLowerCase().contains("pdf") )
             // This is a special case. (see: "https://kb.iu.edu/d/agtj")
@@ -247,7 +243,7 @@ public class UrlUtils
 		{
 		    domainStr = matcher.group(2);	// Group <2> is the DOMAIN.
 		    if ( (domainStr == null) || domainStr.isEmpty() ) {
-		    	logger.warn("Unexpected null or empty value returned by \"matcher.group(2)\"");
+		    	logger.warn("Unexpected null or empty value returned by \"matcher.group(2)\" for url: \"" + urlStr + "\".");
 		    	return null;
 		    }
 		}
@@ -274,12 +270,12 @@ public class UrlUtils
 		
 		String pathStr = null;
 		Matcher matcher = URL_TRIPLE.matcher(urlStr);
-
+		
 		if ( matcher.matches() )
 		{
 			pathStr = matcher.group(1);	// Group <1> is the PATH.
 			if ( (pathStr == null) || pathStr.isEmpty() ) {
-				logger.warn("Unexpected null or empty value returned by \"matcher.group(1)\"");
+				logger.warn("Unexpected null or empty value returned by \"matcher.group(1)\" for url: \"" + urlStr + "\".");
 				return null;
 			}
 		}
@@ -287,15 +283,16 @@ public class UrlUtils
 			logger.warn("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
 			return null;
 		}
-
+		
 		return pathStr;
 	}
 
 
 	/**
 	 * This method is responsible for removing the "jsessionid" part of a url.
+	 * If no jsessionId is found, then it returns the string it recieved.
 	 * @param urlStr
-	 * @return
+	 * @return urlWithoutJsessionId
 	 */
 	public static String removeJsessionid(String urlStr)
 	{
@@ -303,13 +300,13 @@ public class UrlUtils
 		
 		String jsessionid = null;
 		
-		Matcher matcher = JSESSIONID_FILTER.matcher(urlStr);
-		if (matcher.matches())
+		Matcher jsessionIdMatcher = JSESSIONID_FILTER.matcher(urlStr);
+		if (jsessionIdMatcher.matches())
 		{
-			jsessionid = matcher.group(1);	// Take only the 1st part of the urlStr, without the jsessionid.
+			jsessionid = jsessionIdMatcher.group(1);	// Take only the 1st part of the urlStr, without the jsessionid.
 		    if ( (jsessionid == null) || jsessionid.isEmpty() ) {
-		    	logger.warn("Unexpected null or empty value returned by \"matcher.group(1)\"");
-		    	return null;
+		    	logger.warn("Unexpected null or empty value returned by \"jsessionIdMatcher.group(1)\" for url: \"" + urlStr + "\"");
+		    	return finalUrl;
 		    }
 		    finalUrl = StringUtils.replace(finalUrl, jsessionid, "");
 		}
