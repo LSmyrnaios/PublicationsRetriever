@@ -28,7 +28,7 @@ public class CrawlerController
 	
 	//public static DocIDServer docIdServer = null;	// Potentially useful when performing checks in urls added in the Crawler.
 	public static Frontier frontier = null;	// Potentially useful to know the number of pages (left to be crawled, are in memory waiting, already prosseced).
-	//public static long urlsReachedCrawler = 0;	// Potentially useful for statistics.
+	public static long urlsReachedCrawler = 0;	// Potentially useful for statistics.
 	
 	
 	
@@ -67,8 +67,11 @@ public class CrawlerController
 
 			UrlUtils.loadAndCheckUrls();
 
-			//CrawlerController.urlsReachedCrawler = CrawlerController.frontier.getNumberOfScheduledPages();	// If wanted for statistics, in the end.
-        	
+			CrawlerController.urlsReachedCrawler = CrawlerController.frontier.getNumberOfScheduledPages();	// If wanted for statistics, in the end.
+			
+			if ( MachineLearning.useMLA )
+				new MachineLearning();
+			
 	        // Start crawling and wait until finished.
 	        controller.start(PageCrawler.class, 1);
 

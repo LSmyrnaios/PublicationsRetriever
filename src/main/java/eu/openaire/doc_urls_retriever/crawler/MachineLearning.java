@@ -43,7 +43,7 @@ public class MachineLearning
 	 */
 	public MachineLearning()
 	{
-		long urlsInCrawler = CrawlerController.frontier.getNumberOfScheduledPages();
+		long urlsInCrawler = CrawlerController.urlsReachedCrawler;
 		logger.debug("Urls added in Crawler: " + urlsInCrawler);
 		
 		// For small input, make sure the least number of urls to check every time is no more than 10% of the input.
@@ -151,7 +151,7 @@ public class MachineLearning
 			docUrlPath = docPagePath;
 		else
 		{
-			docUrlPath = UrlUtils.getPathStr(docPage);
+			docUrlPath = UrlUtils.getPathStr(docUrl);
 			if ( docUrlPath == null )
 				return;
 		}

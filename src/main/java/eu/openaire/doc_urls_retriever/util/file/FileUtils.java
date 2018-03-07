@@ -20,17 +20,17 @@ import org.slf4j.LoggerFactory;
 public class FileUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(FileUtils.class);
-
+	
 	private static Scanner inputScanner;
 	private static PrintStream printStream;
-	public static HashMap<String, String> idAndUrlMappedInput = new HashMap<String, String>();	// Contains the mapped key(id)-value(url) pairs.
+	//public static HashMap<String, String> idAndUrlMappedInput = new HashMap<String, String>();	// Contains the mapped key(id)-value(url) pairs.
 	private static long fileIndex = 0;	// Index in the input file
-	public static boolean skipFirstRow = false;
+	public static final boolean skipFirstRow = true;
 	private static String endOfLine = "\n";
 	public static long unretrievableInputLines = 0;	// For better statistics in the end.
     public static long unretrievableUrlsOnly = 0;
     public static int groupCount = 1000;	// Just for testing.. TODO -> Later increase it..
-
+	
 	public static List<TripleToBeLogged> tripleToBeLoggedOutputList = new ArrayList<>();
 	
 	
@@ -78,9 +78,6 @@ public class FileUtils
 			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
 			
 			FileUtils.fileIndex ++;
-			
-			if ( (FileUtils.fileIndex == 0) && skipFirstRow )
-				continue;
 			
 			if (retrievedLineStr.isEmpty()) {
 				FileUtils.unretrievableInputLines ++;
@@ -228,7 +225,7 @@ public class FileUtils
 			
 			FileUtils.fileIndex ++;
 			
-			if ( (FileUtils.fileIndex == 0) && skipFirstRow )
+			if ( (FileUtils.fileIndex == 1) && skipFirstRow )
 				continue;
 			
 			if ( retrievedLineStr.isEmpty() ) {

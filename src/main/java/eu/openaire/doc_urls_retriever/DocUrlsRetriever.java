@@ -16,8 +16,9 @@ import java.io.FileOutputStream;
 
 
 /**
- * This class has the responsibility to receive the url(s) from an input file and define from it's header, if it's file-ready-download
- * or, it needs further research with html crawler.
+ * This class contains the entry-point of this program. It calls methods to receive the url(s) (docPages) from an input file.
+ * It then define from its HTTP-Header, if it's a download-ready file, or it needs further research with an html crawler.
+ * After crawling is done, the results (docUrls) are written in the output file.
  * @author Lampros A. Smyrnaios
  */
 public class DocUrlsRetriever
@@ -26,9 +27,9 @@ public class DocUrlsRetriever
 	
     public static void main( String[] args )
     {
-    	// Use test input/output.
+    	// Use testing input/output files.
 		/*try {
-			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testUniversalNewList100.csv")),
+			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testUrls100+1.csv")),
 							new FileOutputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testOutputFile.json")));
 		} catch (FileNotFoundException e) {
 			logger.error("InputFile not found!", e);
@@ -53,11 +54,12 @@ public class DocUrlsRetriever
     	}
 		
 		logger.info("Total urls number in the input was: " + inputUrlNum);
+    	logger.info("From which, " + CrawlerController.urlsReachedCrawler + " reached the crawling stage (others were discarded).");
 		logger.info("Total docs found: " + UrlUtils.sumOfDocsFound + " That's about: " + UrlUtils.sumOfDocsFound * (float)100 / inputUrlNum + "%");
 		logger.info("Αbout: " + UrlUtils.elsevierLinks * (float)100 / inputUrlNum + "% (" + UrlUtils.elsevierLinks + " urls) were redirected to the JavaScript site \"elsevier.com\" and were avoided to be crawled.");
     	logger.info("Αbout: " + UrlUtils.doajResultPageLinks * (float)100 / inputUrlNum + "% (" + UrlUtils.doajResultPageLinks + " urls) were \"doaj.org/toc/\" urls, which are resultPages, thus being avoided to be crawled.");
 		logger.info("Αbout: " + UrlUtils.dlibHtmlDocUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.dlibHtmlDocUrls + " urls) were \"dlib.org\" urls, which are docUrls, but, in HTML, thus being avoided to be crawled.");
-		logger.info("About: " + UrlUtils.ifnmuDeepCrawlingPages * (float)100 / inputUrlNum + "% (" + UrlUtils.ifnmuDeepCrawlingPages + " urls) were \"ojs.ifnmu.edu.ua\" urls, which are docPages with their docUrl being deeper inside the server, thus being currently avoided.");
+		logger.info("About: " + UrlUtils.deepCrawlingPages * (float)100 / inputUrlNum + "% (" + UrlUtils.deepCrawlingPages + " urls) were docPages which have their docUrl deeper inside the server, thus being currently avoided.");
 		logger.info("There were: " + UrlUtils.inputDuplicatesNum + " duplicates in the input file." + " That's about: " + UrlUtils.inputDuplicatesNum * (float)100 / inputUrlNum + "%");
 		
         // Then... just close the open streams (imported and exported content) and exit.

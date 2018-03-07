@@ -50,7 +50,7 @@ public class UrlUtils
     // "DOC_URL_FILTER" works for lowerCase Strings (we make sure they are in lowerCase before we check).
     // Note that we still need to check if it's an alive link and if it's actually a docUrl (though it's mimeType).
 	
-	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("([\\w]+\\/[\\w\\-\\.]+)(?:;[\\s]*[\\w]+\\=.+)?");
+	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("([\\w]+\\/[\\w\\+\\-\\.]+)(?:;[\\s]*[\\w]+\\=.+)?");
 	
 	public static int sumOfDocsFound = 0;	// Change it back to simple int if finally in singleThread mode
 	public static long inputDuplicatesNum = 0;
@@ -63,7 +63,7 @@ public class UrlUtils
 	public static int elsevierLinks = 0;
 	public static int doajResultPageLinks = 0;
 	public static int dlibHtmlDocUrls = 0;
-	public static int ifnmuDeepCrawlingPages = 0;
+	public static int deepCrawlingPages = 0;
 	
 	static {
 		logger.debug("Setting knownDocTypes. Currently testing only \".pdf\" type.");
@@ -125,11 +125,6 @@ public class UrlUtils
 				
 			}// end for-loop
         }// end while-loop
-		
-		
-		// If we decide to use the MLA, then initialize it.
-		if ( MachineLearning.useMLA )
-			new MachineLearning();
 	}
 	
 	
@@ -152,9 +147,9 @@ public class UrlUtils
 			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the HTML-docUrls site: \"dlib.org\".");
 			return true;
 		}
-		else if ( lowerCaseUrl.contains("ojs.ifnmu.edu.ua") ) {	// Avoid crawling in larger depth.
-			UrlUtils.ifnmuDeepCrawlingPages ++;
-			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to the increasedCrawlingDepth-site: \"ojs.ifnmu.edu.ua\".");
+		else if ( lowerCaseUrl.contains("ojs.ifnmu.edu.ua") || lowerCaseUrl.contains("spilplus.journals.ac.za") ) {	// Avoid crawling in larger depth.
+			UrlUtils.deepCrawlingPages++;
+			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to an increasedCrawlingDepth-site.");
 			return true;
 		}
 		else if ( UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() ||UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()

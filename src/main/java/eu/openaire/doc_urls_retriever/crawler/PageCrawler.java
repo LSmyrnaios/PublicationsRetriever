@@ -50,15 +50,17 @@ public class PageCrawler extends WebCrawler
 	public boolean shouldNotCheckInnerLink(String referringPageDomain, String linkStr)
 	{
 		String lowerCaseLink = linkStr.toLowerCase();
-
-		return	!lowerCaseLink.contains(referringPageDomain)	// Don't check this link if it belongs in a different domain than the referringPage's one.
-				|| lowerCaseLink.contains("mailto:")
+		
+		return	lowerCaseLink.contains("mailto:")
 				|| UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.INNER_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.INNER_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseLink).matches();
+		
+		// The following check is obsolete here, as we already use it inside "visit()" method. Still keep it here, as it makes our intentions clearer.
+		// !lowerCaseLink.contains(referringPageDomain)	// Don't check this link if it belongs in a different domain than the referringPage's one.
 	}
 	
 	
@@ -77,10 +79,16 @@ public class PageCrawler extends WebCrawler
 		logger.debug("Checking pageUrl: \"" + pageUrl + "\".");
 		
 		String currentPageDomain = UrlUtils.getDomainStr(pageUrl);
+		if ( currentPageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage.
+			logger.debug("Problematic URL in \"visit()\": \"" +  pageUrl + "\"");
+			UrlUtils.logTriple(pageUrl, pageUrl, "Discarded in visit() method, after the occurrence of a domain-retrieval error.");
+			return;
+		}
+		
 		HttpUtils.lastConnectedHost = currentPageDomain;	// The crawler opened a connection to download this page.
 		
 		if ( UrlUtils.docUrls.contains(pageUrl) ) {	// If we got into an already-found docUrl, log it and return.
-			logger.debug("Re-crossing the already found url: \"" +  pageUrl + "\"");
+			logger.debug("Re-crossing the already found docUrl: \"" +  pageUrl + "\"");
 			UrlUtils.logTriple(pageUrl, pageUrl, "");	// No error here.
 			return;
 		}
@@ -132,21 +140,24 @@ public class PageCrawler extends WebCrawler
                 UrlUtils.duplicateUrls.add(currentLink);
                 continue;
             }
-
+			
+			if ( !urlToCheck.contains(currentPageDomain) )	// Make sure we check only links from current page's domain.
+				continue;
+			
             if ( UrlUtils.duplicateUrls.contains(urlToCheck) )
                 continue;
-
+			
             if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
-				logger.debug("Re-crossing the already found url: \"" +  urlToCheck + "\"");
+				logger.debug("Re-crossing the already found docUrl: \"" +  urlToCheck + "\"");
                 UrlUtils.logTriple(pageUrl, urlToCheck, "");	// No error here.
                 return;
             }
-
+            
             Matcher docUrlMatcher = UrlUtils.DOC_URL_FILTER.matcher(urlToCheck.toLowerCase());
             if ( docUrlMatcher.matches() )
             {
                 try {
-                    if ( HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, null) ) {		// We log the docUrl inside this method.
+                    if ( HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, currentPageDomain) ) {		// We log the docUrl inside this method.
                         //logger.debug("\"DOC_URL_FILTER\" revealed a docUrl in pageUrl: \"" + pageUrl + "\", after matching to: \"" + docUrlMatcher.group(1) + "\"");
                         return;
                     }
@@ -157,9 +168,9 @@ public class PageCrawler extends WebCrawler
                     continue;
                 }
             }
-
+			
 			curLinksStr.add(urlToCheck);	// Keep the string version of this link, in order not to make the transformation later..
-
+			
 		}// end for-loop
 
 		// If we reached here, it means that we couldn't find a docUrl the quick way.. so we have to check some (we exclude lots of them) of the inner links one by one.
@@ -175,7 +186,7 @@ public class PageCrawler extends WebCrawler
 			}
 
 			try {
-				if ( HttpUtils.connectAndCheckMimeType(pageUrl, currentLink, null) )	// We log the docUrl inside this method.
+				if ( HttpUtils.connectAndCheckMimeType(pageUrl, currentLink, currentPageDomain) )	// We log the docUrl inside this method.
 					return;
 			} catch (RuntimeException e) {
 				// No special handling here.. nor logging..
@@ -235,14 +246,11 @@ public class PageCrawler extends WebCrawler
 			if (curTreatableException > 0)	// If there is a treatable Exception.
 			{
 				String domainStr = UrlUtils.getDomainStr(urlStr);
-				
-				if (curTreatableException == 1) {
-					if (domainStr != null)
-						HttpUtils.blacklistedDomains.add(domainStr);
-				}
-				else // TODO - More checks to be added if more exceptions are treated here in the future.
+				if (domainStr != null)
 				{
-					if (domainStr != null)
+					if (curTreatableException == 1)
+						HttpUtils.blacklistedDomains.add(domainStr);
+					else // TODO - More checks to be added if more exceptions are treated here in the future.
 						HttpUtils.onTimeoutException(domainStr);
 				}
 				
