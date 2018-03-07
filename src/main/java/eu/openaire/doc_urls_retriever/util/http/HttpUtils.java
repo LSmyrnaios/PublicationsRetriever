@@ -23,9 +23,9 @@ public class HttpUtils
 	
 	public static HashSet<String> domainsWithUnsupportedHeadMethod = new HashSet<String>();
 	public static HashSet<String> blacklistedDomains = new HashSet<String>();	// Domains with which we don't want to connect again.
-	public static HashMap<String, Integer> domainsReturned5XX = new HashMap<String, Integer>();	// Domains that have returned 5XX Error Code, and the amount of times they did.
-	public static HashMap<String, Integer> domainsWithTimeoutEx = new HashMap<String, Integer>();
-	public static SetMultimap<String, String> domainsWithPaths403BlackListed = HashMultimap.create();	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
+	public static HashMap<String, Integer> timesDomainsReturned5XX = new HashMap<String, Integer>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
+	public static HashMap<String, Integer> timesDomainsHadTimeoutEx = new HashMap<String, Integer>();
+	public static SetMultimap<String, String> timesDomainsHadPaths403BlackListed = HashMultimap.create();	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
 
 	public static String lastConnectedHost = "";
     public static int politenessDelay = 250;	// Time to wait before connecting to the same host again.
@@ -344,15 +344,15 @@ public class HttpUtils
 		String pathStr = UrlUtils.getPathStr(urlStr);
 		
 		if ( pathStr != null ) {
-			HttpUtils.domainsWithPaths403BlackListed.put(domainStr, pathStr);    // Put the new path to be blocked.
+			HttpUtils.timesDomainsHadPaths403BlackListed.put(domainStr, pathStr);    // Put the new path to be blocked.
 			logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code.");
 			
 			// Block the whole domain if it has more than a certain number of blocked paths.
-			Collection<String> paths = HttpUtils.domainsWithPaths403BlackListed.get(domainStr);
+			Collection<String> paths = HttpUtils.timesDomainsHadPaths403BlackListed.get(domainStr);
 			if ( paths.size() > HttpUtils.numberOf403BlockedPathsBeforeBlocked )
 			{
 				HttpUtils.blacklistedDomains.add(domainStr);	// Block the whole domain itself.
-				HttpUtils.domainsWithPaths403BlackListed.removeAll(domainStr);	// No need to keep its paths anymore.
+				HttpUtils.timesDomainsHadPaths403BlackListed.removeAll(domainStr);	// No need to keep its paths anymore.
 			}
 		}
 	}
@@ -369,13 +369,13 @@ public class HttpUtils
 	 */
 	public static boolean checkIfPathIs403BlackListed(String urlStr, String domainStr)
 	{
-		if ( domainsWithPaths403BlackListed.containsKey(domainStr) )	// If this domain has returned 403 before, check if we have the same path.
+		if ( timesDomainsHadPaths403BlackListed.containsKey(domainStr) )	// If this domain has returned 403 before, check if we have the same path.
 		{
 			String pathStr = UrlUtils.getPathStr(urlStr);
 			if ( pathStr == null )	// If there is a problem retrieving this athStr, return false;
 				return false;
 
-			if ( domainsWithPaths403BlackListed.containsValue(pathStr) )
+			if ( timesDomainsHadPaths403BlackListed.containsValue(pathStr) )
 				return true;
 		}
 		return false;
@@ -384,44 +384,44 @@ public class HttpUtils
 
 	public static void on5XXerrorCode(String domainStr)
 	{
-		if ( blockDomainTypeAfterTimes(HttpUtils.domainsReturned5XX, domainStr, HttpUtils.timesToHave5XXerrorCodeBeforeBlocked) ) {
+		if ( blockDomainTypeAfterTimes(HttpUtils.blacklistedDomains, HttpUtils.timesDomainsReturned5XX, domainStr, HttpUtils.timesToHave5XXerrorCodeBeforeBlocked) )
             logger.debug("Domain: \"" + domainStr + "\" was blocked after returning 5XX Error Code " + HttpUtils.timesToHave5XXerrorCodeBeforeBlocked + " times.");
-            HttpUtils.domainsReturned5XX.remove(domainStr); // No point of holding this domain memory from now on.
-        }
 	}
 
 	
 	public static void onTimeoutException(String domainStr)
 	{
-		if ( blockDomainTypeAfterTimes(HttpUtils.domainsWithTimeoutEx, domainStr, HttpUtils.timesToHaveTimeoutExBeforeBlocked) ) {
+		if ( blockDomainTypeAfterTimes(HttpUtils.blacklistedDomains, HttpUtils.timesDomainsHadTimeoutEx, domainStr, HttpUtils.timesToHaveTimeoutExBeforeBlocked) )
             logger.debug("Domain: \"" + domainStr + "\" was blocked after causing Timeout Exception " + HttpUtils.timesToHaveTimeoutExBeforeBlocked + " times.");
-            HttpUtils.domainsWithTimeoutEx.remove(domainStr);  // No point of holding this domain memory from now on.
-        }
 	}
 
 
     /**
      * This method handles domains which are reaching cases were they can be blocked.
-     * To be blocked they have to never have provided a docUrl (<-- this might need a change).
+	 * It calculates the times they did something and if they reached a red line, it adds them in the blackList provided by the caller.
+	 * After adding it in the blackList, it removes its countings to free-up memory.
 	 * It returns "true", if this domain was blocked, otherwise, "false".
-     * @param domainsHashMap
-     * @param domainStr
-     * @param timesBeforeBlock
-     * @return boolean
+	 * @param blackList
+	 * @param domainsWithTimes
+	 * @param domainStr
+	 * @param timesBeforeBlock
+	 * @return boolean
      */
-	public static boolean blockDomainTypeAfterTimes(HashMap<String, Integer> domainsHashMap, String domainStr, int timesBeforeBlock)
+	public static boolean blockDomainTypeAfterTimes(HashSet<String> blackList, HashMap<String, Integer> domainsWithTimes, String domainStr, int timesBeforeBlock)
 	{
 		int curTimes = 1;
-		if (domainsHashMap.containsKey(domainStr))
-			curTimes += domainsHashMap.get(domainStr).intValue();
-
-		domainsHashMap.put(domainStr, curTimes);
-
+		if (domainsWithTimes.containsKey(domainStr))
+			curTimes += domainsWithTimes.get(domainStr).intValue();
+		
+		domainsWithTimes.put(domainStr, curTimes);
+		
 		if (curTimes > timesBeforeBlock) {
-			blacklistedDomains.add(domainStr);    // Block this domain.
+			blackList.add(domainStr);    // Block this domain.
+			domainsWithTimes.remove(domainStr);	// Remove counting-data.
 			return true;	// It was blocked.
 		}
 		else
 			return false;	// It wasn't blocked.
 	}
+	
 }

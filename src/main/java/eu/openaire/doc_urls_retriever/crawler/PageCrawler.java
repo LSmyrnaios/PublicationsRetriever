@@ -107,11 +107,11 @@ public class PageCrawler extends WebCrawler
 		}
 		
 		PageCrawler.totalPagesReachedCrawling ++;	// Used for M.L.A.'s execution-manipulation.
-
+		
 	    // Check if we can use AND if we should run, the MLA.
 		if ( MachineLearning.useMLA )
-			if ( MachineLearning.shouldRunMLA() )
-	    		if (MachineLearning.guessInnerDocUrlUsingML(pageUrl) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
+			if ( MachineLearning.shouldRunMLA(currentPageDomain) )
+	    		if (MachineLearning.guessInnerDocUrlUsingML(pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
     				return;	// If we were able to find the right path.. and hit a docUrl successfully.. return.
         
 	    Set<WebURL> currentPageLinks = page.getParseData().getOutgoingUrls();

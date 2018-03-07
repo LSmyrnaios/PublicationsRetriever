@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.regex.Matcher;
 
 
@@ -35,6 +37,11 @@ public class MachineLearning
 	private static boolean isInSleepMode = false;
 	private static int timesGatheredData = 0;
 	//private static long urlsCheckedWithMLA = 0;
+	
+	private static HashSet<String> domainsBlockedFromMLA = new HashSet<String>();
+	private static HashMap<String, Integer> timesDomainsFailedInMLA = new HashMap<String, Integer>();
+	private static int timesToFailBeforeBlockedFromMLA = 20;
+	
 	
 	
 	/**
@@ -68,16 +75,21 @@ public class MachineLearning
 	 * Since the MLA is still experimental and it doesn't work on all domains, we take measures to stop running it, if it doesn't succeed.
 	 * It returns "true", either when we don't have reached a specific testing number, or when the MLA was succesfull for most of the previous cases.
 	 * It returns "false", when it still hasn't gathered sufficient data, or when the MLA failed to have a specific success-rate (which leads to "sleep-mode"), or if the MLA is already in "sleep-mode".
+	 * @param domainStr
 	 * @return true/false
 	 */
-	public static boolean shouldRunMLA()
+	public static boolean shouldRunMLA(String domainStr)
 	{
 		if ( isInitialLearningPeriod() )
 			return false;
 		
+		if ( domainsBlockedFromMLA.contains(domainStr) ) {    // Check if this domain is not compatible with the MLA.
+			logger.debug("Avoid running MLA for incompatible domain: \"" + domainStr + "\".");
+			return false;
+		}
+		
 		if ( isInSleepMode )	// If it's currently in sleepMode, check if it should restart.
 		{
-			endOfSleepNumOfUrls = latestNumOfUrlsBeforePauseMLA + urlsToWaitUntilRestartMLA;	// Update num of urls to reach before the "sleep period" ends.
 			if ( shouldRestartMLA() ) {
 				logger.debug("MLA's \"sleepMode\" is finished, it will now restart.");
 				isInSleepMode = false;
@@ -106,6 +118,7 @@ public class MachineLearning
 			else {
 				logger.debug("MLA's success-rate is lower than the satisfying one (" + leastSuccessPercentageForMLA + "). Entering \"sleepMode\"...");
 				latestNumOfUrlsBeforePauseMLA = PageCrawler.totalPagesReachedCrawling;
+				endOfSleepNumOfUrls = latestNumOfUrlsBeforePauseMLA + urlsToWaitUntilRestartMLA;	// Update num of urls to reach before the "sleep period" ends.
 				isInSleepMode = true;
 				return false;
 			}
@@ -168,9 +181,10 @@ public class MachineLearning
 	 * So, before going and checking each and every one of the inner links, we should check if by using known paths that gave docUrls before (for the current spesific domain), we are able to take the docUrl immediately.
 	 * Disclaimer: This is still in experimental stage.
 	 * @param pageUrl
+	 * @param domainStr
 	 * @return true / false
 	 */
-	public static boolean guessInnerDocUrlUsingML(String pageUrl)
+	public static boolean guessInnerDocUrlUsingML(String pageUrl, String domainStr)
 	{
 		String pagePath = null;
 		Matcher matcher = UrlUtils.URL_TRIPLE.matcher(pageUrl);
@@ -218,7 +232,7 @@ public class MachineLearning
 				
 				// Check if it's a truly-alive docUrl.
 				try {
-					logger.debug("Going to check guessedDocUrl: " + guessedDocUrl +"\", made out from initialUrl: \"" + pageUrl + "\"");
+					logger.debug("Going to check guessedDocUrl: " + guessedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");
 					
 					if ( HttpUtils.connectAndCheckMimeType(pageUrl, guessedDocUrl, null) ) {
 						logger.debug("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
@@ -236,6 +250,10 @@ public class MachineLearning
 		}// end if
 		
 		// If we reach here, it means that either there is not available data to guess the docUrl, or that all of the guesses have failed.
+		
+		if ( HttpUtils.blockDomainTypeAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, domainStr, timesToFailBeforeBlockedFromMLA) )
+			logger.debug("Domain: \"" + domainStr + "\" was blocked from being accessed again by the MLA, after proved to be incompatible "
+						+ timesToFailBeforeBlockedFromMLA + " times.");
 		
 		return false;	// We can't find its docUrl.. so we return false and continue by crawling this page.
 	}
