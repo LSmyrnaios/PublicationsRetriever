@@ -140,9 +140,9 @@ public class PageCrawler extends WebCrawler
                 UrlUtils.duplicateUrls.add(currentLink);
                 continue;
             }
-			
-			if ( !urlToCheck.contains(currentPageDomain) )	// Make sure we check only links from current page's domain.
-				continue;
+            
+            if ( !urlToCheck.contains(currentPageDomain) || urlToCheck.contains("site=") )	// Make sure we avoid connecting to different domains.
+            	continue;
 			
             if ( UrlUtils.duplicateUrls.contains(urlToCheck) )
                 continue;
@@ -184,7 +184,7 @@ public class PageCrawler extends WebCrawler
 				UrlUtils.duplicateUrls.add(currentLink);
 				continue;
 			}
-
+			
 			try {
 				if ( HttpUtils.connectAndCheckMimeType(pageUrl, currentLink, currentPageDomain) )	// We log the docUrl inside this method.
 					return;

@@ -162,14 +162,13 @@ public class MachineLearning
 		String docUrlPath = null;
 		if ( docPage.equals(docUrl) )	// It will be equal if the "docPage" is a docUrl itself.
 			docUrlPath = docPagePath;
-		else
-		{
+		else {
 			docUrlPath = UrlUtils.getPathStr(docUrl);
 			if ( docUrlPath == null )
 				return;
 		}
 		
-		MachineLearning.successPathsMultiMap.put(docPagePath, docUrlPath);	// Add this pair in "successDomainPathsMultiMap", if the key already exists then it will just add one more value to that key.
+		MachineLearning.successPathsMultiMap.put(docPagePath, docUrlPath);	// Add this pair in "successPathsMultiMap", if the key already exists then it will just add one more value to that key.
 		
 		MachineLearning.timesGatheredData ++;
 	}
@@ -247,13 +246,18 @@ public class MachineLearning
 				strB.setLength(0);	// Clear the buffer before going to check the next path.
 				
 			}// end for-loop
+			
+			if ( HttpUtils.blockDomainTypeAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, domainStr, timesToFailBeforeBlockedFromMLA) )
+			{
+				logger.debug("Domain: \"" + domainStr + "\" was blocked from being accessed again by the MLA, after proved to be incompatible "
+						+ timesToFailBeforeBlockedFromMLA + " times.");
+				
+				successPathsMultiMap.removeAll(pagePath);	// This domain was blocked, remove non-needed data.
+			}
+			
 		}// end if
 		
 		// If we reach here, it means that either there is not available data to guess the docUrl, or that all of the guesses have failed.
-		
-		if ( HttpUtils.blockDomainTypeAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, domainStr, timesToFailBeforeBlockedFromMLA) )
-			logger.debug("Domain: \"" + domainStr + "\" was blocked from being accessed again by the MLA, after proved to be incompatible "
-						+ timesToFailBeforeBlockedFromMLA + " times.");
 		
 		return false;	// We can't find its docUrl.. so we return false and continue by crawling this page.
 	}

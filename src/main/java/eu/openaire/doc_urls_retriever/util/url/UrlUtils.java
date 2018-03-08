@@ -15,16 +15,17 @@ import org.slf4j.LoggerFactory;
 
 
 /**
+ * This class contains various methods and regexes to interact with URLs.
  * @author Lampros A. Smyrnaios
  */
 public class UrlUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(UrlUtils.class);
 	
-	public final static Pattern URL_TRIPLE = Pattern.compile("(.+:\\/\\/(?:www(?:(?:\\w+)?\\.)?)?([\\w\\.\\-]+)(?:[\\:\\d]+)?\\/(?:.+\\/)?(?:[\\w.-]*[^\\.pdf]\\?[\\w.-]+[^site]=)?)(.+)?");
+	public final static Pattern URL_TRIPLE = Pattern.compile("(.+:\\/\\/(?:www(?:(?:\\w+)?\\.)?)?([\\w\\.\\-]+)(?:[\\:\\d]+)?(?:.*\\/)?(?:[\\w.-]*[^\\.pdf]\\?[\\w.-]+[^site]=)?)(.+)?");
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
-	public static final Pattern URL_DIRECTORY_FILTER = Pattern.compile(".+\\/(?:login|join|subscr|register|submit|post|import|announcement|feed|about|citation|faq|wiki|support|error|misuse|abuse|notfound|contribute|subscription|advertisers"
+	public static final Pattern URL_DIRECTORY_FILTER = Pattern.compile(".+\\/(?:login|join|subscr|register|submit|post|import|bookmark|announcement|feed|about|citation|faq|wiki|support|error|misuse|abuse|notfound|contribute|subscription|advertisers"
 																	+ "|author|editor|license|disclaimer|policies|policy|privacy|terms|sitemap|account|search|statistics|cookie|application|help|law|permission|ethic|contact|survey|wallet"
 																	+ "|template|logo|image|photo|profile).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects.
@@ -270,21 +271,23 @@ public class UrlUtils
 	 */
 	public static String getDomainStr(String urlStr)
 	{
-		 if ( (urlStr == null) || urlStr.isEmpty() ) {
-			logger.error("A null or an empty String was given when called \"getDomainStr()\" method!");
+		String domainStr = null;
+		Matcher matcher = null;
+		
+		try {
+			matcher = URL_TRIPLE.matcher(urlStr);
+		} catch (NullPointerException npe) {	// There should never be an NPE...
+			logger.debug("NPE was thrown after calling \"Matcher\" in \"getDomainStr()\" with \"null\" value!");
 			return null;
 		}
 		
-		String domainStr = null;
-		Matcher matcher = URL_TRIPLE.matcher(urlStr);
-		
 		if ( matcher.matches() )
 		{
-		    domainStr = matcher.group(2);	// Group <2> is the DOMAIN.
-		    if ( (domainStr == null) || domainStr.isEmpty() ) {
-		    	logger.warn("Unexpected null or empty value returned by \"matcher.group(2)\" for url: \"" + urlStr + "\".");
-		    	return null;
-		    }
+			domainStr = matcher.group(2);	// Group <2> is the DOMAIN.
+			if ( (domainStr == null) || domainStr.isEmpty() ) {
+				logger.warn("Unexpected null or empty value returned by \"matcher.group(2)\" for url: \"" + urlStr + "\".");
+				return null;
+			}
 		}
 		else {
 			logger.warn("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
@@ -302,13 +305,15 @@ public class UrlUtils
 	 */
 	public static String getPathStr(String urlStr)
 	{
-		if ( (urlStr == null) || urlStr.isEmpty() ) {
-			logger.error("A null or an empty String was given when called \"getPathStr()\" method!");
+		String pathStr = null;
+		Matcher matcher = null;
+		
+		try {
+			matcher = URL_TRIPLE.matcher(urlStr);
+		} catch (NullPointerException npe) {	// There should never be an NPE...
+			logger.debug("NPE was thrown after calling \"Matcher\" in \"getPathStr()\" with \"null\" value!");
 			return null;
 		}
-		
-		String pathStr = null;
-		Matcher matcher = URL_TRIPLE.matcher(urlStr);
 		
 		if ( matcher.matches() )
 		{
