@@ -45,7 +45,7 @@ public class UrlUtils
     
     public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile(".+:\\/\\/[\\w.:-]+(?:\\/)?$");	// Exclude plain domains' urls.
 	
-    public static final Pattern JSESSIONID_FILTER = Pattern.compile(".+:\\/\\/.+(;(?:JSESSIONID|jsessionid)=.*[?\\w\\W]+$)");
+    public static final Pattern JSESSIONID_FILTER = Pattern.compile("(.+:\\/\\/.+)(?:\\;(?:JSESSIONID|jsessionid)=.+)(\\?.+)");
 	
     public static final Pattern DOC_URL_FILTER = Pattern.compile(".+:\\/\\/.+(pdf|download|/doc|document|(?:/|[?]|&)file|/fulltext|attachment|/paper|viewfile|viewdoc|/get|cgi/viewcontent.cgi?).*");
     // "DOC_URL_FILTER" works for lowerCase Strings (we make sure they are in lowerCase before we check).
@@ -342,22 +342,27 @@ public class UrlUtils
 	{
 		String finalUrl = urlStr;
 		
-		String jsessionid = null;
+		String prejsessionidStr = null;
+		String afterJsessionidStr = null;
 		
 		Matcher jsessionIdMatcher = JSESSIONID_FILTER.matcher(urlStr);
 		if (jsessionIdMatcher.matches())
 		{
-			jsessionid = jsessionIdMatcher.group(1);	// Take only the 1st part of the urlStr, without the jsessionid.
-		    if ( (jsessionid == null) || jsessionid.isEmpty() ) {
+			prejsessionidStr = jsessionIdMatcher.group(1);	// Take only the 1st part of the urlStr, without the jsessionid.
+		    if ( (prejsessionidStr == null) || prejsessionidStr.isEmpty() ) {
 		    	logger.warn("Unexpected null or empty value returned by \"jsessionIdMatcher.group(1)\" for url: \"" + urlStr + "\"");
 		    	return finalUrl;
 		    }
-		    finalUrl = StringUtils.replace(finalUrl, jsessionid, "");
+		    finalUrl = prejsessionidStr;
+		    
+		    afterJsessionidStr = jsessionIdMatcher.group(2);
+			if ( (afterJsessionidStr == null) || afterJsessionidStr.isEmpty() )
+				return finalUrl;
+			else
+				return finalUrl + afterJsessionidStr;
 		}
 		else
-			logger.warn("Unexpected \"JSESSIONID_FILTER\" mismatch for url: \"" + urlStr + "\" !");
-		
-		return finalUrl;
+			return finalUrl;
 	}
 
 }
