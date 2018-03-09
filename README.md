@@ -29,6 +29,7 @@ To run the application you should navigate to the ***target*** directory, which 
 ``java -jar doc_urls_retriever-0.1.1-SNAPSHOT.jar < 'inputFile' > 'outputFile'``<br/>
 
 <br/>
+
 **Run with test input/output files and logging in *Console*:**<br/>
 - Change from ***standard input/output*** to ***testing input/output*** code inside ***DocUrlsRetriever.java***.<br/>
 - Change urls' loading from ***FileUtils.getNextUrlGroupFromJson()*** to ***FileUtils.getNextUrlGroupTest()***, in ***UrlUtils.loadAndCheckUrls()***.<br/>
