@@ -6,7 +6,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
-import org.apache.commons.lang3.StringUtils;
 
 import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
@@ -25,17 +24,17 @@ public class UrlUtils
 	public final static Pattern URL_TRIPLE = Pattern.compile("(.+:\\/\\/(?:www(?:(?:\\w+)?\\.)?)?([\\w\\.\\-]+)(?:[\\:\\d]+)?(?:.*\\/)?(?:[\\w.-]*[^\\.pdf]\\?[\\w.-]+[^site]=)?)(.+)?");
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
-	public static final Pattern URL_DIRECTORY_FILTER = Pattern.compile(".+\\/(?:login|join|subscr|register|submit|post|import|bookmark|announcement|feed|about|citation|faq|wiki|support|error|misuse|abuse|notfound|contribute|subscription|advertisers"
+	public static final Pattern URL_DIRECTORY_FILTER = Pattern.compile(".+\\/(?:login|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|citation|faq|wiki|support|error|misuse|abuse|notfound|contribute|subscription|advertisers"
 																	+ "|author|editor|license|disclaimer|policies|policy|privacy|terms|sitemap|account|search|statistics|cookie|application|help|law|permission|ethic|contact|survey|wallet"
 																	+ "|template|logo|image|photo|profile).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects.
 	
-	public static final Pattern PAGE_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|pt|mso|dtl)(?:\\?.+=.+)?$");
+	public static final Pattern PAGE_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|pt|mso|dtl|svg)(?:\\?.+=.+)?$");
 	
-    public static final Pattern INNER_LINKS_FILE_EXTENSION_FILTER = Pattern.compile(".+:\\/\\/.+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|pt|xml|mso|dtl)(?:\\?.+=.+)?$");
+    public static final Pattern INNER_LINKS_FILE_EXTENSION_FILTER = Pattern.compile(".+:\\/\\/.+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|pt|xml|mso|dtl|svg|do)(?:\\?.+=.+)?$");
     // Here don't include .php and relative extensions, since even this can be a docUrl. For example: https://www.dovepress.com/getfile.php?fileID=5337
 	// So, we make a new REGEX for these extensions, this time, without a potential argument in the end (?id=XXX..)
-	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:php|php2|php3|php4|php5|phtml|htm|html|shtml|xht|xhtm|xhtml|xml|aspx|asp|jsp)$");
+	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:php|php2|php3|php4|php5|phtml|htm|html|shtml|xht|xhtm|xhtml|xml|aspx|asp|jsp|do)$");
 	
 	public static final Pattern INNER_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+:\\/\\/.+format=(?:xml|htm|html|shtml|xht|xhtm|xhtml).*");
     
@@ -61,8 +60,9 @@ public class UrlUtils
 	public static HashSet<String> knownDocTypes = new HashSet<String>();
 	
 	// Counters for certain unwanted domains. We show statistics in the end.
-	public static int elsevierLinks = 0;
-	public static int doajResultPageLinks = 0;
+	public static int sciencedirectUrls = 0;
+	public static int elsevierUnwantedUrls = 0;
+	public static int doajResultPageUrls = 0;
 	public static int dlibHtmlDocUrls = 0;
 	public static int deepCrawlingPages = 0;
 	
@@ -138,8 +138,20 @@ public class UrlUtils
 	 */
 	public static boolean matchesUnwantedUrlTypesAtLoading(String retrievedUrl, String lowerCaseUrl)
 	{
-		if ( lowerCaseUrl.contains("doaj.org/toc/") ) {	// Avoid resultPages.
-			UrlUtils.doajResultPageLinks ++;
+		if ( lowerCaseUrl.contains("sciencedirect.com") ) {	// These urls are in JavaScript, having dynamic links which we cannot currently retrieve.
+			UrlUtils.sciencedirectUrls ++;
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the JavaScript-using domain \"sciencedirect.com\".");
+			return true;
+		}
+		else if ( lowerCaseUrl.contains("elsevier.com") ) {	// The plain "elsevier.com" and the "journals.elsevier.com" don't give docUrls.
+			// The "linkinghub.elsevier.com" is redirecting to "sciencedirect.com".
+			// Note that we still accept the "elsevier.es" urls, which give docUrls.
+			UrlUtils.elsevierUnwantedUrls++;
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the unwanted \"elsevier.com\" domain.");
+			return true;
+		}
+		else if ( lowerCaseUrl.contains("doaj.org/toc/") ) {	// Avoid resultPages.
+			UrlUtils.doajResultPageUrls++;
 			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the Results-directory: \"doaj.org/toc/\".");
 			return true;
 		}
@@ -185,7 +197,7 @@ public class UrlUtils
             
             sumOfDocsFound ++;
 			
-            // Gather data for the MLA, if we, or the program itself, decide so.
+            // Gather data for the MLA, if we decide to have it enabled.
             if ( MachineLearning.useMLA )
 				MachineLearning.gatherMLData(sourceUrl, finalDocUrl);
 			

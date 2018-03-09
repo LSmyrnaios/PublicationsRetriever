@@ -30,8 +30,8 @@ public class PageCrawler extends WebCrawler
 		
 		// Check  redirect-finished-urls for certain unwanted types.
 		// Note that "elsevier.com" is reached after redirections only and that it's an intermediate site itself.. so it isn't found at loading time.
-		if ( lowerCaseUrlStr.contains("elsevier.com") ) {   // Avoid this JavaScript site with non accesible dynamic links.
-            UrlUtils.elsevierLinks ++;
+		if ( lowerCaseUrlStr.contains("linkinghub.elsevier.com") ) {   // Avoid this JavaScript site wich redirects to "sciencedirect.com" non-accesible dynamic links.
+            UrlUtils.elsevierUnwantedUrls++;
 			UrlUtils.logTriple(urlStr, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after matching to the JavaScript site: \"elsevier.com\".");
             return false;
 		}

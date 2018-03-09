@@ -48,11 +48,11 @@ public class CrawlerController
 												// We don't want to miss any page!
 		
 		config.setPolitenessDelay(HttpUtils.politenessDelay);
-
+		
 		config.setIncludeBinaryContentInCrawling(true);	// Call "visit()" method even on binary content (which is not prohibited by "shouldVisit()" method) to check its contentType.
 		config.setProcessBinaryContentInCrawling(true);	// Process more pages.. like xhtml ones (Crawler4j processes only html-ones unless instructed to process all).
 		// Binary-content-rules in "shouldVisit()" still apply.
-
+		
 		PageFetcher pageFetcher = new PageFetcher(config);
 		RobotstxtConfig robotstxtConfig = new RobotstxtConfig();
 		RobotstxtServer robotstxtServer = new RobotstxtServer(robotstxtConfig, pageFetcher);
@@ -61,12 +61,12 @@ public class CrawlerController
 		
 		try {
 			controller = new CrawlController(config, pageFetcher, robotstxtServer);
-
+			
 			//CrawlerController.docIdServer = controller.getDocIdServer();	// Enable this code if we need special urls' check from the crawler.
 			CrawlerController.frontier = controller.getFrontier();	// Enable this code if we need to check pages' number in the crawler.
-
+			
 			UrlUtils.loadAndCheckUrls();
-
+			
 			CrawlerController.urlsReachedCrawler = CrawlerController.frontier.getNumberOfScheduledPages();	// If wanted for statistics, in the end.
 			
 			if ( MachineLearning.useMLA )
@@ -74,7 +74,7 @@ public class CrawlerController
 			
 	        // Start crawling and wait until finished.
 	        controller.start(PageCrawler.class, 1);
-
+			
 	        // Write any remaining urls from memory to disk.
 	        if ( FileUtils.tripleToBeLoggedOutputList.size() > 0 ) {
 	        	logger.debug("Writing last set(s) of (\"SourceUrl\", \"DocUrl\"), to disk.");
