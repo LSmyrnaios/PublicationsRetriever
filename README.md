@@ -1,5 +1,5 @@
-*About*
-=============
+About
+=====
 
 A program which finds the Document Urls from the given Publication Page Urls.<br/>
 
@@ -13,4 +13,24 @@ Many customizations were developed to make the program run efficiently, includin
 
 It uses an experimental **M.L.A.(= Machine Learning Algorithm)**, which tries to guess the docUrl of a docPage, based on previous findings.<br/>
 
-Please note that **DocUrlsRetriever** is currently in **beta**, so you may encounter some issues.
+Please note that **DocUrlsRetriever** is currently in **beta**, so you may encounter some issues.<br/>
+<br/>
+
+Install & Run (using MAVEN)
+---------------------------
+
+To install the application, navigate to the directory of the project, where the ***pom.xml*** is.<br/>
+Then enter this command in the terminal:<br/>
+``mvn install``
+
+To run the application you should navigate to the ***target*** directory, which will be created by *MAVEN* and run the ***.jar*** file.<br/> 
+
+**Run with standard input/output:**<br/>
+``java -jar doc_urls_retriever-0.1.1-SNAPSHOT.jar < 'inputFile' > 'outputFile'``
+
+<br/>
+**Run with test input/output files:**
+- Change from ***standard input/output*** to ***testing input/output*** code inside ***DocUrlsRetriever.java***.
+- Change from ***FileUtils.getNextUrlGroupFromJson()*** to ***FileUtils.getNextUrlGroupTest()***, in ***UrlUtils.loadAndCheckUrls()***.
+- Execute the program with the following command:<br/>
+``java -jar doc_urls_retriever-0.1.1-SNAPSHOT.jar``

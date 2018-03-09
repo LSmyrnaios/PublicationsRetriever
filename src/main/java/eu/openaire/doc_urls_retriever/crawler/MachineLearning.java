@@ -247,7 +247,7 @@ public class MachineLearning
 				
 			}// end for-loop
 			
-			if ( HttpUtils.blockDomainTypeAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, domainStr, timesToFailBeforeBlockedFromMLA) )
+			if ( HttpUtils.countAndBlockDomainAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, domainStr, timesToFailBeforeBlockedFromMLA) )
 			{
 				logger.debug("Domain: \"" + domainStr + "\" was blocked from being accessed again by the MLA, after proved to be incompatible "
 						+ timesToFailBeforeBlockedFromMLA + " times.");

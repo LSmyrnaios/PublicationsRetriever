@@ -384,14 +384,14 @@ public class HttpUtils
 
 	public static void on5XXerrorCode(String domainStr)
 	{
-		if ( blockDomainTypeAfterTimes(HttpUtils.blacklistedDomains, HttpUtils.timesDomainsReturned5XX, domainStr, HttpUtils.timesToHave5XXerrorCodeBeforeBlocked) )
+		if ( countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, HttpUtils.timesDomainsReturned5XX, domainStr, HttpUtils.timesToHave5XXerrorCodeBeforeBlocked) )
             logger.debug("Domain: \"" + domainStr + "\" was blocked after returning 5XX Error Code " + HttpUtils.timesToHave5XXerrorCodeBeforeBlocked + " times.");
 	}
 
 	
 	public static void onTimeoutException(String domainStr)
 	{
-		if ( blockDomainTypeAfterTimes(HttpUtils.blacklistedDomains, HttpUtils.timesDomainsHadTimeoutEx, domainStr, HttpUtils.timesToHaveTimeoutExBeforeBlocked) )
+		if ( countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, HttpUtils.timesDomainsHadTimeoutEx, domainStr, HttpUtils.timesToHaveTimeoutExBeforeBlocked) )
             logger.debug("Domain: \"" + domainStr + "\" was blocked after causing Timeout Exception " + HttpUtils.timesToHaveTimeoutExBeforeBlocked + " times.");
 	}
 
@@ -407,11 +407,11 @@ public class HttpUtils
 	 * @param timesBeforeBlock
 	 * @return boolean
      */
-	public static boolean blockDomainTypeAfterTimes(HashSet<String> blackList, HashMap<String, Integer> domainsWithTimes, String domainStr, int timesBeforeBlock)
+	public static boolean countAndBlockDomainAfterTimes(HashSet<String> blackList, HashMap<String, Integer> domainsWithTimes, String domainStr, int timesBeforeBlock)
 	{
 		int curTimes = 1;
 		if (domainsWithTimes.containsKey(domainStr))
-			curTimes += domainsWithTimes.get(domainStr).intValue();
+			curTimes += domainsWithTimes.get(domainStr);
 		
 		domainsWithTimes.put(domainStr, curTimes);
 		
