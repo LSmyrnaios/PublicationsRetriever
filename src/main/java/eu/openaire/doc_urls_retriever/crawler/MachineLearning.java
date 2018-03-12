@@ -28,12 +28,14 @@ public class MachineLearning
 	public static long docUrlsFoundByMLA = 0;
 	// If we later want to show statistics, we should take into account only the number of the urls to which the MLA was tested against, not all of the urls in the inputFile.
 	
+	private static long latestMLADocUrlsFound = 0;
 	private static float leastSuccessPercentageForMLA = 60;	// The percentage which we want, in order to continue running the MLA.
 	private static int leastNumberOfUrlsToCheck = 1000;	// Least number of URLs to check before deciding if we should continue running it.
 	private static int timesToGatherDataBeforeStarting = 10000;	// 5,000 urls.
 	private static int urlsToWaitUntilRestartMLA = 100000;	// 100,000 urls
 	private static long endOfSleepNumOfUrls = 0;
 	private static long latestNumOfUrlsBeforePauseMLA = 0;
+	private static long latestSuccessBreakPoint = 0;
 	private static boolean isInSleepMode = false;
 	private static int timesGatheredData = 0;
 	//private static long urlsCheckedWithMLA = 0;
@@ -58,7 +60,7 @@ public class MachineLearning
 		if ( leastNumberOfUrlsToCheck > tenPercentOfUrlsInCrawler )
 			leastNumberOfUrlsToCheck = tenPercentOfUrlsInCrawler;
 		
-		// For small input, make sure that we gather data for no more than 30% of the input, before starting the MLA.
+		// For small input, make sure that we gather data for no more than 20% of the input, before starting the MLA.
 		int twentyPercentOfUrlsInCrawler = (int)(20 * 100 / urlsInCrawler);
 		if ( timesToGatherDataBeforeStarting > twentyPercentOfUrlsInCrawler )
 			timesToGatherDataBeforeStarting = twentyPercentOfUrlsInCrawler;
@@ -80,11 +82,13 @@ public class MachineLearning
 	 */
 	public static boolean shouldRunMLA(String domainStr)
 	{
-		if ( isInitialLearningPeriod() )
-			return false;
-		
 		if ( domainsBlockedFromMLA.contains(domainStr) ) {    // Check if this domain is not compatible with the MLA.
-			logger.debug("Avoid running MLA for incompatible domain: \"" + domainStr + "\".");
+			logger.debug("Avoiding the execution of the MLA for incompatible domain: \"" + domainStr + "\".");
+			return false;
+		}
+		
+		if ( isInitialLearningPeriod() ) {
+			latestSuccessBreakPoint = timesToGatherDataBeforeStarting;
 			return false;
 		}
 		
@@ -103,22 +107,27 @@ public class MachineLearning
 		// If we reach here, it means that we are not in the "LearningPeriod", nor in "SleepMode".
 		
 		// Check if we should immediately continue running the MLA, or it's time to decide depending on the success-rate.
-		long nextBreakPoint = timesToGatherDataBeforeStarting + leastNumberOfUrlsToCheck + endOfSleepNumOfUrls;
+		long nextBreakPoint = latestSuccessBreakPoint + leastNumberOfUrlsToCheck + endOfSleepNumOfUrls;
 		if ( PageCrawler.totalPagesReachedCrawling <= nextBreakPoint )
 		{
 			return true;	// Always continue in this case, as we don't have enough success-rate-data to decide otherwise.
 		}
 		else	// Decide depending on successPercentage for all of the urls which reached the crawler until now (this will be the case every time this is called, after we exceed the leastNumber)..
 		{
-			float curSuccessRate = (float)(docUrlsFoundByMLA * 100) / PageCrawler.totalPagesReachedCrawling;
-			//logger.debug("CurSuccessRate of MLA = " + curSuccessRate);
+			float curSuccessRate = (float)((docUrlsFoundByMLA - latestMLADocUrlsFound) * 100) / ((PageCrawler.totalPagesReachedCrawling -1) - latestSuccessBreakPoint);
+			logger.debug("CurSuccessRate of MLA = " + curSuccessRate + "%");
 			
-			if ( curSuccessRate >= leastSuccessPercentageForMLA )	// After the safe-period, continue as long as the success-rate is high.
+			if ( curSuccessRate >= leastSuccessPercentageForMLA ) {    // After the safe-period, continue as long as the success-rate is high.
+				endOfSleepNumOfUrls = 0;	// Stop keeping out-of-date sleep-data.
+				latestSuccessBreakPoint = PageCrawler.totalPagesReachedCrawling -1;	// We use <-1>, as we want the latest number for which MLA was tested against.
 				return true;
+			}
 			else {
 				logger.debug("MLA's success-rate is lower than the satisfying one (" + leastSuccessPercentageForMLA + "). Entering \"sleepMode\"...");
-				latestNumOfUrlsBeforePauseMLA = PageCrawler.totalPagesReachedCrawling;
+				latestNumOfUrlsBeforePauseMLA = PageCrawler.totalPagesReachedCrawling -1;
 				endOfSleepNumOfUrls = latestNumOfUrlsBeforePauseMLA + urlsToWaitUntilRestartMLA;	// Update num of urls to reach before the "sleep period" ends.
+				latestMLADocUrlsFound = docUrlsFoundByMLA;	// Keep latest num of docUrls found by the MLA, in order to calculate the success rate only for up-to-date data.
+				latestSuccessBreakPoint = 0;	// Stop keeping successBreakPoint.
 				isInSleepMode = true;
 				return false;
 			}
@@ -240,7 +249,7 @@ public class MachineLearning
 					}
 					logger.debug("Not valid docUrl after trying guessedDocUrl: " + guessedDocUrl + "\"");
 				} catch (Exception e) {
-					// No special handling here, neither logging.. since it's expected that some checks will fail.
+					// No special handling here, neither logging.. since it's expected that some "guessedDocUrls" will fail.
 				}
 				
 				strB.setLength(0);	// Clear the buffer before going to check the next path.
@@ -252,7 +261,7 @@ public class MachineLearning
 				logger.debug("Domain: \"" + domainStr + "\" was blocked from being accessed again by the MLA, after proved to be incompatible "
 						+ timesToFailBeforeBlockedFromMLA + " times.");
 				
-				successPathsMultiMap.removeAll(pagePath);	// This domain was blocked, remove non-needed data.
+				successPathsMultiMap.removeAll(pagePath);	// This domain was blocked, remove current non-needed paths-data. Note that we can't remove all of this domain's paths, since there is no mapping between a domain and its paths.
 			}
 			
 		}// end if
