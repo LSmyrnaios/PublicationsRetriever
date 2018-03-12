@@ -29,7 +29,7 @@ public class DocUrlsRetriever
     {
     	// Use testing input/output files.
 		/*try {
-			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testUrls100+1.csv")),
+			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testUrlsFinalRandom5000+1.csv")),
 							new FileOutputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testOutputFile.json")));
 		} catch (FileNotFoundException e) {
 			logger.error("InputFile not found!", e);
@@ -54,14 +54,19 @@ public class DocUrlsRetriever
     	}
 		
 		logger.info("Total urls number in the input was: " + inputUrlNum);
-    	logger.info("From which, " + CrawlerController.urlsReachedCrawler + " reached the crawling stage (others were discarded).");
+    	logger.info("From which, " + CrawlerController.urlsReachedCrawler + " reached the crawling stage (others were discarded at loading).");
 		logger.info("Total docs found: " + UrlUtils.sumOfDocsFound + " That's about: " + UrlUtils.sumOfDocsFound * (float)100 / inputUrlNum + "%");
-		logger.info("About: " + UrlUtils.sciencedirectUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.sciencedirectUrls + " urls were from the JavaScript-using domain \"sciencedirect.com\", which has dynamic links.");
-		logger.info("Αbout: " + UrlUtils.elsevierUnwantedUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.elsevierUnwantedUrls + " urls) were from the unwanted domain: \"elsevier.com\", which either doesn't provide docUrls in its docPages, or it redirects to \"sciencedirect.com\", thus being avoided to be crawled.");
+		logger.info("About: " + UrlUtils.sciencedirectUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.sciencedirectUrls + " urls) were from the JavaScript-using domain \"sciencedirect.com\", which has dynamic links.");
+		logger.info("About: " + UrlUtils.doiOrgToScienceDirect * (float)100 / inputUrlNum + "% (" + UrlUtils.doiOrgToScienceDirect + " urls) were of a certain type of \"doi.org\" urls which redirect to \"sciencedirect.com\", thus being avoided to be crawled.");
+		logger.info("Αbout: " + UrlUtils.elsevierUnwantedUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.elsevierUnwantedUrls + " urls) were from, or reached after redirects, the unwanted domain: \"elsevier.com\", which either doesn't provide docUrls in its docPages, or it redirects to \"sciencedirect.com\", thus being avoided to be crawled.");
     	logger.info("Αbout: " + UrlUtils.doajResultPageUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.doajResultPageUrls + " urls) were \"doaj.org/toc/\" urls, which are resultPages, thus being avoided to be crawled.");
 		logger.info("Αbout: " + UrlUtils.dlibHtmlDocUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.dlibHtmlDocUrls + " urls) were \"dlib.org\" urls, which are docUrls, but, in HTML, thus being avoided to be crawled.");
-		logger.info("About: " + UrlUtils.deepCrawlingPages * (float)100 / inputUrlNum + "% (" + UrlUtils.deepCrawlingPages + " urls) were docPages which have their docUrl deeper inside the server, thus being currently avoided.");
-		logger.info("There were: " + UrlUtils.inputDuplicatesNum + " duplicates in the input file." + " That's about: " + UrlUtils.inputDuplicatesNum * (float)100 / inputUrlNum + "%");
+		logger.info("About: " + UrlUtils.pagesWithLargerCrawlingDepth * (float)100 / inputUrlNum + "% (" + UrlUtils.pagesWithLargerCrawlingDepth + " urls) were docPages which have their docUrl deeper inside the server, thus being currently avoided.");
+		logger.info("About: " + UrlUtils.urlsWithUnwantedForm * (float)100 / inputUrlNum + "% (" + UrlUtils.urlsWithUnwantedForm + " urls) were urls which are plain-domains, have unwanted url-extensions, ect...");
+		logger.info("About: " + UrlUtils.inputDuplicatesNum * (float)100 / inputUrlNum + "% (" + UrlUtils.inputDuplicatesNum + " urls) were duplicates in the input file.");
+		
+		long problematicUrlsNum = UrlUtils.sciencedirectUrls + UrlUtils.doiOrgToScienceDirect + UrlUtils.elsevierUnwantedUrls + UrlUtils.doajResultPageUrls + UrlUtils.dlibHtmlDocUrls + UrlUtils.pagesWithLargerCrawlingDepth + UrlUtils.urlsWithUnwantedForm + UrlUtils.inputDuplicatesNum;
+		logger.info("From the " + inputUrlNum + " urls in the input, the " + problematicUrlsNum + " of them (about " + problematicUrlsNum * (float)100 / inputUrlNum + "%) were problematic (sum of the all of the above cases).");
 		
         // Then... just close the open streams (imported and exported content) and exit.
         FileUtils.closeStreams();

@@ -52,6 +52,8 @@ public class UrlUtils
 	
 	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("([\\w]+\\/[\\w\\+\\-\\.]+)(?:;[\\s]*[\\w]+\\=.+)?");
 	
+	public static final Pattern DOI_ORG_J_FILTER = Pattern.compile(".+[doi.org]\\/[\\d]{2}\\.[\\d]{4}\\/[j]\\..+");	// doi.org urls which has this form and redirect to "sciencedirect.com".
+	
 	public static int sumOfDocsFound = 0;	// Change it back to simple int if finally in singleThread mode
 	public static long inputDuplicatesNum = 0;
 	
@@ -64,7 +66,9 @@ public class UrlUtils
 	public static int elsevierUnwantedUrls = 0;
 	public static int doajResultPageUrls = 0;
 	public static int dlibHtmlDocUrls = 0;
-	public static int deepCrawlingPages = 0;
+	public static int pagesWithLargerCrawlingDepth = 0;	// Pages with their docUrl behind an inner "view" page.
+	public static int doiOrgToScienceDirect = 0;	// Urls from "doi.org" which redirect to "sciencedirect.com".
+	public static int urlsWithUnwantedForm = 0;	// (plain domains, unwanted page-extensions ect.)
 	
 	static {
 		logger.debug("Setting knownDocTypes. Currently testing only \".pdf\" type.");
@@ -146,12 +150,12 @@ public class UrlUtils
 		else if ( lowerCaseUrl.contains("elsevier.com") ) {	// The plain "elsevier.com" and the "journals.elsevier.com" don't give docUrls.
 			// The "linkinghub.elsevier.com" is redirecting to "sciencedirect.com".
 			// Note that we still accept the "elsevier.es" urls, which give docUrls.
-			UrlUtils.elsevierUnwantedUrls++;
+			UrlUtils.elsevierUnwantedUrls ++;
 			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the unwanted \"elsevier.com\" domain.");
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("doaj.org/toc/") ) {	// Avoid resultPages.
-			UrlUtils.doajResultPageUrls++;
+			UrlUtils.doajResultPageUrls ++;
 			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the Results-directory: \"doaj.org/toc/\".");
 			return true;
 		}
@@ -160,14 +164,21 @@ public class UrlUtils
 			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the HTML-docUrls site: \"dlib.org\".");
 			return true;
 		}
-		else if ( lowerCaseUrl.contains("ojs.ifnmu.edu.ua") || lowerCaseUrl.contains("spilplus.journals.ac.za") ) {	// Avoid crawling in larger depth.
-			UrlUtils.deepCrawlingPages++;
+		else if ( lowerCaseUrl.contains("ojs.ifnmu.edu.ua") || lowerCaseUrl.contains("spilplus.journals.ac.za")	// Avoid crawling pages with larger depth.
+				|| lowerCaseUrl.contains("spilplus.journals.ac.za") || lowerCaseUrl.contains("phcfm.org") || lowerCaseUrl.contains("raco.cat")) {
+			UrlUtils.pagesWithLargerCrawlingDepth ++;
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to an increasedCrawlingDepth-site.");
+			return true;
+		}
+		else if ( UrlUtils.DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() ) {
+			UrlUtils.doiOrgToScienceDirect ++;
+			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to a urlType of \"doi.org\", which redirects to \"sciencedirect.com\".");
 			return true;
 		}
 		else if ( UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() ||UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
 				|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches())
 		{
+			UrlUtils.urlsWithUnwantedForm ++;
 			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to unwantedType-regex-rules.");
 			return true;
 		}
