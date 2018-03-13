@@ -2,7 +2,6 @@ package eu.openaire.doc_urls_retriever.crawler;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Matcher;
 
 import edu.uci.ics.crawler4j.crawler.Page;
 import edu.uci.ics.crawler4j.crawler.WebCrawler;
@@ -10,6 +9,7 @@ import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import edu.uci.ics.crawler4j.url.WebURL;
 import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
+import org.apache.http.Header;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +47,7 @@ public class PageCrawler extends WebCrawler
 	}
 	
 	
-	public boolean shouldNotCheckInnerLink(String referringPageDomain, String linkStr)
+	public boolean shouldNotCheckInnerLink(String linkStr)
 	{
 		String lowerCaseLink = linkStr.toLowerCase();
 		
@@ -55,7 +55,7 @@ public class PageCrawler extends WebCrawler
 				|| UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseLink).matches()
-				|| UrlUtils.INNER_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseLink).matches()	// We re-check here, as in the fast-loop not all of the links are checked against this.
+				|| UrlUtils.INNER_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.INNER_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseLink).matches();
 		
@@ -68,6 +68,31 @@ public class PageCrawler extends WebCrawler
 	public boolean shouldFollowLinksIn(WebURL url)
 	{
 		return false;	// We don't want any inner links to be followed for crawling.
+	}
+	
+	
+	/**
+	 * This method retrieves the needed data to check if this page is a docUrl itself.
+	 * @param page
+	 * @param pageContentType
+	 * @param pageUrl
+	 * @return true/false
+	 */
+	private boolean isPageDocUrlItself(Page page, String pageContentType, String pageUrl)
+	{
+		String contentDisposition = null;
+		
+		if ( pageContentType == null ) {	// If can't retrieve the contentType, try the "Content-Disposition".
+			Header[] headers = page.getFetchResponseHeaders();
+			for ( Header header : headers )
+				if ( header.getName().equals("Content-Disposition") )
+					contentDisposition = header.getValue();
+		}
+		
+		if ( UrlUtils.hasDocMimeType(pageUrl, pageContentType, contentDisposition) )
+			return true;
+		else
+			return false;
 	}
 	
 	
@@ -92,10 +117,10 @@ public class PageCrawler extends WebCrawler
 			UrlUtils.logTriple(pageUrl, pageUrl, "");	// No error here.
 			return;
 		}
-
+		
 		String pageContentType = page.getContentType();
-
-		if ( UrlUtils.hasDocMimeType(pageUrl, pageContentType) ) {
+		
+		if ( isPageDocUrlItself(page, pageContentType, pageUrl) ) {
 			UrlUtils.logTriple(pageUrl, pageUrl, "");
 			return;
 		}
@@ -123,6 +148,13 @@ public class PageCrawler extends WebCrawler
 			UrlUtils.logTriple(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, as no links were able to be retrieved from it. Its contentType is: \"" + pageContentType + "\"");
 			return;
 		}
+		
+		//Check innerLinks for debugging:
+		 /*
+		 if ( pageUrl.contains("<url>") )
+			for ( WebURL url : currentPageLinks )
+				logger.debug(url.toString());
+		 */
 		
 		HashSet<String> curLinksStr = new HashSet<String>();	// HashSet to store the String version of each link.
 		
@@ -159,9 +191,10 @@ public class PageCrawler extends WebCrawler
             lowerCaseUrl = urlToCheck.toLowerCase();
             if ( UrlUtils.DOC_URL_FILTER.matcher(lowerCaseUrl).matches() )
 			{
-				if ( UrlUtils.INNER_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches() )	// Avoid false-positives, such as the common one: ".../pdf.png".
+				if ( shouldNotCheckInnerLink(urlToCheck) )	// Avoid false-positives, such as images (a common one: ".../pdf.png").
 					continue;
 				else {
+					//logger.debug("InnerPossibleDocLink: " + urlToCheck);	// DEBUG!
 					try {
 						if (HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, currentPageDomain))    // We log the docUrl inside this method.
 							return;
@@ -182,7 +215,8 @@ public class PageCrawler extends WebCrawler
 		
 		for ( String currentLink : curLinksStr )
 		{
-			if ( shouldNotCheckInnerLink(currentPageDomain, currentLink) ) {	// If this link matches certain blackListed criteria, move on..
+			// We re-check here, as, in the fast-loop not all of the links are checked against this.
+			if ( shouldNotCheckInnerLink(currentLink) ) {	// If this link matches certain blackListed criteria, move on..
 				//logger.debug("Avoided link: " + currentLink );
 				UrlUtils.duplicateUrls.add(currentLink);
 				continue;

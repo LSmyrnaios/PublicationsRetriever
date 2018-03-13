@@ -64,16 +64,18 @@ public class HttpUtils
 				conn = HttpUtils.handleRedirects(conn, responceCode, domainStr);	// Take care of redirects, as well as some connectivity problems.
 			}
 			
-			// Check if we are able to find the mime type.
-			String mimeType = null;
-			if ( (mimeType = conn.getContentType()) == null ) {
-				if ( currentPage.equals(resourceURL) )
-					logger.warn("Could not find mimeType for " + conn.getURL().toString());
-				throw new RuntimeException();
+			// Check if we are able to find the mime type, if not then try "Content-Disposition".
+			String mimeType = conn.getContentType();
+			String contentDisposition = null;
+			
+			if ( mimeType == null ) {
+				contentDisposition = conn.getHeaderField("Content-Disposition");
+				if (contentDisposition == null)
+					return false;	// We can't retrieve any clue, so return and log it as a non-docUrl.
 			}
 			
 			String finalUrlStr = conn.getURL().toString();
-			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType) ) {
+			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition) ) {
 				UrlUtils.logTriple(currentPage, finalUrlStr, "");	// we send the urls, before and after potential redirections.
 				return true;
 			}
@@ -253,7 +255,7 @@ public class HttpUtils
 
 					// FOR DEBUG -> Check to see what's happening with the redirect urls (location field types, as well as potential error redirects).
 					// Some domains use only the target-ending-path in their location field, while others use full target url.
-					//if ( conn.getURL().toString().contains("plos.org") ) {	// Debug a certain domain.
+					//if ( conn.getURL().toString().contains("<urlType>") ) {	// Debug a certain domain.
 						/*logger.debug("\n");
 						logger.debug("Redirect(s) num: " + redirectsNum);
 						logger.debug("Redirect code: " + conn.getResponseCode());
@@ -293,10 +295,10 @@ public class HttpUtils
 		
 		
 		// Here is a DEBUG section in which we can retrieve statistics about redirections of certain domains.
-		/*	if ( initialUrl.contains("www.ncbi.nlm.nih.gov") )	// DEBUG
+		/*	if ( initialUrl.contains("<urlType>") )	// DEBUG
 				logger.info("\"" + initialUrl + "\" DID: " + redirectsNum + " redirect(s)!");	// DEBUG!
 
-			if ( initialUrl.contains("doi.org/") )	// Check how many redirection are done for doi.org urls..
+			if ( initialUrl.contains("<urlType>") )	// Check how many redirection are done for doi.org urls..
 				if ( redirectsNum == maxRedirects ) {
 					logger.info("DOI.ORG: \"" + initialUrl + "\" DID: " + redirectsNum + " redirect(s)!");	// DEBUG!
 					logger.info("Final link is: \"" + conn.getURL().toString() + "\"");	// DEBUG!

@@ -94,9 +94,9 @@ public class UrlUtils
 		// Start loading and checking urls.
         while ( true )
         {
-        	//loadedUrlGroup = FileUtils.getNextUrlGroupFromJson(); // Take urls from jsonFile.
+        	loadedUrlGroup = FileUtils.getNextUrlGroupFromJson(); // Take urls from jsonFile.
 			
-			loadedUrlGroup = FileUtils.getNextUrlGroupTest();	// Take urls from single-columned (testing) csvFile.
+			//loadedUrlGroup = FileUtils.getNextUrlGroupTest();	// Take urls from single-columned (testing) csvFile.
 			
 	        if ( loadedUrlGroup.isEmpty() ) {
 	        	if ( firstRun ) {
@@ -181,7 +181,7 @@ public class UrlUtils
 				|| lowerCaseUrl.contains("journals.univ-danubius.ro") || lowerCaseUrl.contains("journal.unnes.ac.id") || lowerCaseUrl.contains("online.unisc.br") || lowerCaseUrl.contains("jurnal.ugm.ac.id")
 				|| lowerCaseUrl.contains("wjst.wu.ac.th") || lowerCaseUrl.contains("jurnal.unsyiah.ac.id") || lowerCaseUrl.contains("bvpb.mcu.es") || lowerCaseUrl.contains("journals.iium.edu.my")
 				|| lowerCaseUrl.contains("periodicos.ufsc.br") || lowerCaseUrl.contains("periodicos.unb.br") || lowerCaseUrl.contains("informatio.eubca.edu.uy") || lowerCaseUrl.contains("statecon.rea.ru")
-				|| lowerCaseUrl.contains("cuestionessociologia.fahce.unlp.edu.ar") || lowerCaseUrl.contains("vestnik.szd.si")  )
+				|| lowerCaseUrl.contains("cuestionessociologia.fahce.unlp.edu.ar") || lowerCaseUrl.contains("vestnik.szd.si") || lowerCaseUrl.equals("oncourology.abvpress.ru") || lowerCaseUrl.contains("jwm.ulm.ac.id") )
 		{
 			UrlUtils.pagesWithLargerCrawlingDepth ++;
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to an increasedCrawlingDepth-site.");
@@ -251,33 +251,49 @@ public class UrlUtils
 
     /**
      * This method takes a url and its mimeType and checks if it's a document mimeType or not.
-     * @param linkStr
+     * @param urlStr
      * @param mimeType
-     * @return boolean
+     * @param contentDisposition
+	 * @return boolean
      */
-    public static boolean hasDocMimeType(String linkStr, String mimeType)
+    public static boolean hasDocMimeType(String urlStr, String mimeType, String contentDisposition)
     {
-		String plainMimeType = mimeType;	// Make sure we don't cause any NPE later on..
-    	if ( mimeType.contains("charset") )
+    	if ( mimeType != null )
 		{
-			plainMimeType = removeCharsetFromMimeType(mimeType);
-			
-			if ( plainMimeType == null ) {    // If there was any error removing the charset, still try to save any docMimeType (currently pdf-only).
-				if (mimeType.contains("pdf"))
-					return true;
-				else
-					return false;
+			String plainMimeType = mimeType;	// Make sure we don't cause any NPE later on..
+			if ( mimeType.contains("charset") )
+			{
+				plainMimeType = removeCharsetFromMimeType(mimeType);
+				
+				if ( plainMimeType == null ) {    // If there was any error removing the charset, still try to save any docMimeType (currently pdf-only).
+					if ( mimeType.contains("pdf") )
+						return true;
+					else
+						return false;
+				}
 			}
+			
+			if ( knownDocTypes.contains(plainMimeType) )
+				return true;
+			else if ( plainMimeType.equals("application/octet-stream") && urlStr.toLowerCase().contains("pdf") )
+				// This is a special case. (see: "https://kb.iu.edu/d/agtj")
+				// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
+				return true;
+			else
+				return false;
 		}
-		
-		if ( knownDocTypes.contains(plainMimeType) )
-            return true;
-        else if ( plainMimeType.equals("application/octet-stream") && linkStr.toLowerCase().contains("pdf") )
-            // This is a special case. (see: "https://kb.iu.edu/d/agtj")
-            // TODO - When we will accept more docTypes, match it against "DOC_URL_FILTER" instead of just "pdf".
-            return true;
-        else
-            return false;
+		else if ( contentDisposition != null )	// If the mimeType was not retrieve, thn try the "Content Disposition".
+		{
+			if ( contentDisposition.contains("attachment") && contentDisposition.contains("pdf") )
+				// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
+				return true;
+			else
+				return false;
+		}
+		else {
+    		logger.warn("No mimeType, nor Content-Disposition, were able to be retrieved for url: " + urlStr);
+			return false;
+		}
     }
     
 	
