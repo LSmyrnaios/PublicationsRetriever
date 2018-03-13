@@ -21,17 +21,17 @@ public class UrlUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(UrlUtils.class);
 	
-	public final static Pattern URL_TRIPLE = Pattern.compile("(.+:\\/\\/(?:www(?:(?:\\w+)?\\.)?)?([\\w\\.\\-]+)(?:[\\:\\d]+)?(?:.*\\/)?(?:[\\w.-]*[^\\.pdf]\\?[\\w.-]+[^site]=)?)(.+)?");
+	public final static Pattern URL_TRIPLE = Pattern.compile("(.+:\\/\\/(?:www(?:(?:\\w+)?\\.)?)?([\\w\\.\\-]+)(?:[\\:\\d]+)?(?:.*\\/)?(?:[\\w\\.\\-\\_\\%\\:\\~]*\\?[\\w\\.\\-\\_\\%\\:\\~]+\\=)?)(.+)?");
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
-	public static final Pattern URL_DIRECTORY_FILTER = Pattern.compile(".+\\/(?:login|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|citation|faq|wiki|support|error|misuse|abuse|notfound|contribute|subscription|advertisers"
+	public static final Pattern URL_DIRECTORY_FILTER = Pattern.compile(".+\\/(?:user|profile|login|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|citation|faq|wiki|support|error|misuse|abuse|notfound|contribute"
 																	+ "|author|editor|license|disclaimer|policies|policy|privacy|terms|sitemap|account|search|statistics|cookie|application|help|law|permission|ethic|contact|survey|wallet"
-																	+ "|template|logo|image|photo|profile).*");
+																	+ "|template|logo|image|photo|advertisers).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects.
 	
-	public static final Pattern PAGE_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|pt|mso|dtl|svg)(?:\\?.+=.+)?$");
+	public static final Pattern PAGE_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|mso|dtl|svg|c|cc|cxx|cpp|java|py)(?:\\?.+=.+)?$");
 	
-    public static final Pattern INNER_LINKS_FILE_EXTENSION_FILTER = Pattern.compile(".+:\\/\\/.+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|pt|xml|mso|dtl|svg|do)(?:\\?.+=.+)?$");
+    public static final Pattern INNER_LINKS_FILE_EXTENSION_FILTER = Pattern.compile(".+:\\/\\/.+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|xml|mso|dtl|svg|do|c|cc|cxx|cpp|java|py)(?:\\?.+=.+)?$");
     // Here don't include .php and relative extensions, since even this can be a docUrl. For example: https://www.dovepress.com/getfile.php?fileID=5337
 	// So, we make a new REGEX for these extensions, this time, without a potential argument in the end (?id=XXX..)
 	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:php|php2|php3|php4|php5|phtml|htm|html|shtml|xht|xhtm|xhtml|xml|aspx|asp|jsp|do)$");
@@ -67,11 +67,12 @@ public class UrlUtils
 	public static int sciencedirectUrls = 0;
 	public static int elsevierUnwantedUrls = 0;
 	public static int doajResultPageUrls = 0;
-	public static int dlibHtmlDocUrls = 0;
+	public static int pageWithHtmlDocUrls = 0;
 	public static int pagesWithLargerCrawlingDepth = 0;	// Pages with their docUrl behind an inner "view" page.
 	public static int doiOrgToScienceDirect = 0;	// Urls from "doi.org" which redirect to "sciencedirect.com".
 	public static int urlsWithUnwantedForm = 0;	// (plain domains, unwanted page-extensions ect.)
 	public static int pangaeaUrls = 0;	// These urls are in false form by default, but even if they weren't or we transform them, PANGAEA. only gives datasets, not fulltext.
+	public static int pagesNotProvidingDocUrls = 0;
 	
 	static {
 		logger.debug("Setting knownDocTypes. Currently testing only \".pdf\" type.");
@@ -162,13 +163,25 @@ public class UrlUtils
 			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the Results-directory: \"doaj.org/toc/\".");
 			return true;
 		}
-		else if ( lowerCaseUrl.contains("dlib.org") ) {    // Avoid HTML docUrls.
-			UrlUtils.dlibHtmlDocUrls ++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the HTML-docUrls site: \"dlib.org\".");
+		else if ( lowerCaseUrl.contains("dlib.org") || lowerCaseUrl.contains("saberes.fcecon.unr.edu.ar") ) {    // Avoid HTML docUrls.
+			UrlUtils.pageWithHtmlDocUrls++;
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to an HTML-docUrls site.");
 			return true;
 		}
-		else if ( lowerCaseUrl.contains("ojs.ifnmu.edu.ua") || lowerCaseUrl.contains("spilplus.journals.ac.za")	// Avoid crawling pages with larger depth.
-				|| lowerCaseUrl.contains("spilplus.journals.ac.za") || lowerCaseUrl.contains("phcfm.org") || lowerCaseUrl.contains("raco.cat"))
+		else if ( lowerCaseUrl.contains("rivisteweb.it") || lowerCaseUrl.contains("library.wur.nl") ) {	// Avoid pages known to not provide docUrls (just metadata).
+			UrlUtils.pagesNotProvidingDocUrls ++;
+			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to the non docUrls-providing site \"rivisteweb.it\".");
+			return true;
+		}
+		else if ( lowerCaseUrl.contains("ojs.ifnmu.edu.ua") || lowerCaseUrl.contains("spilplus.journals.ac.za") || lowerCaseUrl.contains("rpd.unibo.it")	// Avoid crawling pages with larger depth.
+				|| lowerCaseUrl.contains("spilplus.journals.ac.za") || lowerCaseUrl.contains("phcfm.org") || lowerCaseUrl.contains("raco.cat") || lowerCaseUrl.contains("journals.cultcenter.net")
+				|| lowerCaseUrl.contains("journal.binus.ac.id") || lowerCaseUrl.contains("ebph.it") || lowerCaseUrl.contains("journal-s.org") || lowerCaseUrl.contains("journal.dogus.edu.tr")
+				|| lowerCaseUrl.contains("bvpb.mcu.es") || lowerCaseUrl.contains("revistas.ufpr.br") || lowerCaseUrl.contains("revista.feb.unesp.br") || lowerCaseUrl.contains("revistas.pucp.edu.pe") || lowerCaseUrl.contains("qualitative-research.net")
+				|| lowerCaseUrl.contains("grbs.library.duke.edu") || lowerCaseUrl.contains("tj-es.com") || lowerCaseUrl.contains("jurnal.uii.ac.id") || lowerCaseUrl.contains("ref.uabc.mx")
+				|| lowerCaseUrl.contains("journals.univ-danubius.ro") || lowerCaseUrl.contains("journal.unnes.ac.id") || lowerCaseUrl.contains("online.unisc.br") || lowerCaseUrl.contains("jurnal.ugm.ac.id")
+				|| lowerCaseUrl.contains("wjst.wu.ac.th") || lowerCaseUrl.contains("jurnal.unsyiah.ac.id") || lowerCaseUrl.contains("bvpb.mcu.es") || lowerCaseUrl.contains("journals.iium.edu.my")
+				|| lowerCaseUrl.contains("periodicos.ufsc.br") || lowerCaseUrl.contains("periodicos.unb.br") || lowerCaseUrl.contains("informatio.eubca.edu.uy") || lowerCaseUrl.contains("statecon.rea.ru")
+				|| lowerCaseUrl.contains("cuestionessociologia.fahce.unlp.edu.ar") || lowerCaseUrl.contains("vestnik.szd.si")  )
 		{
 			UrlUtils.pagesWithLargerCrawlingDepth ++;
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to an increasedCrawlingDepth-site.");

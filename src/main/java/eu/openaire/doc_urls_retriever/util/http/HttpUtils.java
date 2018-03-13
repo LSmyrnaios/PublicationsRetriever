@@ -21,20 +21,22 @@ public class HttpUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(HttpUtils.class);
 	
-	public static HashSet<String> domainsWithUnsupportedHeadMethod = new HashSet<String>();
-	public static HashSet<String> blacklistedDomains = new HashSet<String>();	// Domains with which we don't want to connect again.
-	public static HashMap<String, Integer> timesDomainsReturned5XX = new HashMap<String, Integer>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
-	public static HashMap<String, Integer> timesDomainsHadTimeoutEx = new HashMap<String, Integer>();
-	public static SetMultimap<String, String> timesDomainsHadPaths403BlackListed = HashMultimap.create();	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
+	public static final HashSet<String> domainsWithUnsupportedHeadMethod = new HashSet<String>();
+	public static final HashSet<String> blacklistedDomains = new HashSet<String>();	// Domains with which we don't want to connect again.
+	public static final HashMap<String, Integer> timesDomainsReturned5XX = new HashMap<String, Integer>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
+	public static final HashMap<String, Integer> timesDomainsHadTimeoutEx = new HashMap<String, Integer>();
+	public static final SetMultimap<String, String> timesDomainsHadPaths403BlackListed = HashMultimap.create();	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
 
-	public static String lastConnectedHost = "";
-    public static int politenessDelay = 250;	// Time to wait before connecting to the same host again.
-	public static int maxConnWaitingTime = 15000;	// Max time (in ms) to wait for a connection.
-    private static int maxRedirects = 5;	// It's not worth waiting for more than 3, in general.. except if we turn out missing a lot of them.. test every case and decide.. 
+    public static final int politenessDelay = 250;	// Time to wait before connecting to the same host again.
+	public static final int politenessDelayForPMC = politenessDelay * 2;	// Increased politenessDelay for "PMC"-distributing domains.
+	public static final int maxConnWaitingTime = 15000;	// Max time (in ms) to wait for a connection.
+    private static final int maxRedirects = 5;	// It's not worth waiting for more than 3, in general.. except if we turn out missing a lot of them.. test every case and decide..
     										// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
-    private static int timesToHave5XXerrorCodeBeforeBlocked  = 5;
-    private static int timesToHaveTimeoutExBeforeBlocked = 3;
-    private static int numberOf403BlockedPathsBeforeBlocked = 5;
+    private static final int timesToHave5XXerrorCodeBeforeBlocked = 5;
+    private static final int timesToHaveTimeoutExBeforeBlocked = 3;
+    private static final int numberOf403BlockedPathsBeforeBlocked = 5;
+	
+	public static String lastConnectedHost = "";
 
 
 
@@ -136,7 +138,10 @@ public class HttpUtils
 				conn.setRequestMethod("HEAD");	// Else, try "HEAD" (it may be either a domain that supports "HEAD", or a new domain, for which we have no info yet).
 			
 			if ( domainStr.equals(lastConnectedHost) ) {	// If this is the last-visited domain, sleep a bit before re-connecting to it.
-				Thread.sleep(politenessDelay);	// Avoid server-overloading for the same host.
+				if ( resourceURL.contains("PMC") )	// Increase politenessDelay for pages distributing "PMC", since their domains are way-to-sensitive to crawlers..
+					Thread.sleep(politenessDelayForPMC);
+				else
+					Thread.sleep(politenessDelay);	// Avoid server-overloading for the same host.
 				conn.connect();
 			} else {
 				conn.connect();	// Else, first connect and if there is no error, log this domain as the last one.

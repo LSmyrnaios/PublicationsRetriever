@@ -55,11 +55,11 @@ public class PageCrawler extends WebCrawler
 				|| UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseLink).matches()
-				|| UrlUtils.INNER_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseLink).matches()
+				|| UrlUtils.INNER_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseLink).matches()	// We re-check here, as in the fast-loop not all of the links are checked against this.
 				|| UrlUtils.INNER_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseLink).matches();
 		
-		// The following check is obsolete here, as we already use it inside "visit()" method. Still keep it here, as it makes our intentions clearer.
+		// The following checks are obsolete here, as we already use it inside "visit()" method. Still keep it here, as it makes our intentions clearer.
 		// !lowerCaseLink.contains(referringPageDomain)	// Don't check this link if it belongs in a different domain than the referringPage's one.
 	}
 	
@@ -80,7 +80,7 @@ public class PageCrawler extends WebCrawler
 		
 		String currentPageDomain = UrlUtils.getDomainStr(pageUrl);
 		if ( currentPageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage.
-			logger.debug("Problematic URL in \"visit()\": \"" +  pageUrl + "\"");
+			logger.warn("Problematic URL in \"visit()\": \"" +  pageUrl + "\"");
 			UrlUtils.logTriple(pageUrl, pageUrl, "Discarded in visit() method, after the occurrence of a domain-retrieval error.");
 			return;
 		}
@@ -111,7 +111,7 @@ public class PageCrawler extends WebCrawler
 	    // Check if we can use AND if we should run, the MLA.
 		if ( MachineLearning.useMLA )
 			if ( MachineLearning.shouldRunMLA(currentPageDomain) )
-	    		if (MachineLearning.guessInnerDocUrlUsingML(pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
+	    		if ( MachineLearning.guessInnerDocUrlUsingML(pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
     				return;	// If we were able to find the right path.. and hit a docUrl successfully.. return.
         
 	    Set<WebURL> currentPageLinks = page.getParseData().getOutgoingUrls();
@@ -123,11 +123,13 @@ public class PageCrawler extends WebCrawler
 			UrlUtils.logTriple(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, as no links were able to be retrieved from it. Its contentType is: \"" + pageContentType + "\"");
 			return;
 		}
-
+		
 		HashSet<String> curLinksStr = new HashSet<String>();	// HashSet to store the String version of each link.
-
+		
 		String urlToCheck = null;
-
+		String lowerCaseUrl = null;
+		
+		// Do a fast-loop, try connecting only to a handful of promising links first.
 		// Check if urls inside this page, match to a docUrl regex, if they do, try connecting with them and see if they truly are docUrls. If they are, return.
 		for ( WebURL link : currentPageLinks )
 		{
@@ -136,12 +138,13 @@ public class PageCrawler extends WebCrawler
             // See "Parser.java" and "Net.java", in Crawler4j files, for more info.
             String currentLink = link.toString();
             if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl)) == null ) {	// Fix potential encoding problems.
-                logger.debug("Could not cannonicalize inner url: " + currentLink);
+                logger.warn("Could not cannonicalize inner url: " + currentLink);
                 UrlUtils.duplicateUrls.add(currentLink);
                 continue;
             }
             
-            if ( !urlToCheck.contains(currentPageDomain) || urlToCheck.contains("site=") )	// Make sure we avoid connecting to different domains.
+            if ( !urlToCheck.contains(currentPageDomain)
+				|| urlToCheck.contains("site=") || urlToCheck.contains("login") || urlToCheck.contains("LinkListener") )	// Make sure we avoid connecting to different domains, or to loginPages.
             	continue;
 			
             if ( UrlUtils.duplicateUrls.contains(urlToCheck) )
@@ -153,30 +156,30 @@ public class PageCrawler extends WebCrawler
                 return;
             }
             
-            Matcher docUrlMatcher = UrlUtils.DOC_URL_FILTER.matcher(urlToCheck.toLowerCase());
-            if ( docUrlMatcher.matches() )
-            {
-                try {
-                    if ( HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, currentPageDomain) ) {		// We log the docUrl inside this method.
-                        //logger.debug("\"DOC_URL_FILTER\" revealed a docUrl in pageUrl: \"" + pageUrl + "\", after matching to: \"" + docUrlMatcher.group(1) + "\"");
-                        return;
-                    }
-                    else
-                        continue;	// Don't add it in the new set.
-                } catch (RuntimeException re) {
-                    UrlUtils.duplicateUrls.add(urlToCheck);	// Don't check it ever again..
-                    continue;
-                }
+            lowerCaseUrl = urlToCheck.toLowerCase();
+            if ( UrlUtils.DOC_URL_FILTER.matcher(lowerCaseUrl).matches() )
+			{
+				if ( UrlUtils.INNER_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches() )	// Avoid false-positives, such as the common one: ".../pdf.png".
+					continue;
+				else {
+					try {
+						if (HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, currentPageDomain))    // We log the docUrl inside this method.
+							return;
+						else
+							continue;    // Don't add it in the new set.
+					} catch (RuntimeException re) {
+						UrlUtils.duplicateUrls.add(urlToCheck);    // Don't check it ever again..
+						continue;
+					}
+				}
             }
-			
+            
 			curLinksStr.add(urlToCheck);	// Keep the string version of this link, in order not to make the transformation later..
 			
 		}// end for-loop
 
 		// If we reached here, it means that we couldn't find a docUrl the quick way.. so we have to check some (we exclude lots of them) of the inner links one by one.
-
-		currentPageLinks.clear();	// Free-up non-needed memory.
-
+		
 		for ( String currentLink : curLinksStr )
 		{
 			if ( shouldNotCheckInnerLink(currentPageDomain, currentLink) ) {	// If this link matches certain blackListed criteria, move on..
@@ -222,7 +225,16 @@ public class PageCrawler extends WebCrawler
 	{
 		String urlStr = webUrl.toString();
 		logger.warn("Parsing error of: \"" + urlStr + "\"" );
-		UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onParseError(() method, as there was a problem parsing this page.");
+		
+		// Try rescuing the possible docUrl.
+		try {
+			if ( HttpUtils.connectAndCheckMimeType(urlStr, urlStr, null) )	// Sometimes "TIKA" (Crawler4j uses it for parsing webPages) falls into a parsing error, when parsing PDFs.
+				return;
+			else
+				UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onParseError(() method, as there was a problem parsing this page.");
+		} catch (RuntimeException re) {
+			UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onParseError(() method, as there was a problem parsing this page.");
+		}
 	}
 
 
@@ -233,6 +245,10 @@ public class PageCrawler extends WebCrawler
 		{
 			String urlStr = webUrl.toString();
 			String exceptionMessage = e.getMessage();
+			if ( exceptionMessage == null ) {    // Avoid causing an "NPE".
+				UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an unhandled exception: " + e);
+				return;
+			}
 			
 			int curTreatableException = 0;
 			
