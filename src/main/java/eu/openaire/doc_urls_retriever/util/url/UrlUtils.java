@@ -54,6 +54,8 @@ public class UrlUtils
 	
 	public static final Pattern DOI_ORG_J_FILTER = Pattern.compile(".+[doi.org]\\/[\\d]{2}\\.[\\d]{4}\\/[j]\\..+");	// doi.org urls which has this form and redirect to "sciencedirect.com".
 	
+	public static final Pattern DOI_ORG_PARENTHESIS_FILTER = Pattern.compile(".+[doi.org]\\/[\\d]{2}\\.[\\d]{4}\\/[\\w]*[\\d]{4}\\-[\\d]{3}(?:[\\d]|[\\w])[\\(][\\d]{2}[\\)][\\d]{5}\\-(?:[\\d]|[\\w])");	// Same reason as above.
+	
 	public static int sumOfDocsFound = 0;	// Change it back to simple int if finally in singleThread mode
 	public static long inputDuplicatesNum = 0;
 	
@@ -69,6 +71,7 @@ public class UrlUtils
 	public static int pagesWithLargerCrawlingDepth = 0;	// Pages with their docUrl behind an inner "view" page.
 	public static int doiOrgToScienceDirect = 0;	// Urls from "doi.org" which redirect to "sciencedirect.com".
 	public static int urlsWithUnwantedForm = 0;	// (plain domains, unwanted page-extensions ect.)
+	public static int pangaeaUrls = 0;	// These urls are in false form by default, but even if they weren't or we transform them, PANGAEA. only gives datasets, not fulltext.
 	
 	static {
 		logger.debug("Setting knownDocTypes. Currently testing only \".pdf\" type.");
@@ -90,9 +93,9 @@ public class UrlUtils
 		// Start loading and checking urls.
         while ( true )
         {
-        	loadedUrlGroup = FileUtils.getNextUrlGroupFromJson(); // Take urls from jsonFile.
+        	//loadedUrlGroup = FileUtils.getNextUrlGroupFromJson(); // Take urls from jsonFile.
 			
-			//loadedUrlGroup = FileUtils.getNextUrlGroupTest();	// Take urls from single-columned (testing) csvFile.
+			loadedUrlGroup = FileUtils.getNextUrlGroupTest();	// Take urls from single-columned (testing) csvFile.
 			
 	        if ( loadedUrlGroup.isEmpty() ) {
 	        	if ( firstRun ) {
@@ -165,12 +168,18 @@ public class UrlUtils
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("ojs.ifnmu.edu.ua") || lowerCaseUrl.contains("spilplus.journals.ac.za")	// Avoid crawling pages with larger depth.
-				|| lowerCaseUrl.contains("spilplus.journals.ac.za") || lowerCaseUrl.contains("phcfm.org") || lowerCaseUrl.contains("raco.cat")) {
+				|| lowerCaseUrl.contains("spilplus.journals.ac.za") || lowerCaseUrl.contains("phcfm.org") || lowerCaseUrl.contains("raco.cat"))
+		{
 			UrlUtils.pagesWithLargerCrawlingDepth ++;
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to an increasedCrawlingDepth-site.");
 			return true;
 		}
-		else if ( UrlUtils.DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() ) {
+		else if ( lowerCaseUrl.contains("doi.org/https://doi.org/") && lowerCaseUrl.contains("pangaea.") ) {	// PANGAEA. urls with problematic form and non docUrl inner links.
+			UrlUtils.pangaeaUrls ++;
+			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to \"PANGAEA.\" urls with invalid form and non-docUrls in their inner links.");
+			return true;
+		}
+		else if ( UrlUtils.DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.DOI_ORG_PARENTHESIS_FILTER.matcher(lowerCaseUrl).matches() ) {
 			UrlUtils.doiOrgToScienceDirect ++;
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to a urlType of \"doi.org\", which redirects to \"sciencedirect.com\".");
 			return true;
