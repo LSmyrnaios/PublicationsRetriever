@@ -82,11 +82,14 @@ public class PageCrawler extends WebCrawler
 	{
 		String contentDisposition = null;
 		
-		if ( pageContentType == null ) {	// If can't retrieve the contentType, try the "Content-Disposition".
+		if ( pageContentType == null ) {	// If we can't retrieve the contentType, try the "Content-Disposition".
 			Header[] headers = page.getFetchResponseHeaders();
-			for ( Header header : headers )
-				if ( header.getName().equals("Content-Disposition") )
+			for ( Header header : headers ) {
+				if ( header.getName().equals("Content-Disposition") ) {
 					contentDisposition = header.getValue();
+					break;
+				}
+			}
 		}
 		
 		if ( UrlUtils.hasDocMimeType(pageUrl, pageContentType, contentDisposition) )
