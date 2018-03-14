@@ -107,7 +107,7 @@ public class PageCrawler extends WebCrawler
 		logger.debug("Checking pageUrl: \"" + pageUrl + "\".");
 		
 		String currentPageDomain = UrlUtils.getDomainStr(pageUrl);
-		if ( currentPageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage.
+		if ( currentPageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"visit()\": \"" +  pageUrl + "\"");
 			UrlUtils.logTriple(pageUrl, pageUrl, "Discarded in visit() method, after the occurrence of a domain-retrieval error.");
 			return;
@@ -179,7 +179,7 @@ public class PageCrawler extends WebCrawler
             }
             
             if ( !urlToCheck.contains(currentPageDomain)
-				|| urlToCheck.contains("site=") || urlToCheck.contains("login") || urlToCheck.contains("LinkListener") )	// Make sure we avoid connecting to different domains, or to loginPages.
+				|| urlToCheck.contains("site=") || urlToCheck.contains("login") || urlToCheck.contains("LinkListener") )	// Make sure we avoid connecting to different domains, loginPages, or tracking links.
             	continue;
 			
             if ( UrlUtils.duplicateUrls.contains(urlToCheck) )
@@ -199,7 +199,7 @@ public class PageCrawler extends WebCrawler
 				else {
 					//logger.debug("InnerPossibleDocLink: " + urlToCheck);	// DEBUG!
 					try {
-						if (HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, currentPageDomain))    // We log the docUrl inside this method.
+						if ( HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, currentPageDomain) )	// We log the docUrl inside this method.
 							return;
 						else
 							continue;    // Don't add it in the new set.
@@ -213,7 +213,7 @@ public class PageCrawler extends WebCrawler
 			curLinksStr.add(urlToCheck);	// Keep the string version of this link, in order not to make the transformation later..
 			
 		}// end for-loop
-
+		
 		// If we reached here, it means that we couldn't find a docUrl the quick way.. so we have to check some (we exclude lots of them) of the inner links one by one.
 		
 		for ( String currentLink : curLinksStr )

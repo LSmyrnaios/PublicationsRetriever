@@ -29,9 +29,9 @@ public class UrlUtils
 																	+ "|template|logo|image|photo|advertisers).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects.
 	
-	public static final Pattern PAGE_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|mso|dtl|svg|c|cc|cxx|cpp|java|py)(?:\\?.+=.+)?$");
+	public static final Pattern PAGE_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|mso|dtl|svg|txt|c|cc|cxx|cpp|java|py)(?:\\?.+=.+)?$");
 	
-    public static final Pattern INNER_LINKS_FILE_EXTENSION_FILTER = Pattern.compile(".+:\\/\\/.+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|xml|mso|dtl|svg|do|c|cc|cxx|cpp|java|py)(?:\\?.+=.+)?$");
+    public static final Pattern INNER_LINKS_FILE_EXTENSION_FILTER = Pattern.compile(".+:\\/\\/.+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|xml|mso|dtl|svg|do|txt|c|cc|cxx|cpp|java|py)(?:\\?.+=.+)?$");
     // Here don't include .php and relative extensions, since even this can be a docUrl. For example: https://www.dovepress.com/getfile.php?fileID=5337
 	// So, we make a new REGEX for these extensions, this time, without a potential argument in the end (?id=XXX..)
 	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:php|php2|php3|php4|php5|phtml|htm|html|shtml|xht|xhtm|xhtml|xml|aspx|asp|jsp|do)$");
@@ -181,7 +181,12 @@ public class UrlUtils
 				|| lowerCaseUrl.contains("journals.univ-danubius.ro") || lowerCaseUrl.contains("journal.unnes.ac.id") || lowerCaseUrl.contains("online.unisc.br") || lowerCaseUrl.contains("jurnal.ugm.ac.id")
 				|| lowerCaseUrl.contains("wjst.wu.ac.th") || lowerCaseUrl.contains("jurnal.unsyiah.ac.id") || lowerCaseUrl.contains("bvpb.mcu.es") || lowerCaseUrl.contains("journals.iium.edu.my")
 				|| lowerCaseUrl.contains("periodicos.ufsc.br") || lowerCaseUrl.contains("periodicos.unb.br") || lowerCaseUrl.contains("informatio.eubca.edu.uy") || lowerCaseUrl.contains("statecon.rea.ru")
-				|| lowerCaseUrl.contains("cuestionessociologia.fahce.unlp.edu.ar") || lowerCaseUrl.contains("vestnik.szd.si") || lowerCaseUrl.equals("oncourology.abvpress.ru") || lowerCaseUrl.contains("jwm.ulm.ac.id") )
+				|| lowerCaseUrl.contains("cuestionessociologia.fahce.unlp.edu.ar") || lowerCaseUrl.contains("vestnik.szd.si") || lowerCaseUrl.equals("oncourology.abvpress.ru") || lowerCaseUrl.contains("jwm.ulm.ac.id")
+				|| lowerCaseUrl.contains("riviste.unimi.it") || lowerCaseUrl.contains("seer.ufu.br") || lowerCaseUrl.contains("mimmun.ru") || lowerCaseUrl.contains("bibliotecadigital.fgv.br") || lowerCaseUrl.contains("seer.unirio.br")
+				|| lowerCaseUrl.contains("uel.br/revistas") || lowerCaseUrl.contains("revistafuture.org") || lowerCaseUrl.contains("dergipark.ulakbim.gov.tr") || lowerCaseUrl.contains("ijcto.org")
+				|| lowerCaseUrl.contains("rbhe.sbhe.org.br") || lowerCaseUrl.contains("revistas.usb.edu.co") || lowerCaseUrl.contains("revistachasqui.org") || lowerCaseUrl.contains("ejurnal.unilak.ac.id")
+				|| lowerCaseUrl.contains("revistas.javeriana.edu.co") || lowerCaseUrl.contains("riviste.unimi.it") || lowerCaseUrl.contains("koersjournal.org.za") || lowerCaseUrl.contains("polipapers.upv.es")
+				|| lowerCaseUrl.contains("journal.ipb.ac.id") || lowerCaseUrl.contains("e-publicacoes.uerj.br") )
 		{
 			UrlUtils.pagesWithLargerCrawlingDepth ++;
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to an increasedCrawlingDepth-site.");
