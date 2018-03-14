@@ -24,9 +24,9 @@ public class UrlUtils
 	public final static Pattern URL_TRIPLE = Pattern.compile("(.+:\\/\\/(?:www(?:(?:\\w+)?\\.)?)?([\\w\\.\\-]+)(?:[\\:\\d]+)?(?:.*\\/)?(?:[\\w\\.\\-\\_\\%\\:\\~]*\\?[\\w\\.\\-\\_\\%\\:\\~]+\\=)?)(.+)?");
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
-	public static final Pattern URL_DIRECTORY_FILTER = Pattern.compile(".+\\/(?:user|profile|login|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|citation|faq|wiki|support|error|misuse|abuse|notfound|contribute"
+	public static final Pattern URL_DIRECTORY_FILTER = Pattern.compile(".+\\/(?:user|profile|login|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|citation|faq|wiki|support|error|misuse|abuse|gateway|notfound|contribute"
 																	+ "|author|editor|license|disclaimer|policies|policy|privacy|terms|sitemap|account|search|statistics|cookie|application|help|law|permission|ethic|contact|survey|wallet"
-																	+ "|template|logo|image|photo|advertisers).*");
+																	+ "|template|logo|image|photo|advertiser|people).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects.
 	
 	public static final Pattern PAGE_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|mso|dtl|svg|txt|c|cc|cxx|cpp|java|py)(?:\\?.+=.+)?$");
@@ -40,7 +40,7 @@ public class UrlUtils
     
     public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile(".+:\\/\\/.*(?:google|goo.gl|gstatic|facebook|twitter|youtube|linkedin|wordpress|s.w.org|ebay|bing|amazon|wikipedia|myspace|yahoo|mail|pinterest|reddit|blog|tumblr"
 																					+ "|evernote|skype|microsoft|adobe|buffer|digg|stumbleupon|addthis|delicious|dailymotion|gostats|blogger|copyright|friendfeed|newsvine|telegram|getpocket"
-																					+ "|flipboard|instapaper|line.me|telegram|vk|ok.rudouban|baidu|qzone|xing|renren|weibo).*\\/.*");
+																					+ "|flipboard|instapaper|line.me|telegram|vk|ok.rudouban|baidu|qzone|xing|renren|weibo|doubleclick).*\\/.*");
     
     public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile(".+:\\/\\/[\\w.:-]+(?:\\/)?$");	// Exclude plain domains' urls.
 	
@@ -50,7 +50,7 @@ public class UrlUtils
     // "DOC_URL_FILTER" works for lowerCase Strings (we make sure they are in lowerCase before we check).
     // Note that we still need to check if it's an alive link and if it's actually a docUrl (though it's mimeType).
 	
-	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("([\\w]+\\/[\\w\\+\\-\\.]+)(?:;[\\s]*[\\w]+\\=.+)?");
+	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("([\\w]+\\/[\\w\\+\\-\\.]+)(?:\\;.+)?");
 	
 	public static final Pattern DOI_ORG_J_FILTER = Pattern.compile(".+[doi.org]\\/[\\d]{2}\\.[\\d]{4}\\/[j]\\..+");	// doi.org urls which has this form and redirect to "sciencedirect.com".
 	
@@ -64,6 +64,7 @@ public class UrlUtils
 	public static HashSet<String> knownDocTypes = new HashSet<String>();
 	
 	// Counters for certain unwanted domains. We show statistics in the end.
+	public static int frontiersinUrls = 0;
 	public static int sciencedirectUrls = 0;
 	public static int elsevierUnwantedUrls = 0;
 	public static int doajResultPageUrls = 0;
@@ -126,7 +127,7 @@ public class UrlUtils
 	        	if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
 	        		logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already been seen!");	// DEBUG!
 	        		UrlUtils.inputDuplicatesNum ++;
-	        		UrlUtils.logTriple(retrievedUrl, "duplicate", "Discarded at loading time, as it's a duplicate.");
+	        		UrlUtils.logTriple(retrievedUrl, "duplicate", "Discarded at loading time, as it's a duplicate.", null);
 	        		continue;
 	        	}
 	        	
@@ -146,31 +147,36 @@ public class UrlUtils
 	 */
 	public static boolean matchesUnwantedUrlTypesAtLoading(String retrievedUrl, String lowerCaseUrl)
 	{
-		if ( lowerCaseUrl.contains("sciencedirect.com") ) {	// These urls are in JavaScript, having dynamic links which we cannot currently retrieve.
+		if ( lowerCaseUrl.contains("frontiersin.org") ) {
+			UrlUtils.frontiersinUrls ++;
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the JavaScript-using domain \"frontiersin.org\".", null);
+			return true;
+		}
+		else if ( lowerCaseUrl.contains("sciencedirect.com") ) {	// These urls are in JavaScript, having dynamic links which we cannot currently retrieve.
 			UrlUtils.sciencedirectUrls ++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the JavaScript-using domain \"sciencedirect.com\".");
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the JavaScript-using domain \"sciencedirect.com\".", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("elsevier.com") ) {	// The plain "elsevier.com" and the "journals.elsevier.com" don't give docUrls.
 			// The "linkinghub.elsevier.com" is redirecting to "sciencedirect.com".
 			// Note that we still accept the "elsevier.es" urls, which give docUrls.
 			UrlUtils.elsevierUnwantedUrls ++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the unwanted \"elsevier.com\" domain.");
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the unwanted \"elsevier.com\" domain.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("doaj.org/toc/") ) {	// Avoid resultPages.
 			UrlUtils.doajResultPageUrls ++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the Results-directory: \"doaj.org/toc/\".");
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the Results-directory: \"doaj.org/toc/\".", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("dlib.org") || lowerCaseUrl.contains("saberes.fcecon.unr.edu.ar") ) {    // Avoid HTML docUrls.
 			UrlUtils.pageWithHtmlDocUrls++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to an HTML-docUrls site.");
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to an HTML-docUrls site.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("rivisteweb.it") || lowerCaseUrl.contains("library.wur.nl") ) {	// Avoid pages known to not provide docUrls (just metadata).
 			UrlUtils.pagesNotProvidingDocUrls ++;
-			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to the non docUrls-providing site \"rivisteweb.it\".");
+			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to the non docUrls-providing site \"rivisteweb.it\".", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("ojs.ifnmu.edu.ua") || lowerCaseUrl.contains("spilplus.journals.ac.za") || lowerCaseUrl.contains("rpd.unibo.it")	// Avoid crawling pages with larger depth.
@@ -186,27 +192,27 @@ public class UrlUtils
 				|| lowerCaseUrl.contains("uel.br/revistas") || lowerCaseUrl.contains("revistafuture.org") || lowerCaseUrl.contains("dergipark.ulakbim.gov.tr") || lowerCaseUrl.contains("ijcto.org")
 				|| lowerCaseUrl.contains("rbhe.sbhe.org.br") || lowerCaseUrl.contains("revistas.usb.edu.co") || lowerCaseUrl.contains("revistachasqui.org") || lowerCaseUrl.contains("ejurnal.unilak.ac.id")
 				|| lowerCaseUrl.contains("revistas.javeriana.edu.co") || lowerCaseUrl.contains("riviste.unimi.it") || lowerCaseUrl.contains("koersjournal.org.za") || lowerCaseUrl.contains("polipapers.upv.es")
-				|| lowerCaseUrl.contains("journal.ipb.ac.id") || lowerCaseUrl.contains("e-publicacoes.uerj.br") )
+				|| lowerCaseUrl.contains("journal.ipb.ac.id") || lowerCaseUrl.contains("e-publicacoes.uerj.br") || lowerCaseUrl.contains("revistas.usp.br") || lowerCaseUrl.contains("pbsociety.org.pl") )
 		{
 			UrlUtils.pagesWithLargerCrawlingDepth ++;
-			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to an increasedCrawlingDepth-site.");
+			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to an increasedCrawlingDepth-site.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("doi.org/https://doi.org/") && lowerCaseUrl.contains("pangaea.") ) {	// PANGAEA. urls with problematic form and non docUrl inner links.
 			UrlUtils.pangaeaUrls ++;
-			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to \"PANGAEA.\" urls with invalid form and non-docUrls in their inner links.");
+			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to \"PANGAEA.\" urls with invalid form and non-docUrls in their inner links.", null);
 			return true;
 		}
 		else if ( UrlUtils.DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.DOI_ORG_PARENTHESIS_FILTER.matcher(lowerCaseUrl).matches() ) {
 			UrlUtils.doiOrgToScienceDirect ++;
-			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to a urlType of \"doi.org\", which redirects to \"sciencedirect.com\".");
+			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to a urlType of \"doi.org\", which redirects to \"sciencedirect.com\".", null);
 			return true;
 		}
 		else if ( UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() ||UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
 				|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches())
 		{
 			UrlUtils.urlsWithUnwantedForm ++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to unwantedType-regex-rules.");
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to unwantedType-regex-rules.", null);
 			return true;
 		}
 		else
@@ -216,11 +222,12 @@ public class UrlUtils
 
     /**
      * This method logs the outputEntry to be written, as well as the docUrlPath (if non-empty String) and adds entries in the blackList.
-     * @param sourceUrl
-     * @param initialDocUrl
-     * @param errorCause
-     */
-    public static void logTriple(String sourceUrl, String initialDocUrl, String errorCause)
+	 * @param sourceUrl
+	 * @param initialDocUrl
+	 * @param errorCause
+	 * @param domain
+	 */
+    public static void logTriple(String sourceUrl, String initialDocUrl, String errorCause, String domain)
     {
         String finalDocUrl = initialDocUrl;
 		
@@ -237,7 +244,7 @@ public class UrlUtils
 			
             // Gather data for the MLA, if we decide to have it enabled.
             if ( MachineLearning.useMLA )
-				MachineLearning.gatherMLData(sourceUrl, finalDocUrl);
+				MachineLearning.gatherMLData(domain, sourceUrl, finalDocUrl);
 			
             docUrls.add(finalDocUrl);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
         }

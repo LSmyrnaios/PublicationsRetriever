@@ -44,6 +44,8 @@ public class MachineLearning
 	private static HashMap<String, Integer> timesDomainsFailedInMLA = new HashMap<String, Integer>();
 	private static int timesToFailBeforeBlockedFromMLA = 20;
 	
+	private static HashSet<String> pagePathsBlockedFromMLA = new HashSet<String>();
+	
 	
 	
 	/**
@@ -160,15 +162,19 @@ public class MachineLearning
 	/**
 	 * This method gathers docPagePath and docUrlPath data, for succesfull docUrl-found-cases.
 	 * This data is used by "UrlUtils.guessInnerDocUrl()".
+	 * @param domain
 	 * @param docPage
 	 * @param docUrl
 	 */
-	public static void gatherMLData(String docPage, String docUrl)
+	public static void gatherMLData(String domain, String docPage, String docUrl)
 	{
+		if ( domainsBlockedFromMLA.contains(domain) )
+			return;
+		
 		// Get the paths of the docPage and the docUrl and put them inside "successDomainPathsMultiMap".
 		
 		String docPagePath = UrlUtils.getPathStr(docPage);
-		if ( docPagePath == null )
+		if ( (docPagePath == null) || pagePathsBlockedFromMLA.contains(docPagePath) )
 			return;
 		
 		String docUrlPath = null;
@@ -210,6 +216,9 @@ public class MachineLearning
 			return false;
 		}
 		
+		if ( pagePathsBlockedFromMLA.contains(pagePath) )
+			return false;
+		
 		if ( successPathsMultiMap.containsKey(pagePath) )	// If this page's path is already logged, go check for previous succesfull docUrl's paths, if not logged, then return..
 		{
 			String docIdStr = matcher.group(3);	// Group <3> is the ID.
@@ -218,12 +227,25 @@ public class MachineLearning
 				return false;
 			}
 			
-			//MachineLearning.urlsCheckedWithMLA ++;
-			
 			StringBuilder strB = new StringBuilder(150);
 			String guessedDocUrl = null;
 			
 			Collection<String> knownDocUrlPaths = successPathsMultiMap.get(pagePath);	// Get all available docUrlpaths for this docPagePath, to try them along with current ID.
+			
+			int pathsSize = knownDocUrlPaths.size();
+			if ( pathsSize > 10 ) {	// Too many docPaths for this pagePath, means that there's probably only one pagePath we get for this domain (paths are not mapped to domains so we can't actually check).
+				logger.debug("Domain: \"" + domainStr + "\" was blocked from being accessed again by the MLA, after retrieving a proved-to-be incompatible pagePath.");
+				domainsBlockedFromMLA.add(domainStr);
+				successPathsMultiMap.removeAll(pagePath);	// This domain was blocked, remove current non-needed paths-data.
+				return false;
+			}
+			else if ( pathsSize > 5 ) {    // It's not worth risking connecting with more than 5 "guessedDocUrl"s, for which their success is non-granted.
+				successPathsMultiMap.removeAll(pagePath);	// This pagePath is non-usable anymore.. remove this pagePath's data.
+				pagePathsBlockedFromMLA.add(pagePath);	// Make sure we don't collect docPaths related with this pagePath, ever again.
+				return false;    // The difference here is that we avoid running
+			}
+			
+			//MachineLearning.urlsCheckedWithMLA ++;
 			
 			for ( String knownDocUrlPath : knownDocUrlPaths )
 			{
@@ -235,7 +257,7 @@ public class MachineLearning
 				guessedDocUrl = strB.toString();
 				
 				if ( UrlUtils.docUrls.contains(guessedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
-					UrlUtils.logTriple(pageUrl, guessedDocUrl, "");
+					UrlUtils.logTriple(pageUrl, guessedDocUrl, "", null);
 					logger.debug("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
 					MachineLearning.docUrlsFoundByMLA ++;
 					return true;

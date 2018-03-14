@@ -32,14 +32,14 @@ public class PageCrawler extends WebCrawler
 		// Note that "elsevier.com" is reached after redirections only and that it's an intermediate site itself.. so it isn't found at loading time.
 		if ( lowerCaseUrlStr.contains("linkinghub.elsevier.com") ) {   // Avoid this JavaScript site wich redirects to "sciencedirect.com" non-accesible dynamic links.
             UrlUtils.elsevierUnwantedUrls++;
-			UrlUtils.logTriple(urlStr, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after matching to the JavaScript site: \"elsevier.com\".");
+			UrlUtils.logTriple(urlStr, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after matching to the JavaScript site: \"elsevier.com\".", null);
             return false;
 		}
 		else if ( UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrlStr).matches()
 					|| UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrlStr).matches()
 					||UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrlStr).matches() )
 		{
-			UrlUtils.logTriple(urlStr, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after matching to unwantedType-rules.");
+			UrlUtils.logTriple(urlStr, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after matching to unwantedType-rules.", null);
 			return false;
 		}
 		else
@@ -109,7 +109,7 @@ public class PageCrawler extends WebCrawler
 		String currentPageDomain = UrlUtils.getDomainStr(pageUrl);
 		if ( currentPageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"visit()\": \"" +  pageUrl + "\"");
-			UrlUtils.logTriple(pageUrl, pageUrl, "Discarded in visit() method, after the occurrence of a domain-retrieval error.");
+			UrlUtils.logTriple(pageUrl, pageUrl, "Discarded in visit() method, after the occurrence of a domain-retrieval error.", null);
 			return;
 		}
 		
@@ -117,20 +117,20 @@ public class PageCrawler extends WebCrawler
 		
 		if ( UrlUtils.docUrls.contains(pageUrl) ) {	// If we got into an already-found docUrl, log it and return.
 			logger.debug("Re-crossing the already found docUrl: \"" +  pageUrl + "\"");
-			UrlUtils.logTriple(pageUrl, pageUrl, "");	// No error here.
+			UrlUtils.logTriple(pageUrl, pageUrl, "", currentPageDomain);	// No error here.
 			return;
 		}
 		
 		String pageContentType = page.getContentType();
 		
 		if ( isPageDocUrlItself(page, pageContentType, pageUrl) ) {
-			UrlUtils.logTriple(pageUrl, pageUrl, "");
+			UrlUtils.logTriple(pageUrl, pageUrl, "", currentPageDomain);
 			return;
 		}
 		
 		if ( HttpUtils.blacklistedDomains.contains(currentPageDomain) ) {	// Check if it has been blackListed after running inner links' checks.
 			logger.debug("Avoid crawling blackListed domain: \"" + currentPageDomain + "\"");
-			UrlUtils.logTriple(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, as its domain was found blackListed.");
+			UrlUtils.logTriple(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, as its domain was found blackListed.", null);
 			return;
 		}
 		
@@ -148,7 +148,7 @@ public class PageCrawler extends WebCrawler
 
 		if ( currentPageLinks.isEmpty() ) {	// If no links were retrieved (e.g. the pageUrl was some kind of non-page binary content)
 			logger.warn("No links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
-			UrlUtils.logTriple(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, as no links were able to be retrieved from it. Its contentType is: \"" + pageContentType + "\"");
+			UrlUtils.logTriple(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, as no links were able to be retrieved from it. Its contentType is: \"" + pageContentType + "\"", null);
 			return;
 		}
 		
@@ -178,8 +178,8 @@ public class PageCrawler extends WebCrawler
                 continue;
             }
             
-            if ( !urlToCheck.contains(currentPageDomain)
-				|| urlToCheck.contains("site=") || urlToCheck.contains("login") || urlToCheck.contains("LinkListener") )	// Make sure we avoid connecting to different domains, loginPages, or tracking links.
+            if ( !urlToCheck.contains(currentPageDomain)	// Make sure we avoid connecting to different domains, loginPages, or tracking links.
+				|| urlToCheck.contains("site=") || urlToCheck.contains("linkout") || urlToCheck.contains("login") || urlToCheck.contains("LinkListener") )
             	continue;
 			
             if ( UrlUtils.duplicateUrls.contains(urlToCheck) )
@@ -187,7 +187,7 @@ public class PageCrawler extends WebCrawler
 			
             if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
 				logger.debug("Re-crossing the already found docUrl: \"" +  urlToCheck + "\"");
-                UrlUtils.logTriple(pageUrl, urlToCheck, "");	// No error here.
+                UrlUtils.logTriple(pageUrl, urlToCheck, "", currentPageDomain);	// No error here.
                 return;
             }
             
@@ -235,7 +235,7 @@ public class PageCrawler extends WebCrawler
 
 		// If we get here it means that this pageUrl is not a docUrl itself, nor it contains a docUrl..
 		logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
-		UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as no docUrl was found inside.");
+		UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as no docUrl was found inside.", null);
 	}
 
 
@@ -244,7 +244,7 @@ public class PageCrawler extends WebCrawler
 	{
 		// Call our general statusCode-handling method (it will also find the domainStr).
 		HttpUtils.onErrorStatusCode(urlStr, null, statusCode);
-		UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnexpectedStatusCode() method, after returning: " + statusCode + " errorCode.");
+		UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnexpectedStatusCode() method, after returning: " + statusCode + " errorCode.", null);
 	}
 
 
@@ -253,7 +253,7 @@ public class PageCrawler extends WebCrawler
 	{
 		String urlStr = webUrl.toString();
 		logger.warn("Can't fetch content of: \"" + urlStr + "\"");
-		UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onContentFetchError() method, as no content was able to be fetched for this page.");
+		UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onContentFetchError() method, as no content was able to be fetched for this page.", null);
 	}
 
 
@@ -268,9 +268,9 @@ public class PageCrawler extends WebCrawler
 			if ( HttpUtils.connectAndCheckMimeType(urlStr, urlStr, null) )	// Sometimes "TIKA" (Crawler4j uses it for parsing webPages) falls into a parsing error, when parsing PDFs.
 				return;
 			else
-				UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onParseError(() method, as there was a problem parsing this page.");
+				UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onParseError(() method, as there was a problem parsing this page.", null);
 		} catch (RuntimeException re) {
-			UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onParseError(() method, as there was a problem parsing this page.");
+			UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onParseError(() method, as there was a problem parsing this page.", null);
 		}
 	}
 
@@ -283,17 +283,17 @@ public class PageCrawler extends WebCrawler
 			String urlStr = webUrl.toString();
 			String exceptionMessage = e.getMessage();
 			if ( exceptionMessage == null ) {    // Avoid causing an "NPE".
-				UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an unhandled exception: " + e);
+				UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an unhandled exception: " + e, null);
 				return;
 			}
 			
 			int curTreatableException = 0;
 			
-			if (exceptionMessage.contains("UnknownHostException"))
+			if ( exceptionMessage.contains("UnknownHostException") )
 				curTreatableException = 1;
-			else if (exceptionMessage.contains("SocketTimeoutException"))
+			else if ( exceptionMessage.contains("SocketTimeoutException") )
 				curTreatableException = 2;
-			else if (exceptionMessage.contains("ConnectException"))    // This is a "Connection Timeout" type of Exception.
+			else if ( exceptionMessage.contains("ConnectException") && exceptionMessage.toLowerCase().contains("timeout") )    // If this is a "Connection Timeout" type of Exception.
 				curTreatableException = 3;
 			
 			if (curTreatableException > 0)	// If there is a treatable Exception.
@@ -311,15 +311,15 @@ public class PageCrawler extends WebCrawler
 				switch ( curTreatableException ) {
 					case 1:
 						logger.warn("UnknownHostException was thrown while trying to fetch url: \"" + urlStr + "\".");
-						UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an \"UnknownHostException\" for this url.");
+						UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an \"UnknownHostException\" for this url.", null);
 						break;
 					case 2:
 						logger.warn("SocketTimeoutException was thrown while trying to fetch url: \"" + urlStr + "\".");
-						UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an \"SocketTimeoutException\" for this url.");
+						UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an \"SocketTimeoutException\" for this url.", null);
 						break;
 					case 3:
 						logger.warn("ConnectException was thrown while trying to fetch url: \"" + urlStr + "\".");
-						UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an \"ConnectException\" for this url.");
+						UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an \"ConnectException\" for this url.", null);
 						break;
 					default:
 						logger.error("Undefined value for \"curTreatableException\"! Re-check which exception are treated!");
@@ -328,7 +328,7 @@ public class PageCrawler extends WebCrawler
 			}
 			else {	// If this Exception cannot be treated.
 				logger.warn("Unhandled exception: \"" + e + "\" while fetching url: \"" + urlStr + "\"");
-				UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an unhandled exception: " + e);
+				UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an unhandled exception: " + e, null);
 			}
 		}
 		else // If the url is null.
@@ -341,7 +341,7 @@ public class PageCrawler extends WebCrawler
 	{
 		long generalPageSizeLimit = CrawlerController.controller.getConfig().getMaxDownloadSize();
 		logger.warn("Skipping url: \"" + urlStr + "\" which was bigger (" + pageSize +") than max allowed size (" + generalPageSizeLimit + ")");
-		UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onPageBiggerThanMaxSize() method, as this page's size was over the limit (" + generalPageSizeLimit + ").");
+		UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onPageBiggerThanMaxSize() method, as this page's size was over the limit (" + generalPageSizeLimit + ").", null);
 	}
 
 }

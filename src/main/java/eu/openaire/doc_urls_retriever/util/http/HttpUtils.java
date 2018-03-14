@@ -6,7 +6,7 @@ import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLProtocolException;
+import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.*;
 import java.util.Collection;
@@ -76,7 +76,7 @@ public class HttpUtils
 			
 			String finalUrlStr = conn.getURL().toString();
 			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition) ) {
-				UrlUtils.logTriple(currentPage, finalUrlStr, "");	// we send the urls, before and after potential redirections.
+				UrlUtils.logTriple(currentPage, finalUrlStr, "", domainStr);	// we send the urls, before and after potential redirections.
 				return true;
 			}
 		} catch (IOException e) {
@@ -182,25 +182,45 @@ public class HttpUtils
 				
 				//logger.debug("ResponceCode for \"" + resourceURL + "\", after setting conn-method to: \"" + conn.getRequestMethod() + "\" is: " + conn.getResponseCode());
 			}
+		} catch ( RuntimeException re) {	// THe cause it's already logged.
+			if ( conn != null )
+				conn.disconnect();
+			throw re;
 		} catch (UnknownHostException uhe) {
-	    	logger.debug("A new \"Unknown Network\" Host was found and logged: \"" + domainStr + "\"");
-			blacklistedDomains.add(domainStr);	//Log it to never try connecting with it again.
+			logger.debug("A new \"Unknown Network\" Host was found and logged: \"" + domainStr + "\"");
+			blacklistedDomains.add(domainStr);    //Log it to never try connecting with it again.
 			conn.disconnect();
 			throw new RuntimeException();
-		} catch ( SSLProtocolException spe ) {
-			logger.warn(spe + " for url: " + conn.getURL().toString());
-			// Just log it and move on for now.. until we are sure about this handling..
-			//blacklistedDomains.add(domainStr);
-			conn.disconnect();
-			throw new RuntimeException(spe);
-		} catch (SocketTimeoutException | ConnectException e) {	// Note that "ConnectException" is a ConnectionTimeout type of Exception.
+		}catch (SocketTimeoutException ste) {
 			logger.debug("Url: \"" + resourceURL + "\" failed to respond on time!");
 			onTimeoutException(domainStr);
-			conn.disconnect();
+			if (conn != null)
+				conn.disconnect();
+			throw new RuntimeException();
+		} catch (ConnectException ce) {
+			String eMsg = ce.getMessage();
+			if ( (eMsg != null) && eMsg.toLowerCase().contains("timeout") )	// If it's a "connection timeout" type of exception, treat it like it.
+				onTimeoutException(domainStr);
+			if (conn != null)
+				conn.disconnect();
+			throw new RuntimeException();
+		} catch (SSLException ssle) {
+			logger.warn("No ssl connection was able to be negotiated with the domain: \"" + domainStr + "\".", ssle.getMessage());
+			blacklistedDomains.add(domainStr);
+			// TODO - For "SSLProtocolException", see more about it's possible handling here: https://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0/14884941#14884941
+			if (conn != null)
+				conn.disconnect();
+			throw new RuntimeException();
+		} catch (SocketException se) {
+			blacklistedDomains.add(domainStr);
+			String seMsg = se.getMessage();
+			if ( seMsg != null )
+				logger.warn(se.getMessage() + " This was recieved after trying to connect with the domain: \"" + domainStr + "\"");
+			if ( conn != null )
+				conn.disconnect();
 			throw new RuntimeException();
     	} catch (Exception e) {
-    		if ( !(e instanceof RuntimeException) )	// If it's an instance of R.E. then it's already logged.
-    			logger.warn("", e);
+			logger.warn("", e);
 			if ( conn != null )
 				conn.disconnect();
 			throw new RuntimeException();
