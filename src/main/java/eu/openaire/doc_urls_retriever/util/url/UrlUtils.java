@@ -67,6 +67,7 @@ public class UrlUtils
 	public static int frontiersinUrls = 0;
 	public static int sciencedirectUrls = 0;
 	public static int elsevierUnwantedUrls = 0;
+	public static int crawlerSensitiveDomains = 0;
 	public static int doajResultPageUrls = 0;
 	public static int pageWithHtmlDocUrls = 0;
 	public static int pagesWithLargerCrawlingDepth = 0;	// Pages with their docUrl behind an inner "view" page.
@@ -164,6 +165,11 @@ public class UrlUtils
 			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the unwanted \"elsevier.com\" domain.", null);
 			return true;
 		}
+		else if ( lowerCaseUrl.contains("europepmc.org") || lowerCaseUrl.contains("ncbi.nlm.nih.gov") ) {	// Avoid known-crawler-sensitive domains.
+			UrlUtils.crawlerSensitiveDomains ++;
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to a crawler-sensitive domain.", null);
+			return true;
+		}
 		else if ( lowerCaseUrl.contains("doaj.org/toc/") ) {	// Avoid resultPages.
 			UrlUtils.doajResultPageUrls ++;
 			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the Results-directory: \"doaj.org/toc/\".", null);
@@ -174,25 +180,12 @@ public class UrlUtils
 			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to an HTML-docUrls site.", null);
 			return true;
 		}
-		else if ( lowerCaseUrl.contains("rivisteweb.it") || lowerCaseUrl.contains("library.wur.nl") ) {	// Avoid pages known to not provide docUrls (just metadata).
+		else if ( lowerCaseUrl.contains("rivisteweb.it") || lowerCaseUrl.contains("library.wur.nl") || lowerCaseUrl.contains("remeri.org.mx") ) {	// Avoid pages known to not provide docUrls (just metadata).
 			UrlUtils.pagesNotProvidingDocUrls ++;
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to the non docUrls-providing site \"rivisteweb.it\".", null);
 			return true;
 		}
-		else if ( lowerCaseUrl.contains("ojs.ifnmu.edu.ua") || lowerCaseUrl.contains("spilplus.journals.ac.za") || lowerCaseUrl.contains("rpd.unibo.it")	// Avoid crawling pages with larger depth.
-				|| lowerCaseUrl.contains("spilplus.journals.ac.za") || lowerCaseUrl.contains("phcfm.org") || lowerCaseUrl.contains("raco.cat") || lowerCaseUrl.contains("journals.cultcenter.net")
-				|| lowerCaseUrl.contains("journal.binus.ac.id") || lowerCaseUrl.contains("ebph.it") || lowerCaseUrl.contains("journal-s.org") || lowerCaseUrl.contains("journal.dogus.edu.tr")
-				|| lowerCaseUrl.contains("bvpb.mcu.es") || lowerCaseUrl.contains("revistas.ufpr.br") || lowerCaseUrl.contains("revista.feb.unesp.br") || lowerCaseUrl.contains("revistas.pucp.edu.pe") || lowerCaseUrl.contains("qualitative-research.net")
-				|| lowerCaseUrl.contains("grbs.library.duke.edu") || lowerCaseUrl.contains("tj-es.com") || lowerCaseUrl.contains("jurnal.uii.ac.id") || lowerCaseUrl.contains("ref.uabc.mx")
-				|| lowerCaseUrl.contains("journals.univ-danubius.ro") || lowerCaseUrl.contains("journal.unnes.ac.id") || lowerCaseUrl.contains("online.unisc.br") || lowerCaseUrl.contains("jurnal.ugm.ac.id")
-				|| lowerCaseUrl.contains("wjst.wu.ac.th") || lowerCaseUrl.contains("jurnal.unsyiah.ac.id") || lowerCaseUrl.contains("bvpb.mcu.es") || lowerCaseUrl.contains("journals.iium.edu.my")
-				|| lowerCaseUrl.contains("periodicos.ufsc.br") || lowerCaseUrl.contains("periodicos.unb.br") || lowerCaseUrl.contains("informatio.eubca.edu.uy") || lowerCaseUrl.contains("statecon.rea.ru")
-				|| lowerCaseUrl.contains("cuestionessociologia.fahce.unlp.edu.ar") || lowerCaseUrl.contains("vestnik.szd.si") || lowerCaseUrl.equals("oncourology.abvpress.ru") || lowerCaseUrl.contains("jwm.ulm.ac.id")
-				|| lowerCaseUrl.contains("riviste.unimi.it") || lowerCaseUrl.contains("seer.ufu.br") || lowerCaseUrl.contains("mimmun.ru") || lowerCaseUrl.contains("bibliotecadigital.fgv.br") || lowerCaseUrl.contains("seer.unirio.br")
-				|| lowerCaseUrl.contains("uel.br/revistas") || lowerCaseUrl.contains("revistafuture.org") || lowerCaseUrl.contains("dergipark.ulakbim.gov.tr") || lowerCaseUrl.contains("ijcto.org")
-				|| lowerCaseUrl.contains("rbhe.sbhe.org.br") || lowerCaseUrl.contains("revistas.usb.edu.co") || lowerCaseUrl.contains("revistachasqui.org") || lowerCaseUrl.contains("ejurnal.unilak.ac.id")
-				|| lowerCaseUrl.contains("revistas.javeriana.edu.co") || lowerCaseUrl.contains("riviste.unimi.it") || lowerCaseUrl.contains("koersjournal.org.za") || lowerCaseUrl.contains("polipapers.upv.es")
-				|| lowerCaseUrl.contains("journal.ipb.ac.id") || lowerCaseUrl.contains("e-publicacoes.uerj.br") || lowerCaseUrl.contains("revistas.usp.br") || lowerCaseUrl.contains("pbsociety.org.pl") )
+		else if ( lowerCaseUrl.contains("/view/") )	// Avoid crawling pages with larger depth.
 		{
 			UrlUtils.pagesWithLargerCrawlingDepth ++;
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to an increasedCrawlingDepth-site.", null);
