@@ -225,6 +225,7 @@ public class PageCrawler extends WebCrawler
 				continue;
 			}
 			
+			//logger.debug("InnerLink: " + currentLink);	// DEBUG!
 			try {
 				if ( HttpUtils.connectAndCheckMimeType(pageUrl, currentLink, currentPageDomain) )	// We log the docUrl inside this method.
 					return;

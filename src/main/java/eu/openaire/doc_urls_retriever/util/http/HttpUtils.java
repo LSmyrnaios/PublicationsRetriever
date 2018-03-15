@@ -182,7 +182,7 @@ public class HttpUtils
 				
 				//logger.debug("ResponceCode for \"" + resourceURL + "\", after setting conn-method to: \"" + conn.getRequestMethod() + "\" is: " + conn.getResponseCode());
 			}
-		} catch ( RuntimeException re) {	// THe cause it's already logged.
+		} catch ( RuntimeException re) {	// The cause it's already logged.
 			if ( conn != null )
 				conn.disconnect();
 			throw re;
@@ -244,13 +244,12 @@ public class HttpUtils
 		String initialUrl = conn.getURL().toString();	// Used to have the initialUrl to run tests on redirections (number, path etc..)
 		
 		try {
-			 while (true)
-			 {
+			while (true)
+			{
 				// Check if there was a previous redirection in which we were redirected to a different domain.
-				if ( domainStr == null ) {	// If this is the case, get the new dom
+				if ( domainStr == null )	// If this is the case, get the new dom
 					if ( (domainStr = UrlUtils.getDomainStr(conn.getURL().toString())) == null )
 						throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
-				}
 
 				if ( responceCode >= 300 && responceCode <= 307 && responceCode != 306 && responceCode != 304 )	// Redirect code.
 				{
@@ -266,16 +265,18 @@ public class HttpUtils
 						logger.warn("No \"Location\" field was found in the HTTP Header of \"" + conn.getURL().toString() + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 						throw new RuntimeException();
 					}
-					else if ( location.contains("gateway/error") || location.contains("/error/") || location.contains("/sorryserver") ) {	// TODO - Investigate and add more error cases.
-						logger.warn("Url: \"" + initialUrl +  "\" was prevented to redirect to error page: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
+					
+					String lowerCaseLocation = location.toLowerCase();
+					if ( UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseLocation).matches() || UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLocation).matches() ) {
+						logger.warn("Url: \"" + initialUrl +  "\" was prevented to redirect unwanted url: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 						throw new RuntimeException();
 					}
-
+					
 					URL base = conn.getURL();
 					URL target = new URL(base, location);
-
+					
 					String targetUrlStr = target.toString();
-
+					
 					// FOR DEBUG -> Check to see what's happening with the redirect urls (location field types, as well as potential error redirects).
 					// Some domains use only the target-ending-path in their location field, while others use full target url.
 					//if ( conn.getURL().toString().contains("<urlType>") ) {	// Debug a certain domain.

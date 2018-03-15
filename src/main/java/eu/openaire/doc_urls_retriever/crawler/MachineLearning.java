@@ -44,8 +44,6 @@ public class MachineLearning
 	private static HashMap<String, Integer> timesDomainsFailedInMLA = new HashMap<String, Integer>();
 	private static int timesToFailBeforeBlockedFromMLA = 20;
 	
-	private static HashSet<String> pagePathsBlockedFromMLA = new HashSet<String>();
-	
 	
 	
 	/**
@@ -174,7 +172,7 @@ public class MachineLearning
 		// Get the paths of the docPage and the docUrl and put them inside "successDomainPathsMultiMap".
 		
 		String docPagePath = UrlUtils.getPathStr(docPage);
-		if ( (docPagePath == null) || pagePathsBlockedFromMLA.contains(docPagePath) )
+		if ( docPagePath == null )
 			return;
 		
 		String docUrlPath = null;
@@ -204,34 +202,21 @@ public class MachineLearning
 	public static boolean guessInnerDocUrlUsingML(String pageUrl, String domainStr)
 	{
 		String pagePath = null;
-		Matcher matcher = UrlUtils.URL_TRIPLE.matcher(pageUrl);
-		if ( !matcher.matches() ) {
-			logger.warn("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + pageUrl + "\"");
+		Matcher urlMatcher = UrlUtils.URL_TRIPLE.matcher(pageUrl);
+		if ( !urlMatcher.matches() ) {
+			logger.warn("Unexpected URL_TRIPLE's (" + urlMatcher.toString() + ") mismatch for url: \"" + pageUrl + "\"");
 			return false;
 		}
 		
-		pagePath = matcher.group(1);	// Group <1> is the PATH.
+		pagePath = urlMatcher.group(1);	// Group <1> is the PATH.
 		if ( (pagePath == null) || pagePath.isEmpty() ) {
-			logger.warn("Unexpected null or empty value returned by \"matcher.group(1)\"");
+			logger.warn("Unexpected null or empty value returned by \"urlMatcher.group(1)\"");
 			return false;
 		}
-		
-		if ( pagePathsBlockedFromMLA.contains(pagePath) )
-			return false;
 		
 		if ( successPathsMultiMap.containsKey(pagePath) )	// If this page's path is already logged, go check for previous succesfull docUrl's paths, if not logged, then return..
 		{
-			String docIdStr = matcher.group(3);	// Group <3> is the ID.
-			if ( (docIdStr == null) || docIdStr.isEmpty() ) {
-				logger.warn("Unexpected null or empty value returned by \"matcher.group(3)\" for url: \"" + pageUrl + "\".");
-				return false;
-			}
-			
-			StringBuilder strB = new StringBuilder(150);
-			String guessedDocUrl = null;
-			
-			Collection<String> knownDocUrlPaths = successPathsMultiMap.get(pagePath);	// Get all available docUrlpaths for this docPagePath, to try them along with current ID.
-			
+			Collection<String> knownDocUrlPaths = successPathsMultiMap.get(pagePath);	// Get all available docUrlPaths for this docPagePath, to try them along with current ID.
 			int pathsSize = knownDocUrlPaths.size();
 			if ( pathsSize > 10 ) {	// Too many docPaths for this pagePath, means that there's probably only one pagePath we get for this domain (paths are not mapped to domains so we can't actually check).
 				logger.debug("Domain: \"" + domainStr + "\" was blocked from being accessed again by the MLA, after retrieving a proved-to-be incompatible pagePath.");
@@ -239,11 +224,17 @@ public class MachineLearning
 				successPathsMultiMap.removeAll(pagePath);	// This domain was blocked, remove current non-needed paths-data.
 				return false;
 			}
-			else if ( pathsSize > 5 ) {    // It's not worth risking connecting with more than 5 "guessedDocUrl"s, for which their success is non-granted.
-				successPathsMultiMap.removeAll(pagePath);	// This pagePath is non-usable anymore.. remove this pagePath's data.
-				pagePathsBlockedFromMLA.add(pagePath);	// Make sure we don't collect docPaths related with this pagePath, ever again.
-				return false;    // The difference here is that we avoid running
+			else if ( pathsSize > 5 )    // It's not worth risking connecting with more than 5 "guessedDocUrl"s, for which their success is non-granted.
+				return false;    // The difference here is that we avoid making the connections but we leave the data as it is.. this way we allow whole domains to be blocked based on docPaths' size.
+			
+			String docIdStr = urlMatcher.group(3);	// Group <3> is the ID.
+			if ( (docIdStr == null) || docIdStr.isEmpty() ) {
+				logger.warn("Unexpected null or empty value returned by \"urlMatcher.group(3)\" for url: \"" + pageUrl + "\".");
+				return false;
 			}
+			
+			StringBuilder strB = new StringBuilder(150);
+			String guessedDocUrl = null;
 			
 			//MachineLearning.urlsCheckedWithMLA ++;
 			
