@@ -21,7 +21,47 @@ public class PageCrawler extends WebCrawler
 {
 	private static final Logger logger = LoggerFactory.getLogger(PageCrawler.class);
 	public static long totalPagesReachedCrawling = 0;	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their innerLinks checked.
-
+	
+	
+	/**
+	 * This method checks if the url, for which Crawler4j is going to open a connection, is of specific type in runtime.
+	 * If it is, it returns null and Crawler4j goes to the next one. If this url is not matched against any specific case, it returns the url itself.
+	 * @param curURL
+	 * @return curURL / null
+	 */
+	@Override
+	public WebURL handleUrlBeforeProcess(WebURL curURL)
+	{
+		String urlStr = curURL.toString();
+		
+		String currentUrlDomain = UrlUtils.getDomainStr(urlStr);
+		if ( currentUrlDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
+			logger.warn("Problematic URL in \"PageCrawler.handleUrlBeforeProcess()\": \"" +  urlStr + "\"");
+			UrlUtils.logTriple(urlStr, urlStr, "Discarded in PageCrawler.handleUrlBeforeProcess() method, after the occurrence of a domain-retrieval error.", null);
+			return null;
+		}
+		
+		if ( UrlUtils.docUrls.contains(urlStr) ) {	// If we got into an already-found docUrl, log it and return. Here, we haven't made a connection yet, but since it's the same urlString, we don't need to.
+			logger.debug("Re-crossing (before connecting to it) the already found docUrl: \"" +  urlStr + "\"");
+			UrlUtils.logTriple(urlStr, urlStr, "", currentUrlDomain);	// No error here.
+			return null;
+		}
+		
+		if ( HttpUtils.blacklistedDomains.contains(currentUrlDomain) ) {	// Check if it has been blackListed after running inner links' checks.
+			logger.debug("Crawler4j will avoid to connect to blackListed domain: \"" + currentUrlDomain + "\"");
+			UrlUtils.logTriple(urlStr, "unreachable", "Discarded in PageCrawler.handleUrlBeforeProcess() method, as its domain was found blackListed.", null);
+			return null;
+		}
+		
+		if ( HttpUtils.checkIfPathIs403BlackListed(urlStr, currentUrlDomain) ) {
+			logger.warn("Preventing reaching 403ErrorCode with url: \"" + urlStr + "\"!");
+			return null;
+		}
+		
+		return curURL;
+	}
+	
+	
 	@Override
 	public boolean shouldVisit(Page referringPage, WebURL url)
 	{
@@ -108,8 +148,8 @@ public class PageCrawler extends WebCrawler
 		
 		String currentPageDomain = UrlUtils.getDomainStr(pageUrl);
 		if ( currentPageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
-			logger.warn("Problematic URL in \"visit()\": \"" +  pageUrl + "\"");
-			UrlUtils.logTriple(pageUrl, pageUrl, "Discarded in visit() method, after the occurrence of a domain-retrieval error.", null);
+			logger.warn("Problematic URL in \"PageCrawler.visit()\": \"" +  pageUrl + "\"");
+			UrlUtils.logTriple(pageUrl, pageUrl, "Discarded in PageCrawler.visit() method, after the occurrence of a domain-retrieval error.", null);
 			return;
 		}
 		

@@ -218,13 +218,13 @@ public class MachineLearning
 		{
 			Collection<String> knownDocUrlPaths = successPathsMultiMap.get(pagePath);	// Get all available docUrlPaths for this docPagePath, to try them along with current ID.
 			int pathsSize = knownDocUrlPaths.size();
-			if ( pathsSize > 10 ) {	// Too many docPaths for this pagePath, means that there's probably only one pagePath we get for this domain (paths are not mapped to domains so we can't actually check).
+			if ( pathsSize > 5 ) {	// Too many docPaths for this pagePath, means that there's probably only one pagePath we get for this domain (paths are not mapped to domains so we can't actually check).
 				logger.debug("Domain: \"" + domainStr + "\" was blocked from being accessed again by the MLA, after retrieving a proved-to-be incompatible pagePath.");
 				domainsBlockedFromMLA.add(domainStr);
 				successPathsMultiMap.removeAll(pagePath);	// This domain was blocked, remove current non-needed paths-data.
 				return false;
 			}
-			else if ( pathsSize > 5 )    // It's not worth risking connecting with more than 5 "guessedDocUrl"s, for which their success is non-granted.
+			else if ( pathsSize > 3 )    // It's not worth risking connecting with more than 3 "guessedDocUrl"s, for which their success is non-granted.
 				return false;    // The difference here is that we avoid making the connections but we leave the data as it is.. this way we allow whole domains to be blocked based on docPaths' size.
 			
 			String docIdStr = urlMatcher.group(3);	// Group <3> is the ID.

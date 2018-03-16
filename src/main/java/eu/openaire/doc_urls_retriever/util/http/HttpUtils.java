@@ -29,7 +29,7 @@ public class HttpUtils
 	
     public static final int politenessDelay = 250;	// Time to wait before connecting to the same host again.
 	public static final int maxConnWaitingTime = 15000;	// Max time (in ms) to wait for a connection.
-    private static final int maxRedirects = 5;	// It's not worth waiting for more than 3, in general.. except if we turn out missing a lot of them.. test every case and decide..
+    private static final int maxRedirects = 3;	// It's not worth waiting for more than 3, in general.. except if we turn out missing a lot of them.. test every case and decide..
     										// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
     private static final int timesToHave5XXerrorCodeBeforeBlocked = 5;
     private static final int timesToHaveTimeoutExBeforeBlocked = 3;
@@ -58,10 +58,14 @@ public class HttpUtils
 			conn = HttpUtils.openHttpConnection(resourceURL, domainStr);
 			
 			int responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
-			if ( responceCode < 200 || responceCode > 299 )    // If not an "HTTP SUCCESS"..
-			{
-				conn = HttpUtils.handleRedirects(conn, responceCode, domainStr);	// Take care of redirects, as well as some connectivity problems.
+			if ( (responceCode >= 300) && (responceCode <= 399) ) {   // If we have redirections..
+				conn = HttpUtils.handleRedirects(conn, responceCode, domainStr);	// Take care of redirects.
 			}
+			else if ( (responceCode < 200) || (responceCode >= 400) ) {	// If we have error codes.
+				onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
+				throw new RuntimeException();
+			}
+			// Else it's an HTTP 2XX SUCCESS CODE.
 			
 			// Check if we are able to find the mime type, if not then try "Content-Disposition".
 			String mimeType = conn.getContentType();
@@ -78,14 +82,14 @@ public class HttpUtils
 				UrlUtils.logTriple(currentPage, finalUrlStr, "", domainStr);	// we send the urls, before and after potential redirections.
 				return true;
 			}
-		} catch (IOException e) {
-			if ( currentPage.equals(resourceURL) )	// Log this error only for docPages.
-				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
-			throw new RuntimeException(e);
 		} catch (RuntimeException re) {
 			if ( currentPage.equals(resourceURL) )	// Log this error only for docPages.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
 			throw re;
+		} catch (IOException e) {
+			if ( currentPage.equals(resourceURL) )	// Log this error only for docPages.
+				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
+			throw new RuntimeException(e);
 		} finally {
 			if ( conn != null )
 				conn.disconnect();
@@ -261,7 +265,7 @@ public class HttpUtils
 					
 					String lowerCaseLocation = location.toLowerCase();
 					if ( UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseLocation).matches() || UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLocation).matches() ) {
-						logger.warn("Url: \"" + initialUrl +  "\" was prevented to redirect unwanted url: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
+						logger.warn("Url: \"" + initialUrl +  "\" was prevented to redirect to the unwanted url: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 						throw new RuntimeException();
 					}
 					
@@ -348,7 +352,7 @@ public class HttpUtils
 			if ( domainStr != null )
 				on5XXerrorCode(domainStr);
 		}
-		else {	// Unknown Error.
+		else {	// Unknown Error (including non-handled: 1XX and the weird one: 999, responce codes).
 			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved unexpected responceCode: " + errorStatusCode);
 			if ( domainStr != null )
 				blacklistedDomains.add(domainStr);

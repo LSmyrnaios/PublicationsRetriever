@@ -11,7 +11,7 @@ DocUrl: *the url of the document file.*<br/>
 It currently uses [crawler4j](https://github.com/yasserg/crawler4j) to crawl the web pages.<br/>
 Many customizations were developed to make the program run efficiently, including advanced blocking techniques.<br/>
 
-It uses an experimental **M.L.A.(= Machine Learning Algorithm)**, which tries to guess the docUrl of a pubPage, based on previous findings.<br/>
+It uses an experimental, newly-developed **M.L.A.(= Machine Learning Algorithm)**, which tries to guess the docUrl of a pubPage, based on previous findings.<br/>
 
 Please note that **DocUrlsRetriever** is currently in **beta**, so you may encounter some issues.<br/>
 <br/>
