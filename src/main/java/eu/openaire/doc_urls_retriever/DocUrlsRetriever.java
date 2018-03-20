@@ -47,8 +47,8 @@ public class DocUrlsRetriever
 		}
 		
 		// Show statistics.
-		long inputUrlNum = 0;
-    	if ( (inputUrlNum = FileUtils.getCurrentlyLoadedUrls()) <= 0 ) {
+		long inputUrlNum = FileUtils.getCurrentlyLoadedUrls();
+    	if ( (FileUtils.skipFirstRow && (inputUrlNum < 0)) || (!FileUtils.skipFirstRow && (inputUrlNum == 0)) ) {
     		logger.error("\"FileUtils.getCurrentlyLoadedUrls()\" is unexpectedly reporting that no urls were retrieved from input file! Output data may be affected! Exiting..");
     		System.exit(-2);
     	}
@@ -63,14 +63,15 @@ public class DocUrlsRetriever
 		logger.info("Αbout: " + UrlUtils.elsevierUnwantedUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.elsevierUnwantedUrls + " urls) were from, or reached after redirects, the unwanted domain: \"elsevier.com\", which either doesn't provide docUrls in its docPages, or it redirects to \"sciencedirect.com\", thus being avoided to be crawled.");
     	logger.info("Αbout: " + UrlUtils.doajResultPageUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.doajResultPageUrls + " urls) were \"doaj.org/toc/\" urls, which are resultPages, thus being avoided to be crawled.");
 		logger.info("Αbout: " + UrlUtils.pageWithHtmlDocUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.pageWithHtmlDocUrls + " urls) were docUrls, but, in HTML, thus being avoided to be crawled.");
-		logger.info("About: " + UrlUtils.pagesWithLargerCrawlingDepth * (float)100 / inputUrlNum + "% (" + UrlUtils.pagesWithLargerCrawlingDepth + " urls) were docPages which have their docUrl deeper inside the server, thus being currently avoided.");
+		logger.info("About: " + UrlUtils.pagesWithLargerCrawlingDepth * (float)100 / inputUrlNum + "% (" + UrlUtils.pagesWithLargerCrawlingDepth + " urls) were docPages which have their docUrl deeper inside their server, thus being currently avoided.");
 		logger.info("About: " + UrlUtils.pangaeaUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.pangaeaUrls + " urls) were \"PANGAEA.\" with invalid form and non-docUrls in their inner links.");
+		logger.info("About: " + UrlUtils.connProblematicUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.connProblematicUrls + " urls) were pages known to have connectivity problems.");
 		logger.info("About: " + UrlUtils.pagesNotProvidingDocUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.pagesNotProvidingDocUrls + " urls) were pages which are known to not provide docUrls.");
 		logger.info("About: " + UrlUtils.urlsWithUnwantedForm * (float)100 / inputUrlNum + "% (" + UrlUtils.urlsWithUnwantedForm + " urls) were urls which are plain-domains, have unwanted url-extensions, ect...");
 		logger.info("About: " + UrlUtils.inputDuplicatesNum * (float)100 / inputUrlNum + "% (" + UrlUtils.inputDuplicatesNum + " urls) were duplicates in the input file.");
 		
 		long problematicUrlsNum = UrlUtils.crawlerSensitiveDomains + UrlUtils.frontiersinUrls + UrlUtils.sciencedirectUrls + UrlUtils.doiOrgToScienceDirect + UrlUtils.elsevierUnwantedUrls + UrlUtils.doajResultPageUrls
-									+ UrlUtils.pageWithHtmlDocUrls + UrlUtils.pagesWithLargerCrawlingDepth + UrlUtils.pangaeaUrls + UrlUtils.urlsWithUnwantedForm + UrlUtils.pagesNotProvidingDocUrls + UrlUtils.inputDuplicatesNum;
+									+ UrlUtils.pageWithHtmlDocUrls + UrlUtils.pagesWithLargerCrawlingDepth + UrlUtils.pangaeaUrls + UrlUtils.urlsWithUnwantedForm + UrlUtils.connProblematicUrls + UrlUtils.pagesNotProvidingDocUrls + UrlUtils.inputDuplicatesNum;
 		logger.info("From the " + inputUrlNum + " urls in the input, the " + problematicUrlsNum + " of them (about " + problematicUrlsNum * (float)100 / inputUrlNum + "%) were problematic (sum of the all of the above cases).");
 		
         // Then... just close the open streams (imported and exported content) and exit.

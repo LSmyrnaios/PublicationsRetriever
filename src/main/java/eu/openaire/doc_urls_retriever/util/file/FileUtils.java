@@ -25,7 +25,7 @@ public class FileUtils
 	private static PrintStream printStream;
 	//public static HashMap<String, String> idAndUrlMappedInput = new HashMap<String, String>();	// Contains the mapped key(id)-value(url) pairs.
 	private static long fileIndex = 0;	// Index in the input file
-	public static final boolean skipFirstRow = true;
+	public static boolean skipFirstRow = true;
 	private static String endOfLine = "\n";
 	public static long unretrievableInputLines = 0;	// For better statistics in the end.
     public static long unretrievableUrlsOnly = 0;
@@ -64,6 +64,8 @@ public class FileUtils
 	 */
 	public static Collection<String> getNextUrlGroupFromJson()
 	{
+		skipFirstRow = false;	// Make sure we don't use this rule for any calculations.
+		
 		HashMap<String, String> inputIdUrlPair;
 		Collection<String> urlGroup = new HashSet<String>();
 		

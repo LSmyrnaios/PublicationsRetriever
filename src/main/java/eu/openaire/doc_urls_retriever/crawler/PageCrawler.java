@@ -62,10 +62,37 @@ public class PageCrawler extends WebCrawler
 	}
 	
 	
+	/**
+	 * This method is called by Crawler4j after a "referringPage" is going to be redirected to another "url".
+	 * It is also called in case we follow innerLinks of a page (which currently we are not).
+	 * It is NOT called before visit() for urls which return 2XX.. so runtime checks should be both in shouldVisit() and in visit(). It's a bit confusing.
+	 * It returns true if this "url" should be scheduled to be connected and crawled by Crawler4j, otherwise, it returns false.
+	 * @param referringPage
+	 * @param url
+	 * @return true / false
+	 */
 	@Override
 	public boolean shouldVisit(Page referringPage, WebURL url)
 	{
 		String urlStr = url.toString();
+		
+		// Get this url's domain for checks.
+		String currentPageDomain = UrlUtils.getDomainStr(urlStr);
+		if ( currentPageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
+			logger.warn("Problematic URL in \"PageCrawler.shouldVisit()\": \"" + urlStr + "\"");
+			UrlUtils.logTriple(urlStr, urlStr, "Discarded in PageCrawler.shouldVisit() method, after the occurrence of a domain-retrieval error.", null);
+			return false;
+		}
+		
+		HttpUtils.lastConnectedHost = currentPageDomain;	// The crawler opened a connection which resulted in 3XX responceCode.
+		
+		// Check if it has been blackListed during runtime. We make this check after the alreadyFoundDocUrl and the contentType checks, to avoid losing any potential good finding.
+		if ( HttpUtils.blacklistedDomains.contains(currentPageDomain) ) {
+			logger.debug("Avoid crawling blackListed domain: \"" + currentPageDomain + "\"");
+			UrlUtils.logTriple(urlStr, "unreachable", "Discarded in PageCrawler.shouldVisit() method, as its domain was found blackListed.", null);
+			return false;
+		}
+		
 		String lowerCaseUrlStr = urlStr.toLowerCase();
 		
 		// Check  redirect-finished-urls for certain unwanted types.
@@ -144,31 +171,31 @@ public class PageCrawler extends WebCrawler
 	{
 		String pageUrl = page.getWebURL().getURL();
 		
-		logger.debug("Checking pageUrl: \"" + pageUrl + "\".");
+		logger.debug("Visiting pageUrl: \"" + pageUrl + "\".");
 		
 		String currentPageDomain = UrlUtils.getDomainStr(pageUrl);
 		if ( currentPageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
-			logger.warn("Problematic URL in \"PageCrawler.visit()\": \"" +  pageUrl + "\"");
+			logger.warn("Problematic URL in \"PageCrawler.visit()\": \"" + pageUrl + "\"");
 			UrlUtils.logTriple(pageUrl, pageUrl, "Discarded in PageCrawler.visit() method, after the occurrence of a domain-retrieval error.", null);
 			return;
 		}
 		
-		HttpUtils.lastConnectedHost = currentPageDomain;	// The crawler opened a connection to download this page.
+		HttpUtils.lastConnectedHost = currentPageDomain;	// The crawler opened a connection to download this page. It's both here and in shouldVisit(), as the visit() method can be called without the shouldVisit to be previously called.
 		
 		if ( UrlUtils.docUrls.contains(pageUrl) ) {	// If we got into an already-found docUrl, log it and return.
-			logger.debug("Re-crossing the already found docUrl: \"" +  pageUrl + "\"");
+			logger.debug("Re-crossing the already found docUrl: \"" + pageUrl + "\"");
 			UrlUtils.logTriple(pageUrl, pageUrl, "", currentPageDomain);	// No error here.
 			return;
 		}
 		
+		// Check its contentType, maybe we don't need to crawl it.
 		String pageContentType = page.getContentType();
-		
 		if ( isPageDocUrlItself(page, pageContentType, pageUrl) ) {
 			UrlUtils.logTriple(pageUrl, pageUrl, "", currentPageDomain);
 			return;
 		}
 		
-		if ( HttpUtils.blacklistedDomains.contains(currentPageDomain) ) {	// Check if it has been blackListed after running inner links' checks.
+		if ( HttpUtils.blacklistedDomains.contains(currentPageDomain) ) {	// Check if it has been blackListed.
 			logger.debug("Avoid crawling blackListed domain: \"" + currentPageDomain + "\"");
 			UrlUtils.logTriple(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, as its domain was found blackListed.", null);
 			return;

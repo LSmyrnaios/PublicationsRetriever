@@ -25,7 +25,7 @@ public class UrlUtils
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
 	public static final Pattern URL_DIRECTORY_FILTER = Pattern.compile(".+\\/(?:user|profile|login|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|citation|faq|wiki|support|error|misuse|abuse|gateway|sorryserver|notfound"
-																	+ "|author|editor|license|disclaimer|policies|policy|privacy|terms|sitemap|account|search|external|statistics|cookie|application|help|law|permission|ethic|contact|survey|wallet|contribute"
+																	+ "|author|editor|license|disclaimer|policies|policy|privacy|terms|sitemap|account|external|statistics|application|help|law|permission|ethic|contact|survey|wallet|contribute"
 																	+ "|template|logo|image|photo|advertiser|people).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects.
 	
@@ -74,6 +74,7 @@ public class UrlUtils
 	public static int doiOrgToScienceDirect = 0;	// Urls from "doi.org" which redirect to "sciencedirect.com".
 	public static int urlsWithUnwantedForm = 0;	// (plain domains, unwanted page-extensions ect.)
 	public static int pangaeaUrls = 0;	// These urls are in false form by default, but even if they weren't or we transform them, PANGAEA. only gives datasets, not fulltext.
+	public static int connProblematicUrls = 0;	// Urls known to have connectivity problems, such as long conn times etc.
 	public static int pagesNotProvidingDocUrls = 0;
 	
 	static {
@@ -126,7 +127,7 @@ public class UrlUtils
 				
 				// Check if it's a duplicate. (if already found before inside or outside the Crawler4j).
 	        	if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
-	        		logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already been seen!");	// DEBUG!
+	        		logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already been seen!");
 	        		UrlUtils.inputDuplicatesNum ++;
 	        		UrlUtils.logTriple(retrievedUrl, "duplicate", "Discarded at loading time, as it's a duplicate.", null);
 	        		continue;
@@ -194,6 +195,11 @@ public class UrlUtils
 		else if ( lowerCaseUrl.contains("doi.org/https://doi.org/") && lowerCaseUrl.contains("pangaea.") ) {	// PANGAEA. urls with problematic form and non docUrl inner links.
 			UrlUtils.pangaeaUrls ++;
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to \"PANGAEA.\" urls with invalid form and non-docUrls in their inner links.", null);
+			return true;
+		}
+		else if ( lowerCaseUrl.contains("200.17.137.108") ) {	// Known domains with connectivity problems.
+			UrlUtils.connProblematicUrls ++;
+			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to known urls with connectivity problems.", null);
 			return true;
 		}
 		else if ( UrlUtils.DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.DOI_ORG_PARENTHESIS_FILTER.matcher(lowerCaseUrl).matches() ) {
