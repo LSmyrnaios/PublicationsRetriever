@@ -5,10 +5,12 @@ import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
 
 import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
+import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -133,7 +135,24 @@ public class UrlUtils
 	        		continue;
 	        	}
 	        	
-				CrawlerController.controller.addSeed(retrievedUrl);	// If this is not a valid url, Crawler4j will throw it away by itself.
+	        	if ( UrlUtils.DOC_URL_FILTER.matcher(lowerCaseUrl).matches() )	// If it probably a docUrl, check it right away. (This way we avoid the expensive Crawler4j's process)
+	        	{
+	        		String urlToCheck = null;
+					if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrl, null)) == null ) {
+						logger.warn("Could not canonicalize url: " + retrievedUrl);
+						UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, due to canonicalization problems.", null);
+						continue;
+					}
+					
+	        		try {
+						HttpUtils.connectAndCheckMimeType(urlToCheck, urlToCheck, null, true);    // If it's not a docUrl, it's still added in the crawler but inside this method, in order to add the final-redirected-free url.
+					} catch (RuntimeException re) {
+						UrlUtils.logTriple(urlToCheck, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
+						UrlUtils.connProblematicUrls ++;
+					}
+				}
+	   			else
+					CrawlerController.controller.addSeed(retrievedUrl);	// If this is not a valid url, Crawler4j will throw it away by itself.
 				
 			}// end for-loop
         }// end while-loop

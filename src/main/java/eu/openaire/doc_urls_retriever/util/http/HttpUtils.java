@@ -2,6 +2,7 @@ package eu.openaire.doc_urls_retriever.util.http;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
+import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,13 +28,13 @@ public class HttpUtils
 	public static final HashMap<String, Integer> timesDomainsHadTimeoutEx = new HashMap<String, Integer>();
 	public static final SetMultimap<String, String> timesDomainsHadPaths403BlackListed = HashMultimap.create();	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
 	
-    public static final int politenessDelay = 250;	// Time to wait before connecting to the same host again.
-	public static final int maxConnWaitingTime = 15000;	// Max time (in ms) to wait for a connection.
+    public static final int politenessDelay = 100;	// Time to wait before connecting to the same host again.
+	public static final int maxConnWaitingTime = 3000;	// Max time (in ms) to wait for a connection.
     private static final int maxRedirects = 3;	// It's not worth waiting for more than 3, in general.. except if we turn out missing a lot of them.. test every case and decide..
     										// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
-    private static final int timesToHave5XXerrorCodeBeforeBlocked = 5;
+    private static final int timesToHave5XXerrorCodeBeforeBlocked = 3;
     private static final int timesToHaveTimeoutExBeforeBlocked = 3;
-    private static final int numberOf403BlockedPathsBeforeBlocked = 5;
+    private static final int numberOf403BlockedPathsBeforeBlocked = 3;
 	
 	public static String lastConnectedHost = "";
 
@@ -44,10 +45,11 @@ public class HttpUtils
 	 * It automatically calls the "logUrl()" method for the valid docUrls, while it doesn't call it for non-success cases, thus allowing calling method to handle the case.
 	 * @param currentPage
 	 * @param resourceURL
+	 * @param calledAtLoading
 	 * @return True, if it's a pdfMimeType. False, if it has a different mimeType.
 	 * @throws RuntimeException (when there was a network error).
 	 */
-	public static boolean connectAndCheckMimeType(String currentPage, String resourceURL, String domainStr) throws RuntimeException
+	public static boolean connectAndCheckMimeType(String currentPage, String resourceURL, String domainStr, boolean calledAtLoading) throws RuntimeException
 	{
 		HttpURLConnection conn = null;
 		try {
@@ -74,7 +76,7 @@ public class HttpUtils
 			if ( mimeType == null ) {
 				contentDisposition = conn.getHeaderField("Content-Disposition");
 				if (contentDisposition == null)
-					return false;	// We can't retrieve any clue, so return and log it as a non-docUrl.
+					throw new RuntimeException();	// We can't retrieve any clue. This is not desired.
 			}
 			
 			String finalUrlStr = conn.getURL().toString();
@@ -82,6 +84,9 @@ public class HttpUtils
 				UrlUtils.logTriple(currentPage, finalUrlStr, "", domainStr);	// we send the urls, before and after potential redirections.
 				return true;
 			}
+			else if ( calledAtLoading )	// Add it in the Crawler only if this method was called for an inputUrl.
+				CrawlerController.controller.addSeed(finalUrlStr);	// If this is not a valid url, Crawler4j will throw it away by itself.
+			
 		} catch (RuntimeException re) {
 			if ( currentPage.equals(resourceURL) )	// Log this error only for docPages.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
@@ -112,7 +117,7 @@ public class HttpUtils
     	URL url = null;
 		HttpURLConnection conn = null;
 		int responceCode = 0;
-
+		
 		try {
 			if ( domainStr == null ) {	// No info about dominStr from the calling method "handleRedirects()", we have to find it here.
 				if ( (domainStr = UrlUtils.getDomainStr(resourceURL)) == null )
@@ -142,7 +147,7 @@ public class HttpUtils
 			else
 				conn.setRequestMethod("HEAD");	// Else, try "HEAD" (it may be either a domain that supports "HEAD", or a new domain, for which we have no info yet).
 			
-			if ( domainStr.equals(lastConnectedHost) ) {	// If this is the last-visited domain, sleep a bit before re-connecting to it.
+			if ( (politenessDelay > 0) && domainStr.equals(lastConnectedHost) ) {	// If this is the last-visited domain, sleep a bit before re-connecting to it.
 				Thread.sleep(politenessDelay);	// Avoid server-overloading for the same host.
 				conn.connect();
 			} else {
@@ -150,8 +155,7 @@ public class HttpUtils
 				lastConnectedHost = domainStr;
 			}
 			
-			if ( (responceCode = conn.getResponseCode()) == -1 )
-			{
+			if ( (responceCode = conn.getResponseCode()) == -1 ) {
 				logger.warn("Invalid HTTP response for \"" + conn.getURL().toString() + "\"");
 				throw new RuntimeException();
 			}
@@ -173,7 +177,8 @@ public class HttpUtils
 				
 				conn.setRequestMethod("GET");
 				
-				Thread.sleep(politenessDelay);	// Avoid server-overloading for the same host.
+				if ( politenessDelay > 0 )
+					Thread.sleep(politenessDelay);	// Avoid server-overloading for the same host.
 				
 				conn.connect();
 				
@@ -202,7 +207,7 @@ public class HttpUtils
 				conn.disconnect();
 			throw new RuntimeException();
 		} catch (SSLException ssle) {
-			logger.warn("No ssl connection was able to be negotiated with the domain: \"" + domainStr + "\".", ssle.getMessage());
+			logger.warn("No Secure connection was able to be negotiated with the domain: \"" + domainStr + "\".", ssle.getMessage());
 			blacklistedDomains.add(domainStr);
 			// TODO - For "SSLProtocolException", see more about it's possible handling here: https://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0/14884941#14884941
 			if (conn != null)
@@ -230,7 +235,6 @@ public class HttpUtils
     /**
      * This method takes an open connection for which there is a need for redirections.
      * It opens a new connection every time, up to the point we reach a certain number of redirections defined by "HttpUtils.maxRedirects".
-     * 
      * @param conn
      * @return Last open connection. If there was any problem, it returns "null".
      * @throws RuntimeException

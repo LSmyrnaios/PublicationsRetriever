@@ -169,20 +169,18 @@ public class MachineLearning
 		if ( domainsBlockedFromMLA.contains(domain) )
 			return;
 		
+		if ( docPage.equals(docUrl) )	// It will be equal if the "docPage" is a docUrl itself.
+			return;	// No need to log anything.
+		
 		// Get the paths of the docPage and the docUrl and put them inside "successDomainPathsMultiMap".
 		
 		String docPagePath = UrlUtils.getPathStr(docPage);
 		if ( docPagePath == null )
 			return;
 		
-		String docUrlPath = null;
-		if ( docPage.equals(docUrl) )	// It will be equal if the "docPage" is a docUrl itself.
-			docUrlPath = docPagePath;
-		else {
-			docUrlPath = UrlUtils.getPathStr(docUrl);
-			if ( docUrlPath == null )
-				return;
-		}
+		String docUrlPath = UrlUtils.getPathStr(docUrl);
+		if ( docUrlPath == null )
+			return;
 		
 		MachineLearning.successPathsMultiMap.put(docPagePath, docUrlPath);	// Add this pair in "successPathsMultiMap", if the key already exists then it will just add one more value to that key.
 		
@@ -258,7 +256,7 @@ public class MachineLearning
 				try {
 					logger.debug("Going to check guessedDocUrl: " + guessedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");
 					
-					if ( HttpUtils.connectAndCheckMimeType(pageUrl, guessedDocUrl, null) ) {
+					if ( HttpUtils.connectAndCheckMimeType(pageUrl, guessedDocUrl, null, false) ) {
 						logger.debug("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
 						MachineLearning.docUrlsFoundByMLA ++;
 						return true;	// Note that we have already add it in the output links inside "connectAndCheckMimeType()".

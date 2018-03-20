@@ -65,7 +65,7 @@ public class DocUrlsRetriever
 		logger.info("Αbout: " + UrlUtils.pageWithHtmlDocUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.pageWithHtmlDocUrls + " urls) were docUrls, but, in HTML, thus being avoided to be crawled.");
 		logger.info("About: " + UrlUtils.pagesWithLargerCrawlingDepth * (float)100 / inputUrlNum + "% (" + UrlUtils.pagesWithLargerCrawlingDepth + " urls) were docPages which have their docUrl deeper inside their server, thus being currently avoided.");
 		logger.info("About: " + UrlUtils.pangaeaUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.pangaeaUrls + " urls) were \"PANGAEA.\" with invalid form and non-docUrls in their inner links.");
-		logger.info("About: " + UrlUtils.connProblematicUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.connProblematicUrls + " urls) were pages known to have connectivity problems.");
+		logger.info("About: " + UrlUtils.connProblematicUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.connProblematicUrls + " urls) were pages which had connectivity problems.");
 		logger.info("About: " + UrlUtils.pagesNotProvidingDocUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.pagesNotProvidingDocUrls + " urls) were pages which are known to not provide docUrls.");
 		logger.info("About: " + UrlUtils.urlsWithUnwantedForm * (float)100 / inputUrlNum + "% (" + UrlUtils.urlsWithUnwantedForm + " urls) were urls which are plain-domains, have unwanted url-extensions, ect...");
 		logger.info("About: " + UrlUtils.inputDuplicatesNum * (float)100 / inputUrlNum + "% (" + UrlUtils.inputDuplicatesNum + " urls) were duplicates in the input file.");
