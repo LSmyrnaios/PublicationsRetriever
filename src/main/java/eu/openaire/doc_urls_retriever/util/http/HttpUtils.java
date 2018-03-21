@@ -49,12 +49,13 @@ public class HttpUtils
 	 * @return True, if it's a pdfMimeType. False, if it has a different mimeType.
 	 * @throws RuntimeException (when there was a network error).
 	 */
-	public static boolean connectAndCheckMimeType(String currentPage, String resourceURL, String domainStr, boolean calledAtLoading) throws RuntimeException
+	public static boolean connectAndCheckMimeType(String currentPage, String resourceURL, String domainStr, boolean calledAtLoading)
+																					throws RuntimeException, DomainBlockedException
 	{
 		HttpURLConnection conn = null;
 		try {
 			if ( domainStr == null )	// No info about domainStr from the calling method.. we have to find it here.
-				if ( (domainStr = UrlUtils.getDomainStr(resourceURL) ) == null)
+				if ( (domainStr = UrlUtils.getDomainStr(resourceURL) ) == null )
 					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
 			
 			conn = HttpUtils.openHttpConnection(resourceURL, domainStr);
@@ -65,7 +66,7 @@ public class HttpUtils
 			}
 			else if ( (responceCode < 200) || (responceCode >= 400) ) {	// If we have error codes.
 				onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
-				throw new RuntimeException();
+				throw new RuntimeException();	// This is only thrown if a "DomainBlockedException" is catched.
 			}
 			// Else it's an HTTP 2XX SUCCESS CODE.
 			
@@ -75,8 +76,10 @@ public class HttpUtils
 			
 			if ( mimeType == null ) {
 				contentDisposition = conn.getHeaderField("Content-Disposition");
-				if (contentDisposition == null)
-					throw new RuntimeException();	// We can't retrieve any clue. This is not desired.
+				if (contentDisposition == null) {
+					logger.warn("No ContentType nor ContentDisposition, were able to be retrieved from url: " + conn.getURL().toString());
+					throw new RuntimeException();    // We can't retrieve any clue. This is not desired.
+				}
 			}
 			
 			String finalUrlStr = conn.getURL().toString();
@@ -91,6 +94,8 @@ public class HttpUtils
 			if ( currentPage.equals(resourceURL) )	// Log this error only for docPages.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
 			throw re;
+		} catch (DomainBlockedException dbe) {
+			throw dbe;
 		} catch (IOException e) {
 			if ( currentPage.equals(resourceURL) )	// Log this error only for docPages.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
@@ -112,7 +117,8 @@ public class HttpUtils
      * @return HttpURLConnection
      * @throws RuntimeException
      */
-	public static HttpURLConnection openHttpConnection(String resourceURL, String domainStr) throws RuntimeException
+	public static HttpURLConnection openHttpConnection(String resourceURL, String domainStr)
+																		throws RuntimeException, DomainBlockedException
     {
     	URL url = null;
 		HttpURLConnection conn = null;
@@ -147,13 +153,11 @@ public class HttpUtils
 			else
 				conn.setRequestMethod("HEAD");	// Else, try "HEAD" (it may be either a domain that supports "HEAD", or a new domain, for which we have no info yet).
 			
-			if ( (politenessDelay > 0) && domainStr.equals(lastConnectedHost) ) {	// If this is the last-visited domain, sleep a bit before re-connecting to it.
+			if ( (politenessDelay > 0) && domainStr.equals(lastConnectedHost) )	// If this is the last-visited domain, sleep a bit before re-connecting to it.
 				Thread.sleep(politenessDelay);	// Avoid server-overloading for the same host.
-				conn.connect();
-			} else {
-				conn.connect();	// Else, first connect and if there is no error, log this domain as the last one.
-				lastConnectedHost = domainStr;
-			}
+			
+			conn.connect();	// Else, first connect and if there is no error, log this domain as the last one.
+			lastConnectedHost = domainStr;
 			
 			if ( (responceCode = conn.getResponseCode()) == -1 ) {
 				logger.warn("Invalid HTTP response for \"" + conn.getURL().toString() + "\"");
@@ -184,46 +188,49 @@ public class HttpUtils
 				
 				//logger.debug("ResponceCode for \"" + resourceURL + "\", after setting conn-method to: \"" + conn.getRequestMethod() + "\" is: " + conn.getResponseCode());
 			}
-		} catch ( RuntimeException re) {	// The cause it's already logged.
-			if ( conn != null )
+		} catch (RuntimeException re) {    // The cause it's already logged.
+			if (conn != null)
 				conn.disconnect();
 			throw re;
 		} catch (UnknownHostException uhe) {
 			logger.debug("A new \"Unknown Network\" Host was found and logged: \"" + domainStr + "\"");
-			blacklistedDomains.add(domainStr);    //Log it to never try connecting with it again.
 			conn.disconnect();
-			throw new RuntimeException();
+			blacklistedDomains.add(domainStr);    //Log it to never try connecting with it again.
+			throw new DomainBlockedException();
 		}catch (SocketTimeoutException ste) {
 			logger.debug("Url: \"" + resourceURL + "\" failed to respond on time!");
-			onTimeoutException(domainStr);
 			if (conn != null)
 				conn.disconnect();
+			try { onTimeoutException(domainStr); }
+			catch (DomainBlockedException dbe) { throw dbe; }
 			throw new RuntimeException();
 		} catch (ConnectException ce) {
-			String eMsg = ce.getMessage();
-			if ( (eMsg != null) && eMsg.toLowerCase().contains("timeout") )	// If it's a "connection timeout" type of exception, treat it like it.
-				onTimeoutException(domainStr);
 			if (conn != null)
 				conn.disconnect();
+			String eMsg = ce.getMessage();
+			if ( (eMsg != null) && eMsg.toLowerCase().contains("timeout") ) {    // If it's a "connection timeout" type of exception, treat it like it.
+				try { onTimeoutException(domainStr); }
+				catch (DomainBlockedException dbe) { throw dbe; }
+			}
 			throw new RuntimeException();
 		} catch (SSLException ssle) {
 			logger.warn("No Secure connection was able to be negotiated with the domain: \"" + domainStr + "\".", ssle.getMessage());
-			blacklistedDomains.add(domainStr);
-			// TODO - For "SSLProtocolException", see more about it's possible handling here: https://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0/14884941#14884941
 			if (conn != null)
 				conn.disconnect();
-			throw new RuntimeException();
-		} catch (SocketException se) {
+			// TODO - For "SSLProtocolException", see more about it's possible handling here: https://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0/14884941#14884941
 			blacklistedDomains.add(domainStr);
+			throw new DomainBlockedException();
+		} catch (SocketException se) {
 			String seMsg = se.getMessage();
-			if ( seMsg != null )
+			if (seMsg != null)
 				logger.warn(se.getMessage() + " This was recieved after trying to connect with the domain: \"" + domainStr + "\"");
-			if ( conn != null )
+			if (conn != null)
 				conn.disconnect();
-			throw new RuntimeException();
+			blacklistedDomains.add(domainStr);
+			throw new DomainBlockedException();
     	} catch (Exception e) {
 			logger.warn("", e);
-			if ( conn != null )
+			if (conn != null)
 				conn.disconnect();
 			throw new RuntimeException();
 		}
@@ -239,28 +246,28 @@ public class HttpUtils
      * @return Last open connection. If there was any problem, it returns "null".
      * @throws RuntimeException
      */
-	public static HttpURLConnection handleRedirects(HttpURLConnection conn, int responceCode, String domainStr) throws RuntimeException
-	{
+	public static HttpURLConnection handleRedirects(HttpURLConnection conn, int responceCode, String domainStr)
+																			throws RuntimeException, DomainBlockedException {
 		int redirectsNum = 0;
-		String initialUrl = conn.getURL().toString();	// Used to have the initialUrl to run tests on redirections (number, path etc..)
+		String initialUrl = conn.getURL().toString();    // Used to have the initialUrl to run tests on redirections (number, path etc..)
 		
 		try {
 			while (true)
 			{
 				// Check if there was a previous redirection in which we were redirected to a different domain.
-				if ( domainStr == null )	// If this is the case, get the new dom
+				if ( domainStr == null )    // If this is the case, get the new dom
 					if ( (domainStr = UrlUtils.getDomainStr(conn.getURL().toString())) == null )
-						throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
-
-				if ( responceCode >= 300 && responceCode <= 307 && responceCode != 306 && responceCode != 304 )	// Redirect code.
+						throw new RuntimeException();    // The cause it's already logged inside "getDomainStr()".
+				
+				if ( responceCode >= 300 && responceCode <= 307 && responceCode != 306 && responceCode != 304 )    // Redirect code.
 				{
 					redirectsNum ++;
-
+					
 					if ( redirectsNum > HttpUtils.maxRedirects ) {
 						logger.warn("Redirects exceeded their limit (" + HttpUtils.maxRedirects + ") for \"" + initialUrl + "\"");
 						throw new RuntimeException();
 					}
-
+					
 					String location = conn.getHeaderField("Location");
 					if ( location == null ) {
 						logger.warn("No \"Location\" field was found in the HTTP Header of \"" + conn.getURL().toString() + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
@@ -269,7 +276,7 @@ public class HttpUtils
 					
 					String lowerCaseLocation = location.toLowerCase();
 					if ( UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseLocation).matches() || UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLocation).matches() ) {
-						logger.warn("Url: \"" + initialUrl +  "\" was prevented to redirect to the unwanted url: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
+						logger.warn("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 						throw new RuntimeException();
 					}
 					
@@ -288,30 +295,28 @@ public class HttpUtils
 						logger.debug("Location: " + location);
 						logger.debug("Target: " + targetUrlStr + "\n");*/
 					//}
-
-					if ( !targetUrlStr.contains(HttpUtils.lastConnectedHost) )	// If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
+					
+					if ( !targetUrlStr.contains(HttpUtils.lastConnectedHost) )    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
 						domainStr = null;
-
+					
 					conn.disconnect();
-
+					
 					conn = HttpUtils.openHttpConnection(targetUrlStr, domainStr);
-
-					responceCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
-
-					if ( (responceCode >= 200) && (responceCode <= 299) )
-					{
-						return conn;	// It's an "HTTP SUCCESS", return immediately.
+					
+					responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
+					
+					if ( (responceCode >= 200) && (responceCode <= 299) ) {
+						return conn;    // It's an "HTTP SUCCESS", return immediately.
 					}
-				}
-				else {
+				} else {
 					onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
-					throw new RuntimeException();
+					throw new RuntimeException();    // This is not thrown if a "DomainBlockedException" was thrown first.
 				}
 			}//while-loop.
-
-		} catch (RuntimeException re) {	// We already logged the right messages.
+			
+		} catch (RuntimeException | DomainBlockedException rde) {    // We already logged the right messages.
 			conn.disconnect();
-			throw re;
+			throw rde;
 		} catch (Exception e) {
 			logger.warn("", e);
 			conn.disconnect();
@@ -338,7 +343,7 @@ public class HttpUtils
 	 * @param domainStr
 	 * @param errorStatusCode
 	 */
-	public static void onErrorStatusCode(String urlStr, String domainStr, int errorStatusCode)
+	public static void onErrorStatusCode(String urlStr, String domainStr, int errorStatusCode) throws DomainBlockedException
 	{
 		if ( domainStr == null )	// No info about domainStr from the calling method, we have to find it here.
 			domainStr = UrlUtils.getDomainStr(urlStr);	// It may still be null if there was some problem retrieving the domainStr.
@@ -346,9 +351,10 @@ public class HttpUtils
 		if ( (errorStatusCode >= 400) && (errorStatusCode <= 499) )	// Client Error.
 		{
 			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Client Error.");
-			if ( errorStatusCode == 403 )
-				if ( domainStr != null )
+			if ( errorStatusCode == 403 ) {
+				if (domainStr != null)
 					on403ErrorCode(urlStr, domainStr);
+			}
 		}
 		else if ( (errorStatusCode >= 500) && (errorStatusCode <= 599) )	// Server Error.
 		{
@@ -358,8 +364,10 @@ public class HttpUtils
 		}
 		else {	// Unknown Error (including non-handled: 1XX and the weird one: 999, responce codes).
 			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved unexpected responceCode: " + errorStatusCode);
-			if ( domainStr != null )
+			if ( domainStr != null ) {
 				blacklistedDomains.add(domainStr);
+				throw new DomainBlockedException();
+			}
 		}
 	}
 
@@ -371,7 +379,7 @@ public class HttpUtils
 	 * @param urlStr
 	 * @param domainStr
 	 */
-	public static void on403ErrorCode(String urlStr, String domainStr)
+	public static void on403ErrorCode(String urlStr, String domainStr) throws DomainBlockedException
 	{
 		String pathStr = UrlUtils.getPathStr(urlStr);
 		
@@ -385,6 +393,7 @@ public class HttpUtils
 			{
 				HttpUtils.blacklistedDomains.add(domainStr);	// Block the whole domain itself.
 				HttpUtils.timesDomainsHadPaths403BlackListed.removeAll(domainStr);	// No need to keep its paths anymore.
+				throw new DomainBlockedException();
 			}
 		}
 	}
@@ -414,17 +423,21 @@ public class HttpUtils
 	}
 
 
-	public static void on5XXerrorCode(String domainStr)
+	public static void on5XXerrorCode(String domainStr) throws DomainBlockedException
 	{
-		if ( countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, HttpUtils.timesDomainsReturned5XX, domainStr, HttpUtils.timesToHave5XXerrorCodeBeforeBlocked) )
-            logger.debug("Domain: \"" + domainStr + "\" was blocked after returning 5XX Error Code " + HttpUtils.timesToHave5XXerrorCodeBeforeBlocked + " times.");
+		if ( countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, HttpUtils.timesDomainsReturned5XX, domainStr, HttpUtils.timesToHave5XXerrorCodeBeforeBlocked) ) {
+			logger.debug("Domain: \"" + domainStr + "\" was blocked after returning 5XX Error Code " + HttpUtils.timesToHave5XXerrorCodeBeforeBlocked + " times.");
+			throw new DomainBlockedException();
+		}
 	}
 
 	
-	public static void onTimeoutException(String domainStr)
+	public static void onTimeoutException(String domainStr) throws DomainBlockedException
 	{
-		if ( countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, HttpUtils.timesDomainsHadTimeoutEx, domainStr, HttpUtils.timesToHaveTimeoutExBeforeBlocked) )
-            logger.debug("Domain: \"" + domainStr + "\" was blocked after causing Timeout Exception " + HttpUtils.timesToHaveTimeoutExBeforeBlocked + " times.");
+		if ( countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, HttpUtils.timesDomainsHadTimeoutEx, domainStr, HttpUtils.timesToHaveTimeoutExBeforeBlocked) ) {
+			logger.debug("Domain: \"" + domainStr + "\" was blocked after causing Timeout Exception " + HttpUtils.timesToHaveTimeoutExBeforeBlocked + " times.");
+			throw new DomainBlockedException();
+		}
 	}
 
 
@@ -442,12 +455,12 @@ public class HttpUtils
 	public static boolean countAndBlockDomainAfterTimes(HashSet<String> blackList, HashMap<String, Integer> domainsWithTimes, String domainStr, int timesBeforeBlock)
 	{
 		int curTimes = 1;
-		if (domainsWithTimes.containsKey(domainStr))
+		if ( domainsWithTimes.containsKey(domainStr) )
 			curTimes += domainsWithTimes.get(domainStr);
 		
 		domainsWithTimes.put(domainStr, curTimes);
 		
-		if (curTimes > timesBeforeBlock) {
+		if ( curTimes > timesBeforeBlock ) {
 			blackList.add(domainStr);    // Block this domain.
 			domainsWithTimes.remove(domainStr);	// Remove counting-data.
 			return true;	// It was blocked.

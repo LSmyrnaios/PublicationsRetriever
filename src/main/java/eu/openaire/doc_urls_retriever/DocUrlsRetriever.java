@@ -56,10 +56,10 @@ public class DocUrlsRetriever
 		logger.info("Total urls number in the input was: " + inputUrlNum);
     	logger.info("From which, " + CrawlerController.urlsReachedCrawler + " reached the crawling stage (others were discarded at loading).");
 		logger.info("Total docs found: " + UrlUtils.sumOfDocsFound + " That's about: " + UrlUtils.sumOfDocsFound * (float)100 / inputUrlNum + "%");
-		logger.info("About: " + UrlUtils.crawlerSensitiveDomains * (float)100 / inputUrlNum + "% (" + UrlUtils.crawlerSensitiveDomains  + " urls) were from crawler-sensitive domains.");
+		logger.info("About: " + UrlUtils.crawlerSensitiveDomains * (float)100 / inputUrlNum + "% (" + UrlUtils.crawlerSensitiveDomains  + " urls) were from known crawler-sensitive domains.");
 		logger.info("About: " + UrlUtils.frontiersinUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.frontiersinUrls + " urls) were from the JavaScript-using domain \"frontiersin.org\", which has dynamic links.");
 		logger.info("About: " + UrlUtils.sciencedirectUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.sciencedirectUrls + " urls) were from the JavaScript-using domain \"sciencedirect.com\", which has dynamic links.");
-		logger.info("About: " + UrlUtils.doiOrgToScienceDirect * (float)100 / inputUrlNum + "% (" + UrlUtils.doiOrgToScienceDirect + " urls) were of a certain type of \"doi.org\" urls which redirect to \"sciencedirect.com\", thus being avoided to be crawled.");
+		logger.info("About: " + UrlUtils.doiOrgToScienceDirect * (float)100 / inputUrlNum + "% (" + UrlUtils.doiOrgToScienceDirect + " urls) were of a certain type of \"doi.org\" urls which would redirect to \"sciencedirect.com\", thus being avoided to be crawled.");
 		logger.info("Αbout: " + UrlUtils.elsevierUnwantedUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.elsevierUnwantedUrls + " urls) were from, or reached after redirects, the unwanted domain: \"elsevier.com\", which either doesn't provide docUrls in its docPages, or it redirects to \"sciencedirect.com\", thus being avoided to be crawled.");
     	logger.info("Αbout: " + UrlUtils.doajResultPageUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.doajResultPageUrls + " urls) were \"doaj.org/toc/\" urls, which are resultPages, thus being avoided to be crawled.");
 		logger.info("Αbout: " + UrlUtils.pageWithHtmlDocUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.pageWithHtmlDocUrls + " urls) were docUrls, but, in HTML, thus being avoided to be crawled.");

@@ -68,6 +68,7 @@ public class CrawlerController
 			UrlUtils.loadAndCheckUrls();
 			
 			CrawlerController.urlsReachedCrawler = CrawlerController.frontier.getNumberOfScheduledPages();	// If wanted for statistics, in the end.
+			logger.debug("Urls added in Crawler: " + CrawlerController.urlsReachedCrawler);
 			
 			if ( MachineLearning.useMLA )
 				new MachineLearning();

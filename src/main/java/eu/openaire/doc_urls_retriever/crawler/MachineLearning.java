@@ -53,23 +53,19 @@ public class MachineLearning
 	public MachineLearning()
 	{
 		long urlsInCrawler = CrawlerController.urlsReachedCrawler;
-		logger.debug("Urls added in Crawler: " + urlsInCrawler);
 		
 		// For small input, make sure the least number of urls to check every time is no more than 10% of the input.
 		int tenPercentOfUrlsInCrawler = (int)(urlsInCrawler * 10 / 100);
-			// logger.debug("TenPercent equals to: " + tenPercentOfUrlsInCrawler);
 		if ( leastNumberOfUrlsToCheck > tenPercentOfUrlsInCrawler )
 			leastNumberOfUrlsToCheck = tenPercentOfUrlsInCrawler;
 		
 		// For small input, make sure that we gather data for no more than 20% of the input, before starting the MLA.
 		int twentyPercentOfUrlsInCrawler = (int)(urlsInCrawler * 20 / 100);
-			// logger.debug("TwentyPercent equals to: " + twentyPercentOfUrlsInCrawler);
 		if ( timesToGatherDataBeforeStarting > twentyPercentOfUrlsInCrawler )
 			timesToGatherDataBeforeStarting = twentyPercentOfUrlsInCrawler;
 		
 		// For small input, make sure the MLA can restart at least one time.
 		int thirtyPercentOfUrlsInCrawler = (int)(urlsInCrawler * 30 / 100);
-			// logger.debug("ThirtyPercent equals to: " + thirtyPercentOfUrlsInCrawler);
 		if ( urlsToWaitUntilRestartMLA > thirtyPercentOfUrlsInCrawler )
 			urlsToWaitUntilRestartMLA = thirtyPercentOfUrlsInCrawler;
 	}

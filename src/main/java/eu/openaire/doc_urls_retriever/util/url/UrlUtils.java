@@ -26,9 +26,10 @@ public class UrlUtils
 	public final static Pattern URL_TRIPLE = Pattern.compile("(.+:\\/\\/(?:www(?:(?:\\w+)?\\.)?)?([\\w\\.\\-]+)(?:[\\:\\d]+)?(?:.*\\/)?(?:[\\w\\.\\-\\_\\%\\:\\~]*\\?[\\w\\.\\-\\_\\%\\:\\~]+\\=)?)(.+)?");
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
-	public static final Pattern URL_DIRECTORY_FILTER = Pattern.compile(".+\\/(?:user|profile|login|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|citation|faq|wiki|support|error|misuse|abuse|gateway|sorryserver|notfound"
-																	+ "|author|editor|license|disclaimer|policies|policy|privacy|terms|sitemap|account|external|statistics|application|help|law|permission|ethic|contact|survey|wallet|contribute"
-																	+ "|template|logo|image|photo|advertiser|people).*");
+	public static final Pattern URL_DIRECTORY_FILTER =
+			Pattern.compile(".+\\/(?:profile|login|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|faq|wiki|support|sitemap|license|disclaimer|policies|policy|privacy|terms|account|help|law"
+							+ "|user|author|editor|citation|external|statistics|application|permission|ethic|contact|survey|wallet|contribute|template|logo|image|photo|advertiser|people"
+							+ "|error|misuse|abuse|gateway|sorryserver|notfound|404\\.(?:\\w)?htm).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects.
 	
 	public static final Pattern PAGE_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|mso|dtl|svg|txt|c|cc|cxx|cpp|java|py)(?:\\?.+)?$");
@@ -146,7 +147,7 @@ public class UrlUtils
 					
 	        		try {
 						HttpUtils.connectAndCheckMimeType(urlToCheck, urlToCheck, null, true);    // If it's not a docUrl, it's still added in the crawler but inside this method, in order to add the final-redirected-free url.
-					} catch (RuntimeException re) {
+					} catch (Exception e) {
 						UrlUtils.logTriple(urlToCheck, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
 						UrlUtils.connProblematicUrls ++;
 					}

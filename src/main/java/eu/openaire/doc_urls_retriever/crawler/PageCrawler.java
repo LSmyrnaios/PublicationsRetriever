@@ -7,6 +7,7 @@ import edu.uci.ics.crawler4j.crawler.Page;
 import edu.uci.ics.crawler4j.crawler.WebCrawler;
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import edu.uci.ics.crawler4j.url.WebURL;
+import eu.openaire.doc_urls_retriever.util.http.DomainBlockedException;
 import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.apache.http.Header;
@@ -261,6 +262,10 @@ public class PageCrawler extends WebCrawler
 					} catch (RuntimeException re) {
 						UrlUtils.duplicateUrls.add(urlToCheck);    // Don't check it ever again..
 						continue;
+					} catch (DomainBlockedException dbe) {
+						logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
+						UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as its domain was blocked during crawling.", null);
+						return;
 					}
 				}
             }
@@ -284,6 +289,10 @@ public class PageCrawler extends WebCrawler
 			try {
 				if ( HttpUtils.connectAndCheckMimeType(pageUrl, currentLink, currentPageDomain, false) )	// We log the docUrl inside this method.
 					return;
+			} catch (DomainBlockedException dbe) {
+				logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
+				UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as its domain was blocked during crawling.", null);
+				return;
 			} catch (RuntimeException e) {
 				// No special handling here.. nor logging..
 			}
@@ -308,7 +317,8 @@ public class PageCrawler extends WebCrawler
 			HttpUtils.lastConnectedHost = currentPageDomain;	// The crawler opened a connection to download this page. It's both here and in shouldVisit(), as the visit() method can be called without the shouldVisit to be previously called.
 		
 		// Call our general statusCode-handling method (it will also find the domainStr).
-		HttpUtils.onErrorStatusCode(urlStr, currentPageDomain, statusCode);
+		try { HttpUtils.onErrorStatusCode(urlStr, currentPageDomain, statusCode); }
+		catch (DomainBlockedException dbe) { }
 		UrlUtils.connProblematicUrls ++;
 	}
 
@@ -335,7 +345,7 @@ public class PageCrawler extends WebCrawler
 				return;
 			else
 				UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onParseError(() method, as there was a problem parsing this page.", null);
-		} catch (RuntimeException re) {
+		} catch (Exception e) {
 			UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onParseError(() method, as there was a problem parsing this page.", null);
 		}
 	}
@@ -347,19 +357,19 @@ public class PageCrawler extends WebCrawler
 		if ( webUrl != null )
 		{
 			String urlStr = webUrl.toString();
-			String exceptionMessage = e.getMessage();
-			if ( exceptionMessage == null ) {    // Avoid causing an "NPE".
+			String exceptionReason = e.toString();
+			if ( exceptionReason == null ) {    // Avoid causing an "NPE".
 				UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an unhandled exception: " + e, null);
 				return;
 			}
 			
 			int curTreatableException = 0;
 			
-			if ( exceptionMessage.contains("UnknownHostException") )
+			if ( exceptionReason.contains("UnknownHostException") )
 				curTreatableException = 1;
-			else if ( exceptionMessage.contains("SocketTimeoutException") )
+			else if ( exceptionReason.contains("SocketTimeoutException") )
 				curTreatableException = 2;
-			else if ( exceptionMessage.contains("ConnectException") && exceptionMessage.toLowerCase().contains("timeout") )    // If this is a "Connection Timeout" type of Exception.
+			else if ( exceptionReason.contains("ConnectTimeoutException") )
 				curTreatableException = 3;
 			
 			if (curTreatableException > 0)	// If there is a treatable Exception.
@@ -369,8 +379,10 @@ public class PageCrawler extends WebCrawler
 				{
 					if (curTreatableException == 1)
 						HttpUtils.blacklistedDomains.add(domainStr);
-					else // TODO - More checks to be added if more exceptions are treated here in the future.
-						HttpUtils.onTimeoutException(domainStr);
+					else { // TODO - More checks to be added if more exceptions are treated here in the future.
+						try { HttpUtils.onTimeoutException(domainStr); }
+						catch (DomainBlockedException dbe) { }	// Do nothing here, as Crawler4j will already go to the next url, by itself.
+					}
 				}
 				
 				// Log the right messages for these exceptions.
@@ -384,8 +396,8 @@ public class PageCrawler extends WebCrawler
 						UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an \"SocketTimeoutException\" for this url.", null);
 						break;
 					case 3:
-						logger.warn("ConnectException was thrown while trying to fetch url: \"" + urlStr + "\".");
-						UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an \"ConnectException\" for this url.", null);
+						logger.warn("ConnectTimeoutException was thrown while trying to fetch url: \"" + urlStr + "\".");
+						UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an \"ConnectTimeoutException\" for this url.", null);
 						break;
 					default:
 						logger.error("Undefined value for \"curTreatableException\"! Re-check which exceptions are treated!");
