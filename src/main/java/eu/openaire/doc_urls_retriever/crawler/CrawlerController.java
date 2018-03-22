@@ -53,6 +53,11 @@ public class CrawlerController
 		config.setProcessBinaryContentInCrawling(true);	// Process more pages.. like xhtml ones (Crawler4j processes only html-ones unless instructed to process all).
 		// Binary-content-rules in "shouldVisit()" still apply.
 		
+		int threadDelaySeconds = 5;	// Shutdown faster. Default is 10.
+		config.setThreadMonitoringDelaySeconds(threadDelaySeconds);
+		config.setCleanupDelaySeconds(threadDelaySeconds);
+		config.setThreadShutdownDelaySeconds(threadDelaySeconds);
+		
 		PageFetcher pageFetcher = new PageFetcher(config);
 		RobotstxtConfig robotstxtConfig = new RobotstxtConfig();
 		RobotstxtServer robotstxtServer = new RobotstxtServer(robotstxtConfig, pageFetcher);
@@ -73,8 +78,8 @@ public class CrawlerController
 			if ( MachineLearning.useMLA )
 				new MachineLearning();
 			
-	        // Start crawling and wait until finished.
-	        controller.start(PageCrawler.class, 1);
+			// Start crawling and wait until finished.
+			controller.start(PageCrawler.class, 1);
 			
 	        // Write any remaining urls from memory to disk.
 	        if ( FileUtils.tripleToBeLoggedOutputList.size() > 0 ) {
