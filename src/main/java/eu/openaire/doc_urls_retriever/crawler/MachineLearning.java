@@ -177,7 +177,7 @@ public class MachineLearning
 			return;
 		
 		String docUrlPath = UrlUtils.getPathStr(docUrl);
-		if ( docUrlPath == null )
+		if ( (docUrlPath == null) || docUrlPath.equals(docPagePath) )	// Avoid holding unnecessary/unwanted data.
 			return;
 		
 		MachineLearning.successPathsMultiMap.put(docPagePath, docUrlPath);	// Add this pair in "successPathsMultiMap", if the key already exists then it will just add one more value to that key.
