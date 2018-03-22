@@ -45,7 +45,7 @@ public class PageCrawler extends WebCrawler
 		if ( UrlUtils.docUrls.contains(urlStr) ) {	// If we got into an already-found docUrl, log it and return. Here, we haven't made a connection yet, but since it's the same urlString, we don't need to.
 			logger.debug("Re-crossing (before connecting to it) the already found docUrl: \"" +  urlStr + "\"");
 			UrlUtils.logTriple(urlStr, urlStr, "", currentUrlDomain);	// No error here.
-			return null;
+			return null;	//Skip this url from connecting and crawling.
 		}
 		
 		if ( HttpUtils.blacklistedDomains.contains(currentUrlDomain) ) {	// Check if it has been blackListed after running inner links' checks.
@@ -82,22 +82,11 @@ public class PageCrawler extends WebCrawler
 		if ( currentPageDomain != null )
 			HttpUtils.lastConnectedHost = currentPageDomain;	// The crawler opened a connection which resulted in 3XX responceCode.
 		
-		String lowerCaseUrlStr = url.toString().toLowerCase();
+		String urlStr = url.toString();
+		String lowerCaseUrlStr = urlStr.toLowerCase();
 		
-		// Check  redirect-finished-urls for certain unwanted types.
-		// Note that "elsevier.com" is reached after redirections only and that it's an intermediate site itself.. so it isn't found at loading time.
-		if ( lowerCaseUrlStr.contains("linkinghub.elsevier.com") ) {   // Avoid this JavaScript site wich redirects to "sciencedirect.com" non-accesible dynamic links.
-            UrlUtils.elsevierUnwantedUrls++;
-			UrlUtils.logTriple(pageUrl, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after trying to redirect to the JavaScript site: \"elsevier.com\".", null);
-            return false;
-		}
-		else if ( UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrlStr).matches()
-					|| UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrlStr).matches()
-					||UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrlStr).matches() )
-		{
-			UrlUtils.logTriple(pageUrl, "unreachable", "Discarded in PageCrawler.shouldVisit() method, after trying to redirect to an unwantedType url.", null);
-			return false;
-		}
+		if ( UrlUtils.matchesUnwantedUrlType(urlStr, lowerCaseUrlStr) )
+			return false;	// The output errorCause is already logged.
 		else
 			return true;
 	}

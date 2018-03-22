@@ -121,7 +121,7 @@ public class UrlUtils
 			{
 				String lowerCaseUrl = retrievedUrl.toLowerCase();	// Only for string checking purposes, not supposed to reach any connection.
 				
-				if ( matchesUnwantedUrlTypesAtLoading(retrievedUrl, lowerCaseUrl) )
+				if ( matchesUnwantedUrlType(retrievedUrl, lowerCaseUrl) )
 					continue;
 				
 				// Remove "jsessionid" for urls. Most of them, if not all, will already be expired.
@@ -138,6 +138,8 @@ public class UrlUtils
 	        	
 	        	if ( UrlUtils.DOC_URL_FILTER.matcher(lowerCaseUrl).matches() )	// If it probably a docUrl, check it right away. (This way we avoid the expensive Crawler4j's process)
 	        	{
+	        		//logger.debug("Possible docUrl at loading: " + retrievedUrl);
+	        		
 	        		String urlToCheck = null;
 					if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrl, null)) == null ) {
 						logger.warn("Could not canonicalize url: " + retrievedUrl);
@@ -167,71 +169,71 @@ public class UrlUtils
 	 * @param lowerCaseUrl
 	 * @return true/false
 	 */
-	public static boolean matchesUnwantedUrlTypesAtLoading(String retrievedUrl, String lowerCaseUrl)
+	public static boolean matchesUnwantedUrlType(String retrievedUrl, String lowerCaseUrl)
 	{
 		if ( lowerCaseUrl.contains("frontiersin.org") ) {
 			UrlUtils.frontiersinUrls ++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the JavaScript-using domain \"frontiersin.org\".", null);
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to the JavaScript-using domain \"frontiersin.org\".", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("sciencedirect.com") ) {	// These urls are in JavaScript, having dynamic links which we cannot currently retrieve.
 			UrlUtils.sciencedirectUrls ++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the JavaScript-using domain \"sciencedirect.com\".", null);
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to the JavaScript-using domain \"sciencedirect.com\".", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("elsevier.com") ) {	// The plain "elsevier.com" and the "journals.elsevier.com" don't give docUrls.
 			// The "linkinghub.elsevier.com" is redirecting to "sciencedirect.com".
 			// Note that we still accept the "elsevier.es" urls, which give docUrls.
 			UrlUtils.elsevierUnwantedUrls ++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the unwanted \"elsevier.com\" domain.", null);
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to the unwanted \"elsevier.com\" domain.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("europepmc.org") || lowerCaseUrl.contains("ncbi.nlm.nih.gov") ) {	// Avoid known-crawler-sensitive domains.
 			UrlUtils.crawlerSensitiveDomains ++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to a crawler-sensitive domain.", null);
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to a crawler-sensitive domain.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("doaj.org/toc/") ) {	// Avoid resultPages.
 			UrlUtils.doajResultPageUrls ++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to the Results-directory: \"doaj.org/toc/\".", null);
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to the Results-directory: \"doaj.org/toc/\".", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("dlib.org") || lowerCaseUrl.contains("saberes.fcecon.unr.edu.ar") ) {    // Avoid HTML docUrls.
 			UrlUtils.pageWithHtmlDocUrls++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to an HTML-docUrls site.", null);
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to an HTML-docUrls site.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("rivisteweb.it") || lowerCaseUrl.contains("library.wur.nl") || lowerCaseUrl.contains("remeri.org.mx") ) {	// Avoid pages known to not provide docUrls (just metadata).
 			UrlUtils.pagesNotProvidingDocUrls ++;
-			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to the non docUrls-providing site \"rivisteweb.it\".", null);
+			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to the non docUrls-providing site \"rivisteweb.it\".", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("/view/") )	// Avoid crawling pages with larger depth.
 		{
 			UrlUtils.pagesWithLargerCrawlingDepth ++;
-			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to an increasedCrawlingDepth-site.", null);
+			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to an increasedCrawlingDepth-site.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("doi.org/https://doi.org/") && lowerCaseUrl.contains("pangaea.") ) {	// PANGAEA. urls with problematic form and non docUrl inner links.
 			UrlUtils.pangaeaUrls ++;
-			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to \"PANGAEA.\" urls with invalid form and non-docUrls in their inner links.", null);
+			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to \"PANGAEA.\" urls with invalid form and non-docUrls in their inner links.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("200.17.137.108") ) {	// Known domains with connectivity problems.
 			UrlUtils.connProblematicUrls ++;
-			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to known urls with connectivity problems.", null);
+			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to known urls with connectivity problems.", null);
 			return true;
 		}
 		else if ( UrlUtils.DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.DOI_ORG_PARENTHESIS_FILTER.matcher(lowerCaseUrl).matches() ) {
 			UrlUtils.doiOrgToScienceDirect ++;
-			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded at loading time, after matching to a urlType of \"doi.org\", which redirects to \"sciencedirect.com\".", null);
+			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to a urlType of \"doi.org\", which redirects to \"sciencedirect.com\".", null);
 			return true;
 		}
 		else if ( UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() ||UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
 				|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches())
 		{
 			UrlUtils.urlsWithUnwantedForm ++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, after matching to unwantedType-regex-rules.", null);
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to unwantedType-regex-rules.", null);
 			return true;
 		}
 		else
@@ -297,6 +299,7 @@ public class UrlUtils
 				plainMimeType = removeCharsetFromMimeType(mimeType);
 				
 				if ( plainMimeType == null ) {    // If there was any error removing the charset, still try to save any docMimeType (currently pdf-only).
+					logger.warn("Url with problematic mimeType was: " + urlStr);
 					if ( mimeType.contains("pdf") )
 						return true;
 					else

@@ -36,9 +36,10 @@ public class MachineLearning
 	private static long endOfSleepNumOfUrls = 0;
 	private static long latestNumOfUrlsBeforePauseMLA = 0;
 	private static long latestSuccessBreakPoint = 0;
+	private static long latestUrlsMLAChecked = 0;
 	private static boolean isInSleepMode = false;
 	private static int timesGatheredData = 0;
-	//private static long urlsCheckedWithMLA = 0;
+	private static long urlsCheckedWithMLA = 0;
 	
 	private static HashSet<String> domainsBlockedFromMLA = new HashSet<String>();
 	private static HashMap<String, Integer> timesDomainsFailedInMLA = new HashMap<String, Integer>();
@@ -113,7 +114,7 @@ public class MachineLearning
 		}
 		else	// Decide depending on successPercentage for all of the urls which reached the crawler until now (this will be the case every time this is called, after we exceed the leastNumber)..
 		{
-			float curSuccessRate = (float)((docUrlsFoundByMLA - latestMLADocUrlsFound) * 100) / ((PageCrawler.totalPagesReachedCrawling -1) - latestSuccessBreakPoint);
+			float curSuccessRate = (float)((docUrlsFoundByMLA - latestMLADocUrlsFound) * 100) / (urlsCheckedWithMLA - latestUrlsMLAChecked);
 			logger.debug("CurSuccessRate of MLA = " + curSuccessRate + "%");
 			
 			if ( curSuccessRate >= leastSuccessPercentageForMLA ) {    // After the safe-period, continue as long as the success-rate is high.
@@ -126,6 +127,7 @@ public class MachineLearning
 				latestNumOfUrlsBeforePauseMLA = PageCrawler.totalPagesReachedCrawling -1;
 				endOfSleepNumOfUrls = latestNumOfUrlsBeforePauseMLA + urlsToWaitUntilRestartMLA;	// Update num of urls to reach before the "sleep period" ends.
 				latestMLADocUrlsFound = docUrlsFoundByMLA;	// Keep latest num of docUrls found by the MLA, in order to calculate the success rate only for up-to-date data.
+				latestUrlsMLAChecked = urlsCheckedWithMLA;	// Keep latest num of urls checked by MLA...
 				latestSuccessBreakPoint = 0;	// Stop keeping successBreakPoint.
 				isInSleepMode = true;
 				return false;
@@ -230,7 +232,7 @@ public class MachineLearning
 			StringBuilder strB = new StringBuilder(150);
 			String guessedDocUrl = null;
 			
-			//MachineLearning.urlsCheckedWithMLA ++;
+			MachineLearning.urlsCheckedWithMLA ++;
 			
 			for ( String knownDocUrlPath : knownDocUrlPaths )
 			{
