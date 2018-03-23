@@ -3,6 +3,7 @@ package eu.openaire.doc_urls_retriever.util.http;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
+import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +63,7 @@ public class HttpUtils
 			
 			int responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
 			if ( (responceCode >= 300) && (responceCode <= 399) ) {   // If we have redirections..
-				conn = HttpUtils.handleRedirects(conn, responceCode, domainStr);	// Take care of redirects.
+				conn = HttpUtils.handleRedirects(conn, responceCode, domainStr, calledAtLoading);	// Take care of redirects.
 			}
 			else if ( (responceCode < 200) || (responceCode >= 400) ) {	// If we have error codes.
 				onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
@@ -76,7 +77,7 @@ public class HttpUtils
 			
 			if ( mimeType == null ) {
 				contentDisposition = conn.getHeaderField("Content-Disposition");
-				if (contentDisposition == null) {
+				if ( contentDisposition == null ) {
 					logger.warn("No ContentType nor ContentDisposition, were able to be retrieved from url: " + conn.getURL().toString());
 					throw new RuntimeException();    // We can't retrieve any clue. This is not desired.
 				}
@@ -194,7 +195,8 @@ public class HttpUtils
 			throw re;
 		} catch (UnknownHostException uhe) {
 			logger.debug("A new \"Unknown Network\" Host was found and logged: \"" + domainStr + "\"");
-			conn.disconnect();
+			if (conn != null)
+				conn.disconnect();
 			blacklistedDomains.add(domainStr);    //Log it to never try connecting with it again.
 			throw new DomainBlockedException();
 		}catch (SocketTimeoutException ste) {
@@ -243,10 +245,11 @@ public class HttpUtils
      * This method takes an open connection for which there is a need for redirections.
      * It opens a new connection every time, up to the point we reach a certain number of redirections defined by "HttpUtils.maxRedirects".
      * @param conn
-     * @return Last open connection. If there was any problem, it returns "null".
+     * @param calledForPageUrl
+	 * @return Last open connection. If there was any problem, it returns "null".
      * @throws RuntimeException
      */
-	public static HttpURLConnection handleRedirects(HttpURLConnection conn, int responceCode, String domainStr)
+	public static HttpURLConnection handleRedirects(HttpURLConnection conn, int responceCode, String domainStr, boolean calledForPageUrl)
 																			throws RuntimeException, DomainBlockedException {
 		int redirectsNum = 0;
 		String initialUrl = conn.getURL().toString();    // Used to have the initialUrl to run tests on redirections (number, path etc..)
@@ -274,8 +277,15 @@ public class HttpUtils
 						throw new RuntimeException();
 					}
 					
-					String lowerCaseLocation = location.toLowerCase();
-					if ( UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseLocation).matches() || UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLocation).matches() ) {
+					boolean unwantedRedirection = false;
+					if ( calledForPageUrl ) {
+						if ( UrlUtils.shouldNotAcceptPageUrl(location, null) )
+							unwantedRedirection = true;
+					}
+					else if ( PageCrawler.shouldNotAcceptInnerLink(location) )	// Else we are redirecting an innerPageLink.
+						unwantedRedirection = true;
+					
+					if ( unwantedRedirection ) {
 						logger.warn("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 						throw new RuntimeException();
 					}

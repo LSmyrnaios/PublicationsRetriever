@@ -92,7 +92,7 @@ public class PageCrawler extends WebCrawler
 	}
 	
 	
-	public boolean shouldNotCheckInnerLink(String linkStr)
+	public static boolean shouldNotAcceptInnerLink(String linkStr)
 	{
 		String lowerCaseLink = linkStr.toLowerCase();
 		
@@ -239,23 +239,22 @@ public class PageCrawler extends WebCrawler
             lowerCaseUrl = urlToCheck.toLowerCase();
             if ( UrlUtils.DOC_URL_FILTER.matcher(lowerCaseUrl).matches() )
 			{
-				if ( shouldNotCheckInnerLink(urlToCheck) )	// Avoid false-positives, such as images (a common one: ".../pdf.png").
+				if ( shouldNotAcceptInnerLink(urlToCheck) )	// Avoid false-positives, such as images (a common one: ".../pdf.png").
 					continue;
-				else {
-					//logger.debug("InnerPossibleDocLink: " + urlToCheck);	// DEBUG!
-					try {
-						if ( HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, currentPageDomain, false) )	// We log the docUrl inside this method.
-							return;
-						else
-							continue;    // Don't add it in the new set.
-					} catch (RuntimeException re) {
-						UrlUtils.duplicateUrls.add(urlToCheck);    // Don't check it ever again..
-						continue;
-					} catch (DomainBlockedException dbe) {
-						logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
-						UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as its domain was blocked during crawling.", null);
+				
+				//logger.debug("InnerPossibleDocLink: " + urlToCheck);	// DEBUG!
+				try {
+					if ( HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, currentPageDomain, false) )	// We log the docUrl inside this method.
 						return;
-					}
+					else
+						continue;    // Don't add it in the new set.
+				} catch (RuntimeException re) {
+					UrlUtils.duplicateUrls.add(urlToCheck);    // Don't check it ever again..
+					continue;
+				} catch (DomainBlockedException dbe) {
+					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
+					UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as its domain was blocked during crawling.", null);
+					return;
 				}
             }
             
@@ -268,7 +267,7 @@ public class PageCrawler extends WebCrawler
 		for ( String currentLink : curLinksStr )
 		{
 			// We re-check here, as, in the fast-loop not all of the links are checked against this.
-			if ( shouldNotCheckInnerLink(currentLink) ) {	// If this link matches certain blackListed criteria, move on..
+			if ( shouldNotAcceptInnerLink(currentLink) ) {	// If this link matches certain blackListed criteria, move on..
 				//logger.debug("Avoided link: " + currentLink );
 				UrlUtils.duplicateUrls.add(currentLink);
 				continue;

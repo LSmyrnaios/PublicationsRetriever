@@ -54,8 +54,8 @@ public class DocUrlsRetriever
     	}
 		
 		logger.info("Total urls number in the input was: " + inputUrlNum);
-    	logger.info("From which, " + CrawlerController.urlsReachedCrawler + " reached the crawling stage (others were discarded at loading).");
-		logger.info("Total docs found: " + UrlUtils.sumOfDocsFound + " That's about: " + UrlUtils.sumOfDocsFound * (float)100 / inputUrlNum + "%");
+    	logger.info("From which, " + CrawlerController.urlsReachedCrawler + " reached the crawling stage (others were either detected as docUrls or where discarded at loading after matching to unwanted types).");
+		logger.info("Total docUrls found: " + UrlUtils.sumOfDocsFound + ". That's about: " + UrlUtils.sumOfDocsFound * (float)100 / inputUrlNum + "%");
 		logger.info("About: " + UrlUtils.crawlerSensitiveDomains * (float)100 / inputUrlNum + "% (" + UrlUtils.crawlerSensitiveDomains  + " urls) were from known crawler-sensitive domains.");
 		logger.info("About: " + UrlUtils.frontiersinUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.frontiersinUrls + " urls) were from the JavaScript-using domain \"frontiersin.org\", which has dynamic links.");
 		logger.info("About: " + UrlUtils.sciencedirectUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.sciencedirectUrls + " urls) were from the JavaScript-using domain \"sciencedirect.com\", which has dynamic links.");
