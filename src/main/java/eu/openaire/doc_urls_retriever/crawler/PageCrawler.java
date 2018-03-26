@@ -85,7 +85,7 @@ public class PageCrawler extends WebCrawler
 		String urlStr = url.toString();
 		String lowerCaseUrlStr = urlStr.toLowerCase();
 		
-		return	UrlUtils.matchesUnwantedUrlType(urlStr, lowerCaseUrlStr);	// The output errorCause is already logged.
+		return	!UrlUtils.matchesUnwantedUrlType(urlStr, lowerCaseUrlStr);	// The output errorCause is already logged.
 	}
 	
 	

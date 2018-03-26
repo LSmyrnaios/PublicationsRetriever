@@ -186,7 +186,7 @@ public class HttpUtils
 				conn.disconnect();
 			throw re;
 		} catch (UnknownHostException uhe) {
-			logger.debug("A new \"Unknown Network\" Host was found and logged: \"" + domainStr + "\"");
+			logger.debug("A new \"Unknown Network\" Host was found and blacklisted: \"" + domainStr + "\"");
 			if ( conn != null )
 				conn.disconnect();
 			blacklistedDomains.add(domainStr);    //Log it to never try connecting with it again.
@@ -212,6 +212,7 @@ public class HttpUtils
 			if ( conn != null )
 				conn.disconnect();
 			// TODO - For "SSLProtocolException", see more about it's possible handling here: https://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0/14884941#14884941
+			// TODO - Maybe I should make another list where only urls in https, from these domains, would be blocked.
 			blacklistedDomains.add(domainStr);
 			throw new DomainBlockedException();
 		} catch (SocketException se) {
