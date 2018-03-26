@@ -31,7 +31,7 @@ public class TripleToBeLogged
      */
     public String toJsonString()
     {
-        return FileUtils.jsonEncoder(this.sourceUrl, this.docUrl, this.errorCause);  // It may be null.
+        return  FileUtils.jsonEncoder(this.sourceUrl, this.docUrl, this.errorCause);  // It may be null.
     }
 
 }

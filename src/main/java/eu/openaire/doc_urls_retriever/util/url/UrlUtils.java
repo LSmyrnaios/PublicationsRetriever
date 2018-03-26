@@ -27,7 +27,7 @@ public class UrlUtils
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
 	public static final Pattern URL_DIRECTORY_FILTER =
-			Pattern.compile(".+\\/(?:profile|login|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|faq|wiki|support|sitemap|license|disclaimer|policies|policy|privacy|terms|account|help|law"
+			Pattern.compile(".*\\/(?:profile|login|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|faq|wiki|support|sitemap|license|disclaimer|policies|policy|privacy|terms|account|help|law"
 							+ "|user|author|editor|citation|external|statistics|application|permission|ethic|contact|survey|wallet|contribute|template|logo|image|photo|advertiser|people"
 							+ "|error|misuse|abuse|gateway|sorryserver|notfound|404\\.(?:\\w)?htm).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects.
@@ -49,7 +49,7 @@ public class UrlUtils
 	
     public static final Pattern JSESSIONID_FILTER = Pattern.compile("(.+:\\/\\/.+)(?:\\;(?:JSESSIONID|jsessionid)=.+)(\\?.+)");
 	
-    public static final Pattern DOC_URL_FILTER = Pattern.compile(".+:\\/\\/.+(pdf|download|/doc|document|(?:/|[?]|&)file|/fulltext|attachment|/paper|viewfile|viewdoc|/get|cgi/viewcontent.cgi?).*");
+    public static final Pattern DOC_URL_FILTER = Pattern.compile(".+(pdf|download|/doc|document|(?:/|[?]|&)file|/fulltext|attachment|/paper|viewfile|viewdoc|/get|cgi/viewcontent.cgi?).*");
     // "DOC_URL_FILTER" works for lowerCase Strings (we make sure they are in lowerCase before we check).
     // Note that we still need to check if it's an alive link and if it's actually a docUrl (though it's mimeType).
 	
@@ -256,11 +256,8 @@ public class UrlUtils
 		else
 			lowerCaseUrl = lowerCasePageUrl;	// We might have already done the transformation in the calling method.
 		
-		if ( UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
-				|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches() )
-			return true;
-		else
-			return false;
+		return	UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
+				|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches();
 	}
 	
 
@@ -323,29 +320,21 @@ public class UrlUtils
 				
 				if ( plainMimeType == null ) {    // If there was any error removing the charset, still try to save any docMimeType (currently pdf-only).
 					logger.warn("Url with problematic mimeType was: " + urlStr);
-					if ( mimeType.contains("pdf") )
-						return true;
-					else
-						return false;
+					return	mimeType.contains("pdf");	// TODO - add more types as needed.
 				}
 			}
 			
 			if ( knownDocTypes.contains(plainMimeType) )
 				return true;
-			else if ( plainMimeType.equals("application/octet-stream") && urlStr.toLowerCase().contains("pdf") )
+			else
+				return	(plainMimeType.equals("application/octet-stream") && urlStr.toLowerCase().contains("pdf"));
 				// This is a special case. (see: "https://kb.iu.edu/d/agtj")
 				// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
-				return true;
-			else
-				return false;
 		}
 		else if ( contentDisposition != null )	// If the mimeType was not retrieve, thn try the "Content Disposition".
 		{
-			if ( contentDisposition.contains("attachment") && contentDisposition.contains("pdf") )
-				// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
-				return true;
-			else
-				return false;
+			// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
+			return	(contentDisposition.contains("attachment") && contentDisposition.contains("pdf"));
 		}
 		else {
     		logger.warn("No mimeType, nor Content-Disposition, were able to be retrieved for url: " + urlStr);

@@ -138,20 +138,13 @@ public class MachineLearning
 	
 	public static boolean isInitialLearningPeriod()
 	{
-		// If we haven't yet reached the wanted amount of data gathered.
-		if ( timesGatheredData <= timesToGatherDataBeforeStarting )
-			return true;
-		else
-			return false;
+		return (timesGatheredData <= timesToGatherDataBeforeStarting);
 	}
 	
 	
 	public static boolean shouldRestartMLA()
 	{
-		if ( PageCrawler.totalPagesReachedCrawling > endOfSleepNumOfUrls )
-			return true;
-		else
-			return false;
+		return (PageCrawler.totalPagesReachedCrawling > endOfSleepNumOfUrls);
 	}
 	
 	

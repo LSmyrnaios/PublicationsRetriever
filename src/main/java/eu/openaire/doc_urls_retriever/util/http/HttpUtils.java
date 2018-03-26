@@ -77,7 +77,7 @@ public class HttpUtils
 			
 			if ( mimeType == null ) {
 				contentDisposition = conn.getHeaderField("Content-Disposition");
-				if ( contentDisposition == null ) {
+				if ( contentDisposition == null && !calledAtLoading ) {	// If there is no clue for the type and this method is called for innerLinks.
 					logger.warn("No ContentType nor ContentDisposition, were able to be retrieved from url: " + conn.getURL().toString());
 					throw new RuntimeException();    // We can't retrieve any clue. This is not desired.
 				}
@@ -126,11 +126,6 @@ public class HttpUtils
 		int responceCode = 0;
 		
 		try {
-			if ( domainStr == null ) {	// No info about dominStr from the calling method "handleRedirects()", we have to find it here.
-				if ( (domainStr = UrlUtils.getDomainStr(resourceURL)) == null )
-					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
-			}
-			
 			if ( blacklistedDomains.contains(domainStr) ) {
 		    	logger.warn("Preventing connecting to blacklistedHost: \"" + domainStr + "\"!");
 		    	throw new RuntimeException();
@@ -173,41 +168,38 @@ public class HttpUtils
 				domainsWithUnsupportedHeadMethod.add(domainStr);
 				
 				conn.disconnect();
-				
 				conn = (HttpURLConnection) url.openConnection();
 				
 				conn.setInstanceFollowRedirects(false);
 				conn.setReadTimeout(maxConnWaitingTime);
 				conn.setConnectTimeout(maxConnWaitingTime);
-				
 				conn.setRequestMethod("GET");
 				
 				if ( politenessDelay > 0 )
 					Thread.sleep(politenessDelay);	// Avoid server-overloading for the same host.
 				
 				conn.connect();
-				
 				//logger.debug("ResponceCode for \"" + resourceURL + "\", after setting conn-method to: \"" + conn.getRequestMethod() + "\" is: " + conn.getResponseCode());
 			}
 		} catch (RuntimeException re) {    // The cause it's already logged.
-			if (conn != null)
+			if ( conn != null )
 				conn.disconnect();
 			throw re;
 		} catch (UnknownHostException uhe) {
 			logger.debug("A new \"Unknown Network\" Host was found and logged: \"" + domainStr + "\"");
-			if (conn != null)
+			if ( conn != null )
 				conn.disconnect();
 			blacklistedDomains.add(domainStr);    //Log it to never try connecting with it again.
 			throw new DomainBlockedException();
 		}catch (SocketTimeoutException ste) {
 			logger.debug("Url: \"" + resourceURL + "\" failed to respond on time!");
-			if (conn != null)
+			if ( conn != null )
 				conn.disconnect();
 			try { onTimeoutException(domainStr); }
 			catch (DomainBlockedException dbe) { throw dbe; }
 			throw new RuntimeException();
 		} catch (ConnectException ce) {
-			if (conn != null)
+			if ( conn != null )
 				conn.disconnect();
 			String eMsg = ce.getMessage();
 			if ( (eMsg != null) && eMsg.toLowerCase().contains("timeout") ) {    // If it's a "connection timeout" type of exception, treat it like it.
@@ -217,22 +209,22 @@ public class HttpUtils
 			throw new RuntimeException();
 		} catch (SSLException ssle) {
 			logger.warn("No Secure connection was able to be negotiated with the domain: \"" + domainStr + "\".", ssle.getMessage());
-			if (conn != null)
+			if ( conn != null )
 				conn.disconnect();
 			// TODO - For "SSLProtocolException", see more about it's possible handling here: https://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0/14884941#14884941
 			blacklistedDomains.add(domainStr);
 			throw new DomainBlockedException();
 		} catch (SocketException se) {
 			String seMsg = se.getMessage();
-			if (seMsg != null)
-				logger.warn(se.getMessage() + " This was recieved after trying to connect with the domain: \"" + domainStr + "\"");
-			if (conn != null)
+			if ( seMsg != null )
+				logger.warn(se.getMessage() + " This SocketException was recieved after trying to connect with the domain: \"" + domainStr + "\"");
+			if ( conn != null )
 				conn.disconnect();
 			blacklistedDomains.add(domainStr);
 			throw new DomainBlockedException();
     	} catch (Exception e) {
 			logger.warn("", e);
-			if (conn != null)
+			if ( conn != null )
 				conn.disconnect();
 			throw new RuntimeException();
 		}
@@ -252,20 +244,14 @@ public class HttpUtils
 	public static HttpURLConnection handleRedirects(HttpURLConnection conn, int responceCode, String domainStr, boolean calledForPageUrl)
 																			throws RuntimeException, DomainBlockedException {
 		int redirectsNum = 0;
-		String initialUrl = conn.getURL().toString();    // Used to have the initialUrl to run tests on redirections (number, path etc..)
+		String initialUrl = conn.getURL().toString();    // Keep initialUrl for logging and debugging.
 		
 		try {
-			while (true)
+			while ( true )
 			{
-				// Check if there was a previous redirection in which we were redirected to a different domain.
-				if ( domainStr == null )    // If this is the case, get the new dom
-					if ( (domainStr = UrlUtils.getDomainStr(conn.getURL().toString())) == null )
-						throw new RuntimeException();    // The cause it's already logged inside "getDomainStr()".
-				
 				if ( responceCode >= 300 && responceCode <= 307 && responceCode != 306 && responceCode != 304 )    // Redirect code.
 				{
 					redirectsNum ++;
-					
 					if ( redirectsNum > HttpUtils.maxRedirects ) {
 						logger.warn("Redirects exceeded their limit (" + HttpUtils.maxRedirects + ") for \"" + initialUrl + "\"");
 						throw new RuntimeException();
@@ -277,22 +263,19 @@ public class HttpUtils
 						throw new RuntimeException();
 					}
 					
-					boolean unwantedRedirection = false;
 					if ( calledForPageUrl ) {
-						if ( UrlUtils.shouldNotAcceptPageUrl(location, null) )
-							unwantedRedirection = true;
+						if ( UrlUtils.shouldNotAcceptPageUrl(location, null) ) {
+							logger.warn("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
+							throw new RuntimeException();
+						}
 					}
-					else if ( PageCrawler.shouldNotAcceptInnerLink(location) )	// Else we are redirecting an innerPageLink.
-						unwantedRedirection = true;
-					
-					if ( unwantedRedirection ) {
+					else if ( PageCrawler.shouldNotAcceptInnerLink(location) ) {	// Else we are redirecting an innerPageLink.
 						logger.warn("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 						throw new RuntimeException();
 					}
 					
 					URL base = conn.getURL();
 					URL target = new URL(base, location);
-					
 					String targetUrlStr = target.toString();
 					
 					// FOR DEBUG -> Check to see what's happening with the redirect urls (location field types, as well as potential error redirects).
@@ -307,15 +290,16 @@ public class HttpUtils
 					//}
 					
 					if ( !targetUrlStr.contains(HttpUtils.lastConnectedHost) )    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
-						domainStr = null;
+						if ( (domainStr = UrlUtils.getDomainStr(targetUrlStr)) == null )
+							throw new RuntimeException();    // The cause it's already logged inside "getDomainStr()".
 					
 					conn.disconnect();
-					
 					conn = HttpUtils.openHttpConnection(targetUrlStr, domainStr);
 					
 					responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
 					
 					if ( (responceCode >= 200) && (responceCode <= 299) ) {
+						//printFinalRedirectDataForWantedUrlType(initialUrl, conn.getURL().toString(), null, redirectsNum);	// DEBUG!
 						return conn;    // It's an "HTTP SUCCESS", return immediately.
 					}
 				} else {
@@ -332,18 +316,23 @@ public class HttpUtils
 			conn.disconnect();
 			throw new RuntimeException();
 		}
-		
-		
-		// Here is a DEBUG section in which we can retrieve statistics about redirections of certain domains.
-		/*	if ( initialUrl.contains("<urlType>") )	// DEBUG
-				logger.info("\"" + initialUrl + "\" DID: " + redirectsNum + " redirect(s)!");	// DEBUG!
-
-			if ( initialUrl.contains("<urlType>") )	// Check how many redirection are done for doi.org urls..
-				if ( redirectsNum == maxRedirects ) {
-					logger.info("DOI.ORG: \"" + initialUrl + "\" DID: " + redirectsNum + " redirect(s)!");	// DEBUG!
-					logger.info("Final link is: \"" + conn.getURL().toString() + "\"");	// DEBUG!
-				}
-		*/
+	}
+	
+	
+	/**
+	 * This method print redirectStatistics if the initial url matched to the given wantedUrlType.
+	 * It's intended to be used for debugging-only.
+	 * @param initialUrl
+	 * @param finalUrl
+	 * @param wantedUrlType
+	 * @param redirectsNum
+	 */
+	public static void printFinalRedirectDataForWantedUrlType(String initialUrl, String finalUrl, String wantedUrlType, int redirectsNum)
+	{
+		if ( (wantedUrlType != null) && initialUrl.contains(wantedUrlType) ) {
+			logger.info("\"" + initialUrl + "\" DID: " + redirectsNum + " redirect(s)!");
+			logger.info("Final link is: \"" + finalUrl + "\"");
+		}
 	}
 
 
@@ -361,10 +350,9 @@ public class HttpUtils
 		if ( (errorStatusCode >= 400) && (errorStatusCode <= 499) )	// Client Error.
 		{
 			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Client Error.");
-			if ( errorStatusCode == 403 ) {
+			if ( errorStatusCode == 403 )
 				if (domainStr != null)
 					on403ErrorCode(urlStr, domainStr);
-			}
 		}
 		else if ( (errorStatusCode >= 500) && (errorStatusCode <= 599) )	// Server Error.
 		{

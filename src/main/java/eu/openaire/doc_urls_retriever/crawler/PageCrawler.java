@@ -85,10 +85,7 @@ public class PageCrawler extends WebCrawler
 		String urlStr = url.toString();
 		String lowerCaseUrlStr = urlStr.toLowerCase();
 		
-		if ( UrlUtils.matchesUnwantedUrlType(urlStr, lowerCaseUrlStr) )
-			return false;	// The output errorCause is already logged.
-		else
-			return true;
+		return	UrlUtils.matchesUnwantedUrlType(urlStr, lowerCaseUrlStr);	// The output errorCause is already logged.
 	}
 	
 	
@@ -136,11 +133,7 @@ public class PageCrawler extends WebCrawler
 				}
 			}
 		}
-		
-		if ( UrlUtils.hasDocMimeType(pageUrl, pageContentType, contentDisposition) )
-			return true;
-		else
-			return false;
+		return	UrlUtils.hasDocMimeType(pageUrl, pageContentType, contentDisposition);
 	}
 	
 	
