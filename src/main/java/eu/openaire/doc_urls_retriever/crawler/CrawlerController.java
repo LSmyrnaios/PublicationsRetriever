@@ -43,7 +43,7 @@ public class CrawlerController
 		config.setCrawlStorageFolder(crawlStorageFolder);
 		config.setOnlineTldListUpdate(true);	// Currently this doesn't work (follow the issue #282 I opened on Github: https://github.com/yasserg/crawler4j/issues/282).
 		config.setConnectionTimeout(HttpUtils.maxConnWaitingTime);
-		
+		config.setSocketTimeout(HttpUtils.maxConnWaitingTime);
 		config.setMaxDownloadSize(52428800);	// Max = 50MB (that's larger from the default setting: 1048576)
 												// We don't want to miss any page!
 		

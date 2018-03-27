@@ -29,7 +29,7 @@ public class FileUtils
 	private static String endOfLine = "\n";
 	public static long unretrievableInputLines = 0;	// For better statistics in the end.
     public static long unretrievableUrlsOnly = 0;
-    public static int groupCount = 1000;	// Just for testing.. TODO -> Later increase it..
+    public static int groupCount = 5000;	// Just for testing.. TODO -> Later increase it..
 	
 	public static List<TripleToBeLogged> tripleToBeLoggedOutputList = new ArrayList<>();
 	
@@ -173,7 +173,6 @@ public class FileUtils
 	public static void writeToFile()
 	{
 		int numberOfTriples = FileUtils.tripleToBeLoggedOutputList.size();
-		logger.debug("Writing to the outputFile.. " + numberOfTriples + " set(s) of (\"SourceUrl\", \"DocUrl\")");
 		StringBuilder strB = new StringBuilder(numberOfTriples * 350);  // 350: the maximum expected length for a source-doc-error triple..
 
 		String tempJsonString = null;
@@ -192,6 +191,8 @@ public class FileUtils
 		printStream.flush();
 		
 		FileUtils.tripleToBeLoggedOutputList.clear();	// Clear to keep in memory only <groupCount> values at a time.
+		
+		logger.debug("Finished writing to the outputFile.. " + numberOfTriples + " set(s) of (\"SourceUrl\", \"DocUrl\")");
 	}
 	
 	

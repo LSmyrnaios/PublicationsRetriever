@@ -28,7 +28,7 @@ public class UrlUtils
 	
 	public static final Pattern URL_DIRECTORY_FILTER =
 			Pattern.compile(".*\\/(?:profile|login|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|faq|wiki|support|sitemap|license|disclaimer|policies|policy|privacy|terms|account|help|law"
-							+ "|user|author|editor|citation|external|statistics|application|permission|ethic|contact|survey|wallet|contribute|template|logo|image|photo|advertiser|people"
+							+ "|user|author|editor|citation|external|statistics|application|permission|ethic|contact|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|people"
 							+ "|error|misuse|abuse|gateway|sorryserver|notfound|404\\.(?:\\w)?htm).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects.
 	
@@ -43,7 +43,7 @@ public class UrlUtils
     
     public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile(".+:\\/\\/.*(?:google|goo.gl|gstatic|facebook|twitter|youtube|linkedin|wordpress|s.w.org|ebay|bing|amazon|wikipedia|myspace|yahoo|mail|pinterest|reddit|blog|tumblr"
 																					+ "|evernote|skype|microsoft|adobe|buffer|digg|stumbleupon|addthis|delicious|dailymotion|gostats|blogger|copyright|friendfeed|newsvine|telegram|getpocket"
-																					+ "|flipboard|instapaper|line.me|telegram|vk|ok.rudouban|baidu|qzone|xing|renren|weibo|doubleclick).*\\/.*");
+																					+ "|flipboard|instapaper|line.me|telegram|vk|ok.rudouban|baidu|qzone|xing|renren|weibo|doubleclick|github).*\\/.*");
     
     public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile(".+:\\/\\/[\\w.:-]+(?:\\/)?$");	// Exclude plain domains' urls.
 	
@@ -208,8 +208,7 @@ public class UrlUtils
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to the non docUrls-providing site \"rivisteweb.it\".", null);
 			return true;
 		}
-		else if ( lowerCaseUrl.contains("/view/") )	// Avoid crawling pages with larger depth.
-		{
+		else if ( lowerCaseUrl.contains("/view/") || lowerCaseUrl.contains("scielosp.org") ) {	// Avoid crawling pages with larger depth.
 			UrlUtils.pagesWithLargerCrawlingDepth ++;
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to an increasedCrawlingDepth-site.", null);
 			return true;
@@ -229,8 +228,7 @@ public class UrlUtils
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to a urlType of \"doi.org\", which redirects to \"sciencedirect.com\".", null);
 			return true;
 		}
-		else if ( shouldNotAcceptPageUrl(retrievedUrl, lowerCaseUrl) )
-		{
+		else if ( shouldNotAcceptPageUrl(retrievedUrl, lowerCaseUrl) ) {
 			UrlUtils.urlsWithUnwantedForm ++;
 			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to unwantedType-regex-rules.", null);
 			return true;
@@ -292,8 +290,6 @@ public class UrlUtils
         else if ( !finalDocUrl.equals("duplicate") )	{// Else if this url is not a docUrl and has not been processed before..
             duplicateUrls.add(sourceUrl);	 // Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future..
         }	// We don't add docUrls here, as we want them to be separate for checking purposes.
-		
-        //logger.debug("docUrl received in \"UrlUtils.logUrl()\": "+  docUrl);	// DEBUG!
 		
         FileUtils.tripleToBeLoggedOutputList.add(new TripleToBeLogged(sourceUrl, finalDocUrl, errorCause));	// Log it to be written later.
 		

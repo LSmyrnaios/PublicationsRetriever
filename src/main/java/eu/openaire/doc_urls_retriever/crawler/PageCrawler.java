@@ -140,7 +140,7 @@ public class PageCrawler extends WebCrawler
 	@Override
 	public void visit(Page page)
 	{
-		String pageUrl = page.getWebURL().getURL();
+		String pageUrl = page.getWebURL().toString();
 		
 		logger.debug("Visiting pageUrl: \"" + pageUrl + "\".");
 		

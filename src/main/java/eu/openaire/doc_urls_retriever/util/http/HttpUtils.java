@@ -31,7 +31,7 @@ public class HttpUtils
 	
     public static final int politenessDelay = 100;	// Time to wait before connecting to the same host again.
 	public static final int maxConnWaitingTime = 3000;	// Max time (in ms) to wait for a connection.
-    private static final int maxRedirects = 3;	// It's not worth waiting for more than 3, in general.. except if we turn out missing a lot of them.. test every case and decide..
+	private static final int maxRedirects = 3;	// It's not worth waiting for more than 3, in general.. except if we turn out missing a lot of them.. test every case and decide..
     										// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
     private static final int timesToHave5XXerrorCodeBeforeBlocked = 3;
     private static final int timesToHaveTimeoutExBeforeBlocked = 3;
@@ -61,7 +61,7 @@ public class HttpUtils
 			
 			conn = HttpUtils.openHttpConnection(resourceURL, domainStr);
 			
-			int responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
+			int responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP responce), inside openHttpConnection().
 			if ( (responceCode >= 300) && (responceCode <= 399) ) {   // If we have redirections..
 				conn = HttpUtils.handleRedirects(conn, responceCode, domainStr, calledAtLoading);	// Take care of redirects.
 			}
@@ -144,10 +144,13 @@ public class HttpUtils
 			conn.setReadTimeout(maxConnWaitingTime);
 			conn.setConnectTimeout(maxConnWaitingTime);
 			
+			boolean connWithHead = false;
 			if ( domainsWithUnsupportedHeadMethod.contains(domainStr) )	// If we know that it doesn't support "HEAD"..
 				conn.setRequestMethod("GET");	// Go directly with "GET".
-			else
+			else {
 				conn.setRequestMethod("HEAD");	// Else, try "HEAD" (it may be either a domain that supports "HEAD", or a new domain, for which we have no info yet).
+				connWithHead = true;
+			}
 			
 			if ( (politenessDelay > 0) && domainStr.equals(lastConnectedHost) )	// If this is the last-visited domain, sleep a bit before re-connecting to it.
 				Thread.sleep(politenessDelay);	// Avoid server-overloading for the same host.
@@ -160,7 +163,7 @@ public class HttpUtils
 				throw new RuntimeException();
 			}
 			
-			if ( responceCode == 405 || responceCode == 501 )	// If this SERVER doesn't support "HEAD" method or doesn't allow us to use it..
+			if ( connWithHead && (responceCode == 405 || responceCode == 501) )	// If this SERVER doesn't support "HEAD" method or doesn't allow us to use it..
 			{
 				//logger.debug("HTTP \"HEAD\" method is not supported for: \"" + resourceURL +"\". Server's responceCode was: " + responceCode);
 				

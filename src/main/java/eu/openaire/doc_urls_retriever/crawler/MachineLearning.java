@@ -43,7 +43,7 @@ public class MachineLearning
 	
 	private static HashSet<String> domainsBlockedFromMLA = new HashSet<String>();
 	private static HashMap<String, Integer> timesDomainsFailedInMLA = new HashMap<String, Integer>();
-	private static int timesToFailBeforeBlockedFromMLA = 20;
+	private static int timesToFailBeforeBlockedFromMLA = 10;
 	
 	
 	
