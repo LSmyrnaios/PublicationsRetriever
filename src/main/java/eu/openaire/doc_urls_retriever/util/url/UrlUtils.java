@@ -27,10 +27,10 @@ public class UrlUtils
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
 	public static final Pattern URL_DIRECTORY_FILTER =
-			Pattern.compile(".*\\/(?:profile|login|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|faq|wiki|support|sitemap|license|disclaimer|policies|policy|privacy|terms|account|help|law"
+			Pattern.compile(".*\\/(?:profile|login|ac(?:c)?ess|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|faq|wiki|support|sitemap|license|disclaimer|policies|policy|privacy|terms|account|help|law"
 							+ "|user|author|editor|citation|external|statistics|application|permission|ethic|contact|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|people"
 							+ "|error|misuse|abuse|gateway|sorryserver|notfound|404\\.(?:\\w)?htm).*");
-	// We check them as a directory to avoid discarding publications's urls about these subjects.
+	// We check them as a directory to avoid discarding publications's urls about these subjects. There's "acesso" (single "c") in Portuguese.
 	
 	public static final Pattern PAGE_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|mso|dtl|svg|txt|c|cc|cxx|cpp|java|py)(?:\\?.+)?$");
 	
@@ -203,8 +203,8 @@ public class UrlUtils
 			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to an HTML-docUrls site.", null);
 			return true;
 		}
-		else if ( lowerCaseUrl.contains("rivisteweb.it") || lowerCaseUrl.contains("library.wur.nl") || lowerCaseUrl.contains("remeri.org.mx") ) {	// Avoid pages known to not provide docUrls (just metadata).
-			UrlUtils.pagesNotProvidingDocUrls ++;
+		else if ( lowerCaseUrl.contains("rivisteweb.it") || lowerCaseUrl.contains("wur.nl") || lowerCaseUrl.contains("remeri.org.mx") || lowerCaseUrl.contains("cam.ac.uk") ) {	// Avoid pages known to not provide docUrls (just metadata).
+			UrlUtils.pagesNotProvidingDocUrls ++;												// Keep "remeri" subDomain of "org.mx", as the TLD is having a lot of different sites.
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to the non docUrls-providing site \"rivisteweb.it\".", null);
 			return true;
 		}
@@ -323,12 +323,12 @@ public class UrlUtils
 			if ( knownDocTypes.contains(plainMimeType) )
 				return true;
 			else
-				return	(plainMimeType.equals("application/octet-stream") && urlStr.toLowerCase().contains("pdf"));
-				// This is a special case. (see: "https://kb.iu.edu/d/agtj")
-				// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
+				return	((plainMimeType.equals("application/octet-stream") || plainMimeType.contains("unknown")) && urlStr.toLowerCase().contains("pdf"));
+				// This is a special case. (see: "https://kb.iu.edu/d/agtj" for "octet" info.
+				// and an example for "unknown" : "http://imagebank.osa.org/getExport.xqy?img=OG0kcC5vZS0yMy0xNy0yMjE0OS1nMDAy&xtype=pdf&article=oe-23-17-22149-g002")
+				// TODO - When we will accept more docTypes, match it also against other docTypes not just "pdf".
 		}
-		else if ( contentDisposition != null )	// If the mimeType was not retrieve, thn try the "Content Disposition".
-		{
+		else if ( contentDisposition != null ) {	// If the mimeType was not retrieve, then try the "Content Disposition".
 			// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
 			return	(contentDisposition.contains("attachment") && contentDisposition.contains("pdf"));
 		}

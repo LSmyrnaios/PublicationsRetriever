@@ -257,7 +257,7 @@ public class HttpUtils
 				{
 					redirectsNum ++;
 					if ( redirectsNum > HttpUtils.maxRedirects ) {
-						logger.warn("Redirects exceeded their limit (" + HttpUtils.maxRedirects + ") for \"" + initialUrl + "\"");
+						logger.warn("Redirects exceeded their limit (" + HttpUtils.maxRedirects + ") for: \"" + initialUrl + "\"");
 						throw new RuntimeException();
 					}
 					
@@ -437,7 +437,7 @@ public class HttpUtils
 	public static void onTimeoutException(String domainStr) throws DomainBlockedException
 	{
 		if ( countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, HttpUtils.timesDomainsHadTimeoutEx, domainStr, HttpUtils.timesToHaveTimeoutExBeforeBlocked) ) {
-			logger.debug("Domain: \"" + domainStr + "\" was blocked after causing Timeout Exception " + HttpUtils.timesToHaveTimeoutExBeforeBlocked + " times.");
+			logger.debug("Domain: \"" + domainStr + "\" was blocked after causing TimeoutException " + HttpUtils.timesToHaveTimeoutExBeforeBlocked + " times.");
 			throw new DomainBlockedException();
 		}
 	}
@@ -465,7 +465,7 @@ public class HttpUtils
 		if ( curTimes > timesBeforeBlock ) {
 			blackList.add(domainStr);    // Block this domain.
 			domainsWithTimes.remove(domainStr);	// Remove counting-data.
-			return true;	// It was blocked.
+			return true;	// This domain was blocked.
 		}
 		else
 			return false;	// It wasn't blocked.

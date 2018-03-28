@@ -93,12 +93,10 @@ public class PageCrawler extends WebCrawler
 	{
 		String lowerCaseLink = linkStr.toLowerCase();
 		
-		return	lowerCaseLink.contains("mailto:")
-				|| UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
-				|| UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
+		return	lowerCaseLink.contains("doi.org") || lowerCaseLink.contains("mailto:")	// Avoid "doi.org" in inner links, they will only redirect to the same pages.
 				|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseLink).matches()
-				|| UrlUtils.INNER_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseLink).matches()
-				|| UrlUtils.INNER_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseLink).matches()
+				|| UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLink).matches() || UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
+				|| UrlUtils.INNER_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseLink).matches() || UrlUtils.INNER_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseLink).matches();
 		
 		// The following checks are obsolete here, as we already use it inside "visit()" method. Still keep it here, as it makes our intentions clearer.
