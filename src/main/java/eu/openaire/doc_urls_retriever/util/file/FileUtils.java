@@ -2,6 +2,8 @@ package eu.openaire.doc_urls_retriever.util.file;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.doc_urls_retriever.util.url.TripleToBeLogged;
@@ -38,7 +40,7 @@ public class FileUtils
 	
 	public static String docFilesDownloadPath = "//media//lampros//HDD2GB//downloadedDocFiles";
 	public static long unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
-	
+	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*(?:filename=(?:\\\")?)([\\w\\-\\.\\%\\_]+)[\\\"\\;]*.*");
 	
 	
 	public FileUtils(InputStream input, OutputStream output)
@@ -220,15 +222,16 @@ public class FileUtils
 		boolean hasUnretrievableDocName = false;
 		
 		if ( contentDisposition != null ) {	// Extract docFileName from contentDisposition.
-			int index = contentDisposition.indexOf("filename=");
-			if ( index > 0 ) {
-				if ( contentDisposition.substring(index).contains("\"") )
-					docFileName = contentDisposition.substring(index + 10, contentDisposition.length() -1);
-				else
-					docFileName = contentDisposition.substring(index + 9, contentDisposition.length());
+			Matcher fileNameMatcher = FILENAME_FROM_CONTENT_DISPOSITION_FILTER.matcher(contentDisposition);
+			if ( fileNameMatcher.matches() ) {
+				docFileName = fileNameMatcher.group(1);	// Group<1> is the fileName.
+				if ( docFileName == null || docFileName.isEmpty() )
+					hasUnretrievableDocName = true;
 			}
-			else
+			else {
+				logger.warn("Unmatched Content-Disposition:  " + contentDisposition);
 				hasUnretrievableDocName = true;
+			}
 		}
 		else { // Extract fileName from docUrl.
 			docFileName = UrlUtils.getDocIdStr(docUrl);
@@ -237,7 +240,7 @@ public class FileUtils
 		}
 		
 		if ( hasUnretrievableDocName )
-			docFileName = "unretrievableDocName" + (++unretrievableDocNamesNum) + ".pdf";	// TODO - Later, when having more fileTypes, maybe MAP mimeTypes with fileExtentions
+			docFileName = "unretrievableDocName(" + (++unretrievableDocNamesNum) + ").pdf";	// TODO - Later, when having more fileTypes, maybe MAP mimeTypes with fileExtentions
 		
 		try {
 			String saveDocFileFullPath = docFilesDownloadPath + File.separator + docFileName;
@@ -251,6 +254,7 @@ public class FileUtils
 					curDuplicateNum += numbersOfDuplicateDocFileNames.get(docFileName);
 				numbersOfDuplicateDocFileNames.put(docFileName, curDuplicateNum);
 				
+				// Construct final-DocFileName.
 				String preExtensionFileName = docFileName.substring(0, docFileName.lastIndexOf(".") -1);
 				String fileExtension = docFileName.substring(docFileName.lastIndexOf("."));
 				String newEndingName = preExtensionFileName + "(" + curDuplicateNum + ")" + fileExtension;
