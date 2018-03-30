@@ -1,4 +1,4 @@
-package eu.openaire.doc_urls_retriever.util.http;
+package eu.openaire.doc_urls_retriever.exceptions;
 
 
 /**

@@ -1,10 +1,11 @@
 package eu.openaire.doc_urls_retriever.util.file;
 
 import java.io.*;
-
 import java.util.*;
 
+import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.doc_urls_retriever.util.url.TripleToBeLogged;
+import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -32,6 +33,11 @@ public class FileUtils
     public static int groupCount = 5000;	// Just for testing.. TODO -> Later increase it..
 	
 	public static List<TripleToBeLogged> tripleToBeLoggedOutputList = new ArrayList<>();
+	
+	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<String, Integer>();	// Holds docFileNa,es with their duplicatesNum.
+	
+	public static String docFilesDownloadPath = "//media//lampros//HDD2GB//downloadedDocFiles";
+	public static long unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
 	
 	
 	
@@ -193,6 +199,80 @@ public class FileUtils
 		FileUtils.tripleToBeLoggedOutputList.clear();	// Clear to keep in memory only <groupCount> values at a time.
 		
 		logger.debug("Finished writing to the outputFile.. " + numberOfTriples + " set(s) of (\"SourceUrl\", \"DocUrl\")");
+	}
+	
+	
+	/**
+	 * This method is responsible for storing the docFiles and store them in permanent storage.
+	 * @param contentData
+	 * @param docUrl
+	 * @param contentDisposition
+	 * @throws DocFileNotRetrievedException
+	 */
+	public static void storeDocFile(byte[] contentData, String docUrl, String contentDisposition) throws DocFileNotRetrievedException
+	{
+		// TODO - Maybe it would be helpful to make it return the docFile's name for this to be included in the JSONoutput list.
+		
+		if ( contentData.length == 0 )
+			throw new DocFileNotRetrievedException();
+		
+		String docFileName = null;
+		boolean hasUnretrievableDocName = false;
+		
+		if ( contentDisposition != null ) {	// Extract docFileName from contentDisposition.
+			int index = contentDisposition.indexOf("filename=");
+			if ( index > 0 ) {
+				if ( contentDisposition.substring(index).contains("\"") )
+					docFileName = contentDisposition.substring(index + 10, contentDisposition.length() -1);
+				else
+					docFileName = contentDisposition.substring(index + 9, contentDisposition.length());
+			}
+			else
+				hasUnretrievableDocName = true;
+		}
+		else { // Extract fileName from docUrl.
+			docFileName = UrlUtils.getDocIdStr(docUrl);
+			if ( docFileName == null )
+				hasUnretrievableDocName = true;
+		}
+		
+		if ( hasUnretrievableDocName )
+			docFileName = "unretrievableDocName" + (++unretrievableDocNamesNum) + ".pdf";	// TODO - Later, when having more fileTypes, maybe MAP mimeTypes with fileExtentions
+		
+		try {
+			String saveDocFileFullPath = docFilesDownloadPath + File.separator + docFileName;
+			
+			// Open an outputStream to save the docFile.
+			File docFile = new File(saveDocFileFullPath);
+			if ( docFile.exists() ) {
+				// Count duplicates.
+				int curDuplicateNum = 1;
+				if ( numbersOfDuplicateDocFileNames.containsKey(docFileName) )
+					curDuplicateNum += numbersOfDuplicateDocFileNames.get(docFileName);
+				numbersOfDuplicateDocFileNames.put(docFileName, curDuplicateNum);
+				
+				String preExtensionFileName = docFileName.substring(0, docFileName.lastIndexOf(".") -1);
+				String fileExtension = docFileName.substring(docFileName.lastIndexOf("."));
+				String newEndingName = preExtensionFileName + "(" + curDuplicateNum + ")" + fileExtension;
+				saveDocFileFullPath = docFilesDownloadPath + File.separator + newEndingName;
+				File renamedDocFile = new File(saveDocFileFullPath);
+				if ( !docFile.renameTo(renamedDocFile) ) {
+					logger.error("Renaming operation for \"" + docFileName + "\" failed!");
+					throw new DocFileNotRetrievedException();
+				}
+			}
+			
+			FileOutputStream outputStream = new FileOutputStream(docFile);
+			
+			outputStream.write(contentData, 0, contentData.length - 1);
+			outputStream.close();
+			
+			logger.debug("DocFile: \"" + docFileName + "\" seems to have been downloaded! Go check it out!");	// DEBUG!
+			
+		} catch (Exception ioe) {
+			logger.warn("", ioe);
+			throw new DocFileNotRetrievedException();
+		}
 	}
 	
 	

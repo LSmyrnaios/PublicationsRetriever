@@ -2,14 +2,17 @@ package eu.openaire.doc_urls_retriever.util.http;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
+import edu.uci.ics.crawler4j.crawler.Page;
+import eu.openaire.doc_urls_retriever.exceptions.*;
 import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
+import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLException;
-import java.io.IOException;
+import java.io.*;
 import java.net.*;
 import java.util.Collection;
 import java.util.HashMap;
@@ -29,25 +32,27 @@ public class HttpUtils
 	public static final HashMap<String, Integer> timesDomainsHadTimeoutEx = new HashMap<String, Integer>();
 	public static final SetMultimap<String, String> timesDomainsHadPaths403BlackListed = HashMultimap.create();	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
 	
-    public static final int politenessDelay = 100;	// Time to wait before connecting to the same host again.
+	public static String lastConnectedHost = "";
+	public static final int politenessDelay = 100;	// Time to wait before connecting to the same host again.
 	public static final int maxConnWaitingTime = 3000;	// Max time (in ms) to wait for a connection.
 	private static final int maxRedirects = 3;	// It's not worth waiting for more than 3, in general.. except if we turn out missing a lot of them.. test every case and decide..
     										// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
     private static final int timesToHave5XXerrorCodeBeforeBlocked = 3;
     private static final int timesToHaveTimeoutExBeforeBlocked = 3;
     private static final int numberOf403BlockedPathsBeforeBlocked = 3;
+    
+	public static final int maxDownloadableContentSize = 52428800;
+	private static final boolean shouldNOTretryConnWithGETmethod = true;	// Should we retry connecting with "GET" method when the Server doesn't support "HEAD"?
+	private static boolean useGETmethod = false;	// Should we go directly with "GET" method?
 	
-	public static String lastConnectedHost = "";
-
-
-
+	
 	/**
 	 * This method checks if a certain url can give us its mimeType, as well as if this mimeType is a docMimeType.
 	 * It automatically calls the "logUrl()" method for the valid docUrls, while it doesn't call it for non-success cases, thus allowing calling method to handle the case.
 	 * @param currentPage
 	 * @param resourceURL
 	 * @param calledAtLoading
-	 * @return True, if it's a pdfMimeType. False, if it has a different mimeType.
+	 * @return "true", if it's a docMimeType, otherwise, "false", if it has a different mimeType.
 	 * @throws RuntimeException (when there was a network error).
 	 */
 	public static boolean connectAndCheckMimeType(String currentPage, String resourceURL, String domainStr, boolean calledAtLoading)
@@ -59,7 +64,7 @@ public class HttpUtils
 				if ( (domainStr = UrlUtils.getDomainStr(resourceURL) ) == null )
 					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
 			
-			conn = HttpUtils.openHttpConnection(resourceURL, domainStr);
+			conn = HttpUtils.openHttpConnection(resourceURL, domainStr, calledAtLoading);
 			
 			int responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP responce), inside openHttpConnection().
 			if ( (responceCode >= 300) && (responceCode <= 399) ) {   // If we have redirections..
@@ -85,6 +90,7 @@ public class HttpUtils
 			
 			String finalUrlStr = conn.getURL().toString();
 			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition) ) {
+				downloadAndStoreDocFileOutsideCrawler(conn, domainStr, finalUrlStr);
 				UrlUtils.logTriple(currentPage, finalUrlStr, "", domainStr);	// we send the urls, before and after potential redirections.
 				return true;
 			}
@@ -92,21 +98,70 @@ public class HttpUtils
 				CrawlerController.controller.addSeed(finalUrlStr);	// If this is not a valid url, Crawler4j will throw it away by itself.
 			
 		} catch (RuntimeException re) {
-			if ( currentPage.equals(resourceURL) )	// Log this error only for docPages.
+			if ( currentPage.equals(resourceURL) )    // Log this error only for docPages.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
 			throw re;
+		} catch (DocFileNotRetrievedException dfnde) {
+			logger.warn("" + dfnde);
+			throw new RuntimeException();
 		} catch (DomainBlockedException dbe) {
 			throw dbe;
 		} catch (IOException e) {
 			if ( currentPage.equals(resourceURL) )	// Log this error only for docPages.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
-			throw new RuntimeException(e);
+			throw new RuntimeException();
 		} finally {
 			if ( conn != null )
 				conn.disconnect();
 		}
 		
 		return false;
+	}
+	
+	
+	// TODO - Add documentation explaining the added connection here.
+	public static void downloadAndStoreDocFileOutsideCrawler(HttpURLConnection conn, String domainStr, String docUrl)
+																					throws DocFileNotRetrievedException
+	{
+		InputStream inputStream = null;
+		try {
+			if ( conn.getRequestMethod().equals("HEAD") ) {	// If the connection happened with "HEAD" we have to re-connect with "GET" to download the docFile
+				HttpUtils.useGETmethod = true;	// It gets reseted inside "openHttpConnection()".
+				openHttpConnection(docUrl, domainStr, false);
+				
+				int responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP responce), inside openHttpConnection().
+				if ( (responceCode < 200) || (responceCode >= 400) ) {	// If we have error codes.
+					onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
+					throw new DocFileNotRetrievedException();
+				}
+			}
+			
+			String contentDisposition = conn.getHeaderField("Content-Disposition");
+			
+			int contentSize;
+			try {
+				contentSize = Integer.parseInt(conn.getHeaderField("Content-Length"));
+			} catch (NumberFormatException nfe) {
+				//logger.warn("", nfe);
+				contentSize = HttpUtils.maxDownloadableContentSize;
+			}
+			
+			inputStream = conn.getInputStream();
+			
+			byte[] contentData = new byte[contentSize];
+			
+			while ( inputStream.read(contentData) != -1 )	{ }
+			
+			FileUtils.storeDocFile(contentData, docUrl, contentDisposition);
+			
+		} catch (Exception e) {
+			throw new DocFileNotRetrievedException();
+		} finally {
+			if ( inputStream != null ) {
+				try { inputStream.close(); }
+				catch (IOException ioe) { logger.warn("", ioe); }
+			}
+		}
 	}
 
 
@@ -115,10 +170,11 @@ public class HttpUtils
      * The "domainStr" may be either null, if the calling method doesn't know this String (then openHttpConnection() finds it on its own), or an actual "domainStr" String.
      * @param resourceURL
      * @param domainStr
-     * @return HttpURLConnection
+     * @param calledAtLoading
+	 * @return HttpURLConnection
      * @throws RuntimeException
      */
-	public static HttpURLConnection openHttpConnection(String resourceURL, String domainStr)
+	public static HttpURLConnection openHttpConnection(String resourceURL, String domainStr, boolean calledAtLoading)
 																		throws RuntimeException, DomainBlockedException
     {
     	URL url = null;
@@ -135,7 +191,7 @@ public class HttpUtils
 				logger.warn("Preventing reaching 403ErrorCode with url: \"" + resourceURL + "\"!");
 				throw new RuntimeException();
 			}
-
+			
 			url = new URL(resourceURL);
 			
 			conn = (HttpURLConnection) url.openConnection();
@@ -144,8 +200,11 @@ public class HttpUtils
 			conn.setReadTimeout(maxConnWaitingTime);
 			conn.setConnectTimeout(maxConnWaitingTime);
 			
+			if ( calledAtLoading )	// Either for webPages or for docUrls, we want to use "GET" in order to download the content.
+				HttpUtils.useGETmethod = true;
+			
 			boolean connWithHead = false;
-			if ( domainsWithUnsupportedHeadMethod.contains(domainStr) )	// If we know that it doesn't support "HEAD"..
+			if ( HttpUtils.useGETmethod || domainsWithUnsupportedHeadMethod.contains(domainStr) )	// If we know that it doesn't support "HEAD"..
 				conn.setRequestMethod("GET");	// Go directly with "GET".
 			else {
 				conn.setRequestMethod("HEAD");	// Else, try "HEAD" (it may be either a domain that supports "HEAD", or a new domain, for which we have no info yet).
@@ -167,9 +226,13 @@ public class HttpUtils
 			{
 				//logger.debug("HTTP \"HEAD\" method is not supported for: \"" + resourceURL +"\". Server's responceCode was: " + responceCode);
 				
-				// This domain doesn't support "HEAD" method, log it and retry connecting, using "GET" method this time.
+				// This domain doesn't support "HEAD" method, log it and then check if we can retry with "GET" or not.
 				domainsWithUnsupportedHeadMethod.add(domainStr);
 				
+				if ( shouldNOTretryConnWithGETmethod)	// If we set not to retry with "GET", just return and let the calling method to deal with the error.
+					return conn;
+				
+				// If we accept connection's retrying, using "GET", move on reconnecting.
 				conn.disconnect();
 				conn = (HttpURLConnection) url.openConnection();
 				
@@ -231,6 +294,8 @@ public class HttpUtils
 			if ( conn != null )
 				conn.disconnect();
 			throw new RuntimeException();
+		} finally {
+			HttpUtils.useGETmethod = false;	// Reset its value.
 		}
 		
 		return conn;
@@ -298,7 +363,7 @@ public class HttpUtils
 							throw new RuntimeException();    // The cause it's already logged inside "getDomainStr()".
 					
 					conn.disconnect();
-					conn = HttpUtils.openHttpConnection(targetUrlStr, domainStr);
+					conn = HttpUtils.openHttpConnection(targetUrlStr, domainStr, calledForPageUrl);
 					
 					responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
 					

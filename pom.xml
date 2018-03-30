@@ -4,7 +4,7 @@
 
   <groupId>com.openaire.doc_urls_retriever</groupId>
   <artifactId>doc_urls_retriever</artifactId>
-  <version>0.1.1-SNAPSHOT</version>
+  <version>0.2-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>doc_urls_retriever</name>
@@ -64,6 +64,13 @@
 
   <dependencies>
 
+  <!-- https://mvnrepository.com/artifact/edu.uci.ics/crawler4j -->
+  <dependency>
+    <groupId>edu.uci.ics</groupId>
+    <artifactId>crawler4j</artifactId>
+    <version>4.3</version>
+  </dependency>
+
   <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
   <dependency>
     <groupId>com.google.guava</groupId>
@@ -83,12 +90,6 @@
     <groupId>org.slf4j</groupId>
     <artifactId>slf4j-api</artifactId>
     <version>1.7.25</version>
-  </dependency>
-  
-  <dependency>
-    <groupId>edu.uci.ics</groupId>
-    <artifactId>crawler4j</artifactId>
-    <version>4.3</version>
   </dependency>
   
   </dependencies>

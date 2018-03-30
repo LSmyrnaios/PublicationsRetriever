@@ -44,16 +44,13 @@ public class CrawlerController
 		config.setOnlineTldListUpdate(true);	// Currently this doesn't work (follow the issue #282 I opened on Github: https://github.com/yasserg/crawler4j/issues/282).
 		config.setConnectionTimeout(HttpUtils.maxConnWaitingTime);
 		config.setSocketTimeout(HttpUtils.maxConnWaitingTime);
-		config.setMaxDownloadSize(52428800);	// Max = 50MB (that's larger from the default setting: 1048576)
-												// We don't want to miss any page!
-		
+		config.setMaxDownloadSize(HttpUtils.maxDownloadableContentSize);	// Default setting: 1048576 --> 10mb
 		config.setPolitenessDelay(HttpUtils.politenessDelay);
-		
 		config.setIncludeBinaryContentInCrawling(true);	// Call "visit()" method even on binary content (which is not prohibited by "shouldVisit()" method) to check its contentType.
 		config.setProcessBinaryContentInCrawling(true);	// Process more pages.. like xhtml ones (Crawler4j processes only html-ones unless instructed to process all).
 		// Binary-content-rules in "shouldVisit()" still apply.
 		
-		int threadDelaySeconds = 5;	// Shutdown faster. Default is 10.
+		int threadDelaySeconds = 5;	// This is used for Crawler4j to shutdown faster. Default is 10.
 		config.setThreadMonitoringDelaySeconds(threadDelaySeconds);
 		config.setCleanupDelaySeconds(threadDelaySeconds);
 		config.setThreadShutdownDelaySeconds(threadDelaySeconds);

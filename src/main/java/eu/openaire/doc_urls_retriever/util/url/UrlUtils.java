@@ -348,17 +348,22 @@ public class UrlUtils
 	public static String removeCharsetFromMimeType(String mimeType)
 	{
 		String plainMimeType = null;
+		Matcher mimeMatcher = null;
 		
-		Matcher mimeMatcher = UrlUtils.MIME_TYPE_FILTER.matcher(mimeType);
-		if ( mimeMatcher.matches() )
-		{
+		try {
+			mimeMatcher = MIME_TYPE_FILTER.matcher(mimeType);
+		} catch (NullPointerException npe) {	// There should never be an NPE...
+			logger.debug("NPE was thrown after calling \"Matcher\" in \"removeCharsetFromMimeType()\" with \"null\" value!");
+			return null;
+		}
+		
+		if ( mimeMatcher.matches() ) {
 			plainMimeType = mimeMatcher.group(1);
 			if ( plainMimeType == null || plainMimeType.isEmpty() ) {
 				logger.warn("Unexpected null or empty value returned by \"mimeMatcher.group(1)\" for mimeType: \"" + mimeType + "\".");
 				return null;
 			}
-		}
-		else {
+		} else {
 			logger.warn("Unexpected MIME_TYPE_FILTER's (" + mimeMatcher.toString() + ") mismatch for mimeType: \"" + mimeType + "\"");
 			return null;
 		}
@@ -384,15 +389,13 @@ public class UrlUtils
 			return null;
 		}
 		
-		if ( matcher.matches() )
-		{
+		if ( matcher.matches() ) {
 			domainStr = matcher.group(2);	// Group <2> is the DOMAIN.
 			if ( (domainStr == null) || domainStr.isEmpty() ) {
 				logger.warn("Unexpected null or empty value returned by \"matcher.group(2)\" for url: \"" + urlStr + "\".");
 				return null;
 			}
-		}
-		else {
+		} else {
 			logger.warn("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
 			return null;
 		}
@@ -418,11 +421,43 @@ public class UrlUtils
 			return null;
 		}
 		
-		if ( matcher.matches() )
-		{
+		if ( matcher.matches() ) {
 			pathStr = matcher.group(1);	// Group <1> is the PATH.
 			if ( (pathStr == null) || pathStr.isEmpty() ) {
 				logger.warn("Unexpected null or empty value returned by \"matcher.group(1)\" for url: \"" + urlStr + "\".");
+				return null;
+			}
+		} else {
+			logger.warn("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
+			return null;
+		}
+		
+		return pathStr;
+	}
+	
+	
+	
+	/**
+	 * This method returns the path of the given url.
+	 * @param urlStr
+	 * @return pathStr
+	 */
+	public static String getDocIdStr(String urlStr)
+	{
+		String docIdStr = null;
+		Matcher matcher = null;
+		
+		try {
+			matcher = URL_TRIPLE.matcher(urlStr);
+		} catch (NullPointerException npe) {	// There should never be an NPE...
+			logger.debug("NPE was thrown after calling \"Matcher\" in \"getDocIdStr\" with \"null\" value!");
+			return null;
+		}
+		
+		if ( matcher.matches() ) {
+			docIdStr = matcher.group(3);	// Group <3> is the docId.
+			if ( (docIdStr == null) || docIdStr.isEmpty() ) {
+				logger.warn("Unexpected null or empty value returned by \"matcher.group(3)\" for url: \"" + urlStr + "\".");
 				return null;
 			}
 		}
@@ -431,10 +466,10 @@ public class UrlUtils
 			return null;
 		}
 		
-		return pathStr;
+		return docIdStr;
 	}
-
-
+	
+	
 	/**
 	 * This method is responsible for removing the "jsessionid" part of a url.
 	 * If no jsessionId is found, then it returns the string it recieved.

@@ -7,7 +7,9 @@ import edu.uci.ics.crawler4j.crawler.Page;
 import edu.uci.ics.crawler4j.crawler.WebCrawler;
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import edu.uci.ics.crawler4j.url.WebURL;
-import eu.openaire.doc_urls_retriever.util.http.DomainBlockedException;
+import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
+import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
+import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.apache.http.Header;
@@ -111,6 +113,16 @@ public class PageCrawler extends WebCrawler
 	}
 	
 	
+	public static String getPageContentDisposition(Page page)
+	{
+		Header[] headers = page.getFetchResponseHeaders();
+		for ( Header header : headers ) {
+			if ( header.getName().equals("Content-Disposition") )
+				return header.getValue();
+		}
+		return null;
+	}
+	
 	/**
 	 * This method retrieves the needed data to check if this page is a docUrl itself.
 	 * @param page
@@ -121,17 +133,29 @@ public class PageCrawler extends WebCrawler
 	private boolean isPageDocUrlItself(Page page, String pageContentType, String pageUrl)
 	{
 		String contentDisposition = null;
+		if ( pageContentType == null )	// If we can't retrieve the contentType, try the "Content-Disposition".
+			contentDisposition = getPageContentDisposition(page);
 		
-		if ( pageContentType == null ) {	// If we can't retrieve the contentType, try the "Content-Disposition".
-			Header[] headers = page.getFetchResponseHeaders();
-			for ( Header header : headers ) {
-				if ( header.getName().equals("Content-Disposition") ) {
-					contentDisposition = header.getValue();
-					break;
-				}
-			}
-		}
 		return	UrlUtils.hasDocMimeType(pageUrl, pageContentType, contentDisposition);
+	}
+	
+	
+	/**
+	 * TODO - Add documentation.
+	 * No reconnection is performed here, as the Crawler is only making "GET" requests.
+	 * @param page
+	 * @param pageUrl
+	 * @throws DocFileNotRetrievedException
+	 */
+	public static void storeDocFileInsideCrawler(Page page, String pageUrl) throws DocFileNotRetrievedException
+	{
+		byte[] contentData = page.getContentData();
+		
+		try {
+			FileUtils.storeDocFile(contentData, pageUrl, PageCrawler.getPageContentDisposition(page));
+		} catch (Exception e) {
+			throw new DocFileNotRetrievedException();
+		}
 	}
 	
 	
@@ -153,6 +177,7 @@ public class PageCrawler extends WebCrawler
 		
 		if ( UrlUtils.docUrls.contains(pageUrl) ) {	// If we got into an already-found docUrl, log it and return.
 			logger.debug("Re-crossing the already found docUrl: \"" + pageUrl + "\"");
+			try { storeDocFileInsideCrawler(page, pageUrl); } catch (Exception e) {}
 			UrlUtils.logTriple(pageUrl, pageUrl, "", currentPageDomain);	// No error here.
 			return;
 		}
@@ -160,6 +185,7 @@ public class PageCrawler extends WebCrawler
 		// Check its contentType, maybe we don't need to crawl it.
 		String pageContentType = page.getContentType();
 		if ( isPageDocUrlItself(page, pageContentType, pageUrl) ) {
+			try { storeDocFileInsideCrawler(page, pageUrl); } catch (Exception e) {}
 			UrlUtils.logTriple(pageUrl, pageUrl, "", currentPageDomain);
 			return;
 		}
