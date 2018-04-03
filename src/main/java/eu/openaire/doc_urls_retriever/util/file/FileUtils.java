@@ -16,6 +16,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.apache.commons.io.FileUtils.deleteDirectory;
+
 
 /**
  * @author Lampros A. Smyrnaios
@@ -38,6 +40,8 @@ public class FileUtils
 	
 	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<String, Integer>();	// Holds docFileNa,es with their duplicatesNum.
 	
+	public static final boolean shouldDownloadDocFiles = true;
+	public static final boolean shouldDeleteOlderDocFiles = true;	// Should we delete any older stored docFiles? This is useful for testing.
 	public static String docFilesDownloadPath = "//media//lampros//HDD2GB//downloadedDocFiles";
 	public static long unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
 	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*(?:filename=(?:\\\")?)([\\w\\-\\.\\%\\_]+)[\\\"\\;]*.*");
@@ -50,6 +54,22 @@ public class FileUtils
     	
 		FileUtils.inputScanner = new Scanner(input);
 		FileUtils.printStream = new PrintStream(output);
+		
+		if ( shouldDownloadDocFiles ) {
+			if ( shouldDeleteOlderDocFiles ) {
+				try {
+					logger.debug("Deleting old docFiles..");
+					File dir = new File(docFilesDownloadPath);
+					deleteDirectory(dir);
+					if ( !dir.exists() )
+						if ( !dir.mkdir() )    // Create the directory.
+							logger.warn("Problem when creating the dir: " + docFilesDownloadPath);
+				} catch (Exception e) {
+					logger.warn("Problem when deleting directory: " + docFilesDownloadPath, e);
+					
+				}
+			}
+		}
 	}
 	
 	
@@ -261,7 +281,7 @@ public class FileUtils
 				saveDocFileFullPath = docFilesDownloadPath + File.separator + newEndingName;
 				File renamedDocFile = new File(saveDocFileFullPath);
 				if ( !docFile.renameTo(renamedDocFile) ) {
-					logger.error("Renaming operation for \"" + docFileName + "\" failed!");
+					logger.error("Renaming operation for \"" + docFileName + "\" has failed!");
 					throw new DocFileNotRetrievedException();
 				}
 			}

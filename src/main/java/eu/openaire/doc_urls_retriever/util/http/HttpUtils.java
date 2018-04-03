@@ -90,7 +90,8 @@ public class HttpUtils
 			
 			String finalUrlStr = conn.getURL().toString();
 			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition) ) {
-				downloadAndStoreDocFileOutsideCrawler(conn, domainStr, finalUrlStr);
+				if ( FileUtils.shouldDownloadDocFiles )
+					downloadAndStoreDocFileOutsideCrawler(conn, domainStr, finalUrlStr);
 				UrlUtils.logTriple(currentPage, finalUrlStr, "", domainStr);	// we send the urls, before and after potential redirections.
 				return true;
 			}

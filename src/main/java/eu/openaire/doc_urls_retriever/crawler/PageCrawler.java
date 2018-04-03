@@ -177,7 +177,8 @@ public class PageCrawler extends WebCrawler
 		
 		if ( UrlUtils.docUrls.contains(pageUrl) ) {	// If we got into an already-found docUrl, log it and return.
 			logger.debug("Re-crossing the already found docUrl: \"" + pageUrl + "\"");
-			try { storeDocFileInsideCrawler(page, pageUrl); } catch (Exception e) {}
+			if ( FileUtils.shouldDownloadDocFiles )
+				try { storeDocFileInsideCrawler(page, pageUrl); } catch (Exception e) {}
 			UrlUtils.logTriple(pageUrl, pageUrl, "", currentPageDomain);	// No error here.
 			return;
 		}
@@ -185,7 +186,8 @@ public class PageCrawler extends WebCrawler
 		// Check its contentType, maybe we don't need to crawl it.
 		String pageContentType = page.getContentType();
 		if ( isPageDocUrlItself(page, pageContentType, pageUrl) ) {
-			try { storeDocFileInsideCrawler(page, pageUrl); } catch (Exception e) {}
+			if ( FileUtils.shouldDownloadDocFiles )
+				try { storeDocFileInsideCrawler(page, pageUrl); } catch (Exception e) {}
 			UrlUtils.logTriple(pageUrl, pageUrl, "", currentPageDomain);
 			return;
 		}
