@@ -63,7 +63,7 @@ public class HttpUtils
 				if ( (domainStr = UrlUtils.getDomainStr(resourceURL) ) == null )
 					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
 			
-			conn = HttpUtils.openHttpConnection(resourceURL, domainStr, calledForPossibleDocUrl);
+			conn = HttpUtils.openHttpConnection(resourceURL, domainStr, calledForPageUrl, calledForPossibleDocUrl);
 			
 			int responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP responce), inside openHttpConnection().
 			if ( (responceCode >= 300) && (responceCode <= 399) ) {   // If we have redirections..
@@ -128,7 +128,7 @@ public class HttpUtils
 	 * @return HttpURLConnection
      * @throws RuntimeException
      */
-	public static HttpURLConnection openHttpConnection(String resourceURL, String domainStr, boolean calledForPossibleDocUrl)
+	public static HttpURLConnection openHttpConnection(String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
 									throws RuntimeException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
     {
     	URL url = null;
@@ -158,7 +158,7 @@ public class HttpUtils
 			conn.setReadTimeout(maxConnWaitingTime);
 			conn.setConnectTimeout(maxConnWaitingTime);
 			
-			if ( calledForPossibleDocUrl )	// Either for webPages or for docUrls, we want to use "GET" in order to download the content.
+			if ( calledForPageUrl || (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles) )	// Either for webPages or for docUrls, we want to use "GET" in order to download the content.
 				conn.setRequestMethod("GET");	// Go directly with "GET".
 			else
 				conn.setRequestMethod("HEAD");	// Else, try "HEAD" (it may be either a domain that supports "HEAD", or a new domain, for which we have no info yet).
@@ -316,7 +316,7 @@ public class HttpUtils
 							throw new RuntimeException();    // The cause it's already logged inside "getDomainStr()".
 					
 					conn.disconnect();
-					conn = HttpUtils.openHttpConnection(targetUrlStr, domainStr,  calledForPossibleDocUrl);
+					conn = HttpUtils.openHttpConnection(targetUrlStr, domainStr, calledForPageUrl, calledForPossibleDocUrl);
 					
 					responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
 					
@@ -365,7 +365,7 @@ public class HttpUtils
 		InputStream inputStream = null;
 		try {
 			if ( conn.getRequestMethod().equals("HEAD") ) {	// If the connection happened with "HEAD" we have to re-connect with "GET" to download the docFile
-				openHttpConnection(docUrl, domainStr, true);
+				openHttpConnection(docUrl, domainStr, false,true);
 				
 				int responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP responce), inside openHttpConnection().
 				if ( (responceCode < 200) || (responceCode >= 400) ) {	// If we have error codes.

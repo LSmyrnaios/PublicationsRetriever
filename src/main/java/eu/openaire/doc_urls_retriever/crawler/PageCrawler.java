@@ -45,9 +45,12 @@ public class PageCrawler extends WebCrawler
 			return null;
 		}
 		
-		if ( UrlUtils.docUrls.contains(urlStr) ) {	// If we got into an already-found docUrl, log it and return. Here, we haven't made a connection yet, but since it's the same urlString, we don't need to.
+		if ( UrlUtils.docUrls.contains(urlStr) ) {	// If we got into an already-found docUrl, log it and return.
 			logger.debug("Re-crossing (before connecting to it) the already found docUrl: \"" +  urlStr + "\"");
-			UrlUtils.logTriple(urlStr, urlStr, "", currentUrlDomain);	// No error here.
+			if ( FileUtils.shouldDownloadDocFiles )
+				UrlUtils.logTriple(urlStr, urlStr, "This file is probably already downloaded.", currentUrlDomain);
+			else
+				UrlUtils.logTriple(urlStr, urlStr, "", currentUrlDomain);
 			return null;	//Skip this url from connecting and crawling.
 		}
 		
@@ -78,14 +81,27 @@ public class PageCrawler extends WebCrawler
 	@Override
 	public boolean shouldVisit(Page referringPage, WebURL url)
 	{
-		String pageUrl = referringPage.getWebURL().toString();
-		
-		// Get this url's domain for checks.
-		String currentPageDomain = UrlUtils.getDomainStr(pageUrl);
-		if ( currentPageDomain != null )
-			HttpUtils.lastConnectedHost = currentPageDomain;	// The crawler opened a connection which resulted in 3XX responceCode.
+		String currentPageDomain = null;
+		if ( HttpUtils.politenessDelay > 0 ) {
+			String pageUrl = referringPage.getWebURL().toString();
+			
+			// Get this url's domain for checks.
+			currentPageDomain = UrlUtils.getDomainStr(pageUrl);
+			if ( currentPageDomain != null )
+				HttpUtils.lastConnectedHost = currentPageDomain;    // The crawler opened a connection which resulted in 3XX responceCode.
+		}
 		
 		String urlStr = url.toString();
+		
+		if ( UrlUtils.docUrls.contains(urlStr) ) {	// If we got into an already-found docUrl, log it and return.
+			logger.debug("Re-crossing the already found docUrl: \"" + urlStr + "\"");
+			if ( FileUtils.shouldDownloadDocFiles )
+				UrlUtils.logTriple(urlStr, urlStr, "This file is probably already downloaded.", currentPageDomain);
+			else
+				UrlUtils.logTriple(urlStr, urlStr, "", currentPageDomain);
+			return false;
+		}
+		
 		String lowerCaseUrlStr = urlStr.toLowerCase();
 		
 		return	!UrlUtils.matchesUnwantedUrlType(urlStr, lowerCaseUrlStr);	// The output errorCause is already logged.
@@ -179,8 +195,9 @@ public class PageCrawler extends WebCrawler
 		if ( UrlUtils.docUrls.contains(pageUrl) ) {	// If we got into an already-found docUrl, log it and return.
 			logger.debug("Re-crossing the already found docUrl: \"" + pageUrl + "\"");
 			if ( FileUtils.shouldDownloadDocFiles )
-				try { storeDocFileInsideCrawler(page, pageUrl); } catch (Exception e) {}
-			UrlUtils.logTriple(pageUrl, pageUrl, "", currentPageDomain);	// No error here.
+				UrlUtils.logTriple(pageUrl, pageUrl, "This file is probably already downloaded.", currentPageDomain);
+			else
+				UrlUtils.logTriple(pageUrl, pageUrl, "", currentPageDomain);
 			return;
 		}
 		
@@ -252,7 +269,10 @@ public class PageCrawler extends WebCrawler
 			
             if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
 				logger.debug("Re-crossing the already found docUrl: \"" +  urlToCheck + "\"");
-                UrlUtils.logTriple(pageUrl, urlToCheck, "", currentPageDomain);	// No error here.
+				if ( FileUtils.shouldDownloadDocFiles )
+					UrlUtils.logTriple(pageUrl, urlToCheck, "This file is probably already downloaded.", currentPageDomain);
+				else
+					UrlUtils.logTriple(pageUrl, urlToCheck, "", currentPageDomain);
                 return;
             }
             

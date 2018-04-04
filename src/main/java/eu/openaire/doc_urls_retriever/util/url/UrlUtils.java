@@ -128,7 +128,7 @@ public class UrlUtils
 				if ( lowerCaseUrl.contains("jsessionid") )
 					retrievedUrl = UrlUtils.removeJsessionid(retrievedUrl);
 				
-				// Check if it's a duplicate. (if already found before inside or outside the Crawler4j).
+				// Check if it's a duplicate.
 	        	if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
 	        		logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already been seen!");
 	        		UrlUtils.inputDuplicatesNum ++;
@@ -145,6 +145,15 @@ public class UrlUtils
 						logger.warn("Could not canonicalize url: " + retrievedUrl);
 						UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, due to canonicalization problems.", null);
 						continue;
+					}
+					
+					if ( UrlUtils.docUrls.contains(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
+						logger.debug("Re-crossing (before connecting to it) the already found docUrl: \"" +  urlToCheck + "\"");
+						if ( FileUtils.shouldDownloadDocFiles )
+							UrlUtils.logTriple(urlToCheck, urlToCheck, "This file is probably already downloaded.", null);
+						else
+							UrlUtils.logTriple(urlToCheck, urlToCheck, "", null);
+						continue;	//Skip this url from connecting and crawling.
 					}
 					
 	        		try {
@@ -264,7 +273,7 @@ public class UrlUtils
 	 * @param sourceUrl
 	 * @param initialDocUrl
 	 * @param errorCause
-	 * @param domain
+	 * @param domain (it may be null)
 	 */
     public static void logTriple(String sourceUrl, String initialDocUrl, String errorCause, String domain)
     {

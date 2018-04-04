@@ -157,6 +157,10 @@ public class MachineLearning
 	 */
 	public static void gatherMLData(String domain, String docPage, String docUrl)
 	{
+		if ( domain == null )
+			if ( (domain = UrlUtils.getDomainStr(docUrl)) == null )
+				return;
+		
 		if ( domainsBlockedFromMLA.contains(domain) )
 			return;
 		

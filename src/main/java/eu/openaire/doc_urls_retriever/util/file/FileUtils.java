@@ -42,6 +42,8 @@ public class FileUtils
 	
 	public static final boolean shouldDownloadDocFiles = true;
 	public static final boolean shouldDeleteOlderDocFiles = true;	// Should we delete any older stored docFiles? This is useful for testing.
+	public static final boolean shouldUseOriginaldocFileNames = false;
+	public static int curNumOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremential system.
 	public static String docFilesDownloadPath = "//media//lampros//HDD2GB//downloadedDocFiles";
 	public static long unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
 	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*(?:filename=(?:\\\")?)([\\w\\-\\.\\%\\_]+)[\\\"\\;]*.*");
@@ -235,9 +237,35 @@ public class FileUtils
 	{
 		// TODO - Maybe it would be helpful to make it return the docFile's name for this to be included in the JSONoutput list.
 		
-		if ( contentData.length == 0 )
+		if (contentData.length == 0)
 			throw new DocFileNotRetrievedException();
 		
+		File docFile;
+		
+		try {
+			if ( FileUtils.shouldUseOriginaldocFileNames )
+				docFile = getDocFileWithOriginalFileName(docUrl, contentDisposition);
+			else
+				docFile = new File(docFilesDownloadPath + File.separator + (++curNumOfDocFile) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
+			
+			FileOutputStream outputStream = new FileOutputStream(docFile);
+			
+			outputStream.write(contentData, 0, contentData.length - 1);
+			outputStream.close();
+			
+			logger.debug("DocFile: \"" + docFile.getName() + "\" seems to have been downloaded! Go check it out!");    // DEBUG!
+			
+		} catch (DocFileNotRetrievedException dfnre) {
+			throw dfnre;
+		} catch (Exception ioe) {
+			logger.warn("", ioe);
+			throw new DocFileNotRetrievedException();
+		}
+	}
+	
+	
+	public static File getDocFileWithOriginalFileName(String docUrl, String contentDisposition) throws  DocFileNotRetrievedException
+	{
 		String docFileName = null;
 		boolean hasUnretrievableDocName = false;
 		
@@ -279,21 +307,16 @@ public class FileUtils
 				if ( docFileName.contains(".") )
 					preExtensionFileName = docFileName.substring(0, docFileName.lastIndexOf(".") -1);
 				String fileExtension = docFileName.substring(docFileName.lastIndexOf("."));
-				String newEndingName = preExtensionFileName + "(" + curDuplicateNum + ")" + fileExtension;
-				saveDocFileFullPath = docFilesDownloadPath + File.separator + newEndingName;
+				String newDocFileName = preExtensionFileName + "(" + curDuplicateNum + ")" + fileExtension;
+				saveDocFileFullPath = docFilesDownloadPath + File.separator + newDocFileName;
 				File renamedDocFile = new File(saveDocFileFullPath);
 				if ( !docFile.renameTo(renamedDocFile) ) {
-					logger.error("Renaming operation for \"" + docFileName + "\" has failed!");
+					logger.error("Renaming operation of \"" + docFileName + "\" to \"" + newDocFileName + "\" has failed!");
 					throw new DocFileNotRetrievedException();
 				}
 			}
 			
-			FileOutputStream outputStream = new FileOutputStream(docFile);
-			
-			outputStream.write(contentData, 0, contentData.length - 1);
-			outputStream.close();
-			
-			logger.debug("DocFile: \"" + docFileName + "\" seems to have been downloaded! Go check it out!");	// DEBUG!
+			return docFile;
 			
 		} catch (Exception ioe) {
 			logger.warn("", ioe);
