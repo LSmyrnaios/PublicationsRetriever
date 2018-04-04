@@ -247,7 +247,7 @@ public class MachineLearning
 				try {
 					logger.debug("Going to check guessedDocUrl: " + guessedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");
 					
-					if ( HttpUtils.connectAndCheckMimeType(pageUrl, guessedDocUrl, null, false) ) {
+					if ( HttpUtils.connectAndCheckMimeType(pageUrl, guessedDocUrl, null, false, true) ) {
 						logger.debug("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
 						MachineLearning.docUrlsFoundByMLA ++;
 						return true;	// Note that we have already add it in the output links inside "connectAndCheckMimeType()".

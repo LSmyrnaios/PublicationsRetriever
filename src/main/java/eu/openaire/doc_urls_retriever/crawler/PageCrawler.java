@@ -9,6 +9,7 @@ import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import edu.uci.ics.crawler4j.url.WebURL;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
+import eu.openaire.doc_urls_retriever.exceptions.DomainWithUnsupportedHEADmethodException;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
@@ -263,7 +264,7 @@ public class PageCrawler extends WebCrawler
 				
 				//logger.debug("InnerPossibleDocLink: " + urlToCheck);	// DEBUG!
 				try {
-					if ( HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, currentPageDomain, false) )	// We log the docUrl inside this method.
+					if ( HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, currentPageDomain, false, true) )	// We log the docUrl inside this method.
 						return;
 					else
 						continue;    // Don't add it in the new set.
@@ -274,6 +275,8 @@ public class PageCrawler extends WebCrawler
 					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
 					UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as its domain was blocked during crawling.", null);
 					return;
+				} catch (Exception e) {	// The exception: "DomainWithUnsupportedHEADmethodException" should never be caught here.
+					logger.error("" + e);
 				}
             }
             
@@ -294,17 +297,21 @@ public class PageCrawler extends WebCrawler
 			
 			//logger.debug("InnerLink: " + currentLink);	// DEBUG!
 			try {
-				if ( HttpUtils.connectAndCheckMimeType(pageUrl, currentLink, currentPageDomain, false) )	// We log the docUrl inside this method.
+				if ( HttpUtils.connectAndCheckMimeType(pageUrl, currentLink, currentPageDomain, false, false) )	// We log the docUrl inside this method.
 					return;
 			} catch (DomainBlockedException dbe) {
 				logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
 				UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as its domain was blocked during crawling.", null);
 				return;
+			} catch (DomainWithUnsupportedHEADmethodException dwuhe) {
+				logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was caught to not support the HTTP HEAD method.");
+				UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as its domain was caught to not support the HTTP HEAD method.", null);
+				return;
 			} catch (RuntimeException e) {
 				// No special handling here.. nor logging..
 			}
 		}	// end for-loop
-
+		
 		// If we get here it means that this pageUrl is not a docUrl itself, nor it contains a docUrl..
 		logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
 		UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as no docUrl was found inside.", null);
@@ -348,7 +355,7 @@ public class PageCrawler extends WebCrawler
 		
 		// Try rescuing the possible docUrl.
 		try {
-			if ( HttpUtils.connectAndCheckMimeType(urlStr, urlStr, null, false) )	// Sometimes "TIKA" (Crawler4j uses it for parsing webPages) falls into a parsing error, when parsing PDFs.
+			if ( HttpUtils.connectAndCheckMimeType(urlStr, urlStr, null, false, false) )	// Sometimes "TIKA" (Crawler4j uses it for parsing webPages) falls into a parsing error, when parsing PDFs.
 				return;
 			else
 				UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onParseError(() method, as there was a problem parsing this page.", null);

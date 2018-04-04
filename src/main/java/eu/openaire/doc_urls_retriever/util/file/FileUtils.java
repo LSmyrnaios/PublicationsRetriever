@@ -275,7 +275,9 @@ public class FileUtils
 				numbersOfDuplicateDocFileNames.put(docFileName, curDuplicateNum);
 				
 				// Construct final-DocFileName.
-				String preExtensionFileName = docFileName.substring(0, docFileName.lastIndexOf(".") -1);
+				String preExtensionFileName = "";
+				if ( docFileName.contains(".") )
+					preExtensionFileName = docFileName.substring(0, docFileName.lastIndexOf(".") -1);
 				String fileExtension = docFileName.substring(docFileName.lastIndexOf("."));
 				String newEndingName = preExtensionFileName + "(" + curDuplicateNum + ")" + fileExtension;
 				saveDocFileFullPath = docFilesDownloadPath + File.separator + newEndingName;
