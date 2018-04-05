@@ -272,10 +272,10 @@ public class UrlUtils
      * This method logs the outputEntry to be written, as well as the docUrlPath (if non-empty String) and adds entries in the blackList.
 	 * @param sourceUrl
 	 * @param initialDocUrl
-	 * @param errorCause
+	 * @param comment
 	 * @param domain (it may be null)
 	 */
-    public static void logTriple(String sourceUrl, String initialDocUrl, String errorCause, String domain)
+    public static void logTriple(String sourceUrl, String initialDocUrl, String comment, String domain)
     {
         String finalDocUrl = initialDocUrl;
 		
@@ -287,8 +287,10 @@ public class UrlUtils
                 finalDocUrl = UrlUtils.removeJsessionid(initialDocUrl);
 			
             logger.debug("docUrl found: <" + finalDocUrl + ">");
-            
-            sumOfDocsFound ++;
+            if ( FileUtils.shouldDownloadDocFiles && !comment.contains("DocFileNotRetrievedException") )	// If we set to download docFiles, then their fileNames will be in the "comment".
+				logger.debug("DocFile: \"" + comment + "\" seems to have been downloaded! Go check it out!");    // DEBUG!
+			
+			sumOfDocsFound ++;
 			
             // Gather data for the MLA, if we decide to have it enabled.
             if ( MachineLearning.useMLA )
@@ -300,7 +302,7 @@ public class UrlUtils
             duplicateUrls.add(sourceUrl);	 // Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future..
         }	// We don't add docUrls here, as we want them to be separate for checking purposes.
 		
-        FileUtils.tripleToBeLoggedOutputList.add(new TripleToBeLogged(sourceUrl, finalDocUrl, errorCause));	// Log it to be written later.
+        FileUtils.tripleToBeLoggedOutputList.add(new TripleToBeLogged(sourceUrl, finalDocUrl, comment));	// Log it to be written later.
 		
         if ( FileUtils.tripleToBeLoggedOutputList.size() == FileUtils.groupCount )	// Write to file every time we have a group of <groupCount> triples.
             FileUtils.writeToFile();

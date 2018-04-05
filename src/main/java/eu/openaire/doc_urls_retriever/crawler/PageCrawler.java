@@ -124,8 +124,7 @@ public class PageCrawler extends WebCrawler
 	
 	
 	@Override
-	public boolean shouldFollowLinksIn(WebURL url)
-	{
+	public boolean shouldFollowLinksIn(WebURL url) {
 		return false;	// We don't want any inner links to be followed for crawling.
 	}
 	
@@ -139,6 +138,7 @@ public class PageCrawler extends WebCrawler
 		}
 		return null;
 	}
+	
 	
 	/**
 	 * This method retrieves the needed data to check if this page is a docUrl itself.
@@ -164,15 +164,10 @@ public class PageCrawler extends WebCrawler
 	 * @param pageUrl
 	 * @throws DocFileNotRetrievedException
 	 */
-	public static void storeDocFileInsideCrawler(Page page, String pageUrl) throws DocFileNotRetrievedException
+	public static String storeDocFileInsideCrawler(Page page, String pageUrl) throws DocFileNotRetrievedException
 	{
-		byte[] contentData = page.getContentData();
-		
-		try {
-			FileUtils.storeDocFile(contentData, pageUrl, PageCrawler.getPageContentDisposition(page));
-		} catch (Exception e) {
-			throw new DocFileNotRetrievedException();
-		}
+		try { return FileUtils.storeDocFile(page.getContentData(), pageUrl, PageCrawler.getPageContentDisposition(page)); }
+		catch (Exception e) { throw new DocFileNotRetrievedException(); }
 	}
 	
 	
@@ -201,12 +196,16 @@ public class PageCrawler extends WebCrawler
 			return;
 		}
 		
-		// Check its contentType, maybe we don't need to crawl it.
+		// Check if it's a docUrlItself, maybe we don't need to crawl it.
 		String pageContentType = page.getContentType();
 		if ( isPageDocUrlItself(page, pageContentType, pageUrl) ) {
+			String fullPathFileName = "";
 			if ( FileUtils.shouldDownloadDocFiles )
-				try { storeDocFileInsideCrawler(page, pageUrl); } catch (Exception e) {}
-			UrlUtils.logTriple(pageUrl, pageUrl, "", currentPageDomain);
+				try { fullPathFileName = storeDocFileInsideCrawler(page, pageUrl); }
+				catch (DocFileNotRetrievedException dfnde) {
+					fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored.";
+				}
+			UrlUtils.logTriple(pageUrl, pageUrl, fullPathFileName, currentPageDomain);
 			return;
 		}
 		

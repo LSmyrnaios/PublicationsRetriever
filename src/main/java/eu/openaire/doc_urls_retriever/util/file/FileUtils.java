@@ -174,24 +174,24 @@ public class FileUtils
 	 * This method encodes json members into a Json object and returns its String representation..
 	 * @param sourceUrl String
 	 * @param docUrl String
-	 * @param errorCause String
+	 * @param comment String
 	 * @return jsonString
 	 */
-	public static String jsonEncoder(String sourceUrl, String docUrl, String errorCause)
+	public static String jsonEncoder(String sourceUrl, String docUrl, String comment)
 	{
 		JSONArray jsonArray;
 		try {
 			JSONObject firstJsonObject = new JSONObject().put("sourceUrl", sourceUrl);
 			JSONObject secondJsonObject = new JSONObject().put("docUrl", docUrl);
-			JSONObject thirdJsonObject = new JSONObject().put("errorCause", errorCause);	// The errorCause will be empty, if there is no error.
-
+			JSONObject thirdJsonObject = new JSONObject().put("comment", comment);	// The comment will be empty, if there is no error or if there is no docFileName.
+			
 			// Care about the order of the elements by using a JSONArray (otherwise it's uncertain which one will be where).
 			jsonArray = new JSONArray().put(firstJsonObject).put(secondJsonObject).put(thirdJsonObject);
 		} catch (Exception e) {	// If there was an encoding problem.
 			logger.error("Failed to encode jsonLine!", e);
 			return null;
 		}
-
+		
 		return jsonArray.toString();	// Return the jsonLine.
 	}
 	
@@ -233,15 +233,12 @@ public class FileUtils
 	 * @param contentDisposition
 	 * @throws DocFileNotRetrievedException
 	 */
-	public static void storeDocFile(byte[] contentData, String docUrl, String contentDisposition) throws DocFileNotRetrievedException
+	public static String storeDocFile(byte[] contentData, String docUrl, String contentDisposition) throws DocFileNotRetrievedException
 	{
-		// TODO - Maybe it would be helpful to make it return the docFile's name for this to be included in the JSONoutput list.
-		
 		if (contentData.length == 0)
 			throw new DocFileNotRetrievedException();
 		
 		File docFile;
-		
 		try {
 			if ( FileUtils.shouldUseOriginaldocFileNames )
 				docFile = getDocFileWithOriginalFileName(docUrl, contentDisposition);
@@ -253,7 +250,7 @@ public class FileUtils
 			outputStream.write(contentData, 0, contentData.length - 1);
 			outputStream.close();
 			
-			logger.debug("DocFile: \"" + docFile.getName() + "\" seems to have been downloaded! Go check it out!");    // DEBUG!
+			return docFile.getAbsolutePath();	// Return the fullPathName (if we want just the ending filename, use: "getName()").
 			
 		} catch (DocFileNotRetrievedException dfnre) {
 			throw dfnre;

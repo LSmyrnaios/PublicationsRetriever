@@ -12,14 +12,14 @@ public class TripleToBeLogged
 {
     private String sourceUrl;
     private String docUrl;
-    private String errorCause;   // This will be an emptyString, unless there is an error causing the docUrl to be unreachable.
+    private String comment;   // This will be an emptyString, unless there is an error causing the docUrl to be unreachable.
 
 
-    public TripleToBeLogged(String sourceUrl, String docUrl, String errorCause)
+    public TripleToBeLogged(String sourceUrl, String docUrl, String comment)
     {
         this.sourceUrl = sourceUrl;
         this.docUrl = docUrl;
-        this.errorCause = errorCause;
+        this.comment = comment;
     }
 
 
@@ -31,7 +31,7 @@ public class TripleToBeLogged
      */
     public String toJsonString()
     {
-        return  FileUtils.jsonEncoder(this.sourceUrl, this.docUrl, this.errorCause);  // It may be null.
+        return  FileUtils.jsonEncoder(this.sourceUrl, this.docUrl, this.comment);  // It may be null.
     }
 
 }

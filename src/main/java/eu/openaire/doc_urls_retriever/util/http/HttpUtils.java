@@ -89,9 +89,13 @@ public class HttpUtils
 			
 			String finalUrlStr = conn.getURL().toString();
 			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition) ) {
+				String fullPathFileName = "";
 				if ( FileUtils.shouldDownloadDocFiles )
-					downloadAndStoreDocFileOutsideCrawler(conn, domainStr, finalUrlStr);
-				UrlUtils.logTriple(currentPage, finalUrlStr, "", domainStr);	// we send the urls, before and after potential redirections.
+					try { fullPathFileName = downloadAndStoreDocFileOutsideCrawler(conn, domainStr, finalUrlStr); }
+					catch (DocFileNotRetrievedException dfnde) {
+						fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored.";
+					}
+				UrlUtils.logTriple(currentPage, finalUrlStr, fullPathFileName, domainStr);	// we send the urls, before and after potential redirections.
 				return true;
 			}
 			else if ( calledForPossibleDocUrl )	// Add it in the Crawler only if this method was called for an inputUrl.
@@ -101,9 +105,6 @@ public class HttpUtils
 			if ( currentPage.equals(resourceURL) )    // Log this error only for docPages.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
 			throw re;
-		} catch (DocFileNotRetrievedException dfnde) {
-			logger.warn("" + dfnde);
-			throw new RuntimeException();
 		} catch (DomainBlockedException | DomainWithUnsupportedHEADmethodException de) {
 			throw de;
 		} catch (IOException e) {
@@ -359,7 +360,7 @@ public class HttpUtils
 	
 	
 	// TODO - Add documentation explaining the added connection here.
-	public static void downloadAndStoreDocFileOutsideCrawler(HttpURLConnection conn, String domainStr, String docUrl)
+	public static String downloadAndStoreDocFileOutsideCrawler(HttpURLConnection conn, String domainStr, String docUrl)
 			throws DocFileNotRetrievedException
 	{
 		InputStream inputStream = null;
@@ -390,7 +391,7 @@ public class HttpUtils
 			
 			while ( inputStream.read(contentData) != -1 )	{ }
 			
-			FileUtils.storeDocFile(contentData, docUrl, contentDisposition);
+			return FileUtils.storeDocFile(contentData, docUrl, contentDisposition);	// Returns the name of the docFile.
 			
 		} catch (Exception e) {
 			throw new DocFileNotRetrievedException();
