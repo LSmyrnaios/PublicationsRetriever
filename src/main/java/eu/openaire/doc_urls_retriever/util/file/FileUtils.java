@@ -42,7 +42,8 @@ public class FileUtils
 	
 	public static final boolean shouldDownloadDocFiles = true;
 	public static final boolean shouldDeleteOlderDocFiles = true;	// Should we delete any older stored docFiles? This is useful for testing.
-	public static final boolean shouldUseOriginaldocFileNames = false;
+	public static final boolean shouldUseOriginaldocFileNames = true;
+	public static final boolean shouldLogFullPathName = false;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
 	public static int curNumOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremential system.
 	public static String docFilesDownloadPath = "//media//lampros//HDD2GB//downloadedDocFiles";
 	public static long unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
@@ -250,7 +251,10 @@ public class FileUtils
 			outputStream.write(contentData, 0, contentData.length - 1);
 			outputStream.close();
 			
-			return docFile.getAbsolutePath();	// Return the fullPathName (if we want just the ending filename, use: "getName()").
+			if ( FileUtils.shouldLogFullPathName )
+				return docFile.getAbsolutePath();	// Return the fullPathName (if we want just the ending filename, use: "getName()").
+			else
+				return docFile.getName();
 			
 		} catch (DocFileNotRetrievedException dfnre) {
 			throw dfnre;
@@ -278,38 +282,53 @@ public class FileUtils
 				hasUnretrievableDocName = true;
 			}
 		}
-		else { // Extract fileName from docUrl.
-			docFileName = UrlUtils.getDocIdStr(docUrl);
-			if ( docFileName == null )
+		else if ( (docFileName = UrlUtils.getDocIdStr(docUrl)) == null ) // Extract fileName from docUrl.
 				hasUnretrievableDocName = true;
-		}
+		
+		String dotFileExtension /*= "";
+		if ( shouldAcceptOnlyPDFs )
+			dotFileExtension*/ = ".pdf";
+		/*else {	// TODO - Later we might accept also other fileTypes.
+			if ( contentyType != null )
+				// Use the Content-Type to determine the extension. A multi-mapping between mimeTypes and fileExtensions is needed.
+			else
+				// Use the subString as last resort, although not reliable! (subString after the last "." will not work if the fileName doesn't include an extension).
+		}*/
 		
 		if ( hasUnretrievableDocName )
-			docFileName = "unretrievableDocName(" + (++unretrievableDocNamesNum) + ").pdf";	// TODO - Later, when having more fileTypes, maybe MAP mimeTypes with fileExtentions
+			docFileName = "unretrievableDocName(" + (++unretrievableDocNamesNum) + ")" + dotFileExtension;
 		
 		try {
-			String saveDocFileFullPath = docFilesDownloadPath + File.separator + docFileName;
+			if ( !hasUnretrievableDocName && !docFileName.contains(dotFileExtension) )	// If there is no extension, add ".pdf" in the end. TODO - Later it can be extension-dependent.
+				docFileName += dotFileExtension;
 			
-			// Open an outputStream to save the docFile.
+			String saveDocFileFullPath = docFilesDownloadPath + File.separator + docFileName;
 			File docFile = new File(saveDocFileFullPath);
-			if ( docFile.exists() ) {
-				// Count duplicates.
-				int curDuplicateNum = 1;
-				if ( numbersOfDuplicateDocFileNames.containsKey(docFileName) )
-					curDuplicateNum += numbersOfDuplicateDocFileNames.get(docFileName);
-				numbersOfDuplicateDocFileNames.put(docFileName, curDuplicateNum);
+			
+			if ( !hasUnretrievableDocName ) {	// If we retrieved the fileName, go check if it's a duplicate.
 				
-				// Construct final-DocFileName.
-				String preExtensionFileName = "";
-				if ( docFileName.contains(".") )
-					preExtensionFileName = docFileName.substring(0, docFileName.lastIndexOf(".") -1);
-				String fileExtension = docFileName.substring(docFileName.lastIndexOf("."));
-				String newDocFileName = preExtensionFileName + "(" + curDuplicateNum + ")" + fileExtension;
-				saveDocFileFullPath = docFilesDownloadPath + File.separator + newDocFileName;
-				File renamedDocFile = new File(saveDocFileFullPath);
-				if ( !docFile.renameTo(renamedDocFile) ) {
-					logger.error("Renaming operation of \"" + docFileName + "\" to \"" + newDocFileName + "\" has failed!");
-					throw new DocFileNotRetrievedException();
+				boolean isDuplicate = false;
+				int curDuplicateNum = 1;
+				
+				if ( numbersOfDuplicateDocFileNames.containsKey(docFileName) ) {	// First check -in O(1)- if it's an already-known duplicate.
+					curDuplicateNum += numbersOfDuplicateDocFileNames.get(docFileName);
+					isDuplicate = true;
+				}
+				else if ( docFile.exists() )	// If it's not an already-known duplicate, go check if it exists in the fileSystem.
+					isDuplicate = true;
+				
+				if ( isDuplicate ) {
+					numbersOfDuplicateDocFileNames.put(docFileName, curDuplicateNum);
+					
+					// Construct final-DocFileName by renaming.
+					String preExtensionFileName = docFileName.substring(0, docFileName.lastIndexOf(".") - 1);
+					String newDocFileName = preExtensionFileName + "(" + curDuplicateNum + ")" + dotFileExtension;
+					saveDocFileFullPath = docFilesDownloadPath + File.separator + newDocFileName;
+					File renamedDocFile = new File(saveDocFileFullPath);
+					if ( !docFile.renameTo(renamedDocFile) ) {
+						logger.error("Renaming operation of \"" + docFileName + "\" to \"" + newDocFileName + "\" has failed!");
+						throw new DocFileNotRetrievedException();
+					}
 				}
 			}
 			
