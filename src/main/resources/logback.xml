@@ -16,6 +16,10 @@
         </encoder>
     </appender>
 
+    <logger name="org.apache.http" level="warn"/>
+    <logger name="org.apache.cxf" level="off"/>
+    <logger name="edu.uci.ics.crawler4j.fetcher" level="warn"/>
+
     <root level="debug">
         <appender-ref ref="File" />
     </root>

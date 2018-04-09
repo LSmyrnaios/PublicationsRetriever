@@ -1,5 +1,6 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -208,7 +209,7 @@ public class PageCrawler extends WebCrawler
             // (Crawler4j doesn't canonicalize the urls when it takes them, it does this only if it visit them, depending on "shouldFollowLinksIn()" method.)
             // See "Parser.java" and "Net.java", in Crawler4j files, for more info.
             String currentLink = link.toString();
-            if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl)) == null ) {	// Fix potential encoding problems.
+            if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl, StandardCharsets.UTF_8)) == null ) {	// Fix potential encoding problems.
                 logger.warn("Could not cannonicalize inner url: " + currentLink);
                 UrlUtils.duplicateUrls.add(currentLink);
                 continue;
@@ -303,11 +304,11 @@ public class PageCrawler extends WebCrawler
 
 
 	@Override
-	public void onContentFetchError(WebURL webUrl)
+	public void onContentFetchError(Page page)
 	{
-		String urlStr = webUrl.toString();
-		logger.warn("Can't fetch content of: \"" + urlStr + "\"");
-		UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onContentFetchError() method, as no content was able to be fetched for this page.", null);
+		String pageUrl = page.getWebURL().toString();
+		//logger.warn("Can't fetch content of: \"" + pageUrl + "\"");	// The same log-message is already displayed by Crawler4j as it currently calls the old-deprecated method as well.
+		UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.onContentFetchError() method, as no content was able to be fetched for this page.", null);
 		UrlUtils.connProblematicUrls ++;
 	}
 
