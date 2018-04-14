@@ -1,5 +1,6 @@
 package eu.openaire.doc_urls_retriever.util.url;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.regex.Matcher;
@@ -141,7 +142,7 @@ public class UrlUtils
 	        		//logger.debug("Possible docUrl at loading: " + retrievedUrl);
 	        		
 	        		String urlToCheck = null;
-					if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrl, null)) == null ) {
+					if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null ) {
 						logger.warn("Could not canonicalize url: " + retrievedUrl);
 						UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, due to canonicalization problems.", null);
 						continue;

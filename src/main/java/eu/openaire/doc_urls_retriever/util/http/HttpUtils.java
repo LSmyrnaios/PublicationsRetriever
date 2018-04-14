@@ -171,7 +171,7 @@ public class HttpUtils
 			lastConnectedHost = domainStr;
 			
 			if ( (responceCode = conn.getResponseCode()) == -1 ) {
-				logger.warn("Invalid HTTP response for \"" + conn.getURL().toString() + "\"");
+				logger.warn("Invalid HTTP response for \"" + resourceURL + "\"");
 				throw new RuntimeException();
 			}
 			
@@ -199,6 +199,11 @@ public class HttpUtils
 				
 				conn.connect();
 				//logger.debug("ResponceCode for \"" + resourceURL + "\", after setting conn-method to: \"" + conn.getRequestMethod() + "\" is: " + conn.getResponseCode());
+				
+				if ( conn.getResponseCode() == -1 ) {	// Make sure we throw a RunEx on invalidHTTP.
+					logger.warn("Invalid HTTP response for \"" + resourceURL + "\"");
+					throw new RuntimeException();
+				}
 			}
 		} catch (RuntimeException re) {    // The cause it's already logged.
 			if ( conn != null )
@@ -391,27 +396,28 @@ public class HttpUtils
 	 */
 	public static void onErrorStatusCode(String urlStr, String domainStr, int errorStatusCode) throws DomainBlockedException
 	{
-		if ( domainStr == null )	// No info about domainStr from the calling method, we have to find it here.
-			domainStr = UrlUtils.getDomainStr(urlStr);	// It may still be null if there was some problem retrieving the domainStr.
-
 		if ( (errorStatusCode >= 400) && (errorStatusCode <= 499) )	// Client Error.
 		{
 			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Client Error.");
 			if ( errorStatusCode == 403 )
-				if (domainStr != null)
-					on403ErrorCode(urlStr, domainStr);
+				if ( domainStr == null )
+					if ( (domainStr = UrlUtils.getDomainStr(urlStr)) != null )
+						on403ErrorCode(urlStr, domainStr);
 		}
-		else if ( (errorStatusCode >= 500) && (errorStatusCode <= 599) )	// Server Error.
-		{
-			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Server Error.");
-			if ( domainStr != null )
-				on5XXerrorCode(domainStr);
-		}
-		else {	// Unknown Error (including non-handled: 1XX and the weird one: 999, responce codes).
-			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved unexpected responceCode: " + errorStatusCode);
-			if ( domainStr != null ) {
-				blacklistedDomains.add(domainStr);
-				throw new DomainBlockedException();
+		else {	// Other errorCodes. Retrieve the domain and make the required actions.
+			domainStr = UrlUtils.getDomainStr(urlStr);
+			
+			if ( (errorStatusCode >= 500) && (errorStatusCode <= 599) )    // Server Error.
+			{
+				logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Server Error.");
+				if ( domainStr != null )
+					on5XXerrorCode(domainStr);
+			} else {	// Unknown Error (including non-handled: 1XX and the weird one: 999, responceCodes).
+				logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved unexpected responceCode: " + errorStatusCode);
+				if ( domainStr != null ) {
+					blacklistedDomains.add(domainStr);
+					throw new DomainBlockedException();
+				}
 			}
 		}
 	}
