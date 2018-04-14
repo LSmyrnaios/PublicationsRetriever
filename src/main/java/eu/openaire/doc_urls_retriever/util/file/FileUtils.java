@@ -43,9 +43,9 @@ public class FileUtils
 	
 	public static final boolean shouldDownloadDocFiles = true;
 	public static final boolean shouldDeleteOlderDocFiles = true;	// Should we delete any older stored docFiles? This is useful for testing.
-	public static final boolean shouldUseOriginaldocFileNames = true;
+	public static final boolean shouldUseOriginalDocFileNames = false;
 	public static final boolean shouldLogFullPathName = false;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
-	public static int curNumOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremential system.
+	public static int numOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremential system.
 	public static String docFilesDownloadPath = "//media//lampros//HDD2GB//downloadedDocFiles";
 	public static long unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
 	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*(?:filename=(?:\\\")?)([\\w\\-\\.\\%\\_]+)[\\\"\\;]*.*");
@@ -242,10 +242,10 @@ public class FileUtils
 		
 		File docFile;
 		try {
-			if ( FileUtils.shouldUseOriginaldocFileNames )
+			if ( FileUtils.shouldUseOriginalDocFileNames)
 				docFile = getDocFileWithOriginalFileName(docUrl, contentDisposition);
 			else
-				docFile = new File(docFilesDownloadPath + File.separator + (++curNumOfDocFile) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
+				docFile = new File(docFilesDownloadPath + File.separator + (numOfDocFile++) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
 			
 			writeByteArrayToFile(docFile, contentData);	// apache.commons.io.FileUtils
 			
