@@ -249,7 +249,7 @@ public class FileUtils
 			else
 				docFile = new File(docFilesDownloadPath + File.separator + (numOfDocFile++) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
 			
-			writeByteArrayToFile(docFile, contentData);	// apache.commons.io.FileUtils
+			writeByteArrayToFile(docFile, contentData, 0, contentData.length, false);	// apache.commons.io.FileUtils
 			
 			if ( FileUtils.shouldLogFullPathName )
 				return docFile.getAbsolutePath();	// Return the fullPathName.
