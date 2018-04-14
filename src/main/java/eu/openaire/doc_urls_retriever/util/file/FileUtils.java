@@ -41,7 +41,7 @@ public class FileUtils
 	
 	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<String, Integer>();	// Holds docFileNa,es with their duplicatesNum.
 	
-	public static final boolean shouldDownloadDocFiles = true;
+	public static boolean shouldDownloadDocFiles = true;
 	public static final boolean shouldDeleteOlderDocFiles = true;	// Should we delete any older stored docFiles? This is useful for testing.
 	public static final boolean shouldUseOriginalDocFileNames = false;
 	public static final boolean shouldLogFullPathName = false;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
@@ -53,25 +53,27 @@ public class FileUtils
 	
 	public FileUtils(InputStream input, OutputStream output)
 	{
-    	logger.debug("Input: " + input.toString());
-    	logger.debug("Output: " + output.toString());
-    	
 		FileUtils.inputScanner = new Scanner(input);
 		FileUtils.printStream = new PrintStream(output);
 		
 		if ( shouldDownloadDocFiles ) {
-			if ( shouldDeleteOlderDocFiles ) {
-				try {
+			try {
+				File dir = new File(docFilesDownloadPath);
+				if ( shouldDeleteOlderDocFiles ) {
 					logger.debug("Deleting old docFiles..");
-					File dir = new File(docFilesDownloadPath);
 					deleteDirectory(dir);	// apache.commons.io.FileUtils
-					if ( !dir.exists() )
-						if ( !dir.mkdir() )    // Create the directory.
-							logger.warn("Problem when creating the dir: " + docFilesDownloadPath);
-				} catch (Exception e) {
-					logger.warn("Problem when deleting directory: " + docFilesDownloadPath, e);
-					
 				}
+				
+				// If the directory doesn't exist, try to (re)create it.
+				if ( !dir.exists() ) {
+					if ( !dir.mkdir() ) {   // Create the directory.
+						logger.error("Problem when creating the dir: " + docFilesDownloadPath);
+						FileUtils.shouldDownloadDocFiles = false;
+					}
+				}
+			} catch (Exception e) {
+				logger.error("Problem when deleting directory: " + docFilesDownloadPath, e);
+				FileUtils.shouldDownloadDocFiles = false;
 			}
 		}
 	}
