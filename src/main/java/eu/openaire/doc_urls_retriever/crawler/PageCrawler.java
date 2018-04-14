@@ -200,11 +200,11 @@ public class PageCrawler extends WebCrawler
 		String pageContentType = page.getContentType();
 		if ( isPageDocUrlItself(page, pageContentType, pageUrl) ) {
 			String fullPathFileName = "";
-			if ( FileUtils.shouldDownloadDocFiles )
+			if ( FileUtils.shouldDownloadDocFiles ) {
 				try { fullPathFileName = storeDocFileInsideCrawler(page, pageUrl); }
 				catch (DocFileNotRetrievedException dfnde) {
-					fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored.";
-				}
+					fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored."; }
+			}
 			UrlUtils.logTriple(pageUrl, pageUrl, fullPathFileName, currentPageDomain);
 			return;
 		}
@@ -343,8 +343,11 @@ public class PageCrawler extends WebCrawler
 		UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnexpectedStatusCode() method, after returning: " + statusCode + " errorCode.", null);
 		
 		String currentPageDomain = UrlUtils.getDomainStr(urlStr);
-		if ( currentPageDomain == null )    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
-			logger.warn("Problematic URL in \"PageCrawler.visit()\": \"" + urlStr + "\"");
+		if ( currentPageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPageString and we shouldn't crawl it.
+			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable and its domain is unretrievable. Recieved unexpected responceCode: " + statusCode);
+			UrlUtils.connProblematicUrls ++;
+			return;
+		}
 		else
 			HttpUtils.lastConnectedHost = currentPageDomain;	// The crawler opened a connection to download this page. It's both here and in shouldVisit(), as the visit() method can be called without the shouldVisit to be previously called.
 		
@@ -370,6 +373,14 @@ public class PageCrawler extends WebCrawler
 	{
 		String urlStr = webUrl.toString();
 		logger.warn("Parsing error of: \"" + urlStr + "\"" );
+		
+		if ( HttpUtils.politenessDelay > 0 ) {
+			String domain = UrlUtils.getDomainStr(urlStr);
+			if ( domain != null )
+				HttpUtils.lastConnectedHost = domain;
+			else
+				return;
+		}
 		
 		// Try rescuing the possible docUrl.
 		try {
@@ -425,10 +436,12 @@ public class PageCrawler extends WebCrawler
 						break;
 					case 2:
 						logger.warn("SocketTimeoutException was thrown while trying to fetch url: \"" + urlStr + "\".");
+						HttpUtils.lastConnectedHost = domainStr;
 						UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an \"SocketTimeoutException\" for this url.", null);
 						break;
 					case 3:
 						logger.warn("ConnectTimeoutException was thrown while trying to fetch url: \"" + urlStr + "\".");
+						HttpUtils.lastConnectedHost = domainStr;
 						UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnhandledException() method, as there was an \"ConnectTimeoutException\" for this url.", null);
 						break;
 					default:
@@ -451,9 +464,14 @@ public class PageCrawler extends WebCrawler
 	@Override
 	public void onPageBiggerThanMaxSize(String urlStr, long pageSize)
 	{
-		long generalPageSizeLimit = CrawlerController.controller.getConfig().getMaxDownloadSize();
-		logger.warn("Skipping url: \"" + urlStr + "\" which was bigger (" + pageSize +") than the max allowed size (" + generalPageSizeLimit + ")");
-		UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onPageBiggerThanMaxSize() method, as this page's size was over the limit (" + generalPageSizeLimit + ").", null);
+		logger.warn("Skipping url: \"" + urlStr + "\" which was bigger (" + pageSize +") than the max allowed size (" + HttpUtils.maxDownloadableContentSize + ")");
+		UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onPageBiggerThanMaxSize() method, as this page's size was over the limit (" + HttpUtils.maxDownloadableContentSize + ").", null);	// No domain needs to be passed along..
+		
+		if ( HttpUtils.politenessDelay > 0 ) {
+			String domain = null;
+			if ( (domain = UrlUtils.getDomainStr(urlStr)) != null )
+				HttpUtils.lastConnectedHost = domain;
+		}
 	}
 
 }

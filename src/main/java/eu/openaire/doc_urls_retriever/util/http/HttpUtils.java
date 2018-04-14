@@ -33,7 +33,7 @@ public class HttpUtils
 	public static final SetMultimap<String, String> timesDomainsHadPaths403BlackListed = HashMultimap.create();	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
 	
 	public static String lastConnectedHost = "";
-	public static final int politenessDelay = 100;	// Time to wait before connecting to the same host again.
+	public static final int politenessDelay = 0;	// Time to wait before connecting to the same host again.
 	public static final int maxConnWaitingTime = 3000;	// Max time (in ms) to wait for a connection.
 	private static final int maxRedirects = 3;	// It's not worth waiting for more than 3, in general.. except if we turn out missing a lot of them.. test every case and decide..
     										// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
