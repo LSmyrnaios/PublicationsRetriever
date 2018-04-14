@@ -41,7 +41,7 @@ public class CrawlerController
 		config.setMaxDepthOfCrawling(0);	// Crawl with a maximum depth of 0. Meaning that no inner link is allowed to be crawled.
 		config.setResumableCrawling(false);	// False for testing.. Later it should be set to true.. to handle crawling with crashes, better.
 		config.setCrawlStorageFolder(crawlStorageFolder);
-		config.setOnlineTldListUpdate(true);	// Currently this doesn't work (follow the issue #282 I opened on Github: https://github.com/yasserg/crawler4j/issues/282).
+		config.setOnlineTldListUpdate(true);
 		config.setConnectionTimeout(HttpUtils.maxConnWaitingTime);
 		config.setSocketTimeout(HttpUtils.maxConnWaitingTime);
 		config.setMaxDownloadSize(HttpUtils.maxDownloadableContentSize);	// Default setting: 1048576 --> 10mb
