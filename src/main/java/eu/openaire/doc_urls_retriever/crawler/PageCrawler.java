@@ -8,7 +8,10 @@ import edu.uci.ics.crawler4j.crawler.Page;
 import edu.uci.ics.crawler4j.crawler.WebCrawler;
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import edu.uci.ics.crawler4j.url.WebURL;
-import eu.openaire.doc_urls_retriever.util.http.DomainBlockedException;
+import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
+import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
+import eu.openaire.doc_urls_retriever.exceptions.DomainWithUnsupportedHEADmethodException;
+import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.apache.http.Header;
@@ -43,9 +46,12 @@ public class PageCrawler extends WebCrawler
 			return null;
 		}
 		
-		if ( UrlUtils.docUrls.contains(urlStr) ) {	// If we got into an already-found docUrl, log it and return. Here, we haven't made a connection yet, but since it's the same urlString, we don't need to.
+		if ( UrlUtils.docUrls.contains(urlStr) ) {	// If we got into an already-found docUrl, log it and return.
 			logger.debug("Re-crossing (before connecting to it) the already found docUrl: \"" +  urlStr + "\"");
-			UrlUtils.logTriple(urlStr, urlStr, "", currentUrlDomain);	// No error here.
+			if ( FileUtils.shouldDownloadDocFiles )
+				UrlUtils.logTriple(urlStr, urlStr, "This file is probably already downloaded.", currentUrlDomain);
+			else
+				UrlUtils.logTriple(urlStr, urlStr, "", currentUrlDomain);
 			return null;	//Skip this url from connecting and crawling.
 		}
 		
@@ -76,14 +82,27 @@ public class PageCrawler extends WebCrawler
 	@Override
 	public boolean shouldVisit(Page referringPage, WebURL url)
 	{
-		String pageUrl = referringPage.getWebURL().toString();
-		
-		// Get this url's domain for checks.
-		String currentPageDomain = UrlUtils.getDomainStr(pageUrl);
-		if ( currentPageDomain != null )
-			HttpUtils.lastConnectedHost = currentPageDomain;	// The crawler opened a connection which resulted in 3XX responceCode.
+		String currentPageDomain = null;
+		if ( HttpUtils.politenessDelay > 0 ) {
+			String pageUrl = referringPage.getWebURL().toString();
+			
+			// Get this url's domain for checks.
+			currentPageDomain = UrlUtils.getDomainStr(pageUrl);
+			if ( currentPageDomain != null )
+				HttpUtils.lastConnectedHost = currentPageDomain;    // The crawler opened a connection which resulted in 3XX responceCode.
+		}
 		
 		String urlStr = url.toString();
+		
+		if ( UrlUtils.docUrls.contains(urlStr) ) {	// If we got into an already-found docUrl, log it and return.
+			logger.debug("Re-crossing the already found docUrl: \"" + urlStr + "\"");
+			if ( FileUtils.shouldDownloadDocFiles )
+				UrlUtils.logTriple(urlStr, urlStr, "This file is probably already downloaded.", currentPageDomain);
+			else
+				UrlUtils.logTriple(urlStr, urlStr, "", currentPageDomain);
+			return false;
+		}
+		
 		String lowerCaseUrlStr = urlStr.toLowerCase();
 		
 		return	!UrlUtils.matchesUnwantedUrlType(urlStr, lowerCaseUrlStr);	// The output errorCause is already logged.
@@ -106,9 +125,18 @@ public class PageCrawler extends WebCrawler
 	
 	
 	@Override
-	public boolean shouldFollowLinksIn(WebURL url)
-	{
+	public boolean shouldFollowLinksIn(WebURL url) {
 		return false;	// We don't want any inner links to be followed for crawling.
+	}
+	
+	
+	public static String getPageContentDisposition(Page page)
+	{
+		for ( Header header : page.getFetchResponseHeaders() ) {
+			if ( header.getName().equals("Content-Disposition") )
+				return header.getValue();
+		}
+		return null;
 	}
 	
 	
@@ -122,17 +150,24 @@ public class PageCrawler extends WebCrawler
 	private boolean isPageDocUrlItself(Page page, String pageContentType, String pageUrl)
 	{
 		String contentDisposition = null;
+		if ( pageContentType == null )	// If we can't retrieve the contentType, try the "Content-Disposition".
+			contentDisposition = getPageContentDisposition(page);
 		
-		if ( pageContentType == null ) {	// If we can't retrieve the contentType, try the "Content-Disposition".
-			Header[] headers = page.getFetchResponseHeaders();
-			for ( Header header : headers ) {
-				if ( header.getName().equals("Content-Disposition") ) {
-					contentDisposition = header.getValue();
-					break;
-				}
-			}
-		}
 		return	UrlUtils.hasDocMimeType(pageUrl, pageContentType, contentDisposition);
+	}
+	
+	
+	/**
+	 * TODO - Add documentation.
+	 * No reconnection is performed here, as the Crawler is only making "GET" requests.
+	 * @param page
+	 * @param pageUrl
+	 * @throws DocFileNotRetrievedException
+	 */
+	public static String storeDocFileInsideCrawler(Page page, String pageUrl) throws DocFileNotRetrievedException
+	{
+		try { return FileUtils.storeDocFile(page.getContentData(), pageUrl, PageCrawler.getPageContentDisposition(page)); }
+		catch (Exception e) { throw new DocFileNotRetrievedException(); }
 	}
 	
 	
@@ -154,14 +189,23 @@ public class PageCrawler extends WebCrawler
 		
 		if ( UrlUtils.docUrls.contains(pageUrl) ) {	// If we got into an already-found docUrl, log it and return.
 			logger.debug("Re-crossing the already found docUrl: \"" + pageUrl + "\"");
-			UrlUtils.logTriple(pageUrl, pageUrl, "", currentPageDomain);	// No error here.
+			if ( FileUtils.shouldDownloadDocFiles )
+				UrlUtils.logTriple(pageUrl, pageUrl, "This file is probably already downloaded.", currentPageDomain);
+			else
+				UrlUtils.logTriple(pageUrl, pageUrl, "", currentPageDomain);
 			return;
 		}
 		
-		// Check its contentType, maybe we don't need to crawl it.
+		// Check if it's a docUrlItself, maybe we don't need to crawl it.
 		String pageContentType = page.getContentType();
 		if ( isPageDocUrlItself(page, pageContentType, pageUrl) ) {
-			UrlUtils.logTriple(pageUrl, pageUrl, "", currentPageDomain);
+			String fullPathFileName = "";
+			if ( FileUtils.shouldDownloadDocFiles )
+				try { fullPathFileName = storeDocFileInsideCrawler(page, pageUrl); }
+				catch (DocFileNotRetrievedException dfnde) {
+					fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored.";
+				}
+			UrlUtils.logTriple(pageUrl, pageUrl, fullPathFileName, currentPageDomain);
 			return;
 		}
 		
@@ -224,7 +268,10 @@ public class PageCrawler extends WebCrawler
 			
             if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
 				logger.debug("Re-crossing the already found docUrl: \"" +  urlToCheck + "\"");
-                UrlUtils.logTriple(pageUrl, urlToCheck, "", currentPageDomain);	// No error here.
+				if ( FileUtils.shouldDownloadDocFiles )
+					UrlUtils.logTriple(pageUrl, urlToCheck, "This file is probably already downloaded.", currentPageDomain);
+				else
+					UrlUtils.logTriple(pageUrl, urlToCheck, "", currentPageDomain);
                 return;
             }
             
@@ -236,7 +283,7 @@ public class PageCrawler extends WebCrawler
 				
 				//logger.debug("InnerPossibleDocLink: " + urlToCheck);	// DEBUG!
 				try {
-					if ( HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, currentPageDomain, false) )	// We log the docUrl inside this method.
+					if ( HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, currentPageDomain, false, true) )	// We log the docUrl inside this method.
 						return;
 					else
 						continue;    // Don't add it in the new set.
@@ -247,6 +294,8 @@ public class PageCrawler extends WebCrawler
 					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
 					UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as its domain was blocked during crawling.", null);
 					return;
+				} catch (Exception e) {	// The exception: "DomainWithUnsupportedHEADmethodException" should never be caught here.
+					logger.error("" + e);
 				}
             }
             
@@ -267,17 +316,21 @@ public class PageCrawler extends WebCrawler
 			
 			//logger.debug("InnerLink: " + currentLink);	// DEBUG!
 			try {
-				if ( HttpUtils.connectAndCheckMimeType(pageUrl, currentLink, currentPageDomain, false) )	// We log the docUrl inside this method.
+				if ( HttpUtils.connectAndCheckMimeType(pageUrl, currentLink, currentPageDomain, false, false) )	// We log the docUrl inside this method.
 					return;
 			} catch (DomainBlockedException dbe) {
 				logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
 				UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as its domain was blocked during crawling.", null);
 				return;
+			} catch (DomainWithUnsupportedHEADmethodException dwuhe) {
+				logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was caught to not support the HTTP HEAD method.");
+				UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as its domain was caught to not support the HTTP HEAD method.", null);
+				return;
 			} catch (RuntimeException e) {
 				// No special handling here.. nor logging..
 			}
 		}	// end for-loop
-
+		
 		// If we get here it means that this pageUrl is not a docUrl itself, nor it contains a docUrl..
 		logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
 		UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as no docUrl was found inside.", null);
@@ -290,9 +343,8 @@ public class PageCrawler extends WebCrawler
 		UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnexpectedStatusCode() method, after returning: " + statusCode + " errorCode.", null);
 		
 		String currentPageDomain = UrlUtils.getDomainStr(urlStr);
-		if ( currentPageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
+		if ( currentPageDomain == null )    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"PageCrawler.visit()\": \"" + urlStr + "\"");
-		}
 		else
 			HttpUtils.lastConnectedHost = currentPageDomain;	// The crawler opened a connection to download this page. It's both here and in shouldVisit(), as the visit() method can be called without the shouldVisit to be previously called.
 		
@@ -321,7 +373,7 @@ public class PageCrawler extends WebCrawler
 		
 		// Try rescuing the possible docUrl.
 		try {
-			if ( HttpUtils.connectAndCheckMimeType(urlStr, urlStr, null, false) )	// Sometimes "TIKA" (Crawler4j uses it for parsing webPages) falls into a parsing error, when parsing PDFs.
+			if ( HttpUtils.connectAndCheckMimeType(urlStr, urlStr, null, false, false) )	// Sometimes "TIKA" (Crawler4j uses it for parsing webPages) falls into a parsing error, when parsing PDFs.
 				return;
 			else
 				UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onParseError(() method, as there was a problem parsing this page.", null);

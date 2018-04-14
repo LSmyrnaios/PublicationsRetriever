@@ -1,4 +1,4 @@
-package eu.openaire.doc_urls_retriever.util.http;
+package eu.openaire.doc_urls_retriever.exceptions;
 
 
 /**
@@ -9,5 +9,5 @@ package eu.openaire.doc_urls_retriever.util.http;
  */
 public class DomainBlockedException extends Exception
 {
-	public DomainBlockedException () { }
+	public DomainBlockedException() { }
 }

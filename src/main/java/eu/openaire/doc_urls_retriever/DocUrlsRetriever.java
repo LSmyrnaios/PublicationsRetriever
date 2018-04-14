@@ -27,13 +27,31 @@ public class DocUrlsRetriever
 	
     public static void main( String[] args )
     {
+    	// If we will download docFile and use custom-fileNames.. retrieve the starting docFileName for this program's instance.
+		if ( FileUtils.shouldDownloadDocFiles && !FileUtils.shouldUseOriginalDocFileNames) {
+			if ( args.length > 1 ) {
+				logger.error("You have to give only one argument, to be used as the starting fileName for the docFileNames!");
+				System.exit(-1);
+			} else {
+				try {
+					if ( (FileUtils.numOfDocFile = Integer.parseInt(args[0])) <= 0 ) {
+						logger.error("The starting-numOfDocFile must be above zero! Given one was: " + FileUtils.numOfDocFile);
+						System.exit(-2);
+					}
+				} catch (NumberFormatException nfe) {
+					logger.error("Argument" + args[0] + " must be an integer!");
+					System.exit(-3);
+				}
+			}
+		}
+    	
     	// Use testing input/output files.
 		/*try {
 			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testUrlsFinalRandom5000+1.csv")),
 							new FileOutputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testOutputFile.json")));
 		} catch (FileNotFoundException e) {
 			logger.error("InputFile not found!", e);
-			System.exit(-3);
+			System.exit(-4);
 		}*/
 		
 		// Use standard input/output.
@@ -43,14 +61,14 @@ public class DocUrlsRetriever
 			new CrawlerController();
 		} catch (RuntimeException e) {  // In case there was no input, or on Crawler4j's failure to be initialized, there will be thrown a RuntimeException, after logging the cause.
 			logger.error("There was a serious error! Output data is affected! Exiting..");
-			System.exit(-1);
+			System.exit(-5);
 		}
 		
 		// Show statistics.
 		long inputUrlNum = FileUtils.getCurrentlyLoadedUrls();
     	if ( (FileUtils.skipFirstRow && (inputUrlNum < 0)) || (!FileUtils.skipFirstRow && (inputUrlNum == 0)) ) {
     		logger.error("\"FileUtils.getCurrentlyLoadedUrls()\" is unexpectedly reporting that no urls were retrieved from input file! Output data may be affected! Exiting..");
-    		System.exit(-2);
+    		System.exit(-6);
     	}
 		
 		logger.info("Total urls number in the input was: " + inputUrlNum);

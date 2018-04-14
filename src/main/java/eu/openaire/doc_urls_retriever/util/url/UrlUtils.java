@@ -42,7 +42,7 @@ public class UrlUtils
 	
 	public static final Pattern INNER_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+format=(?:xml|htm|html|shtml|xht|xhtm|xhtml).*");
     
-    public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile(".+:\\/\\/.*(?:google|goo.gl|gstatic|facebook|twitter|youtube|linkedin|wordpress|s.w.org|ebay|bing|amazon|wikipedia|myspace|yahoo|mail|pinterest|reddit|blog|tumblr"
+    public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile(".+:\\/\\/.*(?:google|goo.gl|gstatic|facebook|twitter|youtube|linkedin|wordpress|s.w.org|ebay|bing|amazon\\.|wikipedia|myspace|yahoo|mail|pinterest|reddit|blog|tumblr"
 																					+ "|evernote|skype|microsoft|adobe|buffer|digg|stumbleupon|addthis|delicious|dailymotion|gostats|blogger|copyright|friendfeed|newsvine|telegram|getpocket"
 																					+ "|flipboard|instapaper|line.me|telegram|vk|ok.rudouban|baidu|qzone|xing|renren|weibo|doubleclick|github).*\\/.*");
     
@@ -129,7 +129,7 @@ public class UrlUtils
 				if ( lowerCaseUrl.contains("jsessionid") )
 					retrievedUrl = UrlUtils.removeJsessionid(retrievedUrl);
 				
-				// Check if it's a duplicate. (if already found before inside or outside the Crawler4j).
+				// Check if it's a duplicate.
 	        	if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
 	        		logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already been seen!");
 	        		UrlUtils.inputDuplicatesNum ++;
@@ -148,8 +148,17 @@ public class UrlUtils
 						continue;
 					}
 					
+					if ( UrlUtils.docUrls.contains(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
+						logger.debug("Re-crossing (before connecting to it) the already found docUrl: \"" +  urlToCheck + "\"");
+						if ( FileUtils.shouldDownloadDocFiles )
+							UrlUtils.logTriple(urlToCheck, urlToCheck, "This file is probably already downloaded.", null);
+						else
+							UrlUtils.logTriple(urlToCheck, urlToCheck, "", null);
+						continue;	//Skip this url from connecting and crawling.
+					}
+					
 	        		try {
-						HttpUtils.connectAndCheckMimeType(urlToCheck, urlToCheck, null, true);    // If it's not a docUrl, it's still added in the crawler but inside this method, in order to add the final-redirected-free url.
+						HttpUtils.connectAndCheckMimeType(urlToCheck, urlToCheck, null, false, true);    // If it's not a docUrl, it's still added in the crawler but inside this method, in order to add the final-redirected-free url.
 					} catch (Exception e) {
 						UrlUtils.logTriple(urlToCheck, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
 						UrlUtils.connProblematicUrls ++;
@@ -264,10 +273,10 @@ public class UrlUtils
      * This method logs the outputEntry to be written, as well as the docUrlPath (if non-empty String) and adds entries in the blackList.
 	 * @param sourceUrl
 	 * @param initialDocUrl
-	 * @param errorCause
-	 * @param domain
+	 * @param comment
+	 * @param domain (it may be null)
 	 */
-    public static void logTriple(String sourceUrl, String initialDocUrl, String errorCause, String domain)
+    public static void logTriple(String sourceUrl, String initialDocUrl, String comment, String domain)
     {
         String finalDocUrl = initialDocUrl;
 		
@@ -279,8 +288,10 @@ public class UrlUtils
                 finalDocUrl = UrlUtils.removeJsessionid(initialDocUrl);
 			
             logger.debug("docUrl found: <" + finalDocUrl + ">");
-            
-            sumOfDocsFound ++;
+            if ( FileUtils.shouldDownloadDocFiles && !comment.contains("DocFileNotRetrievedException") )	// If we set to download docFiles, then their fileNames will be in the "comment".
+				logger.debug("DocFile: \"" + comment + "\" seems to have been downloaded! Go check it out!");    // DEBUG!
+			
+			sumOfDocsFound ++;
 			
             // Gather data for the MLA, if we decide to have it enabled.
             if ( MachineLearning.useMLA )
@@ -292,7 +303,7 @@ public class UrlUtils
             duplicateUrls.add(sourceUrl);	 // Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future..
         }	// We don't add docUrls here, as we want them to be separate for checking purposes.
 		
-        FileUtils.tripleToBeLoggedOutputList.add(new TripleToBeLogged(sourceUrl, finalDocUrl, errorCause));	// Log it to be written later.
+        FileUtils.tripleToBeLoggedOutputList.add(new TripleToBeLogged(sourceUrl, finalDocUrl, comment));	// Log it to be written later.
 		
         if ( FileUtils.tripleToBeLoggedOutputList.size() == FileUtils.groupCount )	// Write to file every time we have a group of <groupCount> triples.
             FileUtils.writeToFile();
@@ -349,17 +360,22 @@ public class UrlUtils
 	public static String removeCharsetFromMimeType(String mimeType)
 	{
 		String plainMimeType = null;
+		Matcher mimeMatcher = null;
 		
-		Matcher mimeMatcher = UrlUtils.MIME_TYPE_FILTER.matcher(mimeType);
-		if ( mimeMatcher.matches() )
-		{
+		try {
+			mimeMatcher = MIME_TYPE_FILTER.matcher(mimeType);
+		} catch (NullPointerException npe) {	// There should never be an NPE...
+			logger.debug("NPE was thrown after calling \"Matcher\" in \"removeCharsetFromMimeType()\" with \"null\" value!");
+			return null;
+		}
+		
+		if ( mimeMatcher.matches() ) {
 			plainMimeType = mimeMatcher.group(1);
 			if ( plainMimeType == null || plainMimeType.isEmpty() ) {
 				logger.warn("Unexpected null or empty value returned by \"mimeMatcher.group(1)\" for mimeType: \"" + mimeType + "\".");
 				return null;
 			}
-		}
-		else {
+		} else {
 			logger.warn("Unexpected MIME_TYPE_FILTER's (" + mimeMatcher.toString() + ") mismatch for mimeType: \"" + mimeType + "\"");
 			return null;
 		}
@@ -385,15 +401,13 @@ public class UrlUtils
 			return null;
 		}
 		
-		if ( matcher.matches() )
-		{
+		if ( matcher.matches() ) {
 			domainStr = matcher.group(2);	// Group <2> is the DOMAIN.
 			if ( (domainStr == null) || domainStr.isEmpty() ) {
 				logger.warn("Unexpected null or empty value returned by \"matcher.group(2)\" for url: \"" + urlStr + "\".");
 				return null;
 			}
-		}
-		else {
+		} else {
 			logger.warn("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
 			return null;
 		}
@@ -419,11 +433,43 @@ public class UrlUtils
 			return null;
 		}
 		
-		if ( matcher.matches() )
-		{
+		if ( matcher.matches() ) {
 			pathStr = matcher.group(1);	// Group <1> is the PATH.
 			if ( (pathStr == null) || pathStr.isEmpty() ) {
 				logger.warn("Unexpected null or empty value returned by \"matcher.group(1)\" for url: \"" + urlStr + "\".");
+				return null;
+			}
+		} else {
+			logger.warn("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
+			return null;
+		}
+		
+		return pathStr;
+	}
+	
+	
+	
+	/**
+	 * This method returns the path of the given url.
+	 * @param urlStr
+	 * @return pathStr
+	 */
+	public static String getDocIdStr(String urlStr)
+	{
+		String docIdStr = null;
+		Matcher matcher = null;
+		
+		try {
+			matcher = URL_TRIPLE.matcher(urlStr);
+		} catch (NullPointerException npe) {	// There should never be an NPE...
+			logger.debug("NPE was thrown after calling \"Matcher\" in \"getDocIdStr\" with \"null\" value!");
+			return null;
+		}
+		
+		if ( matcher.matches() ) {
+			docIdStr = matcher.group(3);	// Group <3> is the docId.
+			if ( (docIdStr == null) || docIdStr.isEmpty() ) {
+				logger.warn("Unexpected null or empty value returned by \"matcher.group(3)\" for url: \"" + urlStr + "\".");
 				return null;
 			}
 		}
@@ -432,10 +478,10 @@ public class UrlUtils
 			return null;
 		}
 		
-		return pathStr;
+		return docIdStr;
 	}
-
-
+	
+	
 	/**
 	 * This method is responsible for removing the "jsessionid" part of a url.
 	 * If no jsessionId is found, then it returns the string it recieved.
