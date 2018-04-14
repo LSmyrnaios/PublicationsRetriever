@@ -7,6 +7,7 @@ import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,11 +91,10 @@ public class HttpUtils
 			String finalUrlStr = conn.getURL().toString();
 			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition) ) {
 				String fullPathFileName = "";
-				if ( FileUtils.shouldDownloadDocFiles )
+				if ( FileUtils.shouldDownloadDocFiles ) {
 					try { fullPathFileName = downloadAndStoreDocFileOutsideCrawler(conn, domainStr, finalUrlStr); }
-					catch (DocFileNotRetrievedException dfnde) {
-						fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored.";
-					}
+					catch (DocFileNotRetrievedException dfnde) { fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored."; }
+				}
 				UrlUtils.logTriple(currentPage, finalUrlStr, fullPathFileName, domainStr);	// we send the urls, before and after potential redirections.
 				return true;
 			}
@@ -363,7 +363,6 @@ public class HttpUtils
 	public static String downloadAndStoreDocFileOutsideCrawler(HttpURLConnection conn, String domainStr, String docUrl)
 			throws DocFileNotRetrievedException
 	{
-		InputStream inputStream = null;
 		try {
 			if ( conn.getRequestMethod().equals("HEAD") ) {	// If the connection happened with "HEAD" we have to re-connect with "GET" to download the docFile
 				openHttpConnection(docUrl, domainStr, false,true);
@@ -375,31 +374,11 @@ public class HttpUtils
 				}
 			}
 			
-			String contentDisposition = conn.getHeaderField("Content-Disposition");
-			
-			int contentSize;
-			try {
-				contentSize = Integer.parseInt(conn.getHeaderField("Content-Length"));
-			} catch (NumberFormatException nfe) {
-				//logger.warn("", nfe);
-				contentSize = HttpUtils.maxDownloadableContentSize;
-			}
-			
-			inputStream = conn.getInputStream();
-			
-			byte[] contentData = new byte[contentSize];
-			
-			while ( inputStream.read(contentData) != -1 )	{ }
-			
-			return FileUtils.storeDocFile(contentData, docUrl, contentDisposition);	// Returns the name of the docFile.
+			// Write the downloaded bytes to the docFile and return the docFileName.
+			return FileUtils.storeDocFile(IOUtils.toByteArray(conn.getInputStream()), docUrl, conn.getHeaderField("Content-Disposition"));
 			
 		} catch (Exception e) {
 			throw new DocFileNotRetrievedException();
-		} finally {
-			if ( inputStream != null ) {
-				try { inputStream.close(); }
-				catch (IOException ioe) { logger.warn("", ioe); }
-			}
 		}
 	}
 
@@ -533,6 +512,22 @@ public class HttpUtils
 		}
 		else
 			return false;	// It wasn't blocked.
+	}
+	
+	
+	/**
+	 * This method returns the ContentSize of the content of an HttpURLConnection.
+	 * @param conn
+	 * @return contentSize
+	 */
+	public static int getContentSize(HttpURLConnection conn)
+	{
+		try {
+			return Integer.parseInt(conn.getHeaderField("Content-Length"));
+		} catch (NumberFormatException nfe) {
+			//logger.warn("", nfe);
+			return HttpUtils.maxDownloadableContentSize;
+		}
 	}
 	
 }

@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.apache.commons.io.FileUtils.deleteDirectory;
+import static org.apache.commons.io.FileUtils.writeByteArrayToFile;
 
 
 /**
@@ -63,7 +64,7 @@ public class FileUtils
 				try {
 					logger.debug("Deleting old docFiles..");
 					File dir = new File(docFilesDownloadPath);
-					deleteDirectory(dir);
+					deleteDirectory(dir);	// apache.commons.io.FileUtils
 					if ( !dir.exists() )
 						if ( !dir.mkdir() )    // Create the directory.
 							logger.warn("Problem when creating the dir: " + docFilesDownloadPath);
@@ -189,7 +190,7 @@ public class FileUtils
 			// Care about the order of the elements by using a JSONArray (otherwise it's uncertain which one will be where).
 			jsonArray = new JSONArray().put(firstJsonObject).put(secondJsonObject).put(thirdJsonObject);
 		} catch (Exception e) {	// If there was an encoding problem.
-			logger.error("Failed to encode jsonLine!", e);
+			logger.error("Failed to encode jsonLine: \"" + sourceUrl + ", " + docUrl + ", " + comment + "\"", e);
 			return null;
 		}
 		
@@ -236,7 +237,7 @@ public class FileUtils
 	 */
 	public static String storeDocFile(byte[] contentData, String docUrl, String contentDisposition) throws DocFileNotRetrievedException
 	{
-		if (contentData.length == 0)
+		if ( contentData.length == 0 )
 			throw new DocFileNotRetrievedException();
 		
 		File docFile;
@@ -246,15 +247,12 @@ public class FileUtils
 			else
 				docFile = new File(docFilesDownloadPath + File.separator + (++curNumOfDocFile) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
 			
-			FileOutputStream outputStream = new FileOutputStream(docFile);
-			
-			outputStream.write(contentData, 0, contentData.length - 1);
-			outputStream.close();
+			writeByteArrayToFile(docFile, contentData);	// apache.commons.io.FileUtils
 			
 			if ( FileUtils.shouldLogFullPathName )
-				return docFile.getAbsolutePath();	// Return the fullPathName (if we want just the ending filename, use: "getName()").
+				return docFile.getAbsolutePath();	// Return the fullPathName.
 			else
-				return docFile.getName();
+				return docFile.getName();	// Return just the fileName.
 			
 		} catch (DocFileNotRetrievedException dfnre) {
 			throw dfnre;

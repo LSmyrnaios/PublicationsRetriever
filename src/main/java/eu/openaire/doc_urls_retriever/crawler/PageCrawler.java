@@ -131,8 +131,7 @@ public class PageCrawler extends WebCrawler
 	
 	public static String getPageContentDisposition(Page page)
 	{
-		Header[] headers = page.getFetchResponseHeaders();
-		for ( Header header : headers ) {
+		for ( Header header : page.getFetchResponseHeaders() ) {
 			if ( header.getName().equals("Content-Disposition") )
 				return header.getValue();
 		}
@@ -343,9 +342,8 @@ public class PageCrawler extends WebCrawler
 		UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onUnexpectedStatusCode() method, after returning: " + statusCode + " errorCode.", null);
 		
 		String currentPageDomain = UrlUtils.getDomainStr(urlStr);
-		if ( currentPageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
+		if ( currentPageDomain == null )    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"PageCrawler.visit()\": \"" + urlStr + "\"");
-		}
 		else
 			HttpUtils.lastConnectedHost = currentPageDomain;	// The crawler opened a connection to download this page. It's both here and in shouldVisit(), as the visit() method can be called without the shouldVisit to be previously called.
 		
