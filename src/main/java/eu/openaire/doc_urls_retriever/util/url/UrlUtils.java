@@ -28,7 +28,7 @@ public class UrlUtils
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
 	public static final Pattern URL_DIRECTORY_FILTER =
-			Pattern.compile(".*\\/(?:profile|login|ac(?:c)?ess|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|faq|wiki|support|sitemap|license|disclaimer|policies|policy|privacy|terms|account|help|law"
+			Pattern.compile(".*\\/(?:profile|login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|faq|wiki|support|sitemap|license|disclaimer|policies|policy|privacy|terms|account|help|law"
 							+ "|user|author|editor|citation|external|statistics|application|permission|ethic|contact|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|people"
 							+ "|error|misuse|abuse|gateway|sorryserver|notfound|404\\.(?:\\w)?htm).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects. There's "acesso" (single "c") in Portuguese.
@@ -73,7 +73,8 @@ public class UrlUtils
 	public static int elsevierUnwantedUrls = 0;
 	public static int crawlerSensitiveDomains = 0;
 	public static int doajResultPageUrls = 0;
-	public static int pageWithHtmlDocUrls = 0;
+	public static int pagesWithHtmlDocUrls = 0;
+	public static int pagesRequireLoginToAccessDocFiles = 0;
 	public static int pagesWithLargerCrawlingDepth = 0;	// Pages with their docUrl behind an inner "view" page.
 	public static int doiOrgToScienceDirect = 0;	// Urls from "doi.org" which redirect to "sciencedirect.com".
 	public static int urlsWithUnwantedForm = 0;	// (plain domains, unwanted page-extensions ect.)
@@ -158,7 +159,7 @@ public class UrlUtils
 					}
 					
 	        		try {
-						HttpUtils.connectAndCheckMimeType(urlToCheck, urlToCheck, null, false, true);    // If it's not a docUrl, it's still added in the crawler but inside this method, in order to add the final-redirected-free url.
+						HttpUtils.connectAndCheckMimeType(urlToCheck, urlToCheck, null, true, true);    // If it's not a docUrl, it's still added in the crawler but inside this method, in order to add the final-redirected-free url.
 					} catch (Exception e) {
 						UrlUtils.logTriple(urlToCheck, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
 						UrlUtils.connProblematicUrls ++;
@@ -209,13 +210,18 @@ public class UrlUtils
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("dlib.org") || lowerCaseUrl.contains("saberes.fcecon.unr.edu.ar") ) {    // Avoid HTML docUrls.
-			UrlUtils.pageWithHtmlDocUrls++;
+			UrlUtils.pagesWithHtmlDocUrls++;
 			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to an HTML-docUrls site.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("rivisteweb.it") || lowerCaseUrl.contains("wur.nl") || lowerCaseUrl.contains("remeri.org.mx") || lowerCaseUrl.contains("cam.ac.uk") ) {	// Avoid pages known to not provide docUrls (just metadata).
 			UrlUtils.pagesNotProvidingDocUrls ++;												// Keep "remeri" subDomain of "org.mx", as the TLD is having a lot of different sites.
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to the non docUrls-providing site \"rivisteweb.it\".", null);
+			return true;
+		}
+		else if ( lowerCaseUrl.contains("bibliotecadigital.uel.br") ) {
+			UrlUtils.pagesRequireLoginToAccessDocFiles++;
+			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to a domain which needs login to access docFiles.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("/view/") || lowerCaseUrl.contains("scielosp.org") ) {	// Avoid crawling pages with larger depth.

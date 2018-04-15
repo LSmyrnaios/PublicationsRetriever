@@ -98,9 +98,9 @@ public class HttpUtils
 				UrlUtils.logTriple(currentPage, finalUrlStr, fullPathFileName, domainStr);	// we send the urls, before and after potential redirections.
 				return true;
 			}
-			else if ( calledForPossibleDocUrl )	// Add it in the Crawler only if this method was called for an inputUrl.
+			else if ( calledForPageUrl )	// Add it in the Crawler only if this method was called for an inputUrl.
 				CrawlerController.controller.addSeed(finalUrlStr);	// If this is not a valid url, Crawler4j will throw it away by itself.
-			
+		
 		} catch (RuntimeException re) {
 			if ( currentPage.equals(resourceURL) )    // Log this error only for docPages.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
