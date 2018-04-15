@@ -378,18 +378,20 @@ public class PageCrawler extends WebCrawler
 			String domain = UrlUtils.getDomainStr(urlStr);
 			if ( domain != null )
 				HttpUtils.lastConnectedHost = domain;
-			else
+			else {
+				UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onParseError() method, as there was a problem parsing this page.", null);
 				return;
+			}
 		}
 		
-		// Try rescuing the possible docUrl.
+		// Try rescuing the possible-docUrl.
 		try {
 			if ( HttpUtils.connectAndCheckMimeType(urlStr, urlStr, null, false, false) )	// Sometimes "TIKA" (Crawler4j uses it for parsing webPages) falls into a parsing error, when parsing PDFs.
 				return;
 			else
-				UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onParseError(() method, as there was a problem parsing this page.", null);
+				UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onParseError() method, as there was a problem parsing this page.", null);
 		} catch (Exception e) {
-			UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onParseError(() method, as there was a problem parsing this page.", null);
+			UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onParseError() method, as there was a problem parsing this page.", null);
 		}
 	}
 
@@ -415,12 +417,12 @@ public class PageCrawler extends WebCrawler
 			else if ( exceptionReason.contains("ConnectTimeoutException") )
 				curTreatableException = 3;
 			
-			if (curTreatableException > 0)	// If there is a treatable Exception.
+			if ( curTreatableException > 0 )	// If there is a treatable Exception.
 			{
 				String domainStr = UrlUtils.getDomainStr(urlStr);
-				if (domainStr != null)
+				if ( domainStr != null )
 				{
-					if (curTreatableException == 1)
+					if ( curTreatableException == 1 )
 						HttpUtils.blacklistedDomains.add(domainStr);
 					else { // TODO - More checks to be added if more exceptions are treated here in the future.
 						try { HttpUtils.onTimeoutException(domainStr); }
@@ -458,6 +460,7 @@ public class PageCrawler extends WebCrawler
 		}
 		else // If the url is null.
 			logger.warn("", e);
+			// It cannot be logged in the output..
 	}
 
 

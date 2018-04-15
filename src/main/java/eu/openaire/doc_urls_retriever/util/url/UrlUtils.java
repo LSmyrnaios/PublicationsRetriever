@@ -166,7 +166,7 @@ public class UrlUtils
 					}
 				}
 	   			else
-					CrawlerController.controller.addSeed(retrievedUrl);	// If this is not a valid url, Crawler4j will throw it away by itself.
+					CrawlerController.controller.addSeed(retrievedUrl);	// Canonicalization is performed by Crawler4j itself.
 				
 			}// end for-loop
         }// end while-loop
@@ -182,7 +182,7 @@ public class UrlUtils
 	 */
 	public static boolean matchesUnwantedUrlType(String retrievedUrl, String lowerCaseUrl)
 	{
-		if ( lowerCaseUrl.contains("frontiersin.org") ) {
+		if ( lowerCaseUrl.contains("frontiersin.org") ) {	// Avoid JavaScript-powered domain.
 			UrlUtils.frontiersinUrls ++;
 			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to the JavaScript-using domain \"frontiersin.org\".", null);
 			return true;
@@ -214,12 +214,13 @@ public class UrlUtils
 			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to an HTML-docUrls site.", null);
 			return true;
 		}
-		else if ( lowerCaseUrl.contains("rivisteweb.it") || lowerCaseUrl.contains("wur.nl") || lowerCaseUrl.contains("remeri.org.mx") || lowerCaseUrl.contains("cam.ac.uk") ) {	// Avoid pages known to not provide docUrls (just metadata).
+		else if ( lowerCaseUrl.contains("rivisteweb.it") || lowerCaseUrl.contains("wur.nl") || lowerCaseUrl.contains("remeri.org.mx")
+				|| lowerCaseUrl.contains("cam.ac.uk") || lowerCaseUrl.contains("scindeks.ceon.rs") ) {	// Avoid pages known to not provide docUrls (just metadata).
 			UrlUtils.pagesNotProvidingDocUrls ++;												// Keep "remeri" subDomain of "org.mx", as the TLD is having a lot of different sites.
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to the non docUrls-providing site \"rivisteweb.it\".", null);
 			return true;
 		}
-		else if ( lowerCaseUrl.contains("bibliotecadigital.uel.br") ) {
+		else if ( lowerCaseUrl.contains("bibliotecadigital.uel.br") ) {	// Avoid domains requiring login to access docUrls.
 			UrlUtils.pagesRequireLoginToAccessDocFiles++;
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to a domain which needs login to access docFiles.", null);
 			return true;

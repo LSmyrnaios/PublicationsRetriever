@@ -142,6 +142,7 @@ public class HttpUtils
 		    	throw new RuntimeException();
 			}
 			
+			// Check whether we don't accept "GET" method for uncategorizedInnerLinks and if this url is such a case.
 			if ( shouldNOTacceptGETmethodForUncategorizedInnerLinks
 				&& !calledForPossibleDocUrl && domainsWithUnsupportedHeadMethod.contains(domainStr) )
 				throw new DomainWithUnsupportedHEADmethodException();
@@ -159,7 +160,8 @@ public class HttpUtils
 			conn.setReadTimeout(maxConnWaitingTime);
 			conn.setConnectTimeout(maxConnWaitingTime);
 			
-			if ( calledForPageUrl || (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles) )	// Either for webPages or for docUrls, we want to use "GET" in order to download the content.
+			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// Either for just-webPages or for docUrls, we want to use "GET" in order to download the content.
+					|| (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles) )
 				conn.setRequestMethod("GET");	// Go directly with "GET".
 			else
 				conn.setRequestMethod("HEAD");	// Else, try "HEAD" (it may be either a domain that supports "HEAD", or a new domain, for which we have no info yet).
@@ -175,14 +177,14 @@ public class HttpUtils
 				throw new RuntimeException();
 			}
 			
-			if ( !calledForPossibleDocUrl && (responceCode == 405 || responceCode == 501) )	// If this SERVER doesn't support "HEAD" method or doesn't allow us to use it..
+			if ( (responceCode == 405 || responceCode == 501) && conn.getRequestMethod().equals("HEAD") )	// If this SERVER doesn't support "HEAD" method or doesn't allow us to use it..
 			{
 				//logger.debug("HTTP \"HEAD\" method is not supported for: \"" + resourceURL +"\". Server's responceCode was: " + responceCode);
 				
 				// This domain doesn't support "HEAD" method, log it and then check if we can retry with "GET" or not.
 				domainsWithUnsupportedHeadMethod.add(domainStr);
 				
-				if ( shouldNOTacceptGETmethodForUncategorizedInnerLinks )	// If we set not to retry with "GET", throw the related exception and stop the crawling of this page.
+				if ( shouldNOTacceptGETmethodForUncategorizedInnerLinks && !calledForPossibleDocUrl )	// If we set not to retry with "GET" when we try uncategorizedInnerLinks, throw the related exception and stop the crawling of this page.
 					throw new DomainWithUnsupportedHEADmethodException();
 				
 				// If we accept connection's retrying, using "GET", move on reconnecting.
