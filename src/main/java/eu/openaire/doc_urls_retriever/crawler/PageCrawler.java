@@ -386,7 +386,7 @@ public class PageCrawler extends WebCrawler
 		
 		// Try rescuing the possible-docUrl.
 		try {
-			if ( HttpUtils.connectAndCheckMimeType(urlStr, urlStr, null, false, false) )	// Sometimes "TIKA" (Crawler4j uses it for parsing webPages) falls into a parsing error, when parsing PDFs.
+			if ( HttpUtils.connectAndCheckMimeType(urlStr, urlStr, null, false, true) )	// Sometimes "TIKA" (Crawler4j uses it for parsing webPages) falls into a parsing error, when parsing PDFs.
 				return;
 			else
 				UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onParseError() method, as there was a problem parsing this page.", null);

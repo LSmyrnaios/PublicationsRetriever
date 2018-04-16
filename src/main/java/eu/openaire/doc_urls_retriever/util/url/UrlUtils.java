@@ -124,7 +124,7 @@ public class UrlUtils
 				String lowerCaseUrl = retrievedUrl.toLowerCase();	// Only for string checking purposes, not supposed to reach any connection.
 				
 				if ( matchesUnwantedUrlType(retrievedUrl, lowerCaseUrl) )
-					continue;
+					continue;	// The url-logging is happening inside this method (per urlType).
 				
 				// Remove "jsessionid" for urls. Most of them, if not all, will already be expired.
 				if ( lowerCaseUrl.contains("jsessionid") )
@@ -155,7 +155,7 @@ public class UrlUtils
 							UrlUtils.logTriple(urlToCheck, urlToCheck, "This file is probably already downloaded.", null);
 						else
 							UrlUtils.logTriple(urlToCheck, urlToCheck, "", null);
-						continue;	//Skip this url from connecting and crawling.
+						continue;	//Skip this url from connecting again.
 					}
 					
 	        		try {
