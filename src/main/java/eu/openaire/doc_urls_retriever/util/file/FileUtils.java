@@ -5,6 +5,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimaps;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.doc_urls_retriever.util.url.TripleToBeLogged;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
@@ -41,7 +43,7 @@ public class FileUtils
 	
 	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<String, Integer>();	// Holds docFileNa,es with their duplicatesNum.
 	
-	public static boolean shouldDownloadDocFiles = true;
+	public static boolean shouldDownloadDocFiles = false;
 	public static final boolean shouldDeleteOlderDocFiles = true;	// Should we delete any older stored docFiles? This is useful for testing.
 	public static final boolean shouldUseOriginalDocFileNames = false;
 	public static final boolean shouldLogFullPathName = false;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
@@ -96,12 +98,12 @@ public class FileUtils
 	 * This method parses a Json file and extracts the urls, along with the IDs.
 	 * @return Collection<String>
 	 */
-	public static Collection<String> getNextUrlGroupFromJson()
+	public static LinkedListMultimap<String, String> getNextIdUrlPairGroupFromJson()
 	{
 		skipFirstRow = false;	// Make sure we don't use this rule for any calculations.
 		
-		HashMap<String, String> inputIdUrlPair;
-		Collection<String> urlGroup = new HashSet<String>();
+		Map<String, String> inputIdUrlPair;
+		LinkedListMultimap<String, String> idAndUrlMappedInput = LinkedListMultimap.create(groupCount);
 		
 		long curBeginning = FileUtils.fileIndex;
 		
@@ -120,7 +122,7 @@ public class FileUtils
 				continue;
 			}
 			
-			inputIdUrlPair = jsonDecoder(retrievedLineStr); // Decode the jsonLine and take the two attributes.
+			inputIdUrlPair =  jsonDecoder(retrievedLineStr);// Decode the jsonLine and take the two attributes.
 			if ( inputIdUrlPair == null ) {
 				logger.warn("A problematic inputLine found: \"" + retrievedLineStr + "\"");
 				FileUtils.unretrievableInputLines ++;
@@ -132,12 +134,10 @@ public class FileUtils
 			// Currently there is no control over the correlation of pre-redirected pages and after-redirected ones, as Crawler4j, which handles this process doesn't keep track of such thing.
 			// So the output currently contains the redirected-final-docPages with their docUrls.
 			
-			//idAndUrlMappedInput.putAll(inputIdUrlPair);    // Keep mapping to be put in the outputFile later.
-			
-			urlGroup.addAll(inputIdUrlPair.values());	// Make sure that our returning's source is the temporary collection (otherwise we go into an infinite loop).
+			idAndUrlMappedInput.putAll(Multimaps.forMap(inputIdUrlPair));    // Keep mapping to be put in the outputFile later.
 		}
 		
-		return urlGroup;	// Return just the urls to be crawled. We still keep the IDs.
+		return idAndUrlMappedInput;
 	}
 
 
@@ -146,9 +146,9 @@ public class FileUtils
 	 * @param jsonLine String
 	 * @return HashMap<String,String>
 	 */
-	public static HashMap<String,String> jsonDecoder(String jsonLine)
+	public static Map<String, String> jsonDecoder(String jsonLine)
 	{
-		HashMap<String, String> returnIdUrlMap = new HashMap<String, String>();
+		Map<String, String> returnIdUrlMap = new HashMap<String, String>();
 
 		JSONObject jObj = new JSONObject(jsonLine); // Construct a JSONObject from the retrieved jsonLine.
 

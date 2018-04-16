@@ -47,7 +47,7 @@ public class DocUrlsRetriever
     	
     	// Use testing input/output files.
 		/*try {
-			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testUrlsFinalRandom5000+1.csv")),
+			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testNewOrderedList5000.json")),
 							new FileOutputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testOutputFile.json")));
 		} catch (FileNotFoundException e) {
 			logger.error("InputFile not found!", e);

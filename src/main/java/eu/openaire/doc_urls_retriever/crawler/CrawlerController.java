@@ -29,7 +29,7 @@ public class CrawlerController
 	//public static DocIDServer docIdServer = null;	// Potentially useful when performing checks in urls added in the Crawler.
 	public static Frontier frontier = null;	// Potentially useful to know the number of pages (left to be crawled, are in memory waiting, already prosseced).
 	public static long urlsReachedCrawler = 0;	// Potentially useful for statistics.
-	
+	public static boolean useIdUrlPairs = true;
 	
 	
 	/**
@@ -67,7 +67,10 @@ public class CrawlerController
 			//CrawlerController.docIdServer = controller.getDocIdServer();	// Enable this code if we need special urls' check from the crawler.
 			CrawlerController.frontier = controller.getFrontier();	// Enable this code if we need to check pages' number in the crawler.
 			
-			UrlUtils.loadAndCheckUrls();
+			if ( CrawlerController.useIdUrlPairs )
+				UrlUtils.loadAndCheckIdUrlPairs();
+			else
+				UrlUtils.loadAndCheckUrls();
 			
 			CrawlerController.urlsReachedCrawler = CrawlerController.frontier.getNumberOfScheduledPages();	// If wanted for statistics, in the end.
 			logger.debug("Urls added in Crawler: " + CrawlerController.urlsReachedCrawler);
