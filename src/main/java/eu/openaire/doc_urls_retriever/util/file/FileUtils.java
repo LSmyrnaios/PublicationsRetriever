@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimaps;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.doc_urls_retriever.util.url.TripleToBeLogged;
@@ -98,12 +98,12 @@ public class FileUtils
 	 * This method parses a Json file and extracts the urls, along with the IDs.
 	 * @return Collection<String>
 	 */
-	public static LinkedListMultimap<String, String> getNextIdUrlPairGroupFromJson()
+	public static HashMultimap<String, String> getNextIdUrlPairGroupFromJson()
 	{
 		skipFirstRow = false;	// Make sure we don't use this rule for any calculations.
 		
-		Map<String, String> inputIdUrlPair;
-		LinkedListMultimap<String, String> idAndUrlMappedInput = LinkedListMultimap.create(groupCount);
+		HashMap<String, String> inputIdUrlPair;
+		HashMultimap<String, String> idAndUrlMappedInput = HashMultimap.create();
 		
 		long curBeginning = FileUtils.fileIndex;
 		
@@ -146,9 +146,9 @@ public class FileUtils
 	 * @param jsonLine String
 	 * @return HashMap<String,String>
 	 */
-	public static Map<String, String> jsonDecoder(String jsonLine)
+	public static HashMap<String, String> jsonDecoder(String jsonLine)
 	{
-		Map<String, String> returnIdUrlMap = new HashMap<String, String>();
+		HashMap<String, String> returnIdUrlMap = new HashMap<String, String>();
 
 		JSONObject jObj = new JSONObject(jsonLine); // Construct a JSONObject from the retrieved jsonLine.
 

@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.HashMultimap;
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
 
@@ -96,7 +96,6 @@ public class UrlUtils
 	public static void loadAndCheckUrls() throws RuntimeException
 	{
 		Collection<String> loadedUrlGroup;
-		
 		boolean firstRun = true;
 		
 		// Start loading and checking urls.
@@ -114,7 +113,6 @@ public class UrlUtils
 					break;	// No more urls to load and check, initialize M.L.A. (if wanted) and start Crawling.
 				}
 			}
-			
 			firstRun = false;
 			
 			for ( String retrievedUrl : loadedUrlGroup )
@@ -147,7 +145,7 @@ public class UrlUtils
 						continue;
 					}
 					
-					if ( UrlUtils.docUrls.contains(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
+					if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
 						logger.debug("Re-crossing (before connecting to it) the already found docUrl: \"" +  urlToCheck + "\"");
 						if ( FileUtils.shouldDownloadDocFiles )
 							UrlUtils.logTriple(urlToCheck, urlToCheck, "This file is probably already downloaded.", null);
@@ -180,7 +178,7 @@ public class UrlUtils
 	 */
 	public static void loadAndCheckIdUrlPairs() throws RuntimeException
 	{
-		LinkedListMultimap<String, String> loadedIdUrlPairs;
+		HashMultimap<String, String> loadedIdUrlPairs;
 		boolean firstRun = true;
 		
 		// Start loading and checking urls.
@@ -202,21 +200,23 @@ public class UrlUtils
 	        }
 			firstRun = false;
 			
-			for ( String retrievedId : loadedIdUrlPairs.keys() )
+			List<String> urlList = new ArrayList<String>();	// Theoretically, is faster to add 3 elements in a new list, than removing 3 values from a Multimap, after finding the key between 3000 other keys.
+			boolean goToNextId = false;
+			
+			for ( String retrievedId : loadedIdUrlPairs.keySet() )
 			{
 				//logger.debug("ID: " + retrievedId);	// DEBUG!
 				
-				List<String> urlList = new ArrayList<String>();	// Theoritically, is faster to add 3 elements in a new list, than removing 3 values from a Multimap, after finding the key between 3000 other keys.
-				boolean goToNextId = false;
+				goToNextId = false;
 				
 				for ( String retrievedUrl : loadedIdUrlPairs.get(retrievedId) )
 				{
 					//logger.debug("     URL: " + retrievedUrl);	// DEBUG!
 					
-					String lowerCaseUrl = retrievedUrl.toLowerCase();	// Only for string checking purposes, not supposed to reach any connection.
+					String lowerCaseUrl = retrievedUrl.toLowerCase();    // Only for string checking purposes, not supposed to reach any connection.
 					
 					if ( matchesUnwantedUrlType(retrievedUrl, lowerCaseUrl) )
-						continue;	// The url-logging is happening inside this method (per urlType).
+						continue;    // The url-logging is happening inside this method (per urlType).
 					
 					// Remove "jsessionid" for urls. Most of them, if not all, will already be expired.
 					if ( lowerCaseUrl.contains("jsessionid") )
@@ -242,14 +242,14 @@ public class UrlUtils
 							continue;	// No breaking here, since the other urls of this group might be/get well-formed.
 						}
 						
-						if ( UrlUtils.docUrls.contains(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
+						if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
 							logger.debug("Re-crossing (before connecting to it) the already found docUrl: \"" +  urlToCheck + "\"");
 							if ( FileUtils.shouldDownloadDocFiles )
 								UrlUtils.logTriple(urlToCheck, urlToCheck, "This file is probably already downloaded.", null);
 							else
 								UrlUtils.logTriple(urlToCheck, urlToCheck, "", null);
 							goToNextId = true;	// The bestUrl for this group was found, go to the next group (next ID).
-							break;
+							break;	// No need to remove this url here, since no other url from this group will be used.
 						}
 						
 						try {
@@ -261,13 +261,15 @@ public class UrlUtils
 							goToNextId = true;
 							break;	// Ignore IDE-warnings, this usage is useful here.
 						}
-					}
+					}// end-if
 					
-					urlList.add(retrievedUrl);	// Construct the final list with the validUrls.
-				}
+					urlList.add(retrievedUrl);	// Store the needToBeCrawled-url in a new tempList, to be handled appropriately.
+				}// end-for
 				
-				if ( goToNextId )	// If either the docUrl was found, or the possible-DocUrl was broken, continue with the next group. It will get false in the next iteration by its own.
+				if ( goToNextId ) {    // If either the docUrl was found, or the possible-DocUrl was broken, continue with the next group. It will get false in the next iteration by its own.
+					urlList.clear();
 					continue;
+				}
 				
 	        	// TODO - Here implement the lookAhead for duplicate IDs.
 					// If there are duplicate IDs, find the one which needs less time to give the docUrl and connect with it.
@@ -283,7 +285,7 @@ public class UrlUtils
 						
 						String bestUrl = null;
 						
-						for (String retrievedUrl : urlList) {
+						for ( String url : urlList ) {
 							// We already checked if there is a possible docUrl within the values.. so here we decide which url from this group we will crawl.
 							
 							// TODO - Use custom rules (at least for now, later possibly use a new MLA), to define which
@@ -291,7 +293,7 @@ public class UrlUtils
 							//if ( customRule exists )	// For example if this url contains "/handle/" we know that it's a bestCaseUrl. Any other url will either be of the same priority..
 							//{							// or it will be worse, in this case it will be in the domain "hdl.handle.net", which after redirects reaches the bestCaseUrl (containing "/handle/").
 														// No possible-docUrl is available here, as this was already checked in the initial-Loop.
-								bestUrl = retrievedUrl;
+								bestUrl = url;
 								break;
 							//}
 						}
@@ -302,7 +304,9 @@ public class UrlUtils
 					}
 					else	// If there's only one url, add it in the crawler.
 						CrawlerController.controller.addSeed(urlList.get(0));    // Canonicalization is performed by Crawler4j itself.
-				}
+					
+					urlList.clear();
+				}// end-if
 			}// end for-loop
         }// end while-loop
 	}
