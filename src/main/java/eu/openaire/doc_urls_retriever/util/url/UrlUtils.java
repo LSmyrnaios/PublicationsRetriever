@@ -35,12 +35,12 @@ public class UrlUtils
 							+ "|error|misuse|abuse|gateway|sorryserver|notfound|404\\.(?:\\w)?htm).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects. There's "acesso" (single "c") in Portuguese.
 	
-	public static final Pattern PAGE_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|mso|dtl|svg|txt|c|cc|cxx|cpp|java|py)(?:\\?.+)?$");
+	public static final Pattern PAGE_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|mso|dtl|svg|asc|txt|c|cc|cxx|cpp|java|py)(?:\\?.+)?$");
 	
-    public static final Pattern INNER_LINKS_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|xml|mso|dtl|svg|do|txt|c|cc|cxx|cpp|java|py)(?:\\?.+)?$");
+    public static final Pattern INNER_LINKS_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|xml|mso|dtl|svg|do|asc|txt|c|cc|cxx|cpp|java|py)(?:\\?.+)?$");
     // Here don't include .php and relative extensions, since even this can be a docUrl. For example: https://www.dovepress.com/getfile.php?fileID=5337
 	// So, we make a new REGEX for these extensions, this time, without a potential argument in the end (?id=XXX..)
-	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:php|php2|php3|php4|php5|phtml|htm|html|shtml|xht|xhtm|xhtml|xml|aspx|asp|jsp|do)$");
+	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:php|php2|php3|php4|php5|phtml|htm|html|shtml|xht|xhtm|xhtml|xml|aspx|asp|jsp|do|asc)$");
 	
 	public static final Pattern INNER_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+format=(?:xml|htm|html|shtml|xht|xhtm|xhtml).*");
     
@@ -78,6 +78,7 @@ public class UrlUtils
 	public static int pagesWithHtmlDocUrls = 0;
 	public static int pagesRequireLoginToAccessDocFiles = 0;
 	public static int pagesWithLargerCrawlingDepth = 0;	// Pages with their docUrl behind an inner "view" page.
+	public static int longToRespondUrls = 0;	// Urls belonging to domains which take too long to respond.
 	public static int doiOrgToScienceDirect = 0;	// Urls from "doi.org" which redirect to "sciencedirect.com".
 	public static int urlsWithUnwantedForm = 0;	// (plain domains, unwanted page-extensions ect.)
 	public static int pangaeaUrls = 0;	// These urls are in false form by default, but even if they weren't or we transform them, PANGAEA. only gives datasets, not fulltext.
@@ -156,6 +157,8 @@ public class UrlUtils
 			List<String> urlList = new ArrayList<String>();	// Theoretically, is faster to add 3 elements in a new list, than removing 3 values from a Multimap, after finding the key between 3000 other keys.
 			boolean goToNextId = false;
 			
+			//logger.debug("CurGroup IDs-size: " + loadedIdUrlPairs.keySet().size());	// DEBUG!
+			
 			for ( String retrievedId : loadedIdUrlPairs.keySet() )
 			{
 				//logger.debug("ID: " + retrievedId);	// DEBUG!
@@ -203,23 +206,31 @@ public class UrlUtils
 					if ( urlsInList > 1 ) {    // If we still have a group of duplicates..
 						
 						String bestUrl = null;
+						String nonDoiUrl = null;
 						
 						for ( String url : urlList ) {
 							// We already checked if there is a possible docUrl within the values.. so here we decide which url from this group we will crawl.
 							
-							// TODO - Use custom rules (no MLA can be used at this point, since the urls added to Crawler4j will be crawled after loading is finished), to define which urls are best-cases aming others (which ones take less time to connect).
+							// TODO - Use custom rules (no MLA can be used at this point, since the urls added to Crawler4j will be crawled after loading is finished), to define which urls are best-cases among others (which ones take less time to connect).
 							
-							//if ( customRule exists )	// For example if this url contains "/handle/" we know that it's a bestCaseUrl. Any other url will either be of the same priority..
-							//{							// or it will be worse, in this case it will be in the domain "hdl.handle.net", which after redirects reaches the bestCaseUrl (containing "/handle/").
-														// No possible-docUrl is available here, as this was already checked in the initial-Loop.
+							if ( (nonDoiUrl == null) && !url.contains("doi.org") ) {    // If we find a nonDoiUrl keep it for possible later usage.
+								bestUrl = url;
+								//nonDoiUrl = url;	// To be un-commented later.. if bestUrl-rules are added.
+								break;
+							}
+							
+							/* Add this rule later, if we accept the slow "hdl.handle.net"
+							if ( url.contains("/handle/") ) {	// If this url contains "/handle/" we know that it's a bestCaseUrl among urls from the domain "handle.net", which after redirects reaches the bestCaseUrl (containing "/handle/").
 								bestUrl = url;
 								break;
-							//}
+							}*/
 						}
 						if ( bestUrl != null )
 							CrawlerController.controller.addSeed(bestUrl);
-						else	// No bestUrl was found based on our customRules. The checks in memory are relatively cheap comparing to opening connections for every single url in this list (as was done before).
-							CrawlerController.controller.addSeed(urlList.get(0));	// Use the 1st one.
+						else if ( nonDoiUrl != null )	// No bestUrl was found based on our customRules. We will have to use an unknown one, but first look if we can at least avoid the redirect-expensive "doi.org" urls.
+							CrawlerController.controller.addSeed(nonDoiUrl);    // Use the 1st one.
+						else	// Use the 1st one (unknown case).
+							CrawlerController.controller.addSeed(urlList.get(0));
 					}
 					else	// If there's only one url, add it in the crawler.
 						CrawlerController.controller.addSeed(urlList.get(0));    // Canonicalization is performed by Crawler4j itself.
@@ -383,6 +394,11 @@ public class UrlUtils
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to known urls with connectivity problems.", null);
 			return true;
 		}
+		else if ( lowerCaseUrl.contains("handle.net") ) {	// Slow urls (taking more than 3secs to connect).
+			UrlUtils.longToRespondUrls ++;
+			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to domain, known to take long to respond.", null);
+			return true;
+		}
 		else if ( UrlUtils.DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.DOI_ORG_PARENTHESIS_FILTER.matcher(lowerCaseUrl).matches() ) {
 			UrlUtils.doiOrgToScienceDirect ++;
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to a urlType of \"doi.org\", which redirects to \"sciencedirect.com\".", null);
@@ -400,7 +416,7 @@ public class UrlUtils
 	
 	/**
 	 * This method matches the given pageUrl against general regexes.
-	 * It returns true
+	 * It returns "true" if the givenUrl should not be accepted, otherwise, it returns "false".
 	 * @param pageUrl
 	 * @param lowerCasePageUrl
 	 * @return true / false
