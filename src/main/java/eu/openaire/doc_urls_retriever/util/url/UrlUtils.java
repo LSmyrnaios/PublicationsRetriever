@@ -8,8 +8,10 @@ import java.util.regex.Pattern;
 import com.google.common.collect.HashMultimap;
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
-
 import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
+
+import eu.openaire.doc_urls_retriever.exceptions.CanonicalizationFailedException;
+
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 import org.slf4j.Logger;
@@ -96,80 +98,40 @@ public class UrlUtils
 	public static void loadAndCheckUrls() throws RuntimeException
 	{
 		Collection<String> loadedUrlGroup;
-		boolean firstRun = true;
+		boolean isFirstRun = true;
 		
 		// Start loading and checking urls.
 		while ( true )
 		{
 			loadedUrlGroup = FileUtils.getNextUrlGroupTest();	// Take urls from single-columned (testing) csvFile.
 			
-			if ( loadedUrlGroup.isEmpty() ) {
-				if ( firstRun ) {
-					logger.error("Could not retrieve any urls from the inputFile!");
-					throw new RuntimeException();
-				}
-				else {
-					logger.debug("Done loading " + FileUtils.getCurrentlyLoadedUrls() + " urls from the inputFile.");	// DEBUG!
-					break;	// No more urls to load and check, initialize M.L.A. (if wanted) and start Crawling.
-				}
-			}
-			firstRun = false;
+			if ( isFinishedLoading(loadedUrlGroup.isEmpty(), isFirstRun) )	// Throws RuntimeException which is automatically passed on.
+				break;
+			else
+				isFirstRun = false;
 			
 			for ( String retrievedUrl : loadedUrlGroup )
 			{
 				String lowerCaseUrl = retrievedUrl.toLowerCase();	// Only for string checking purposes, not supposed to reach any connection.
 				
-				if ( matchesUnwantedUrlType(retrievedUrl, lowerCaseUrl) )
-					continue;	// The url-logging is happening inside this method (per urlType).
-				
-				// Remove "jsessionid" for urls. Most of them, if not all, will already be expired.
-				if ( lowerCaseUrl.contains("jsessionid") )
-					retrievedUrl = UrlUtils.removeJsessionid(retrievedUrl);
-				
-				// Check if it's a duplicate.
-				if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
-					logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already been seen!");
-					UrlUtils.inputDuplicatesNum ++;
-					UrlUtils.logTriple(retrievedUrl, "duplicate", "Discarded at loading time, as it's a duplicate.", null);
+				if ( (retrievedUrl = handleUrlCheckAtLoading(retrievedUrl, lowerCaseUrl)) == null )
 					continue;
-				}
 				
-				if ( UrlUtils.DOC_URL_FILTER.matcher(lowerCaseUrl).matches() )	// If it probably a docUrl, check it right away. (This way we avoid the expensive Crawler4j's process)
-				{
-					//logger.debug("Possible docUrl at loading: " + retrievedUrl);
-					
-					String urlToCheck = null;
-					if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null ) {
-						logger.warn("Could not canonicalize url: " + retrievedUrl);
-						UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, due to canonicalization problems.", null);
-						continue;
-					}
-					
-					if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
-						logger.debug("Re-crossing (before connecting to it) the already found docUrl: \"" +  urlToCheck + "\"");
-						if ( FileUtils.shouldDownloadDocFiles )
-							UrlUtils.logTriple(urlToCheck, urlToCheck, "This file is probably already downloaded.", null);
-						else
-							UrlUtils.logTriple(urlToCheck, urlToCheck, "", null);
-						continue;	//Skip this url from connecting again.
-					}
-					
-					try {
-						HttpUtils.connectAndCheckMimeType(urlToCheck, urlToCheck, null, true, true);    // If it's not a docUrl, it's still added in the crawler but inside this method, in order to add the final-redirected-free url.
-					} catch (Exception e) {
-						UrlUtils.logTriple(urlToCheck, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
-						UrlUtils.connProblematicUrls ++;
-					}
+				// After utl-type checks, see if this is a possibleDocUlr and if so, connect to it. Otherwise, add it to the crawler and move on.
+				try {
+					if ( !handleIfPossibleDocUrlAtLoading(retrievedUrl, lowerCaseUrl) )
+						CrawlerController.controller.addSeed(retrievedUrl);	// Canonicalization is performed by Crawler4j itself.
+				} catch (CanonicalizationFailedException cfe) {
+					// This url was badly-formed, no special-handling here, move on to the next one.
 				}
-				else
-					CrawlerController.controller.addSeed(retrievedUrl);	// Canonicalization is performed by Crawler4j itself.
 				
 			}// end for-loop
 		}// end while-loop
 	}
 	
-	// TODO - Since there's common code in these two methods.. we should break it into smaller methods (if possible).
-	// TODO - Run-instructions in "README.md" are now affected and should change.
+	
+	// TODO - Run-instructions in "README.md" are now affected and should get updated.
+	
 	
 	/**
 	 * This method loads the id-url pairs from the input file, in memory and check them. TODO - Add/Optimize documentation.
@@ -179,26 +141,17 @@ public class UrlUtils
 	public static void loadAndCheckIdUrlPairs() throws RuntimeException
 	{
 		HashMultimap<String, String> loadedIdUrlPairs;
-		boolean firstRun = true;
+		boolean isFirstRun = true;
 		
 		// Start loading and checking urls.
         while ( true )
         {
 			loadedIdUrlPairs = FileUtils.getNextIdUrlPairGroupFromJson(); // Take urls from jsonFile.
 			
-			// TODO - The following code is common and can be added in a new method: "isFinishedLoading(boolean, isEmptyOfData, boolean firstRun)" if it returns true, the whileLoop will break (the message can be inside this method).
-					// If it raises an exception, this exception will cause this method to stop and it will be passed on, as it happens now..
-	        if ( loadedIdUrlPairs.isEmpty() ) {
-	        	if ( firstRun ) {
-	        		logger.error("Could not retrieve any urls from the inputFile!");
-	        		throw new RuntimeException();
-	        	}
-	        	else {
-	        		logger.debug("Done loading " + FileUtils.getCurrentlyLoadedUrls() + " urls from the inputFile.");	// DEBUG!
-	        		break;	// No more urls to load and check, initialize M.L.A. (if wanted) and start Crawling.
-	        	}
-	        }
-			firstRun = false;
+			if ( isFinishedLoading(loadedIdUrlPairs.isEmpty(), isFirstRun) )	// Throws RuntimeException which is automatically passed on.
+				break;
+			else
+				isFirstRun = false;
 			
 			List<String> urlList = new ArrayList<String>();	// Theoretically, is faster to add 3 elements in a new list, than removing 3 values from a Multimap, after finding the key between 3000 other keys.
 			boolean goToNextId = false;
@@ -207,66 +160,32 @@ public class UrlUtils
 			{
 				//logger.debug("ID: " + retrievedId);	// DEBUG!
 				
-				goToNextId = false;
-				
 				for ( String retrievedUrl : loadedIdUrlPairs.get(retrievedId) )
 				{
 					//logger.debug("     URL: " + retrievedUrl);	// DEBUG!
 					
 					String lowerCaseUrl = retrievedUrl.toLowerCase();    // Only for string checking purposes, not supposed to reach any connection.
 					
-					if ( matchesUnwantedUrlType(retrievedUrl, lowerCaseUrl) )
-						continue;    // The url-logging is happening inside this method (per urlType).
-					
-					// Remove "jsessionid" for urls. Most of them, if not all, will already be expired.
-					if ( lowerCaseUrl.contains("jsessionid") )
-						retrievedUrl = UrlUtils.removeJsessionid(retrievedUrl);
-					
-					// Check if it's a duplicate.
-					if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
-						logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already been seen!");
-						UrlUtils.inputDuplicatesNum ++;
-						UrlUtils.logTriple(retrievedUrl, "duplicate", "Discarded at loading time, as it's a duplicate.", null);
+					if ( (retrievedUrl = handleUrlCheckAtLoading(retrievedUrl, lowerCaseUrl)) == null )
 						continue;
-					}
 					
 					// Check if it's a possible-DocUrl, if so, this is the only url which will be checked from this group, unless there's a canonicalization problem.
-					if ( UrlUtils.DOC_URL_FILTER.matcher(lowerCaseUrl).matches() )	// If it probably a docUrl, check it right away. (This way we avoid the expensive Crawler4j's process)
-					{
-						//logger.debug("Possible docUrl at loading: " + retrievedUrl);
-						
-						String urlToCheck = null;
-						if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null ) {
-							logger.warn("Could not canonicalize url: " + retrievedUrl);
-							UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, due to canonicalization problems.", null);
-							continue;	// No breaking here, since the other urls of this group might be/get well-formed.
-						}
-						
-						if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
-							logger.debug("Re-crossing (before connecting to it) the already found docUrl: \"" +  urlToCheck + "\"");
-							if ( FileUtils.shouldDownloadDocFiles )
-								UrlUtils.logTriple(urlToCheck, urlToCheck, "This file is probably already downloaded.", null);
-							else
-								UrlUtils.logTriple(urlToCheck, urlToCheck, "", null);
-							goToNextId = true;	// The bestUrl for this group was found, go to the next group (next ID).
-							break;	// No need to remove this url here, since no other url from this group will be used.
-						}
-						
-						try {
-							HttpUtils.connectAndCheckMimeType(urlToCheck, urlToCheck, null, true, true);    // If it's not a docUrl, it's still added in the crawler but inside this method, in order to add the final-redirected-free url.
-						} catch (Exception e) {
-							UrlUtils.logTriple(urlToCheck, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
-							UrlUtils.connProblematicUrls ++;
-						} finally {
+					try {
+						if ( handleIfPossibleDocUrlAtLoading(retrievedUrl, lowerCaseUrl) ) {
 							goToNextId = true;
-							break;	// Ignore IDE-warnings, this usage is useful here.
+							break;
 						}
-					}// end-if
+					} catch (CanonicalizationFailedException cfe) {
+						// This url was badly-formed, but any other url in this group will reach this same badly-formed url anyway.. so just move on tho the next group.
+						goToNextId = true;
+						break;
+					}
 					
 					urlList.add(retrievedUrl);	// Store the needToBeCrawled-url in a new tempList, to be handled appropriately.
 				}// end-for
 				
 				if ( goToNextId ) {    // If either the docUrl was found, or the possible-DocUrl was broken, continue with the next group. It will get false in the next iteration by its own.
+					goToNextId = false;
 					urlList.clear();
 					continue;
 				}
@@ -288,7 +207,7 @@ public class UrlUtils
 						for ( String url : urlList ) {
 							// We already checked if there is a possible docUrl within the values.. so here we decide which url from this group we will crawl.
 							
-							// TODO - Use custom rules (at least for now, later possibly use a new MLA), to define which
+							// TODO - Use custom rules (no MLA can be used at this point, since the urls added to Crawler4j will be crawled after loading is finished), to define which urls are best-cases aming others (which ones take less time to connect).
 							
 							//if ( customRule exists )	// For example if this url contains "/handle/" we know that it's a bestCaseUrl. Any other url will either be of the same priority..
 							//{							// or it will be worse, in this case it will be in the domain "hdl.handle.net", which after redirects reaches the bestCaseUrl (containing "/handle/").
@@ -306,9 +225,94 @@ public class UrlUtils
 						CrawlerController.controller.addSeed(urlList.get(0));    // Canonicalization is performed by Crawler4j itself.
 					
 					urlList.clear();
-				}// end-if
+				}// end-if-listNotEmpty
 			}// end for-loop
         }// end while-loop
+	}
+	
+	
+	public static boolean isFinishedLoading(boolean isEmptyOfData, boolean isFirstRun) throws RuntimeException
+	{
+		if ( isEmptyOfData ) {
+			if ( isFirstRun ) {
+				logger.error("Could not retrieve any urls from the inputFile!");
+				throw new RuntimeException();
+			} else {
+				logger.debug("Done loading " + FileUtils.getCurrentlyLoadedUrls() + " urls from the inputFile.");	// DEBUG!
+				return true;
+			}
+		} else
+			return false;
+	}
+	
+	
+	/**
+	 * This method checks if the given url is either of unwantedType or if it's a duplicate in the input, while removing the potential jsessionid from the url.
+	 * It returns the givenUrl without the jsessionidPart if this url is accepted for connection/crawling, otherwise, it returns "null".
+	 * @param retrievedUrl
+	 * @param lowerCaseUrl
+	 * @return the non-jsessionid-url-string / null for unwanted-duplicate-url
+	 */
+	public static String handleUrlCheckAtLoading(String retrievedUrl, String lowerCaseUrl)
+	{
+		if ( matchesUnwantedUrlType(retrievedUrl, lowerCaseUrl) )
+			return null;	// The url-logging is happening inside this method (per urlType).
+		
+		// Remove "jsessionid" for urls. Most of them, if not all, will already be expired.
+		if ( lowerCaseUrl.contains("jsessionid") )
+			retrievedUrl = UrlUtils.removeJsessionid(retrievedUrl);
+		
+		// Check if it's a duplicate.
+		if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
+			logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already been seen!");
+			UrlUtils.inputDuplicatesNum ++;
+			UrlUtils.logTriple(retrievedUrl, "duplicate", "Discarded at loading time, as it's a duplicate.", null);
+			return null;
+		}
+		
+		return retrievedUrl;	// The calling method needs the non-jsessionid-string.
+	}
+	
+	
+	/**
+	 * This method checks if a url is a possibleDocUrl and if so, it first looks if it was found before and if not, it connects to it.
+	 * It returns "true" if the given url is a possibleDocUrl and it was handled, otherwise, it returns "false".
+	 * @param retrievedUrl
+	 * @param lowerCaseUrl
+	 * @return
+	 * @throws CanonicalizationFailedException
+	 */
+	public static boolean handleIfPossibleDocUrlAtLoading(String retrievedUrl, String lowerCaseUrl) throws CanonicalizationFailedException
+	{
+		if ( UrlUtils.DOC_URL_FILTER.matcher(lowerCaseUrl).matches() )	// If it probably a docUrl, check it right away. (This way we avoid the expensive Crawler4j's process)
+		{
+			//logger.debug("Possible docUrl: " + retrievedUrl);
+			
+			String urlToCheck = null;
+			if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null ) {
+				logger.warn("Could not canonicalize url: " + retrievedUrl);
+				UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, due to canonicalization problems.", null);
+				throw new CanonicalizationFailedException();	// The calling method can decide its move.
+			}
+			
+			if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
+				logger.debug("Re-crossing (before connecting to it) the already found docUrl: \"" +  urlToCheck + "\"");
+				if ( FileUtils.shouldDownloadDocFiles )
+					UrlUtils.logTriple(urlToCheck, urlToCheck, "This file is probably already downloaded.", null);
+				else
+					UrlUtils.logTriple(urlToCheck, urlToCheck, "", null);
+				return true;	// Return quickly, don't let this already-found docUrl to be connected again.
+			}
+			
+			try {
+				HttpUtils.connectAndCheckMimeType(urlToCheck, urlToCheck, null, true, true);    // If it's not a docUrl, it's still added in the crawler but inside this method, in order to add the final-redirected-free url.
+			} catch (Exception e) {
+				UrlUtils.logTriple(urlToCheck, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
+				UrlUtils.connProblematicUrls ++;
+			}
+			return true;
+		} else
+			return false;
 	}
 	
 	
@@ -638,20 +642,20 @@ public class UrlUtils
 	{
 		String finalUrl = urlStr;
 		
-		String prejsessionidStr = null;
+		String preJsessionidStr = null;
 		String afterJsessionidStr = null;
 		
-		Matcher jsessionIdMatcher = JSESSIONID_FILTER.matcher(urlStr);
-		if (jsessionIdMatcher.matches())
+		Matcher jsessionidMatcher = JSESSIONID_FILTER.matcher(urlStr);
+		if (jsessionidMatcher.matches())
 		{
-			prejsessionidStr = jsessionIdMatcher.group(1);	// Take only the 1st part of the urlStr, without the jsessionid.
-		    if ( (prejsessionidStr == null) || prejsessionidStr.isEmpty() ) {
-		    	logger.warn("Unexpected null or empty value returned by \"jsessionIdMatcher.group(1)\" for url: \"" + urlStr + "\"");
+			preJsessionidStr = jsessionidMatcher.group(1);	// Take only the 1st part of the urlStr, without the jsessionid.
+		    if ( (preJsessionidStr == null) || preJsessionidStr.isEmpty() ) {
+		    	logger.warn("Unexpected null or empty value returned by \"jsessionidMatcher.group(1)\" for url: \"" + urlStr + "\"");
 		    	return finalUrl;
 		    }
-		    finalUrl = prejsessionidStr;
+		    finalUrl = preJsessionidStr;
 		    
-		    afterJsessionidStr = jsessionIdMatcher.group(2);
+		    afterJsessionidStr = jsessionidMatcher.group(2);
 			if ( (afterJsessionidStr == null) || afterJsessionidStr.isEmpty() )
 				return finalUrl;
 			else
