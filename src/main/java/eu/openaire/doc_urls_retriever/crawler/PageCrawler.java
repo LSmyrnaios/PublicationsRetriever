@@ -6,8 +6,10 @@ import java.util.Set;
 
 import edu.uci.ics.crawler4j.crawler.Page;
 import edu.uci.ics.crawler4j.crawler.WebCrawler;
+import edu.uci.ics.crawler4j.parser.TextParseData;
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import edu.uci.ics.crawler4j.url.WebURL;
+import edu.uci.ics.crawler4j.util.Net;
 import eu.openaire.doc_urls_retriever.exceptions.ConnTimeoutException;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
@@ -211,6 +213,22 @@ public class PageCrawler extends WebCrawler
 			}
 			UrlUtils.logTriple(pageUrl, pageUrl, fullPathFileName, currentPageDomain);
 			return;
+		}
+		else if ( pageContentType.equals("application/xhtml+xml") ) {	// Unless we set Crawler4j to parse binaryContent, this type is not parsed. TODO - More tests need to be done.
+			try {	// Follow the issue I opened on GitHub: https://github.com/yasserg/crawler4j/issues/306
+				TextParseData parseData = new TextParseData();
+				if (page.getContentCharset() == null)
+					parseData.setTextContent(new String(page.getContentData()));
+				else
+					parseData.setTextContent(new String(page.getContentData(), page.getContentCharset()));
+				
+				parseData.setOutgoingUrls(Net.extractUrls(parseData.getTextContent()));
+				page.setParseData(parseData);
+			} catch (Exception e) {
+				logger.error("{}, while parsing: {}", e.getMessage(), pageUrl);
+				UrlUtils.logTriple(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, as it could not be parsed manually, having ContentType: " + pageContentType, null);
+				return;
+			}
 		}
 		
 		if ( HttpUtils.blacklistedDomains.contains(currentPageDomain) ) {	// Check if it has been blackListed.

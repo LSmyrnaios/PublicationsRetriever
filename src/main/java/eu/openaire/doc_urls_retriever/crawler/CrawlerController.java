@@ -47,7 +47,7 @@ public class CrawlerController
 		config.setMaxDownloadSize(HttpUtils.maxDownloadableContentSize);	// Default setting: 1048576 --> 10mb
 		config.setPolitenessDelay(HttpUtils.politenessDelay);
 		config.setIncludeBinaryContentInCrawling(true);	// Call "visit()" method even on binary content (which is not prohibited by "shouldVisit()" method) to check its contentType.
-		config.setProcessBinaryContentInCrawling(true);	// Process more pages.. like xhtml ones (Crawler4j processes only html-ones unless instructed to process all).
+		config.setProcessBinaryContentInCrawling(false);	// If set to "true", it processes more webPages like "xhtml" ones (Crawler4j processes html-only, unless instructed to process all), BUT, if it has to deal with actual binaryContent, it will be slower.
 		// Binary-content-rules in "shouldVisit()" still apply.
 		
 		int threadDelaySeconds = 5;	// This is used for Crawler4j to shutdown faster. Default is 10.
