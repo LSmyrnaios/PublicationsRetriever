@@ -26,13 +26,13 @@ Then enter this command in the terminal:<br/>
 To run the application you should navigate to the ***target*** directory, which will be created by *MAVEN* and run the ***.jar*** file.<br/> 
 
 **Run with standard input/output and logging in a *log file*:**<br/>
-``java -jar doc_urls_retriever-0.1.1-SNAPSHOT.jar < 'inputFile' > 'outputFile'``<br/>
+``java -jar doc_urls_retriever-0.2-SNAPSHOT.jar < 'inputFile' > 'outputFile'``<br/>
 
 <br/>
 
 **Run with test input/output files and logging in *Console*:**<br/>
-- Change from ***standard input/output*** to ***testing input/output*** code inside ***DocUrlsRetriever.java***.<br/>
-- Change urls' loading from ***FileUtils.getNextUrlGroupFromJson()*** to ***FileUtils.getNextUrlGroupTest()*** , in ***UrlUtils.loadAndCheckUrls()*** .<br/>
-- Change ***appender-ref***, in ***logback.xml***, from ***File*** to ***Console***.<br/>
+- Inside ***DocUrlsRetriever.java***, change code from ***standard input/output*** to ***testing input/output*** and give the wanted testInputFile.<br/>
+- Inside ***CrawlerController()***, choose the wanted input-handling method: either ***UrlUtils.loadAndCheckIdUrlPairs()*** or the ***UrlUtils.loadAndCheckUrls()***.<br/>
+- Inside ***logback.xml***, change the ***appender-ref***, from ***File*** to ***Console***.<br/>
 - Execute the program with the following command:<br/>
-``java -jar doc_urls_retriever-0.1.1-SNAPSHOT.jar``
+``java -jar doc_urls_retriever-0.2-SNAPSHOT.jar``

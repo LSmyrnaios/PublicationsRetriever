@@ -47,7 +47,7 @@ public class DocUrlsRetriever
     	
     	// Use testing input/output files.
 		/*try {
-			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testUrlsFinalRandom5000+1.csv")),
+			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testNewOrderedList5000.json")),
 							new FileOutputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testOutputFile.json")));
 		} catch (FileNotFoundException e) {
 			logger.error("InputFile not found!", e);
@@ -86,11 +86,12 @@ public class DocUrlsRetriever
 		logger.info("About: " + UrlUtils.pangaeaUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.pangaeaUrls + " urls) were \"PANGAEA.\" with invalid form and non-docUrls in their inner links.");
 		logger.info("About: " + UrlUtils.connProblematicUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.connProblematicUrls + " urls) were pages which had connectivity problems.");
 		logger.info("About: " + UrlUtils.pagesNotProvidingDocUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.pagesNotProvidingDocUrls + " urls) were pages which are known to not provide docUrls.");
+		logger.info("About: " + UrlUtils.longToRespondUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.longToRespondUrls + " urls) were urls which belong to domains which take too long to respond.");
 		logger.info("About: " + UrlUtils.urlsWithUnwantedForm * (float)100 / inputUrlNum + "% (" + UrlUtils.urlsWithUnwantedForm + " urls) were urls which are plain-domains, have unwanted url-extensions, ect...");
 		logger.info("About: " + UrlUtils.inputDuplicatesNum * (float)100 / inputUrlNum + "% (" + UrlUtils.inputDuplicatesNum + " urls) were duplicates in the input file.");
 		
 		long problematicUrlsNum = UrlUtils.crawlerSensitiveDomains + UrlUtils.frontiersinUrls + UrlUtils.sciencedirectUrls + UrlUtils.doiOrgToScienceDirect + UrlUtils.elsevierUnwantedUrls + UrlUtils.doajResultPageUrls + UrlUtils.pagesWithHtmlDocUrls + UrlUtils.pagesRequireLoginToAccessDocFiles
-									+ UrlUtils.pagesWithLargerCrawlingDepth + UrlUtils.pangaeaUrls + UrlUtils.urlsWithUnwantedForm + UrlUtils.connProblematicUrls + UrlUtils.pagesNotProvidingDocUrls + UrlUtils.inputDuplicatesNum;
+									+ UrlUtils.pagesWithLargerCrawlingDepth + UrlUtils.pangaeaUrls + UrlUtils.urlsWithUnwantedForm + UrlUtils.connProblematicUrls + UrlUtils.pagesNotProvidingDocUrls + UrlUtils.longToRespondUrls + UrlUtils.inputDuplicatesNum;
 		logger.info("From the " + inputUrlNum + " urls in the input, the " + problematicUrlsNum + " of them (about " + problematicUrlsNum * (float)100 / inputUrlNum + "%) were problematic (sum of the all of the above cases).");
 		
         // Then... just close the open streams (imported and exported content) and exit.

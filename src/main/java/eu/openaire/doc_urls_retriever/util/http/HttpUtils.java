@@ -82,9 +82,9 @@ public class HttpUtils
 			
 			if ( mimeType == null ) {
 				contentDisposition = conn.getHeaderField("Content-Disposition");
-				if ( contentDisposition == null && !calledForPageUrl ) {	// If there is no clue for the type and this method is called for innerLinks..
+				if ( (contentDisposition == null) && !calledForPageUrl ) {	// If there is no clue for its type and this method is called for innerLinks..
 					logger.warn("No ContentType nor ContentDisposition, were able to be retrieved from url: " + conn.getURL().toString());
-					throw new RuntimeException();    // We can't retrieve any clue. This is not desired.
+					throw new RuntimeException();	// We can't retrieve any clue. This is not desired.
 				}
 			}
 			
@@ -164,7 +164,7 @@ public class HttpUtils
 					|| (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles) )
 				conn.setRequestMethod("GET");	// Go directly with "GET".
 			else
-				conn.setRequestMethod("HEAD");	// Else, try "HEAD" (it may be either a domain that supports "HEAD", or a new domain, for which we have no info yet).
+				conn.setRequestMethod("HEAD");    // Else, try "HEAD" (it may be either a domain that supports "HEAD", or a new domain, for which we have no info yet).
 			
 			if ( (politenessDelay > 0) && domainStr.contains(lastConnectedHost) )	// If this is the last-visited domain, sleep a bit before re-connecting to it.
 				Thread.sleep(politenessDelay);	// Avoid server-overloading for the same host.
