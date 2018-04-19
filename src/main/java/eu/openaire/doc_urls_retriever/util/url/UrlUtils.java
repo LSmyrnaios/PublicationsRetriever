@@ -30,8 +30,8 @@ public class UrlUtils
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
 	public static final Pattern URL_DIRECTORY_FILTER =
-			Pattern.compile(".*\\/(?:profile|login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|faq|wiki|support|sitemap|license|disclaimer|policies|policy|privacy|terms|account|help|law"
-							+ "|user|author|editor|citation|external|statistics|application|permission|ethic|contact|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|people"
+			Pattern.compile(".*\\/(?:profile|login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|faq|wiki|support|sitemap|license|disclaimer|policies|policy|privacy|terms|help|law"
+							+ "|account|myaccount|user|author|editor|citation|review|external|statistics|application|permission|ethic|contact|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|people"
 							+ "|error|misuse|abuse|gateway|sorryserver|notfound|404\\.(?:\\w)?htm).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects. There's "acesso" (single "c") in Portuguese.
 	
@@ -373,7 +373,7 @@ public class UrlUtils
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to a domain which needs login to access docFiles.", null);
 			return true;
 		}
-		else if ( lowerCaseUrl.contains("/view/") || lowerCaseUrl.contains("scielosp.org") ) {	// Avoid crawling pages with larger depth.
+		else if ( lowerCaseUrl.contains("/view/") || lowerCaseUrl.contains("scielosp.org") || lowerCaseUrl.contains("dk.um.si") ) {	// Avoid crawling pages with larger depth.
 			UrlUtils.pagesWithLargerCrawlingDepth ++;
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to an increasedCrawlingDepth-site.", null);
 			return true;

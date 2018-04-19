@@ -19,6 +19,7 @@
     <logger name="org.apache.http" level="warn"/>
     <logger name="org.apache.cxf" level="off"/>
     <logger name="edu.uci.ics.crawler4j.fetcher" level="warn"/>
+    <logger name="edu.uci.ics.crawler4j.crawler.WebCrawler" level="warn"/>
 
     <root level="debug">
         <appender-ref ref="File" />

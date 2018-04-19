@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLException;
-import java.io.*;
 import java.net.*;
 import java.util.Collection;
 import java.util.HashMap;
@@ -86,7 +85,7 @@ public class HttpUtils
 			
 			if ( mimeType == null ) {
 				contentDisposition = conn.getHeaderField("Content-Disposition");
-				if ( (contentDisposition == null) && !calledForPageUrl ) {	// If there is no clue for its type and this method is called for innerLinks..
+				if ( (contentDisposition == null) && !calledForPageUrl ) {	// If there is no clue for its type and this method is called for innerLinks, throw exception, otherwise, on pageUrls, give them a chance to be parsed and crawled.
 					logger.warn("No ContentType nor ContentDisposition, were able to be retrieved from url: " + conn.getURL().toString());
 					throw new RuntimeException();	// We can't retrieve any clue. This is not desired.
 				}

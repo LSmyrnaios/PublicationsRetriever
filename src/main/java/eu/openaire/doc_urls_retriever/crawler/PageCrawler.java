@@ -31,6 +31,7 @@ public class PageCrawler extends WebCrawler
 	
 	/**
 	 * This method checks if the url, for which Crawler4j is going to open a connection, is of specific type in runtime.
+	 * This method doesn't check for general-unwantedUrlTypes, since every url passes from here, has already been checked against those types, at loading.
 	 * If it is, it returns null and Crawler4j goes to the next one. If this url is not matched against any specific case, it returns the url itself.
 	 * @param curURL
 	 * @return curURL / null
@@ -74,7 +75,7 @@ public class PageCrawler extends WebCrawler
 	/**
 	 * This method is called by Crawler4j after a "referringPage" is going to be redirected to another "url".
 	 * It is also called in case we follow innerLinks of a page (which currently we are not).
-	 * It is NOT called before visit() for urls which return 2XX.. so runtime checks should be both in shouldVisit() and in visit(). It's a bit confusing.
+	 * It is NOT called before visit() for urls which immediately return 2XX.. so, runtime checks should be positioned both in shouldVisit() and in visit(). It's a bit confusing.
 	 * It returns true if this "url" should be scheduled to be connected and crawled by Crawler4j, otherwise, it returns false.
 	 * @param referringPage
 	 * @param url
@@ -98,7 +99,7 @@ public class PageCrawler extends WebCrawler
 		if ( UrlUtils.docUrls.contains(urlStr) ) {	// If we got into an already-found docUrl, log it and return.
 			logger.debug("Re-crossing the already found docUrl: \"" + urlStr + "\"");
 			if ( FileUtils.shouldDownloadDocFiles )
-				UrlUtils.logTriple(urlStr, urlStr, "This file is probably already downloaded.", currentPageDomain);
+				UrlUtils.logTriple(urlStr, urlStr, "This file is probably already downloaded.", currentPageDomain);	// Inner methods are responsible to domain-retrieval if "null" is sent instead.
 			else
 				UrlUtils.logTriple(urlStr, urlStr, "", currentPageDomain);
 			return false;
@@ -114,12 +115,13 @@ public class PageCrawler extends WebCrawler
 	{
 		String lowerCaseLink = linkStr.toLowerCase();
 		
-		return	lowerCaseLink.contains("doi.org") || lowerCaseLink.contains("mailto:")	// Avoid "doi.org" in inner links, they will only redirect to the same pages.
-				|| UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseLink).matches()
+		return	UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseLink).matches()
+				|| lowerCaseLink.contains("doi.org")	// Avoid "doi.org" in inner links, they will only redirect to the same pages.
 				|| UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLink).matches() || UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.INNER_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseLink).matches() || UrlUtils.INNER_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseLink).matches()
-				|| UrlUtils.CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseLink).matches();	// TODO - To be removed when these docExtensions get supported.
+				|| UrlUtils.CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseLink).matches()	// TODO - To be removed when these docExtensions get supported.
+				|| lowerCaseLink.contains("mailto:");
 		
 		// The following checks are obsolete here, as we already use it inside "visit()" method. Still keep it here, as it makes our intentions clearer.
 		// !lowerCaseLink.contains(referringPageDomain)	// Don't check this link if it belongs in a different domain than the referringPage's one.

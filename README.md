@@ -3,7 +3,7 @@ About
 
 A program which finds the Document Urls from the given Publication Page Urls.<br/>
 
-It takes as input a JSON file with the pubPages and gives an output in JSON, which contains the pubPages with their docUrls and the errorCause, if any error prevented the discovery of the docUrl.<br/>
+It takes as input a JSON file with the pubPages and gives an output in JSON, which contains the pubPages with their docUrls and a comment, which is either empty, or it contains the docFileName (if we have set to store the dcoFiles), or, if there was any error which prevented the discovery of the docUrl, it contains the errorCause.<br/>
 
 PubPage: *the web page with the publication's data.*<br/> 
 DocUrl: *the url of the document file.*<br/>
@@ -32,7 +32,7 @@ To run the application you should navigate to the ***target*** directory, which 
 
 **Run with test input/output files and logging in *Console*:**<br/>
 - Inside ***DocUrlsRetriever.java***, change code from ***standard input/output*** to ***testing input/output*** and give the wanted testInputFile.<br/>
-- Inside ***CrawlerController()***, choose the wanted input-handling method: either ***UrlUtils.loadAndCheckIdUrlPairs()*** or the ***UrlUtils.loadAndCheckUrls()***.<br/>
+- Inside ***CrawlerController()*** , choose the wanted input-handling method: either ***UrlUtils.loadAndCheckIdUrlPairs()*** or the ***UrlUtils.loadAndCheckUrls()*** .<br/>
 - Inside ***logback.xml***, change the ***appender-ref***, from ***File*** to ***Console***.<br/>
 - Execute the program with the following command:<br/>
 ``java -jar doc_urls_retriever-0.2-SNAPSHOT.jar``
