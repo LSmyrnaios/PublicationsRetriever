@@ -133,9 +133,6 @@ public class UrlUtils
 	}
 	
 	
-	// TODO - Run-instructions in "README.md" are now affected and should get updated.
-	
-	
 	/**
 	 * This method loads the id-url pairs from the input file, in memory and check them. TODO - Add/Optimize documentation.
 	 * Then, the loaded urls will either reach the connection point, were they will be checked for a docMimeType or they will be send directly for crawling.
@@ -195,14 +192,9 @@ public class UrlUtils
 					continue;
 				}
 				
-	        	// TODO - Here implement the lookAhead for duplicate IDs.
-					// If there are duplicate IDs, find the one which needs less time to give the docUrl and connect with it.
-						// For example, a possible-docUrl (matches the DOC-Regex) OR from a url which exists in two faces: the pre-redirections and the post-redirections, choosing the post-one will result in faster docUrl-retrieval.
-						// Custom rules for two-faces URLs, have to be added hardcoded (at least in the beginning). For example "hdl.handle.net" always redirect to a url which contains "/handle/".
-						// If this "faster" url is not a docUrl, add it to the crawler (as usual) and continue with the next group.
-						// If this url has any problem, just continue with the next ID-URL-group.
-					// If there is no duplicate ID, continue as normal.
-				
+	        	// Here, since we can't find the docUrl right-away, choose the bestUrl to be crawled (needs less time to give the docUrl and connect with it).
+					// An example would be a url which exists in two faces: the pre-redirections and the post-redirections, choosing the post-one will result in faster docUrl-retrieval.
+					// Custom rules for two-faces URLs, have to be added hardcoded (at least in the beginning). For example "hdl.handle.net" always redirect to a url which contains "/handle/".
 				int urlsInList = urlList.size();
 				if ( urlsInList > 0 ) {	// If a valid-url existed in this group..
 					if ( urlsInList > 1 ) {    // If we still have a group of duplicates..

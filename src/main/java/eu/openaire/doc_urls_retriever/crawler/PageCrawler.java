@@ -242,7 +242,6 @@ public class PageCrawler extends WebCrawler
 		 */
 		
 		HashSet<String> curLinksStr = new HashSet<String>();	// HashSet to store the String version of each link.
-		
 		String urlToCheck = null;
 		String lowerCaseUrl = null;
 		
@@ -295,7 +294,7 @@ public class PageCrawler extends WebCrawler
 					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
 					UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as its domain was blocked during crawling.", null);
 					return;
-				} catch (Exception e) {	// The exception: "DomainWithUnsupportedHEADmethodException" should never be caught here.
+				} catch (Exception e) {	// The exception: "DomainWithUnsupportedHEADmethodException" should never be caught here, as we use "GET" for possibleDocUrls.
 					logger.error("" + e);
 				}
             }
