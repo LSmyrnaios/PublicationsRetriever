@@ -50,13 +50,17 @@ public class HttpUtils
 	 * It automatically calls the "logUrl()" method for the valid docUrls, while it doesn't call it for non-success cases, thus allowing calling method to handle the case.
 	 * @param currentPage
 	 * @param resourceURL
+	 * @param domainStr
 	 * @param calledForPageUrl
 	 * @param calledForPossibleDocUrl
 	 * @return "true", if it's a docMimeType, otherwise, "false", if it has a different mimeType.
 	 * @throws RuntimeException (when there was a network error).
+	 * @throws DomainBlockedException
+	 * @throws DomainWithUnsupportedHEADmethodException
+	 * @throws ConnTimeoutException
 	 */
 	public static boolean connectAndCheckMimeType(String currentPage, String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
-													throws RuntimeException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
+													throws RuntimeException, DomainBlockedException, DomainWithUnsupportedHEADmethodException, ConnTimeoutException
 	{
 		HttpURLConnection conn = null;
 		try {
@@ -105,9 +109,9 @@ public class HttpUtils
 			if ( currentPage.equals(resourceURL) )    // Log this error only for docPages.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
 			throw re;
-		} catch (DomainBlockedException | DomainWithUnsupportedHEADmethodException de) {
-			throw de;
-		} catch (IOException e) {
+		} catch (DomainBlockedException | DomainWithUnsupportedHEADmethodException | ConnTimeoutException e) {
+			throw e;
+		} catch (Exception e) {
 			if ( currentPage.equals(resourceURL) )	// Log this error only for docPages.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
 			throw new RuntimeException();
@@ -123,14 +127,18 @@ public class HttpUtils
 	/**
      * This method sets up a connection with the given url, using the "HEAD" method. If the server doesn't support "HEAD", it logs it, then it resets the connection and tries again using "GET".
      * The "domainStr" may be either null, if the calling method doesn't know this String (then openHttpConnection() finds it on its own), or an actual "domainStr" String.
-     * @param resourceURL
-     * @param domainStr
-     * @param calledForPossibleDocUrl
+	 * @param resourceURL
+	 * @param domainStr
+	 * @param calledForPageUrl
+	 * @param calledForPossibleDocUrl
 	 * @return HttpURLConnection
-     * @throws RuntimeException
+	 * @throws RuntimeException
+	 * @throws DomainBlockedException
+	 * @throws DomainWithUnsupportedHEADmethodException
+	 * @throws ConnTimeoutException
      */
 	public static HttpURLConnection openHttpConnection(String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
-									throws RuntimeException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
+									throws RuntimeException, DomainBlockedException, DomainWithUnsupportedHEADmethodException, ConnTimeoutException
     {
     	URL url = null;
 		HttpURLConnection conn = null;
@@ -225,7 +233,7 @@ public class HttpUtils
 				conn.disconnect();
 			try { onTimeoutException(domainStr); }
 			catch (DomainBlockedException dbe) { throw dbe; }
-			throw new RuntimeException();
+			throw new ConnTimeoutException();
 		} catch (ConnectException ce) {
 			if ( conn != null )
 				conn.disconnect();
@@ -233,6 +241,7 @@ public class HttpUtils
 			if ( (eMsg != null) && eMsg.toLowerCase().contains("timeout") ) {    // If it's a "connection timeout" type of exception, treat it like it.
 				try { onTimeoutException(domainStr); }
 				catch (DomainBlockedException dbe) { throw dbe; }
+				throw new ConnTimeoutException();
 			}
 			throw new RuntimeException();
 		} catch (SSLException ssle) {
@@ -272,7 +281,8 @@ public class HttpUtils
      * @throws RuntimeException
      */
 	public static HttpURLConnection handleRedirects(HttpURLConnection conn, int responceCode, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
-																			throws RuntimeException, DomainBlockedException {
+																			throws RuntimeException, DomainBlockedException, ConnTimeoutException
+	{
 		int redirectsNum = 0;
 		String initialUrl = conn.getURL().toString();    // Keep initialUrl for logging and debugging.
 		
@@ -338,7 +348,7 @@ public class HttpUtils
 				}
 			}//while-loop.
 			
-		} catch (RuntimeException | DomainBlockedException rde) {    // We already logged the right messages.
+		} catch (RuntimeException | DomainBlockedException | ConnTimeoutException rde) {    // We already logged the right messages.
 			conn.disconnect();
 			throw rde;
 		} catch (Exception e) {
@@ -366,7 +376,17 @@ public class HttpUtils
 	}
 	
 	
-	// TODO - Add documentation explaining the added connection here.
+	/**
+	 * This method first checks which "HTTP METHOD" was used to connect to the docUrl.
+	 * If this docUrl was connected using "GET" (i.e. when this docURL was fast-found as a possibleDocUrl), just write the data to the disk.
+	 * If it was connected using "HEAD", then, before we can store the data to the disk, we connect again, this time with "GET" in order to download the data.
+	 * It returns the docFileName which was produced for this docUrl.
+	 * @param conn
+	 * @param domainStr
+	 * @param docUrl
+	 * @return
+	 * @throws DocFileNotRetrievedException
+	 */
 	public static String downloadAndStoreDocFileOutsideCrawler(HttpURLConnection conn, String domainStr, String docUrl)
 			throws DocFileNotRetrievedException
 	{

@@ -8,6 +8,7 @@ import edu.uci.ics.crawler4j.crawler.Page;
 import edu.uci.ics.crawler4j.crawler.WebCrawler;
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import edu.uci.ics.crawler4j.url.WebURL;
+import eu.openaire.doc_urls_retriever.exceptions.ConnTimeoutException;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
 import eu.openaire.doc_urls_retriever.exceptions.DomainWithUnsupportedHEADmethodException;
@@ -159,8 +160,8 @@ public class PageCrawler extends WebCrawler
 	
 	
 	/**
-	 * TODO - Add documentation.
-	 * No reconnection is performed here, as the Crawler is only making "GET" requests.
+	 * This method collects Crawler's connData for this page and it sends it to the "FileUtils.storeDocFile()" for the docFile to be stored.
+	 * Note that no reconnection is performed here, as the Crawler is only making "GET" requests.
 	 * @param page
 	 * @param pageUrl
 	 * @throws DocFileNotRetrievedException
@@ -294,6 +295,10 @@ public class PageCrawler extends WebCrawler
 					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
 					UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as its domain was blocked during crawling.", null);
 					return;
+				} catch (ConnTimeoutException cte) {	// In this case, it's unworthy to stay and check other innerLinks here.
+					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after a potentialDocUrl caused a ConnTimeoutException.");
+					UrlUtils.logTriple(pageUrl, "unreachable", "Logged in \"PageCrawler.visit()\" method, as an innerLink of this page caused \"ConnTimeoutException\".", null);
+					return;
 				} catch (Exception e) {	// The exception: "DomainWithUnsupportedHEADmethodException" should never be caught here, as we use "GET" for possibleDocUrls.
 					logger.error("" + e);
 				}
@@ -325,6 +330,10 @@ public class PageCrawler extends WebCrawler
 			} catch (DomainWithUnsupportedHEADmethodException dwuhe) {
 				logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was caught to not support the HTTP HEAD method.");
 				UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as its domain was caught to not support the HTTP HEAD method.", null);
+				return;
+			} catch (ConnTimeoutException cte) {	// In this case, it's unworthy to stay and check other innerLinks here.
+				logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after an innerLink caused a ConnTimeoutException.");
+				UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as an innerLink of this page caused \"ConnTimeoutException\".", null);
 				return;
 			} catch (RuntimeException e) {
 				// No special handling here.. nor logging..
