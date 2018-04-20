@@ -496,8 +496,8 @@ public class PageCrawler extends WebCrawler
 	@Override
 	public void onPageBiggerThanMaxSize(String urlStr, long pageSize)
 	{
-		logger.warn("Skipping url: \"" + urlStr + "\" which was bigger (" + pageSize +") than the max allowed size (" + HttpUtils.maxDownloadableContentSize + ")");
-		UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onPageBiggerThanMaxSize() method, as this page's size was over the limit (" + HttpUtils.maxDownloadableContentSize + ").", null);	// No domain needs to be passed along..
+		logger.warn("Skipping url: \"" + urlStr + "\" which was bigger (" + pageSize +") than the max allowed size (" + HttpUtils.maxAllowedContentSize + ")");
+		UrlUtils.logTriple(urlStr, "unreachable", "Logged in PageCrawler.onPageBiggerThanMaxSize() method, as this page's size was over the limit (" + HttpUtils.maxAllowedContentSize + ").", null);	// No domain needs to be passed along..
 		
 		if ( HttpUtils.politenessDelay > 0 ) {
 			String domain = null;

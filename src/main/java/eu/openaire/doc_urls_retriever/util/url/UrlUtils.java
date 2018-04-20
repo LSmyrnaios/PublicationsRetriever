@@ -208,17 +208,17 @@ public class UrlUtils
 							
 							// TODO - Use custom rules (no MLA can be used at this point, since the urls added to Crawler4j will be crawled after loading is finished), to define which urls are best-cases among others (which ones take less time to connect).
 							
+							// Add this rule, if we accept the slow "hdl.handle.net"
+							if ( url.contains("/handle/") ) {	// If this url contains "/handle/" we know that it's a bestCaseUrl among urls from the domain "handle.net", which after redirects reaches the bestCaseUrl (containing "/handle/").
+								bestUrl = url;
+								break;
+							}
+							
 							if ( (nonDoiUrl == null) && !url.contains("doi.org") ) {    // If we find a nonDoiUrl keep it for possible later usage.
 								bestUrl = url;
 								//nonDoiUrl = url;	// To be un-commented later.. if bestUrl-rules are added.
 								break;
 							}
-							
-							/* Add this rule later, if we accept the slow "hdl.handle.net"
-							if ( url.contains("/handle/") ) {	// If this url contains "/handle/" we know that it's a bestCaseUrl among urls from the domain "handle.net", which after redirects reaches the bestCaseUrl (containing "/handle/").
-								bestUrl = url;
-								break;
-							}*/
 						}
 						if ( bestUrl != null )
 							CrawlerController.controller.addSeed(bestUrl);
@@ -389,11 +389,11 @@ public class UrlUtils
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to known urls with connectivity problems.", null);
 			return true;
 		}
-		else if ( lowerCaseUrl.contains("handle.net") ) {	// Slow urls (taking more than 3secs to connect).
+		/*else if ( lowerCaseUrl.contains("handle.net") ) {	// Slow urls (taking more than 3secs to connect).
 			UrlUtils.longToRespondUrls ++;
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to domain, known to take long to respond.", null);
 			return true;
-		}
+		}*/
 		else if ( UrlUtils.DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.DOI_ORG_PARENTHESIS_FILTER.matcher(lowerCaseUrl).matches() ) {
 			UrlUtils.doiOrgToScienceDirect ++;
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to a urlType of \"doi.org\", which redirects to \"sciencedirect.com\".", null);

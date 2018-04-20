@@ -43,7 +43,7 @@ public class FileUtils
 	
 	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<String, Integer>();	// Holds docFileNa,es with their duplicatesNum.
 	
-	public static boolean shouldDownloadDocFiles = false;
+	public static boolean shouldDownloadDocFiles = true;
 	public static final boolean shouldDeleteOlderDocFiles = true;	// Should we delete any older stored docFiles? This is useful for testing.
 	public static final boolean shouldUseOriginalDocFileNames = false;
 	public static final boolean shouldLogFullPathName = false;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
@@ -69,7 +69,9 @@ public class FileUtils
 				// If the directory doesn't exist, try to (re)create it.
 				if ( !dir.exists() ) {
 					if ( !dir.mkdir() ) {   // Create the directory.
-						logger.error("Problem when creating the dir: " + docFilesDownloadPath);
+						logger.error("Problem when creating the \"storeDocFilesDir\": \"" + docFilesDownloadPath + "\"."
+										+ "\nThe docFiles will NOT be stored, but the docUrls will be retrieved and kept in the outputFile."
+										+ "\nIf this is not desired, please terminate the program and re-define the \"storeDocFilesDir\"");
 						FileUtils.shouldDownloadDocFiles = false;
 					}
 				}

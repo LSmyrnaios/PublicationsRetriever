@@ -33,14 +33,15 @@ public class HttpUtils
 	
 	public static String lastConnectedHost = "";
 	public static final int politenessDelay = 0;	// Time to wait before connecting to the same host again.
-	public static final int maxConnWaitingTime = 3000;	// Max time (in ms) to wait for a connection.
+	public static final int maxConnHEADWaitingTime = 3000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
+	public static final int maxConnGETWaitingTime = 5000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
 	private static final int maxRedirects = 3;	// It's not worth waiting for more than 3, in general.. except if we turn out missing a lot of them.. test every case and decide..
     										// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
     private static final int timesToHave5XXerrorCodeBeforeBlocked = 3;
     private static final int timesToHaveTimeoutExBeforeBlocked = 3;
     private static final int numberOf403BlockedPathsBeforeBlocked = 3;
     
-	public static final int maxDownloadableContentSize = 52428800;
+	public static final int maxAllowedContentSize = 83886080;	// 80mb
 	private static final boolean shouldNOTacceptGETmethodForUncategorizedInnerLinks = true;
 	
 	
@@ -164,14 +165,18 @@ public class HttpUtils
 			conn = (HttpURLConnection) url.openConnection();
 			
 			conn.setInstanceFollowRedirects(false);	// We manage redirects on our own, in order to control redirectsNum as well as to be able to handle single http to https redirect without having to do a network redirect.
-			conn.setReadTimeout(maxConnWaitingTime);
-			conn.setConnectTimeout(maxConnWaitingTime);
 			
 			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// Either for just-webPages or for docUrls, we want to use "GET" in order to download the content.
-					|| (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles) )
-				conn.setRequestMethod("GET");	// Go directly with "GET".
-			else
+					|| (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles) ) {
+				conn.setRequestMethod("GET");    // Go directly with "GET".
+				conn.setReadTimeout(HttpUtils.maxConnGETWaitingTime);
+				conn.setConnectTimeout(HttpUtils.maxConnGETWaitingTime);
+			}
+			else {
 				conn.setRequestMethod("HEAD");    // Else, try "HEAD" (it may be either a domain that supports "HEAD", or a new domain, for which we have no info yet).
+				conn.setReadTimeout(maxConnHEADWaitingTime);
+				conn.setConnectTimeout(maxConnHEADWaitingTime);
+			}
 			
 			if ( (politenessDelay > 0) && domainStr.contains(lastConnectedHost) )	// If this is the last-visited domain, sleep a bit before re-connecting to it.
 				Thread.sleep(politenessDelay);	// Avoid server-overloading for the same host.
@@ -198,10 +203,10 @@ public class HttpUtils
 				conn.disconnect();
 				conn = (HttpURLConnection) url.openConnection();
 				
-				conn.setInstanceFollowRedirects(false);
-				conn.setReadTimeout(maxConnWaitingTime);
-				conn.setConnectTimeout(maxConnWaitingTime);
 				conn.setRequestMethod("GET");	// To reach here, it means that the HEAD method is unsupported.
+				conn.setReadTimeout(maxConnGETWaitingTime);
+				conn.setConnectTimeout(maxConnGETWaitingTime);
+				conn.setInstanceFollowRedirects(false);
 				
 				if ( politenessDelay > 0 )
 					Thread.sleep(politenessDelay);	// Avoid server-overloading for the same host.
@@ -390,19 +395,27 @@ public class HttpUtils
 			throws DocFileNotRetrievedException
 	{
 		try {
-			if ( conn.getRequestMethod().equals("HEAD") ) {	// If the connection happened with "HEAD" we have to re-connect with "GET" to download the docFile
-				openHttpConnection(docUrl, domainStr, false,true);
+			if ( conn.getRequestMethod().equals("HEAD") ) {    // If the connection happened with "HEAD" we have to re-connect with "GET" to download the docFile
+				openHttpConnection(docUrl, domainStr, false, true);
 				
 				int responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP responce), inside openHttpConnection().
-				if ( (responceCode < 200) || (responceCode >= 400) ) {	// If we have error codes.
+				if ( (responceCode < 200) || (responceCode >= 400) ) {    // If we have error codes.
 					onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
 					throw new DocFileNotRetrievedException();
 				}
 			}
 			
+			long contentSize = HttpUtils.getContentSize(conn);
+			if ( contentSize > HttpUtils.maxAllowedContentSize ) {
+				logger.warn("DocUrl: \"" + docUrl + "\" had larger content size (" + contentSize + "), than the maxAllowed one (" + HttpUtils.maxAllowedContentSize + ").");
+				throw new DocFileNotRetrievedException();
+			}
+			
 			// Write the downloaded bytes to the docFile and return the docFileName.
 			return FileUtils.storeDocFile(IOUtils.toByteArray(conn.getInputStream()), docUrl, conn.getHeaderField("Content-Disposition"));
 			
+		} catch (DocFileNotRetrievedException dfnre ) {
+			throw dfnre;
 		} catch (Exception e) {
 			throw new DocFileNotRetrievedException();
 		}
@@ -546,14 +559,15 @@ public class HttpUtils
 	 * This method returns the ContentSize of the content of an HttpURLConnection.
 	 * @param conn
 	 * @return contentSize
+	 * @throws RuntimeException
 	 */
-	public static int getContentSize(HttpURLConnection conn)
+	public static int getContentSize(HttpURLConnection conn) throws RuntimeException
 	{
 		try {
 			return Integer.parseInt(conn.getHeaderField("Content-Length"));
 		} catch (NumberFormatException nfe) {
 			//logger.warn("", nfe);
-			return HttpUtils.maxDownloadableContentSize;
+			throw new RuntimeException();
 		}
 	}
 	

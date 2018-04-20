@@ -42,9 +42,9 @@ public class CrawlerController
 		config.setResumableCrawling(false);	// False for testing.. Later it should be set to true.. to handle crawling with crashes, better.
 		config.setCrawlStorageFolder(crawlStorageFolder);
 		config.setOnlineTldListUpdate(true);
-		config.setConnectionTimeout(HttpUtils.maxConnWaitingTime);
-		config.setSocketTimeout(HttpUtils.maxConnWaitingTime);
-		config.setMaxDownloadSize(HttpUtils.maxDownloadableContentSize);	// Default setting: 1048576 --> 10mb
+		config.setConnectionTimeout(HttpUtils.maxConnGETWaitingTime);	// Crawler4j uses the "HTTP GET" method, by default, as it always need to download the HTML.
+		config.setSocketTimeout(HttpUtils.maxConnGETWaitingTime);
+		config.setMaxDownloadSize(HttpUtils.maxAllowedContentSize);	// Default setting: 1048576 --> 10mb
 		config.setPolitenessDelay(HttpUtils.politenessDelay);
 		config.setIncludeBinaryContentInCrawling(true);	// Call "visit()" method even on binary content (which is not prohibited by "shouldVisit()" method) to check its contentType.
 		config.setProcessBinaryContentInCrawling(false);	// If set to "true", it processes more webPages like "xhtml" ones (Crawler4j processes html-only, unless instructed to process all), BUT, if it has to deal with actual binaryContent, it will be slower.
