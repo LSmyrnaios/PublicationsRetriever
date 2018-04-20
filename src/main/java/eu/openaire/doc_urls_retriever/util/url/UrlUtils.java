@@ -30,9 +30,9 @@ public class UrlUtils
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
 	public static final Pattern URL_DIRECTORY_FILTER =
-			Pattern.compile(".*\\/(?:profile|login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|faq|wiki|support|sitemap|license|disclaimer|policies|policy|privacy|terms|help|law"
-							+ "|account|myaccount|user|author|editor|citation|review|external|statistics|application|permission|ethic|contact|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|people"
-							+ "|error|misuse|abuse|gateway|sorryserver|notfound|404\\.(?:\\w)?htm).*");
+			Pattern.compile(".*\\/(?:profile|login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|post|import|bookmark|announcement|rss|feed|about|faq|wiki|support|sitemap|license|disclaimer|polic(?:y|ies)|privacy|terms|help|law"
+							+ "|(?:my|your)?account|user|author|editor|citation|review|external|statistics|application|permission|ethic|contact|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|people"
+							+ "|error|(?:mis|ab)use|gateway|sorryserver|notfound|404\\.(?:\\w)?htm).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects. There's "acesso" (single "c") in Portuguese.
 	
 	public static final Pattern CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER = Pattern.compile(".+\\.(?:doc|docx|ppt|pptx)(?:\\?.+)?$");	// Doc-extensions which are currently unsupported.
@@ -214,11 +214,8 @@ public class UrlUtils
 								break;
 							}
 							
-							if ( (nonDoiUrl == null) && !url.contains("doi.org") ) {    // If we find a nonDoiUrl keep it for possible later usage.
-								bestUrl = url;
-								//nonDoiUrl = url;	// To be un-commented later.. if bestUrl-rules are added.
-								break;
-							}
+							if ( (nonDoiUrl == null) && !url.contains("doi.org") )	// If we find a nonDoiUrl keep it for possible later usage.
+								nonDoiUrl = url;	// To be un-commented later.. if bestUrl-rules are added.
 						}
 						if ( bestUrl != null )
 							CrawlerController.controller.addSeed(bestUrl);
