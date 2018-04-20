@@ -406,8 +406,8 @@ public class HttpUtils
 			}
 			
 			long contentSize = HttpUtils.getContentSize(conn);
-			if ( contentSize > HttpUtils.maxAllowedContentSize ) {
-				logger.warn("DocUrl: \"" + docUrl + "\" had larger content size (" + contentSize + "), than the maxAllowed one (" + HttpUtils.maxAllowedContentSize + ").");
+			if ( (contentSize == 0) || (contentSize > HttpUtils.maxAllowedContentSize) ) {
+				logger.warn("DocUrl: \"" + docUrl + "\" had a non-acceptable content size: " + contentSize + ". The maxAllowed one is: " + HttpUtils.maxAllowedContentSize);
 				throw new DocFileNotRetrievedException();
 			}
 			
