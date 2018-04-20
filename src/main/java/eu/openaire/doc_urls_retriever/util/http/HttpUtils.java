@@ -314,7 +314,7 @@ public class HttpUtils
 						}
 					}
 					else if ( PageCrawler.shouldNotAcceptInnerLink(location) ) {	// Else we are redirecting an innerPageLink.
-						logger.warn("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
+						logger.warn("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 						throw new RuntimeException();
 					}
 					
@@ -433,10 +433,13 @@ public class HttpUtils
 		if ( (errorStatusCode >= 400) && (errorStatusCode <= 499) )	// Client Error.
 		{
 			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Client Error.");
-			if ( errorStatusCode == 403 )
-				if ( domainStr == null )
+			if ( errorStatusCode == 403 ) {
+				if ( domainStr == null ) {
 					if ( (domainStr = UrlUtils.getDomainStr(urlStr)) != null )
 						on403ErrorCode(urlStr, domainStr);
+				} else
+					on403ErrorCode(urlStr, domainStr);
+			}
 		}
 		else {	// Other errorCodes. Retrieve the domain and make the required actions.
 			domainStr = UrlUtils.getDomainStr(urlStr);
@@ -477,10 +480,10 @@ public class HttpUtils
 			logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code.");
 			
 			// Block the whole domain if it has more than a certain number of blocked paths.
-			Collection<String> paths = HttpUtils.domainsMultimapWithPaths403BlackListed.get(domainStr);
-			if ( paths.size() > HttpUtils.numberOf403BlockedPathsBeforeBlocked )
+			if ( HttpUtils.domainsMultimapWithPaths403BlackListed.get(domainStr).size() > HttpUtils.numberOf403BlockedPathsBeforeBlocked )
 			{
 				HttpUtils.blacklistedDomains.add(domainStr);	// Block the whole domain itself.
+				logger.debug("Domain: \"" + domainStr + "\" was blocked, after having more than " + HttpUtils.numberOf403BlockedPathsBeforeBlocked + " of its paths 403blackListed.");
 				HttpUtils.domainsMultimapWithPaths403BlackListed.removeAll(domainStr);	// No need to keep its paths anymore.
 				throw new DomainBlockedException();
 			}

@@ -30,7 +30,7 @@ public class UrlUtils
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
 	public static final Pattern URL_DIRECTORY_FILTER =
-			Pattern.compile(".*\\/(?:profile|login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|post\\/|send\\/|shop\\/|import|bookmark|announcement|rss|feed|about|faq|wiki|support|sitemap|license|disclaimer|polic(?:y|ies)|privacy|terms|help|law"
+			Pattern.compile(".*\\/(?:profile|login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|post\\/|send\\/|shop\\/|import|bookmark|announcement|rss|feed|about|faq|wiki|news|events|cart|support|sitemap|license|disclaimer|polic(?:y|ies)|privacy|terms|help|law"
 							+ "|(?:my|your)?account|user|author|editor|citation|review|external|statistics|application|permission|ethic|contact|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|people"
 							+ "|error|(?:mis|ab)use|gateway|sorryserver|notfound|404\\.(?:\\w)?htm).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects. There's "acesso" (single "c") in Portuguese.

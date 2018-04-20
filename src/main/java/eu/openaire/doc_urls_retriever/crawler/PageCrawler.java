@@ -221,22 +221,6 @@ public class PageCrawler extends WebCrawler
 			UrlUtils.logTriple(pageUrl, pageUrl, fullPathFileName, currentPageDomain);
 			return;
 		}
-		else if ( pageContentType.equals("application/xhtml+xml") ) {	// Unless we set Crawler4j to parse binaryContent, this type is not parsed. TODO - More tests need to be done.
-			try {	// Follow the issue I opened on GitHub: https://github.com/yasserg/crawler4j/issues/306
-				TextParseData parseData = new TextParseData();
-				if (page.getContentCharset() == null)
-					parseData.setTextContent(new String(page.getContentData()));
-				else
-					parseData.setTextContent(new String(page.getContentData(), page.getContentCharset()));
-				
-				parseData.setOutgoingUrls(Net.extractUrls(parseData.getTextContent()));
-				page.setParseData(parseData);
-			} catch (Exception e) {
-				logger.error("{}, while parsing: {}", e.getMessage(), pageUrl);
-				UrlUtils.logTriple(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, as it could not be parsed manually, having ContentType: " + pageContentType, null);
-				return;
-			}
-		}
 		
 		if ( HttpUtils.blacklistedDomains.contains(currentPageDomain) ) {	// Check if it has been blackListed.
 			logger.debug("Avoid crawling blackListed domain: \"" + currentPageDomain + "\"");
@@ -251,7 +235,25 @@ public class PageCrawler extends WebCrawler
 			if ( MachineLearning.shouldRunMLA(currentPageDomain) )
 	    		if ( MachineLearning.guessInnerDocUrlUsingML(pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
     				return;	// If we were able to find the right path.. and hit a docUrl successfully.. return.
-        
+		
+		if ( pageContentType.equals("application/xhtml+xml") ) {	// Unless we set Crawler4j to parse binaryContent, this type is not parsed. TODO - More tests need to be done.
+			try {	// Follow the issue I opened on GitHub: https://github.com/yasserg/crawler4j/issues/306
+				logger.debug("Page with contentType = " + pageContentType + " was found! Trying to parse it..");
+				TextParseData parseData = new TextParseData();
+				if (page.getContentCharset() == null)
+					parseData.setTextContent(new String(page.getContentData()));
+				else
+					parseData.setTextContent(new String(page.getContentData(), page.getContentCharset()));
+				
+				parseData.setOutgoingUrls(Net.extractUrls(parseData.getTextContent()));
+				page.setParseData(parseData);
+			} catch (Exception e) {
+				logger.error(e.getMessage() + ", while parsing: " + pageUrl);
+				UrlUtils.logTriple(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, as it could not be parsed manually, having ContentType: " + pageContentType, null);
+				return;
+			}
+		}
+		
 	    Set<WebURL> currentPageLinks = page.getParseData().getOutgoingUrls();
 
 		//logger.debug("Num of links in: \"" + pageUrl + "\" is: " + currentPageLinks.size());

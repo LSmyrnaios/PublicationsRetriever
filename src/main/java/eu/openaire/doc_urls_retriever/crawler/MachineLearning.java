@@ -87,20 +87,20 @@ public class MachineLearning
 			return false;
 		}
 		
-		if ( isInitialLearningPeriod() ) {
+		if ( timesGatheredData <= timesToGatherDataBeforeStarting ) {	// Check if it's initial learning period, in which the MLA should not run.
 			latestSuccessBreakPoint = timesToGatherDataBeforeStarting;
 			return false;
 		}
 		
 		if ( isInSleepMode )	// If it's currently in sleepMode, check if it should restart.
 		{
-			if ( shouldRestartMLA() ) {
+			if ( PageCrawler.totalPagesReachedCrawling > endOfSleepNumOfUrls ) {	// Check if we should restart the MLA (awake it from sleepMode).
 				logger.debug("MLA's \"sleepMode\" is finished, it will now restart.");
 				isInSleepMode = false;
 				return true;
 			}
 			else
-				return false;
+				return false;	// Continue sleeping.
 		}
 		// Note that if it has never entered the sleepMode, the "endOfSleepNumOfUrls" will be 0.
 		
@@ -133,18 +133,6 @@ public class MachineLearning
 				return false;
 			}
 		}
-	}
-	
-	
-	public static boolean isInitialLearningPeriod()
-	{
-		return (timesGatheredData <= timesToGatherDataBeforeStarting);
-	}
-	
-	
-	public static boolean shouldRestartMLA()
-	{
-		return (PageCrawler.totalPagesReachedCrawling > endOfSleepNumOfUrls);
 	}
 	
 	
@@ -242,7 +230,7 @@ public class MachineLearning
 				
 				if ( UrlUtils.docUrls.contains(guessedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
 					UrlUtils.logTriple(pageUrl, guessedDocUrl, "", null);
-					logger.debug("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
+					logger.debug("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted (already found before) docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
 					MachineLearning.docUrlsFoundByMLA ++;
 					return true;
 				}
