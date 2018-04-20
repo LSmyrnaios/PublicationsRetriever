@@ -29,7 +29,7 @@ public class HttpUtils
 	public static final HashSet<String> blacklistedDomains = new HashSet<String>();	// Domains with which we don't want to connect again.
 	public static final HashMap<String, Integer> timesDomainsReturned5XX = new HashMap<String, Integer>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
 	public static final HashMap<String, Integer> timesDomainsHadTimeoutEx = new HashMap<String, Integer>();
-	public static final SetMultimap<String, String> timesDomainsHadPaths403BlackListed = HashMultimap.create();	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
+	public static final SetMultimap<String, String> domainsMultimapWithPaths403BlackListed = HashMultimap.create();	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
 	
 	public static String lastConnectedHost = "";
 	public static final int politenessDelay = 0;	// Time to wait before connecting to the same host again.
@@ -444,8 +444,12 @@ public class HttpUtils
 			if ( (errorStatusCode >= 500) && (errorStatusCode <= 599) )    // Server Error.
 			{
 				logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Server Error.");
-				if ( domainStr != null )
-					on5XXerrorCode(domainStr);
+				if ( domainStr != null ) {
+					if ( (errorStatusCode == 500) && domainStr.contains("handle.net") )	// Don't take the 500 of "handle.net", into consideration, it returns many times 500, where it should return 404.. so don't treat it like a 500.
+						logger.warn("\"handle.com\" did it again! It returned 500 where it should return 404.. :-P");	// See an example: "https://hdl.handle.net/10655/10123".
+					else
+						on5XXerrorCode(domainStr);
+				}
 			} else {	// Unknown Error (including non-handled: 1XX and the weird one: 999, responceCodes).
 				logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved unexpected responceCode: " + errorStatusCode);
 				if ( domainStr != null ) {
@@ -469,15 +473,15 @@ public class HttpUtils
 		String pathStr = UrlUtils.getPathStr(urlStr);
 		
 		if ( pathStr != null ) {
-			HttpUtils.timesDomainsHadPaths403BlackListed.put(domainStr, pathStr);    // Put the new path to be blocked.
+			HttpUtils.domainsMultimapWithPaths403BlackListed.put(domainStr, pathStr);    // Put the new path to be blocked.
 			logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code.");
 			
 			// Block the whole domain if it has more than a certain number of blocked paths.
-			Collection<String> paths = HttpUtils.timesDomainsHadPaths403BlackListed.get(domainStr);
+			Collection<String> paths = HttpUtils.domainsMultimapWithPaths403BlackListed.get(domainStr);
 			if ( paths.size() > HttpUtils.numberOf403BlockedPathsBeforeBlocked )
 			{
 				HttpUtils.blacklistedDomains.add(domainStr);	// Block the whole domain itself.
-				HttpUtils.timesDomainsHadPaths403BlackListed.removeAll(domainStr);	// No need to keep its paths anymore.
+				HttpUtils.domainsMultimapWithPaths403BlackListed.removeAll(domainStr);	// No need to keep its paths anymore.
 				throw new DomainBlockedException();
 			}
 		}
@@ -495,13 +499,13 @@ public class HttpUtils
 	 */
 	public static boolean checkIfPathIs403BlackListed(String urlStr, String domainStr)
 	{
-		if ( timesDomainsHadPaths403BlackListed.containsKey(domainStr) )	// If this domain has returned 403 before, check if we have the same path.
+		if ( domainsMultimapWithPaths403BlackListed.containsKey(domainStr) )	// If this domain has returned 403 before, check if we have the same path.
 		{
 			String pathStr = UrlUtils.getPathStr(urlStr);
 			if ( pathStr == null )	// If there is a problem retrieving this athStr, return false;
 				return false;
 
-			if ( timesDomainsHadPaths403BlackListed.containsValue(pathStr) )
+			if ( domainsMultimapWithPaths403BlackListed.get(domainStr).contains(pathStr) )
 				return true;
 		}
 		return false;

@@ -17,6 +17,7 @@ import eu.openaire.doc_urls_retriever.exceptions.DomainWithUnsupportedHEADmethod
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +70,12 @@ public class PageCrawler extends WebCrawler
 			logger.warn("Preventing reaching 403ErrorCode with url: \"" + urlStr + "\"!");
 			return null;
 		}
+		
+		// Handle the weird-case of: "ir.lib.u-ryukyu.ac.jp"
+		// See: http://ir.lib.u-ryukyu.ac.jp/handle/123456789/8743
+		// Note that this is NOT the case for all of the urls containing "/handle/123456789/".. but just for this domain.
+		if ( urlStr.contains("ir.lib.u-ryukyu.ac.jp") && urlStr.contains("/handle/123456789/") )
+			curURL.setURL(StringUtils.replace(urlStr, "/123456789/", "/20.500.12000/"));
 		
 		return curURL;
 	}
