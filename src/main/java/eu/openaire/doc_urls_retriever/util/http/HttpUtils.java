@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLException;
 import java.net.*;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 
