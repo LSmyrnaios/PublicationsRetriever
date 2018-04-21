@@ -54,12 +54,12 @@ public class HttpUtils
 	 * @param calledForPossibleDocUrl
 	 * @return "true", if it's a docMimeType, otherwise, "false", if it has a different mimeType.
 	 * @throws RuntimeException (when there was a network error).
+	 * @throws ConnTimeoutException
 	 * @throws DomainBlockedException
 	 * @throws DomainWithUnsupportedHEADmethodException
-	 * @throws ConnTimeoutException
 	 */
 	public static boolean connectAndCheckMimeType(String currentPage, String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
-													throws RuntimeException, DomainBlockedException, DomainWithUnsupportedHEADmethodException, ConnTimeoutException
+													throws RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
 	{
 		HttpURLConnection conn = null;
 		try {
@@ -132,12 +132,12 @@ public class HttpUtils
 	 * @param calledForPossibleDocUrl
 	 * @return HttpURLConnection
 	 * @throws RuntimeException
+	 * @throws ConnTimeoutException
 	 * @throws DomainBlockedException
 	 * @throws DomainWithUnsupportedHEADmethodException
-	 * @throws ConnTimeoutException
      */
 	public static HttpURLConnection openHttpConnection(String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
-									throws RuntimeException, DomainBlockedException, DomainWithUnsupportedHEADmethodException, ConnTimeoutException
+									throws RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
     {
     	URL url = null;
 		HttpURLConnection conn = null;
@@ -277,14 +277,19 @@ public class HttpUtils
     /**
      * This method takes an open connection for which there is a need for redirections.
      * It opens a new connection every time, up to the point we reach a certain number of redirections defined by "HttpUtils.maxRedirects".
-     * @param conn
-     * @param calledForPageUrl
+	 * @param conn
+	 * @param responceCode
+	 * @param domainStr
+	 * @param calledForPageUrl
 	 * @param calledForPossibleDocUrl
 	 * @return Last open connection. If there was any problem, it returns "null".
-     * @throws RuntimeException
-     */
+	 * @throws RuntimeException
+	 * @throws ConnTimeoutException
+	 * @throws DomainBlockedException
+	 * @throws DomainWithUnsupportedHEADmethodException
+	 */
 	public static HttpURLConnection handleRedirects(HttpURLConnection conn, int responceCode, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
-																			throws RuntimeException, DomainBlockedException, ConnTimeoutException
+																			throws RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
 	{
 		int redirectsNum = 0;
 		String initialUrl = conn.getURL().toString();    // Keep initialUrl for logging and debugging.
@@ -351,9 +356,9 @@ public class HttpUtils
 				}
 			}//while-loop.
 			
-		} catch (RuntimeException | DomainBlockedException | ConnTimeoutException rde) {    // We already logged the right messages.
+		} catch (RuntimeException | ConnTimeoutException | DomainBlockedException | DomainWithUnsupportedHEADmethodException e) {    // We already logged the right messages.
 			conn.disconnect();
-			throw rde;
+			throw e;
 		} catch (Exception e) {
 			logger.warn("", e);
 			conn.disconnect();
@@ -426,9 +431,15 @@ public class HttpUtils
 	 * @param urlStr
 	 * @param domainStr
 	 * @param errorStatusCode
+	 * @throws DomainBlockedException
 	 */
 	public static void onErrorStatusCode(String urlStr, String domainStr, int errorStatusCode) throws DomainBlockedException
 	{
+		if ( (errorStatusCode == 500) && domainStr.contains("handle.net") ) {    // Don't take the 500 of "handle.net", into consideration, it returns many times 500, where it should return 404.. so don't treat it like a 500.
+			//logger.warn("\"handle.com\" returned 500 where it should return 404.. so we will treat it like a 404.");    // See an example: "https://hdl.handle.net/10655/10123".
+			errorStatusCode = 404;	// Set it to 404 to be handled as such, if any rule  for 404s is to be added later.
+		}
+		
 		if ( (errorStatusCode >= 400) && (errorStatusCode <= 499) )	// Client Error.
 		{
 			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Client Error.");
@@ -446,12 +457,8 @@ public class HttpUtils
 			if ( (errorStatusCode >= 500) && (errorStatusCode <= 599) )    // Server Error.
 			{
 				logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Server Error.");
-				if ( domainStr != null ) {
-					if ( (errorStatusCode == 500) && domainStr.contains("handle.net") )	// Don't take the 500 of "handle.net", into consideration, it returns many times 500, where it should return 404.. so don't treat it like a 500.
-						logger.warn("\"handle.com\" did it again! It returned 500 where it should return 404.. :-P");	// See an example: "https://hdl.handle.net/10655/10123".
-					else
-						on5XXerrorCode(domainStr);
-				}
+				if ( domainStr != null )
+					on5XXerrorCode(domainStr);
 			} else {	// Unknown Error (including non-handled: 1XX and the weird one: 999, responceCodes).
 				logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved unexpected responceCode: " + errorStatusCode);
 				if ( domainStr != null ) {
@@ -469,6 +476,7 @@ public class HttpUtils
 	 * If a domain ends up having more paths blocked than a certain number, we block the whole domain itself.
 	 * @param urlStr
 	 * @param domainStr
+	 * @throws DomainBlockedException
 	 */
 	public static void on403ErrorCode(String urlStr, String domainStr) throws DomainBlockedException
 	{

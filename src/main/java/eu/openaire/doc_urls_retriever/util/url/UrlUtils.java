@@ -73,7 +73,7 @@ public class UrlUtils
 	public static HashSet<String> knownDocTypes = new HashSet<String>();
 	
 	// Counters for certain unwanted domains. We show statistics in the end.
-	public static int frontiersinUrls = 0;
+	public static int javascriptPageUrls = 0;
 	public static int sciencedirectUrls = 0;
 	public static int elsevierUnwantedUrls = 0;
 	public static int crawlerSensitiveDomains = 0;
@@ -328,9 +328,9 @@ public class UrlUtils
 	 */
 	public static boolean matchesUnwantedUrlType(String retrievedUrl, String lowerCaseUrl)
 	{
-		if ( lowerCaseUrl.contains("frontiersin.org") ) {	// Avoid JavaScript-powered domain.
-			UrlUtils.frontiersinUrls ++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to the JavaScript-using domain \"frontiersin.org\".", null);
+		if ( lowerCaseUrl.contains("frontiersin.org") || lowerCaseUrl.contains("tandfonline.com") ) {	// Avoid JavaScript-powered domains, other than the "sciencedirect.com", which is counted separately.
+			UrlUtils.javascriptPageUrls++;
+			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to a JavaScript-using domain, other than.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("sciencedirect.com") ) {	// These urls are in JavaScript, having dynamic links which we cannot currently retrieve.
@@ -340,7 +340,7 @@ public class UrlUtils
 		}
 		else if ( lowerCaseUrl.contains("elsevier.com") ) {	// The plain "elsevier.com" and the "journals.elsevier.com" don't give docUrls.
 			// The "linkinghub.elsevier.com" is redirecting to "sciencedirect.com".
-			// Note that we still accept the "elsevier.es" urls, which give docUrls.
+			// Note that we still accept the "elsevier.es" pageUrls, which give docUrls.
 			UrlUtils.elsevierUnwantedUrls ++;
 			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to the unwanted \"elsevier.com\" domain.", null);
 			return true;
@@ -386,7 +386,7 @@ public class UrlUtils
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to known urls with connectivity problems.", null);
 			return true;
 		}
-		/*else if ( lowerCaseUrl.contains("handle.net") || lowerCaseUrl.contains("doors.doshisha.ac.jp") ) {	// Slow urls (taking more than 3secs to connect).
+		/*else if ( lowerCaseUrl.contains("handle.net") || lowerCaseUrl.contains("doors.doshisha.ac.jp") || lowerCaseUrl.contains("opac-ir.lib.osaka-kyoiku.ac.jp") ) {	// Slow urls (taking more than 3secs to connect).
 			UrlUtils.longToRespondUrls ++;
 			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to domain, known to take long to respond.", null);
 			return true;

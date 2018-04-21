@@ -228,28 +228,18 @@ public class PageCrawler extends WebCrawler
 			return;
 		}
 		
-		PageCrawler.totalPagesReachedCrawling ++;	// Used for M.L.A.'s execution-manipulation.
-		
 	    // Check if we can use AND if we should run, the MLA.
-		if ( MachineLearning.useMLA )
+		if ( MachineLearning.useMLA ) {
+			PageCrawler.totalPagesReachedCrawling ++;	// Used for M.L.A.'s execution-manipulation.
 			if ( MachineLearning.shouldRunMLA(currentPageDomain) )
-	    		if ( MachineLearning.guessInnerDocUrlUsingML(pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
-    				return;	// If we were able to find the right path.. and hit a docUrl successfully.. return.
+				if ( MachineLearning.guessInnerDocUrlUsingML(pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
+					return;	// If we were able to find the right path.. and hit a docUrl successfully.. return.
+		}
 		
 		if ( pageContentType.equals("application/xhtml+xml") ) {	// Unless we set Crawler4j to parse binaryContent, this type is not parsed. TODO - More tests need to be done.
-			try {	// Follow the issue I opened on GitHub: https://github.com/yasserg/crawler4j/issues/306
-				logger.debug("Page with contentType = " + pageContentType + " was found! Trying to parse it..");
-				TextParseData parseData = new TextParseData();
-				if (page.getContentCharset() == null)
-					parseData.setTextContent(new String(page.getContentData()));
-				else
-					parseData.setTextContent(new String(page.getContentData(), page.getContentCharset()));
-				
-				parseData.setOutgoingUrls(Net.extractUrls(parseData.getTextContent()));
-				page.setParseData(parseData);
-			} catch (Exception e) {
-				logger.error(e.getMessage() + ", while parsing: " + pageUrl);
-				UrlUtils.logTriple(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, as it could not be parsed manually, having ContentType: " + pageContentType, null);
+			try {
+				parsePageDataWorkAroundForCrawler4j(page, pageUrl, pageContentType);
+			} catch (Exception e) {	// Already logged.
 				return;
 			}
 		}
@@ -372,6 +362,25 @@ public class PageCrawler extends WebCrawler
 		// If we get here it means that this pageUrl is not a docUrl itself, nor it contains a docUrl..
 		logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
 		UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as no docUrl was found inside.", null);
+	}
+	
+	
+	private static void parsePageDataWorkAroundForCrawler4j(Page page, String pageUrl, String pageContentType)
+	{
+		try {	// Follow the issue I opened on GitHub: https://github.com/yasserg/crawler4j/issues/306
+			logger.debug("Page with contentType = " + pageContentType + " was found! Trying to parse it..");
+			TextParseData parseData = new TextParseData();
+			if (page.getContentCharset() == null)
+				parseData.setTextContent(new String(page.getContentData()));
+			else
+				parseData.setTextContent(new String(page.getContentData(), page.getContentCharset()));
+			
+			parseData.setOutgoingUrls(Net.extractUrls(parseData.getTextContent()));
+			page.setParseData(parseData);
+		} catch (Exception e) {
+			logger.error(e.getMessage() + ", while parsing: " + pageUrl);
+			UrlUtils.logTriple(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, as it could not be parsed manually, having ContentType: " + pageContentType, null);
+		}
 	}
 
 
