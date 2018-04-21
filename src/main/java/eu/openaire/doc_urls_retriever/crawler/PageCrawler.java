@@ -1,6 +1,7 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -31,6 +32,11 @@ public class PageCrawler extends WebCrawler
 	private static final Logger logger = LoggerFactory.getLogger(PageCrawler.class);
 	public static long totalPagesReachedCrawling = 0;	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their innerLinks checked.
 	
+	public static final HashMap<String, Integer> timesDomainNotGivingInnerLinks = new HashMap<String, Integer>();
+	public static final HashMap<String, Integer> timesDomainNotGivingDocUrls = new HashMap<String, Integer>();
+	
+	public static int timesToGiveNoInnerLinksBegoreBlocked = 5;
+	public static int timesToGiveNoDocUrlsBeforeBlocked = 10;
 	
 	/**
 	 * This method checks if the url, for which Crawler4j is going to open a connection, is of specific type in runtime.
@@ -74,8 +80,10 @@ public class PageCrawler extends WebCrawler
 		// Handle the weird-case of: "ir.lib.u-ryukyu.ac.jp"
 		// See: http://ir.lib.u-ryukyu.ac.jp/handle/123456789/8743
 		// Note that this is NOT the case for all of the urls containing "/handle/123456789/".. but just for this domain.
-		if ( urlStr.contains("ir.lib.u-ryukyu.ac.jp") && urlStr.contains("/handle/123456789/") )
+		if ( urlStr.contains("ir.lib.u-ryukyu.ac.jp") && urlStr.contains("/handle/123456789/") ) {
+			logger.debug("We will handle the weird case of \"" + urlStr + "\".");
 			curURL.setURL(StringUtils.replace(urlStr, "/123456789/", "/20.500.12000/"));
+		}
 		
 		return curURL;
 	}
@@ -249,6 +257,8 @@ public class PageCrawler extends WebCrawler
 		if ( currentPageLinks.isEmpty() ) {	// If no links were retrieved (e.g. the pageUrl was some kind of non-page binary content)
 			logger.warn("No links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
 			UrlUtils.logTriple(pageUrl, "unreachable", "Discarded in PageCrawler.visit() method, as no links were able to be retrieved from it. Its contentType is: \"" + pageContentType + "\"", null);
+			if ( HttpUtils.countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingInnerLinks, currentPageDomain, PageCrawler.timesToGiveNoInnerLinksBegoreBlocked) )
+				logger.debug("Domain: " + currentPageDomain + " was blocked after giving no innerLinks more than " + PageCrawler.timesToGiveNoInnerLinksBegoreBlocked + " times.");
 			return;
 		}
 		
@@ -360,6 +370,9 @@ public class PageCrawler extends WebCrawler
 		// If we get here it means that this pageUrl is not a docUrl itself, nor it contains a docUrl..
 		logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
 		UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as no docUrl was found inside.", null);
+		
+		if ( HttpUtils.countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingDocUrls, currentPageDomain, PageCrawler.timesToGiveNoDocUrlsBeforeBlocked) )
+			logger.debug("Domain: " + currentPageDomain + " was blocked after giving no docUrls more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
 	}
 	
 	
