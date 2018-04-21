@@ -124,13 +124,11 @@ public class PageCrawler extends WebCrawler
 	{
 		String lowerCaseLink = linkStr.toLowerCase();
 		
-		return	UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseLink).matches()
-				|| lowerCaseLink.contains("doi.org")	// Avoid "doi.org" in inner links, they will only redirect to the same pages.
+		return	UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseLink).matches() || UrlUtils.INNER_LINKS_KEYWORDS_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLink).matches() || UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.INNER_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseLink).matches() || UrlUtils.INNER_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseLink).matches()
 				|| UrlUtils.PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseLink).matches()
-				|| UrlUtils.CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseLink).matches()	// TODO - To be removed when these docExtensions get supported.
-				|| lowerCaseLink.contains("mailto:");
+				|| UrlUtils.CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseLink).matches();	// TODO - To be removed when these docExtensions get supported.
 		
 		// The following checks are obsolete here, as we already use it inside "visit()" method. Still keep it here, as it makes our intentions clearer.
 		// !lowerCaseLink.contains(referringPageDomain)	// Don't check this link if it belongs in a different domain than the referringPage's one.
