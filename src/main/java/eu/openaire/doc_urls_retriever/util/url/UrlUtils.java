@@ -1,15 +1,18 @@
 package eu.openaire.doc_urls_retriever.util.url;
 
+import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.common.collect.HashMultimap;
+import edu.uci.ics.crawler4j.crawler.Page;
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
 import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
 
+import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.exceptions.CanonicalizationFailedException;
 
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
@@ -478,10 +481,24 @@ public class UrlUtils
      * @param contentDisposition
 	 * @return boolean
      */
-    public static boolean hasDocMimeType(String urlStr, String mimeType, String contentDisposition)
+    public static boolean hasDocMimeType(String urlStr, String mimeType, String contentDisposition, HttpURLConnection conn, Page page)
     {
     	if ( mimeType != null )
 		{
+			if ( mimeType.contains("System.IO.FileInfo") ) {	// Check this out: "http://www.esocialsciences.org/Download/repecDownload.aspx?fname=Document110112009530.6423303.pdf&fcategory=Articles&AId=2279&fref=repec", ιt has: "System.IO.FileInfo".
+				// In this case, we want first to try the "Content-Disposition", as it's more trustworthy. If that's not available, use the urlStr as the last resort.
+				if ( conn != null )	// If we came here from the "HttpUtils".
+					contentDisposition = conn.getHeaderField("Content-Disposition");
+				else if ( page != null )	// If we came from the "PageCrawler".
+					contentDisposition = PageCrawler.getPageContentDisposition(page);
+				// else it will be "null".
+				
+				if ( contentDisposition != null )
+					return	contentDisposition.contains("pdf");	// TODO - add more types as needed.
+				else
+					return	urlStr.toLowerCase().contains("pdf");
+			}
+			
 			String plainMimeType = mimeType;	// Make sure we don't cause any NPE later on..
 			if ( mimeType.contains("charset") )
 			{
@@ -489,7 +506,7 @@ public class UrlUtils
 				
 				if ( plainMimeType == null ) {    // If there was any error removing the charset, still try to save any docMimeType (currently pdf-only).
 					logger.warn("Url with problematic mimeType was: " + urlStr);
-					return	mimeType.contains("pdf");	// TODO - add more types as needed.
+					return	urlStr.toLowerCase().contains("pdf");
 				}
 			}
 			

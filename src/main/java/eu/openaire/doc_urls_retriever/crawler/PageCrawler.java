@@ -172,7 +172,7 @@ public class PageCrawler extends WebCrawler
 		if ( pageContentType == null )	// If we can't retrieve the contentType, try the "Content-Disposition".
 			contentDisposition = getPageContentDisposition(page);
 		
-		return	UrlUtils.hasDocMimeType(pageUrl, pageContentType, contentDisposition);
+		return	UrlUtils.hasDocMimeType(pageUrl, pageContentType, contentDisposition, null, page);
 	}
 	
 	

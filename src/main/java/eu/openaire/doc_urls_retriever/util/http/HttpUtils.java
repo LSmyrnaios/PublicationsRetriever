@@ -92,7 +92,7 @@ public class HttpUtils
 			}
 			
 			String finalUrlStr = conn.getURL().toString();
-			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition) ) {
+			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition, conn, null) ) {
 				String fullPathFileName = "";
 				if ( FileUtils.shouldDownloadDocFiles ) {
 					try { fullPathFileName = downloadAndStoreDocFileOutsideCrawler(conn, domainStr, finalUrlStr); }
