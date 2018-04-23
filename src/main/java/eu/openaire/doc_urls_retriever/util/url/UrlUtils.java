@@ -34,9 +34,9 @@ public class UrlUtils
 	
 	public static final Pattern URL_DIRECTORY_FILTER =
 			Pattern.compile(".*\\/(?:profile|login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|post\\/|send\\/|shop\\/|import|bookmark|announcement|rss|feed|about|faq|wiki|news|events|cart|support|sitemap|license|disclaimer|polic(?:y|ies)|privacy|terms|help|law"
-							+ "|(?:my|your)?account|user|author|editor|citation|review|external|statistics|application|permission|ethic|contact|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|people"
+							+ "|(?:my|your)?account|user|aut(?:h)?or|editor|citation|review|external|statistics|application|permission|ethic|conta(?:c)?t|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|people"
 							+ "|error|(?:mis|ab)use|gateway|sorryserver|notfound|404\\.(?:\\w)?htm).*");
-	// We check them as a directory to avoid discarding publications's urls about these subjects. There's "acesso" (single "c") in Portuguese.
+	// We check them as a directory to avoid discarding publications's urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
 	
 	public static final Pattern CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER = Pattern.compile(".+\\.(?:doc|docx|ppt|pptx)(?:\\?.+)?$");	// Doc-extensions which are currently unsupported.
 	
