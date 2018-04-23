@@ -48,7 +48,7 @@ public class FileUtils
 	public static final boolean shouldUseOriginalDocFileNames = false;
 	public static final boolean shouldLogFullPathName = false;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
 	public static int numOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremential system.
-	public static String docFilesDownloadPath = "//media//lampros//HDD2GB//downloadedDocFiles";
+	public static String storeDocFilesDir = "//media//lampros//HDD2GB//downloadedDocFiles";
 	public static long unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
 	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*(?:filename=(?:\\\")?)([\\w\\-\\.\\%\\_]+)[\\\"\\;]*.*");
 	
@@ -60,7 +60,7 @@ public class FileUtils
 		
 		if ( shouldDownloadDocFiles ) {
 			try {
-				File dir = new File(docFilesDownloadPath);
+				File dir = new File(storeDocFilesDir);
 				if ( shouldDeleteOlderDocFiles ) {
 					logger.debug("Deleting old docFiles..");
 					deleteDirectory(dir);	// apache.commons.io.FileUtils
@@ -69,14 +69,14 @@ public class FileUtils
 				// If the directory doesn't exist, try to (re)create it.
 				if ( !dir.exists() ) {
 					if ( !dir.mkdir() ) {   // Create the directory.
-						logger.error("Problem when creating the \"storeDocFilesDir\": \"" + docFilesDownloadPath + "\"."
+						logger.error("Problem when creating the \"storeDocFilesDir\": \"" + storeDocFilesDir + "\"."
 										+ "\nThe docFiles will NOT be stored, but the docUrls will be retrieved and kept in the outputFile."
 										+ "\nIf this is not desired, please terminate the program and re-define the \"storeDocFilesDir\"");
 						FileUtils.shouldDownloadDocFiles = false;
 					}
 				}
 			} catch (Exception e) {
-				logger.error("Problem when deleting directory: " + docFilesDownloadPath, e);
+				logger.error("Problem when deleting directory: " + storeDocFilesDir, e);
 				FileUtils.shouldDownloadDocFiles = false;
 			}
 		}
@@ -251,7 +251,7 @@ public class FileUtils
 			if ( FileUtils.shouldUseOriginalDocFileNames)
 				docFile = getDocFileWithOriginalFileName(docUrl, contentDisposition);
 			else
-				docFile = new File(docFilesDownloadPath + File.separator + (numOfDocFile++) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
+				docFile = new File(storeDocFilesDir + File.separator + (numOfDocFile++) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
 			
 			writeByteArrayToFile(docFile, contentData, 0, contentData.length, false);	// apache.commons.io.FileUtils
 			
@@ -306,7 +306,7 @@ public class FileUtils
 			if ( !hasUnretrievableDocName && !docFileName.contains(dotFileExtension) )	// If there is no extension, add ".pdf" in the end. TODO - Later it can be extension-dependent.
 				docFileName += dotFileExtension;
 			
-			String saveDocFileFullPath = docFilesDownloadPath + File.separator + docFileName;
+			String saveDocFileFullPath = storeDocFilesDir + File.separator + docFileName;
 			File docFile = new File(saveDocFileFullPath);
 			
 			if ( !hasUnretrievableDocName ) {	// If we retrieved the fileName, go check if it's a duplicate.
@@ -327,7 +327,7 @@ public class FileUtils
 					// Construct final-DocFileName by renaming.
 					String preExtensionFileName = docFileName.substring(0, docFileName.lastIndexOf(".") - 1);
 					String newDocFileName = preExtensionFileName + "(" + curDuplicateNum + ")" + dotFileExtension;
-					saveDocFileFullPath = docFilesDownloadPath + File.separator + newDocFileName;
+					saveDocFileFullPath = storeDocFilesDir + File.separator + newDocFileName;
 					File renamedDocFile = new File(saveDocFileFullPath);
 					if ( !docFile.renameTo(renamedDocFile) ) {
 						logger.error("Renaming operation of \"" + docFileName + "\" to \"" + newDocFileName + "\" has failed!");
