@@ -96,7 +96,10 @@ public class HttpUtils
 				String fullPathFileName = "";
 				if ( FileUtils.shouldDownloadDocFiles ) {
 					try { fullPathFileName = downloadAndStoreDocFileOutsideCrawler(conn, domainStr, finalUrlStr); }
-					catch (DocFileNotRetrievedException dfnde) { fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored."; }
+					catch (DocFileNotRetrievedException dfnde) {
+						fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored.";
+						logger.warn(fullPathFileName, dfnde);
+					}
 				}
 				UrlUtils.logTriple(currentPage, finalUrlStr, fullPathFileName, domainStr);	// we send the urls, before and after potential redirections.
 				return true;
@@ -199,7 +202,7 @@ public class HttpUtils
 					throw new DomainWithUnsupportedHEADmethodException();
 				
 				// If we accept connection's retrying, using "GET", move on reconnecting.
-				conn.disconnect();
+				// No call of "conn.disconnect()" here, as we will connect to the same server.
 				conn = (HttpURLConnection) url.openConnection();
 				
 				conn.setRequestMethod("GET");	// To reach here, it means that the HEAD method is unsupported.
@@ -396,14 +399,15 @@ public class HttpUtils
 	 * @throws DocFileNotRetrievedException
 	 */
 	public static String downloadAndStoreDocFileOutsideCrawler(HttpURLConnection conn, String domainStr, String docUrl)
-			throws DocFileNotRetrievedException
+																										throws DocFileNotRetrievedException
 	{
 		try {
 			if ( conn.getRequestMethod().equals("HEAD") ) {    // If the connection happened with "HEAD" we have to re-connect with "GET" to download the docFile
-				openHttpConnection(docUrl, domainStr, false, true);
+				// No call of "conn.disconnect()" here, as we will connect to the same server.
+				conn = openHttpConnection(docUrl, domainStr, false, true);
 				
 				int responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP responce), inside openHttpConnection().
-				if ( (responceCode < 200) || (responceCode >= 400) ) {    // If we have error codes.
+				if ( (responceCode < 200) || (responceCode >= 400) ) {    // If we have unwanted/error codes.
 					onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
 					throw new DocFileNotRetrievedException();
 				}
@@ -421,7 +425,11 @@ public class HttpUtils
 		} catch (DocFileNotRetrievedException dfnre ) {
 			throw dfnre;
 		} catch (Exception e) {
+			logger.warn("", e);
 			throw new DocFileNotRetrievedException();
+		} finally {
+			if ( conn != null )
+				conn.disconnect();
 		}
 	}
 

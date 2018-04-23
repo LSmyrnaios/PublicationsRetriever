@@ -186,7 +186,7 @@ public class PageCrawler extends WebCrawler
 	public static String storeDocFileInsideCrawler(Page page, String pageUrl) throws DocFileNotRetrievedException
 	{
 		try { return FileUtils.storeDocFile(page.getContentData(), pageUrl, PageCrawler.getPageContentDisposition(page)); }
-		catch (Exception e) { throw new DocFileNotRetrievedException(); }
+		catch (DocFileNotRetrievedException dfnre) { throw dfnre; }
 	}
 	
 	
@@ -222,7 +222,9 @@ public class PageCrawler extends WebCrawler
 			if ( FileUtils.shouldDownloadDocFiles ) {
 				try { fullPathFileName = storeDocFileInsideCrawler(page, pageUrl); }
 				catch (DocFileNotRetrievedException dfnde) {
-					fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored."; }
+					fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored.";
+					logger.warn(fullPathFileName, dfnde);
+				}
 			}
 			UrlUtils.logTriple(pageUrl, pageUrl, fullPathFileName, currentPageDomain);
 			return;

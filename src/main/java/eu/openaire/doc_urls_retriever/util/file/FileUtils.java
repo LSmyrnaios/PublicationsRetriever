@@ -241,8 +241,10 @@ public class FileUtils
 	 */
 	public static String storeDocFile(byte[] contentData, String docUrl, String contentDisposition) throws DocFileNotRetrievedException
 	{
-		if ( contentData.length == 0 )
+		if ( contentData.length == 0 ) {
+			logger.warn("ContentData for docUrl: \"" + docUrl + "\" was zero!");
 			throw new DocFileNotRetrievedException();
+		}
 		
 		File docFile;
 		try {
