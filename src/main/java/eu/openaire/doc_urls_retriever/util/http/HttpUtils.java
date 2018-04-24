@@ -314,16 +314,17 @@ public class HttpUtils
 						throw new RuntimeException();
 					}
 					
+					String lowerCaseLocation = location.toLowerCase();
 					if ( calledForPageUrl ) {
-						if ( UrlUtils.shouldNotAcceptPageUrl(location, null) ) {
+						if ( UrlUtils.shouldNotAcceptPageUrl(location, lowerCaseLocation) ) {
 							logger.warn("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 							throw new RuntimeException();
 						}
 					}
-					else if ( PageCrawler.shouldNotAcceptInnerLink(location) ) {	// Else we are redirecting an innerPageLink.
+					else if ( PageCrawler.shouldNotAcceptInnerLink(location, lowerCaseLocation) ) {	// Else we are redirecting an innerPageLink.
 						logger.warn("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 						throw new RuntimeException();
-					} else if ( location.toLowerCase().contains("sharedsitesession") ) {    // either "getSharedSiteSession" or "consumeSharedSiteSession".
+					} else if ( lowerCaseLocation.contains("sharedsitesession") ) {    // either "getSharedSiteSession" or "consumeSharedSiteSession".
 						HttpUtils.blockSharedSiteSessionDomain(initialUrl, domainStr);
 						throw new DomainBlockedException();
 					}
@@ -375,11 +376,11 @@ public class HttpUtils
 	
 	public static void blockSharedSiteSessionDomain(String initialUrl, String pageDomain)
 	{
-		if ( pageDomain == null )
+		if ( pageDomain == null ) {
 			if ( (pageDomain = UrlUtils.getDomainStr(initialUrl)) != null )
 				HttpUtils.blacklistedDomains.add(pageDomain);
-			else
-				HttpUtils.blacklistedDomains.add(pageDomain);
+		} else
+			HttpUtils.blacklistedDomains.add(pageDomain);
 		
 		logger.warn("Domain: \"" + pageDomain + "\" was blocked after trying to cause a \"sharedSiteSession-redirectionPack\"!");
 	}
@@ -427,7 +428,6 @@ public class HttpUtils
 					throw new DocFileNotRetrievedException();
 				}
 			}
-			
 			long contentSize = 0;
 			try {
 				contentSize = HttpUtils.getContentSize(conn);
@@ -470,13 +470,12 @@ public class HttpUtils
 			errorStatusCode = 404;	// Set it to 404 to be handled as such, if any rule  for 404s is to be added later.
 		}
 		
-		if ( (errorStatusCode >= 400) && (errorStatusCode <= 499) )	// Client Error.
-		{
+		if ( (errorStatusCode >= 400) && (errorStatusCode <= 499) ) {	// Client Error.
 			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Client Error.");
 			if ( errorStatusCode == 403 ) {
 				if ( domainStr == null ) {
 					if ( (domainStr = UrlUtils.getDomainStr(urlStr)) != null )
-						on403ErrorCode(urlStr, domainStr);
+						on403ErrorCode(urlStr, domainStr);	// The "DomainBlockedException" will go up-method by its own, if thrown inside this one.
 				} else
 					on403ErrorCode(urlStr, domainStr);
 			}
@@ -484,17 +483,16 @@ public class HttpUtils
 		else {	// Other errorCodes. Retrieve the domain and make the required actions.
 			domainStr = UrlUtils.getDomainStr(urlStr);
 			
-			if ( (errorStatusCode >= 500) && (errorStatusCode <= 599) )    // Server Error.
-			{
+			if ( (errorStatusCode >= 500) && (errorStatusCode <= 599) ) {	// Server Error.
 				logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Server Error.");
 				if ( domainStr != null )
 					on5XXerrorCode(domainStr);
 			} else {	// Unknown Error (including non-handled: 1XX and the weird one: 999, responceCodes).
 				logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved unexpected responceCode: " + errorStatusCode);
-				if ( domainStr != null ) {
+				if ( domainStr != null )
 					blacklistedDomains.add(domainStr);
-					throw new DomainBlockedException();
-				}
+				
+				throw new DomainBlockedException();	// Throw this even if there was an error preventing the domain from getting blocked.
 			}
 		}
 	}

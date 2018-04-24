@@ -124,8 +124,7 @@ public class PageCrawler extends WebCrawler
 		
 		if ( UrlUtils.matchesUnwantedUrlType(redirectUrlStr, lowerCaseUrlStr) )	// The output errorCause is already logged.
 			return false;
-		else if ( lowerCaseUrlStr.contains("sharedsitesession") )	// either "getSharedSiteSession" or "consumeSharedSiteSession".
-		{
+		else if ( lowerCaseUrlStr.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
 			HttpUtils.blockSharedSiteSessionDomain(pageUrl, currentPageDomain);
 			UrlUtils.logTriple(pageUrl, "unreachable", "It was discarded in \"PageCrawler.shouldVisit()\" after participating in a \" sharedSiteSession-redirectionPack\".", null);
 			return false;	// Do not visit it.
@@ -135,18 +134,23 @@ public class PageCrawler extends WebCrawler
 	}
 	
 	
-	public static boolean shouldNotAcceptInnerLink(String linkStr)
+	public static boolean shouldNotAcceptInnerLink(String linkStr, String lowerCaseLink)
 	{
-		String lowerCaseLink = linkStr.toLowerCase();
+		String lowerCaseUrl = null;
 		
-		return	UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseLink).matches() || UrlUtils.INNER_LINKS_KEYWORDS_FILTER.matcher(lowerCaseLink).matches()
-				|| UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLink).matches() || UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
-				|| UrlUtils.INNER_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseLink).matches() || UrlUtils.INNER_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseLink).matches()
-				|| UrlUtils.PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseLink).matches()
-				|| UrlUtils.CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseLink).matches();	// TODO - To be removed when these docExtensions get supported.
+		if ( lowerCaseLink == null )
+			lowerCaseUrl = linkStr.toLowerCase();
+		else
+			lowerCaseUrl = lowerCaseLink;
+		
+		return	UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.INNER_LINKS_KEYWORDS_FILTER.matcher(lowerCaseUrl).matches()
+				|| UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
+				|| UrlUtils.INNER_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.INNER_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseUrl).matches()
+				|| UrlUtils.PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches()
+				|| UrlUtils.CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseUrl).matches();	// TODO - To be removed when these docExtensions get supported.
 		
 		// The following checks are obsolete here, as we already use it inside "visit()" method. Still keep it here, as it makes our intentions clearer.
-		// !lowerCaseLink.contains(referringPageDomain)	// Don't check this link if it belongs in a different domain than the referringPage's one.
+		// !lowerCaseUrl.contains(referringPageDomain)	// Don't check this link if it belongs in a different domain than the referringPage's one.
 	}
 	
 	
@@ -280,7 +284,7 @@ public class PageCrawler extends WebCrawler
 		
 		HashSet<String> curLinksStr = new HashSet<String>();	// HashSet to store the String version of each link.
 		String urlToCheck = null;
-		String lowerCaseUrl = null;
+		String lowerCaseLink = null;
 		
 		// Do a fast-loop, try connecting only to a handful of promising links first.
 		// Check if urls inside this page, match to a docUrl regex, if they do, try connecting with them and see if they truly are docUrls. If they are, return.
@@ -312,13 +316,13 @@ public class PageCrawler extends WebCrawler
                 return;
             }
             
-            lowerCaseUrl = urlToCheck.toLowerCase();
-            if ( UrlUtils.DOC_URL_FILTER.matcher(lowerCaseUrl).matches() )
+            lowerCaseLink = urlToCheck.toLowerCase();
+            if ( UrlUtils.DOC_URL_FILTER.matcher(lowerCaseLink).matches() )
 			{
-				if ( shouldNotAcceptInnerLink(urlToCheck) )	// Avoid false-positives, such as images (a common one: ".../pdf.png").
+				if ( shouldNotAcceptInnerLink(urlToCheck, lowerCaseLink) )	// Avoid false-positives, such as images (a common one: ".../pdf.png").
 					continue;
 				
-				//logger.debug("InnerPossibleDocLink: " + urlToCheck);	// DEBUG!
+				//logger.debug("InnerPossibleDocLink to connect with: " + urlToCheck);	// DEBUG!
 				try {
 					if ( HttpUtils.connectAndCheckMimeType(pageUrl, urlToCheck, currentPageDomain, false, true) )	// We log the docUrl inside this method.
 						return;
@@ -339,9 +343,7 @@ public class PageCrawler extends WebCrawler
 					logger.error("" + e);
 				}
             }
-            
 			curLinksStr.add(urlToCheck);	// Keep the string version of this link, in order not to make the transformation later..
-			
 		}// end for-loop
 		
 		// If we reached here, it means that we couldn't find a docUrl the quick way.. so we have to check some (we exclude lots of them) of the inner links one by one.
@@ -349,13 +351,13 @@ public class PageCrawler extends WebCrawler
 		for ( String currentLink : curLinksStr )
 		{
 			// We re-check here, as, in the fast-loop not all of the links are checked against this.
-			if ( shouldNotAcceptInnerLink(currentLink) ) {	// If this link matches certain blackListed criteria, move on..
+			if ( shouldNotAcceptInnerLink(currentLink, null) ) {	// If this link matches certain blackListed criteria, move on..
 				//logger.debug("Avoided link: " + currentLink );
 				UrlUtils.duplicateUrls.add(currentLink);
 				continue;
 			}
 			
-			//logger.debug("InnerLink: " + currentLink);	// DEBUG!
+			//logger.debug("InnerLink to connect with: " + currentLink);	// DEBUG!
 			try {
 				if ( HttpUtils.connectAndCheckMimeType(pageUrl, currentLink, currentPageDomain, false, false) )	// We log the docUrl inside this method.
 					return;
@@ -379,7 +381,6 @@ public class PageCrawler extends WebCrawler
 		// If we get here it means that this pageUrl is not a docUrl itself, nor it contains a docUrl..
 		logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
 		UrlUtils.logTriple(pageUrl, "unreachable", "Logged in PageCrawler.visit() method, as no docUrl was found inside.", null);
-		
 		if ( HttpUtils.countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingDocUrls, currentPageDomain, PageCrawler.timesToGiveNoDocUrlsBeforeBlocked) )
 			logger.debug("Domain: " + currentPageDomain + " was blocked after giving no docUrls more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
 	}
