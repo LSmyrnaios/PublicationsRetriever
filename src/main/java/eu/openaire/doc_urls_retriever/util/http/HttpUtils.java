@@ -428,10 +428,17 @@ public class HttpUtils
 				}
 			}
 			
-			long contentSize = HttpUtils.getContentSize(conn);
-			if ( (contentSize == 0) || (contentSize > HttpUtils.maxAllowedContentSize) ) {
-				logger.warn("DocUrl: \"" + docUrl + "\" had a non-acceptable content size: " + contentSize + ". The maxAllowed one is: " + HttpUtils.maxAllowedContentSize);
-				throw new DocFileNotRetrievedException();
+			long contentSize = 0;
+			try {
+				contentSize = HttpUtils.getContentSize(conn);
+				if ( (contentSize == 0) || (contentSize > HttpUtils.maxAllowedContentSize) ) {
+					logger.warn("DocUrl: \"" + docUrl + "\" had a non-acceptable contentSize: " + contentSize + ". The maxAllowed one is: " + HttpUtils.maxAllowedContentSize);
+					throw new DocFileNotRetrievedException();
+				}
+			} catch (RuntimeException re) {
+				logger.warn("No \"Content-Length\" was retrieved from docUrl: \"" + conn.getURL().toString() + "\"! We will store the docFile anyway..");
+			} catch (DocFileNotRetrievedException dfnre) {
+				throw dfnre;
 			}
 			
 			// Write the downloaded bytes to the docFile and return the docFileName.
