@@ -29,7 +29,7 @@ public class UrlUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(UrlUtils.class);
 	
-	public final static Pattern URL_TRIPLE = Pattern.compile("(.+:\\/\\/(?:www(?:(?:\\w+)?\\.)?)?([\\w\\.\\-]+)(?:[\\:\\d]+)?(?:.*\\/)?(?:[\\w\\.\\,\\-\\_\\%\\:\\~]*\\?[\\w\\.\\,\\-\\_\\%\\:\\~]+\\=)?)(.+)?");
+	public static final Pattern URL_TRIPLE = Pattern.compile("(.+:\\/\\/(?:www(?:(?:\\w+)?\\.)?)?([\\w\\.\\-]+)(?:[\\:\\d]+)?(?:.*\\/)?(?:[\\w\\.\\,\\-\\_\\%\\:\\~]*\\?[\\w\\.\\,\\-\\_\\%\\:\\~]+\\=)?)(.+)?");
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
 	public static final Pattern URL_DIRECTORY_FILTER =
@@ -71,11 +71,11 @@ public class UrlUtils
 	public static final Pattern DOI_ORG_PARENTHESIS_FILTER = Pattern.compile(".+[doi.org]\\/[\\d]{2}\\.[\\d]{4}\\/[\\w]*[\\d]{4}\\-[\\d]{3}(?:[\\d]|[\\w])[\\(][\\d]{2}[\\)][\\d]{5}\\-(?:[\\d]|[\\w])");	// Same reason as above.
 	
 	public static int sumOfDocUrlsFound = 0;	// Change it back to simple int if finally in singleThread mode
-	public static long inputDuplicatesNum = 0;
+	public static int inputDuplicatesNum = 0;
 	
-	public static HashSet<String> duplicateUrls = new HashSet<String>();
-	public static HashSet<String> docUrls = new HashSet<String>();
-	public static HashSet<String> knownDocTypes = new HashSet<String>();
+	public static final HashSet<String> duplicateUrls = new HashSet<String>();
+	public static final HashSet<String> docUrls = new HashSet<String>();
+	public static final HashSet<String> knownDocTypes = new HashSet<String>();
 	
 	// Counters for certain unwanted domains. We show statistics in the end.
 	public static int javascriptPageUrls = 0;

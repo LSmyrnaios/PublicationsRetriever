@@ -30,13 +30,13 @@ import org.slf4j.LoggerFactory;
 public class PageCrawler extends WebCrawler
 {
 	private static final Logger logger = LoggerFactory.getLogger(PageCrawler.class);
-	public static long totalPagesReachedCrawling = 0;	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their innerLinks checked.
+	public static int totalPagesReachedCrawling = 0;	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their innerLinks checked.
 	
 	public static final HashMap<String, Integer> timesDomainNotGivingInnerLinks = new HashMap<String, Integer>();
 	public static final HashMap<String, Integer> timesDomainNotGivingDocUrls = new HashMap<String, Integer>();
 	
-	public static int timesToGiveNoInnerLinksBegoreBlocked = 5;
-	public static int timesToGiveNoDocUrlsBeforeBlocked = 10;
+	public static final int timesToGiveNoInnerLinksBegoreBlocked = 5;
+	public static final int timesToGiveNoDocUrlsBeforeBlocked = 10;
 	
 	/**
 	 * This method checks if the url, for which Crawler4j is going to open a connection, is of specific type in runtime.

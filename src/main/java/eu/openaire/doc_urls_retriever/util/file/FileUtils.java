@@ -31,15 +31,14 @@ public class FileUtils
 	
 	private static Scanner inputScanner;
 	private static PrintStream printStream;
-	//public static HashMap<String, String> idAndUrlMappedInput = new HashMap<String, String>();	// Contains the mapped key(id)-value(url) pairs.
-	private static long fileIndex = 0;	// Index in the input file
-	public static boolean skipFirstRow = true;
+	private static int fileIndex = 0;	// Index in the input file
+	public static final boolean skipFirstRow = true;	// Use this to skip the HeaderLine in a csvFile.
 	private static String endOfLine = "\n";
-	public static long unretrievableInputLines = 0;	// For better statistics in the end.
-    public static long unretrievableUrlsOnly = 0;
+	public static int unretrievableInputLines = 0;	// For better statistics in the end.
+    public static int unretrievableUrlsOnly = 0;
     public static int groupCount = 5000;	// Just for testing.. TODO -> Later increase it..
 	
-	public static List<TripleToBeLogged> tripleToBeLoggedOutputList = new ArrayList<>();
+	public static final List<TripleToBeLogged> tripleToBeLoggedOutputList = new ArrayList<>();
 	
 	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<String, Integer>();	// Holds docFileNa,es with their duplicatesNum.
 	
@@ -49,7 +48,7 @@ public class FileUtils
 	public static final boolean shouldLogFullPathName = false;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
 	public static int numOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremential system.
 	public static String storeDocFilesDir = "//media//lampros//HDD2GB//downloadedDocFiles";
-	public static long unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
+	public static int unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
 	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*(?:filename=(?:\\\")?)([\\w\\-\\.\\%\\_]+)[\\\"\\;]*.*");
 	
 	
@@ -87,7 +86,7 @@ public class FileUtils
 	 * This method returns the number of (non-heading, non-empty) lines we have read from the inputFile.
 	 * @return loadedUrls
 	 */
-	public static long getCurrentlyLoadedUrls()	// In the end, it gives the total number of urls we have processed.
+	public static int getCurrentlyLoadedUrls()	// In the end, it gives the total number of urls we have processed.
 	{
 		if ( FileUtils.skipFirstRow )
 			return FileUtils.fileIndex - FileUtils.unretrievableInputLines - FileUtils.unretrievableUrlsOnly -1; // -1 to exclude the first line
@@ -102,12 +101,10 @@ public class FileUtils
 	 */
 	public static HashMultimap<String, String> getNextIdUrlPairGroupFromJson()
 	{
-		skipFirstRow = false;	// Make sure we don't use this rule for any calculations.
-		
 		HashMap<String, String> inputIdUrlPair;
 		HashMultimap<String, String> idAndUrlMappedInput = HashMultimap.create();
 		
-		long curBeginning = FileUtils.fileIndex;
+		int curBeginning = FileUtils.fileIndex;
 		
 		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + groupCount)) )// While (!EOF) iterate through lines.
 		{
@@ -119,7 +116,7 @@ public class FileUtils
 			
 			FileUtils.fileIndex ++;
 			
-			if (retrievedLineStr.isEmpty()) {
+			if ( retrievedLineStr.isEmpty() ) {
 				FileUtils.unretrievableInputLines ++;
 				continue;
 			}
@@ -286,7 +283,7 @@ public class FileUtils
 				hasUnretrievableDocName = true;
 			}
 		}
-		else if ( (docFileName = UrlUtils.getDocIdStr(docUrl)) == null ) // Extract fileName from docUrl.
+		else if ( (docFileName = UrlUtils.getDocIdStr(docUrl)) == null )	// Extract fileName from docUrl.
 				hasUnretrievableDocName = true;
 		
 		String dotFileExtension /*= "";
@@ -317,8 +314,7 @@ public class FileUtils
 				if ( numbersOfDuplicateDocFileNames.containsKey(docFileName) ) {	// First check -in O(1)- if it's an already-known duplicate.
 					curDuplicateNum += numbersOfDuplicateDocFileNames.get(docFileName);
 					isDuplicate = true;
-				}
-				else if ( docFile.exists() )	// If it's not an already-known duplicate, go check if it exists in the fileSystem.
+				} else if ( docFile.exists() )	// If it's not an already-known duplicate, go check if it exists in the fileSystem.
 					isDuplicate = true;
 				
 				if ( isDuplicate ) {
@@ -338,6 +334,8 @@ public class FileUtils
 			
 			return docFile;
 			
+		} catch (DocFileNotRetrievedException dfnre) {
+			throw dfnre;
 		} catch (Exception ioe) {
 			logger.warn("", ioe);
 			throw new DocFileNotRetrievedException();
@@ -367,7 +365,7 @@ public class FileUtils
 		// If we are at the end and there are less than <groupCount>.. take as many as there are..
 		
 		//logger.debug("Retrieving the next group of " + groupCount + " elements from the inputFile.");
-		long curBeginning = FileUtils.fileIndex;
+		int curBeginning = FileUtils.fileIndex;
 		
 		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + groupCount)) )
 		{// While (!EOF) iterate through lines.

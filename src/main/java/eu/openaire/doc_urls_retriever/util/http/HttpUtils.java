@@ -428,7 +428,7 @@ public class HttpUtils
 					throw new DocFileNotRetrievedException();
 				}
 			}
-			long contentSize = 0;
+			int contentSize = 0;
 			try {
 				contentSize = HttpUtils.getContentSize(conn);
 				if ( (contentSize == 0) || (contentSize > HttpUtils.maxAllowedContentSize) ) {

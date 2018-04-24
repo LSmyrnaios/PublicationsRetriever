@@ -24,7 +24,7 @@ import java.io.FileOutputStream;
 public class DocUrlsRetriever
 {
 	private static final Logger logger = LoggerFactory.getLogger(DocUrlsRetriever.class);
-	private static long initialNumOfDocFile = 0;
+	private static int initialNumOfDocFile = 0;
 	
     public static void main( String[] args )
     {
@@ -77,7 +77,7 @@ public class DocUrlsRetriever
 		logger.info("From which, " + CrawlerController.urlsReachedCrawler + " reached the crawling stage (others were either detected as docUrls or where discarded at loading after matching to unwanted types).");
 		logger.info("Total docUrls found: " + UrlUtils.sumOfDocUrlsFound + ". That's about: " + UrlUtils.sumOfDocUrlsFound * (float)100 / inputUrlNum + "%");
 		if ( FileUtils.shouldDownloadDocFiles && !FileUtils.shouldUseOriginalDocFileNames ) {
-			long numOfStoredDocFiles = FileUtils.numOfDocFile - (initialNumOfDocFile -1);
+			int numOfStoredDocFiles = FileUtils.numOfDocFile - (initialNumOfDocFile -1);
 			logger.info("From which docUrls, we were able to retrieve: " + numOfStoredDocFiles + " docFiles. That's about: " + numOfStoredDocFiles * (float)100 / UrlUtils.sumOfDocUrlsFound +"%");
 		}
 		logger.info("About: " + UrlUtils.crawlerSensitiveDomains * (float)100 / inputUrlNum + "% (" + UrlUtils.crawlerSensitiveDomains  + " urls) were from known crawler-sensitive domains.");
