@@ -323,6 +323,9 @@ public class HttpUtils
 					else if ( PageCrawler.shouldNotAcceptInnerLink(location) ) {	// Else we are redirecting an innerPageLink.
 						logger.warn("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 						throw new RuntimeException();
+					} else if ( location.toLowerCase().contains("sharedsitesession") ) {    // either "getSharedSiteSession" or "consumeSharedSiteSession".
+						HttpUtils.blockSharedSiteSessionDomain(initialUrl, domainStr);
+						throw new DomainBlockedException();
 					}
 					
 					URL base = conn.getURL();
@@ -367,6 +370,18 @@ public class HttpUtils
 			conn.disconnect();
 			throw new RuntimeException();
 		}
+	}
+	
+	
+	public static void blockSharedSiteSessionDomain(String initialUrl, String pageDomain)
+	{
+		if ( pageDomain == null )
+			if ( (pageDomain = UrlUtils.getDomainStr(initialUrl)) != null )
+				HttpUtils.blacklistedDomains.add(pageDomain);
+			else
+				HttpUtils.blacklistedDomains.add(pageDomain);
+		
+		logger.warn("Domain: \"" + pageDomain + "\" was blocked after trying to cause a \"sharedSiteSession-redirectionPack\"!");
 	}
 	
 	

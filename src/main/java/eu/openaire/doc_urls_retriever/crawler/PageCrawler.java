@@ -101,30 +101,37 @@ public class PageCrawler extends WebCrawler
 	@Override
 	public boolean shouldVisit(Page referringPage, WebURL url)
 	{
-		String currentPageDomain = null;
+		String currentPageDomain = null;	// We could retrieve it... but the case for this to be used in "shouldVisit()".. it's rare..
+		String pageUrl = referringPage.getWebURL().toString();
 		if ( HttpUtils.politenessDelay > 0 ) {
-			String pageUrl = referringPage.getWebURL().toString();
-			
 			// Get this url's domain for checks.
 			currentPageDomain = UrlUtils.getDomainStr(pageUrl);
 			if ( currentPageDomain != null )
 				HttpUtils.lastConnectedHost = currentPageDomain;    // The crawler opened a connection which resulted in 3XX responceCode.
 		}
 		
-		String urlStr = url.toString();
-		
-		if ( UrlUtils.docUrls.contains(urlStr) ) {	// If we got into an already-found docUrl, log it and return.
-			logger.debug("Re-crossing the already found docUrl: \"" + urlStr + "\"");
+		String redirectUrlStr = url.toString();
+		if ( UrlUtils.docUrls.contains(redirectUrlStr) ) {	// If we got into an already-found docUrl, log it and return.
+			logger.debug("Re-crossing the already found docUrl: \"" + redirectUrlStr + "\"");
 			if ( FileUtils.shouldDownloadDocFiles )
-				UrlUtils.logTriple(urlStr, urlStr, "This file is probably already downloaded.", currentPageDomain);	// Inner methods are responsible to domain-retrieval if "null" is sent instead.
+				UrlUtils.logTriple(pageUrl, redirectUrlStr, "This file is probably already downloaded.", currentPageDomain);	// Inner methods are responsible to domain-retrieval if "null" is sent instead.
 			else
-				UrlUtils.logTriple(urlStr, urlStr, "", currentPageDomain);
+				UrlUtils.logTriple(pageUrl, redirectUrlStr, "", currentPageDomain);
 			return false;
 		}
 		
-		String lowerCaseUrlStr = urlStr.toLowerCase();
+		String lowerCaseUrlStr = redirectUrlStr.toLowerCase();
 		
-		return	!UrlUtils.matchesUnwantedUrlType(urlStr, lowerCaseUrlStr);	// The output errorCause is already logged.
+		if ( UrlUtils.matchesUnwantedUrlType(redirectUrlStr, lowerCaseUrlStr) )	// The output errorCause is already logged.
+			return false;
+		else if ( lowerCaseUrlStr.contains("sharedsitesession") )	// either "getSharedSiteSession" or "consumeSharedSiteSession".
+		{
+			HttpUtils.blockSharedSiteSessionDomain(pageUrl, currentPageDomain);
+			UrlUtils.logTriple(pageUrl, "unreachable", "It was discarded in \"PageCrawler.shouldVisit()\" after participating in a \" sharedSiteSession-redirectionPack\".", null);
+			return false;	// Do not visit it.
+		}
+		
+		return true;
 	}
 	
 	
