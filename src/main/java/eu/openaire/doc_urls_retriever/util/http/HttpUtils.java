@@ -40,7 +40,7 @@ public class HttpUtils
     private static final int timesToHaveTimeoutExBeforeBlocked = 3;
     private static final int numberOf403BlockedPathsBeforeBlocked = 3;
     
-	public static final int maxAllowedContentSize = 83886080;	// 80mb
+	public static final int maxAllowedContentSize = 1073741824;	// 1Gb
 	private static final boolean shouldNOTacceptGETmethodForUncategorizedInnerLinks = true;
 	
 	

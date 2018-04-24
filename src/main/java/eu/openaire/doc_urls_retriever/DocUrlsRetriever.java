@@ -24,11 +24,12 @@ import java.io.FileOutputStream;
 public class DocUrlsRetriever
 {
 	private static final Logger logger = LoggerFactory.getLogger(DocUrlsRetriever.class);
+	private static long initialNumOfDocFile = 0;
 	
     public static void main( String[] args )
     {
     	// If we will download docFile and use custom-fileNames.. retrieve the starting docFileName for this program's instance.
-		if ( FileUtils.shouldDownloadDocFiles && !FileUtils.shouldUseOriginalDocFileNames) {
+		if ( FileUtils.shouldDownloadDocFiles && !FileUtils.shouldUseOriginalDocFileNames ) {
 			if ( args.length > 1 ) {
 				logger.error("You have to give only one argument, to be used as the starting fileName for the docFileNames!");
 				System.exit(-1);
@@ -37,7 +38,8 @@ public class DocUrlsRetriever
 					if ( (FileUtils.numOfDocFile = Integer.parseInt(args[0])) <= 0 ) {
 						logger.error("The starting-numOfDocFile must be above zero! Given one was: " + FileUtils.numOfDocFile);
 						System.exit(-2);
-					}
+					} else
+						initialNumOfDocFile = FileUtils.numOfDocFile;
 				} catch (NumberFormatException nfe) {
 					logger.error("Argument" + args[0] + " must be an integer!");
 					System.exit(-3);
@@ -72,14 +74,18 @@ public class DocUrlsRetriever
     	}
 		
 		logger.info("Total urls number in the input was: " + inputUrlNum);
-    	logger.info("From which, " + CrawlerController.urlsReachedCrawler + " reached the crawling stage (others were either detected as docUrls or where discarded at loading after matching to unwanted types).");
-		logger.info("Total docUrls found: " + UrlUtils.sumOfDocsFound + ". That's about: " + UrlUtils.sumOfDocsFound * (float)100 / inputUrlNum + "%");
+		logger.info("From which, " + CrawlerController.urlsReachedCrawler + " reached the crawling stage (others were either detected as docUrls or where discarded at loading after matching to unwanted types).");
+		logger.info("Total docUrls found: " + UrlUtils.sumOfDocUrlsFound + ". That's about: " + UrlUtils.sumOfDocUrlsFound * (float)100 / inputUrlNum + "%");
+		if ( FileUtils.shouldDownloadDocFiles && !FileUtils.shouldUseOriginalDocFileNames ) {
+			long numOfStoredDocFiles = FileUtils.numOfDocFile - (initialNumOfDocFile -1);
+			logger.info("From which docUrls, we were able to retrieve: " + numOfStoredDocFiles + " docFiles. That's about: " + numOfStoredDocFiles * (float)100 / UrlUtils.sumOfDocUrlsFound +"%");
+		}
 		logger.info("About: " + UrlUtils.crawlerSensitiveDomains * (float)100 / inputUrlNum + "% (" + UrlUtils.crawlerSensitiveDomains  + " urls) were from known crawler-sensitive domains.");
 		logger.info("About: " + UrlUtils.javascriptPageUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.javascriptPageUrls + " urls) were from a JavaScript-powered domain, other than the \"sciencedirect.com\", which has dynamic links.");
 		logger.info("About: " + UrlUtils.sciencedirectUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.sciencedirectUrls + " urls) were from the JavaScript-powered domain \"sciencedirect.com\", which has dynamic links.");
 		logger.info("About: " + UrlUtils.doiOrgToScienceDirect * (float)100 / inputUrlNum + "% (" + UrlUtils.doiOrgToScienceDirect + " urls) were of a certain type of \"doi.org\" urls which would redirect to \"sciencedirect.com\", thus being avoided to be crawled.");
 		logger.info("Αbout: " + UrlUtils.elsevierUnwantedUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.elsevierUnwantedUrls + " urls) were from, or reached after redirects, the unwanted domain: \"elsevier.com\", which either doesn't provide docUrls in its docPages, or it redirects to \"sciencedirect.com\", thus being avoided to be crawled.");
-    	logger.info("Αbout: " + UrlUtils.doajResultPageUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.doajResultPageUrls + " urls) were \"doaj.org/toc/\" urls, which are resultPages, thus being avoided to be crawled.");
+		logger.info("Αbout: " + UrlUtils.doajResultPageUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.doajResultPageUrls + " urls) were \"doaj.org/toc/\" urls, which are resultPages, thus being avoided to be crawled.");
 		logger.info("Αbout: " + UrlUtils.pagesWithHtmlDocUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.pagesWithHtmlDocUrls + " urls) were docUrls, but, in HTML, thus being avoided to be crawled.");
 		logger.info("About: " + UrlUtils.pagesRequireLoginToAccessDocFiles * (float)100 / inputUrlNum + "% (" + UrlUtils.pagesRequireLoginToAccessDocFiles + " urls) were of domains which require login to access docFiles.");
 		logger.info("About: " + UrlUtils.pagesWithLargerCrawlingDepth * (float)100 / inputUrlNum + "% (" + UrlUtils.pagesWithLargerCrawlingDepth + " urls) were docPages which have their docUrl deeper inside their server, thus being currently avoided.");

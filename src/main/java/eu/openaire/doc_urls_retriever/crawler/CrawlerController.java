@@ -73,12 +73,14 @@ public class CrawlerController
 				UrlUtils.loadAndCheckUrls();
 			
 			CrawlerController.urlsReachedCrawler = CrawlerController.frontier.getNumberOfScheduledPages();	// If wanted for statistics, in the end.
-			logger.debug("Urls added in Crawler: " + CrawlerController.urlsReachedCrawler);
+			logger.info("DocUrls found till now (at loading): " + UrlUtils.sumOfDocUrlsFound);
+			logger.info("Urls pending to be processed by the Crawler: " + CrawlerController.urlsReachedCrawler);
 			
 			if ( MachineLearning.useMLA )
 				new MachineLearning();
 			
 			// Start crawling and wait until finished.
+			logger.info("Starting crawler..");
 			controller.start(PageCrawler.class, 1);
 			
 	        // Write any remaining urls from memory to disk.

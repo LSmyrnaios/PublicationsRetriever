@@ -70,7 +70,7 @@ public class UrlUtils
 	
 	public static final Pattern DOI_ORG_PARENTHESIS_FILTER = Pattern.compile(".+[doi.org]\\/[\\d]{2}\\.[\\d]{4}\\/[\\w]*[\\d]{4}\\-[\\d]{3}(?:[\\d]|[\\w])[\\(][\\d]{2}[\\)][\\d]{5}\\-(?:[\\d]|[\\w])");	// Same reason as above.
 	
-	public static int sumOfDocsFound = 0;	// Change it back to simple int if finally in singleThread mode
+	public static int sumOfDocUrlsFound = 0;	// Change it back to simple int if finally in singleThread mode
 	public static long inputDuplicatesNum = 0;
 	
 	public static HashSet<String> duplicateUrls = new HashSet<String>();
@@ -455,7 +455,7 @@ public class UrlUtils
             if ( FileUtils.shouldDownloadDocFiles && !comment.contains("DocFileNotRetrievedException") )	// If we set to download docFiles, then their fileNames will be in the "comment".
 				logger.debug("DocFile: \"" + comment + "\" seems to have been downloaded! Go check it out!");    // DEBUG!
 			
-			sumOfDocsFound ++;
+			sumOfDocUrlsFound++;
 			
             // Gather data for the MLA, if we decide to have it enabled.
             if ( MachineLearning.useMLA )
