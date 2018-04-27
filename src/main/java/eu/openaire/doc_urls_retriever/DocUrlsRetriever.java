@@ -33,13 +33,16 @@ public class DocUrlsRetriever
 			if ( args.length > 1 ) {
 				logger.error("You have to give only one argument, to be used as the starting fileName for the docFileNames!");
 				System.exit(-1);
+			} else if ( args.length == 0 ) {
+				initialNumOfDocFile = 1;
+				FileUtils.numOfDocFile = initialNumOfDocFile;
 			} else {
 				try {
-					if ( (FileUtils.numOfDocFile = Integer.parseInt(args[0])) <= 0 ) {
+					if ( (initialNumOfDocFile = Integer.parseInt(args[0])) <= 0 ) {
 						logger.error("The starting-numOfDocFile must be above zero! Given one was: " + FileUtils.numOfDocFile);
 						System.exit(-2);
 					} else
-						initialNumOfDocFile = FileUtils.numOfDocFile;
+						FileUtils.numOfDocFile = initialNumOfDocFile;
 				} catch (NumberFormatException nfe) {
 					logger.error("Argument" + args[0] + " must be an integer!");
 					System.exit(-3);

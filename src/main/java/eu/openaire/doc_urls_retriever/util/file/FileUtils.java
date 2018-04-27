@@ -32,7 +32,7 @@ public class FileUtils
 	private static Scanner inputScanner;
 	private static PrintStream printStream;
 	private static int fileIndex = 0;	// Index in the input file
-	public static final boolean skipFirstRow = true;	// Use this to skip the HeaderLine in a csvFile.
+	public static final boolean skipFirstRow = false;	// Use this to skip the HeaderLine in a csv-kindOf-File.
 	private static String endOfLine = "\n";
 	public static int unretrievableInputLines = 0;	// For better statistics in the end.
     public static int unretrievableUrlsOnly = 0;

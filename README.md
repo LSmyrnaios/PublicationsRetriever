@@ -14,6 +14,7 @@ Many customizations were developed to make the program run efficiently, includin
 It uses an experimental, newly-developed **M.L.A.(= Machine Learning Algorithm)**, which tries to guess the docUrl of a pubPage, based on previous findings.<br/>
 
 Please note that **DocUrlsRetriever** is currently in **beta**, so you may encounter some issues.<br/>
+Keep in mind that it's best to run the program for a small set of urls (a few hundred maybe) at first, in order to see how it's operating and which parameters work best for you (timeouts, runOfMLA, domainsBlocking ect.).
 <br/>
 
 Install & Run (using MAVEN)
@@ -24,9 +25,10 @@ Then enter this command in the terminal:<br/>
 ``mvn install``<br/>
 
 To run the application you should navigate to the ***target*** directory, which will be created by *MAVEN* and run the ***.jar*** file.<br/> 
+*Note: If you choose to download the docFiles and store them with numbers as their names, you can set the number of the first docFile as an argument. Although this argument is optional and the number <1> will be the default number.*<br/>
 
 **Run with standard input/output and logging in a *log file*:**<br/>
-``java -jar doc_urls_retriever-0.2-SNAPSHOT.jar < 'inputFile' > 'outputFile'``<br/>
+``java -jar doc_urls_retriever-0.2-SNAPSHOT.jar <arg:firstDocFileNum> < 'stdIn:inputFile' > 'stdOut:outputFile'``<br/>
 
 <br/>
 
@@ -35,4 +37,4 @@ To run the application you should navigate to the ***target*** directory, which 
 - Inside ***CrawlerController()*** , choose the wanted input-handling method: either ***UrlUtils.loadAndCheckIdUrlPairs()*** or the ***UrlUtils.loadAndCheckUrls()*** .<br/>
 - Inside ***logback.xml***, change the ***appender-ref***, from ***File*** to ***Console***.<br/>
 - Execute the program with the following command:<br/>
-``java -jar doc_urls_retriever-0.2-SNAPSHOT.jar``
+``java -jar doc_urls_retriever-0.2-SNAPSHOT.jar <arg:firstDocFileNum>``
