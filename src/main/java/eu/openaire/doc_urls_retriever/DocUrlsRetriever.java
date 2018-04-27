@@ -31,7 +31,9 @@ public class DocUrlsRetriever
     	// If we will download docFile and use custom-fileNames.. retrieve the starting docFileName for this program's instance.
 		if ( FileUtils.shouldDownloadDocFiles && !FileUtils.shouldUseOriginalDocFileNames ) {
 			if ( args.length > 1 ) {
-				logger.error("You have to give only one argument, to be used as the starting fileName for the docFileNames!");
+				String errorMessage = "You have to give only one argument, to be used as the starting fileName for the docFileNames!";
+				System.err.println(errorMessage);
+				logger.error(errorMessage);
 				System.exit(-1);
 			} else if ( args.length == 0 ) {
 				initialNumOfDocFile = 1;
@@ -39,12 +41,16 @@ public class DocUrlsRetriever
 			} else {
 				try {
 					if ( (initialNumOfDocFile = Integer.parseInt(args[0])) <= 0 ) {
-						logger.error("The starting-numOfDocFile must be above zero! Given one was: " + FileUtils.numOfDocFile);
+						String errorMessage = "The starting-numOfDocFile must be above zero! Given one was: " + FileUtils.numOfDocFile;
+						System.err.println(errorMessage);
+						logger.error(errorMessage);
 						System.exit(-2);
 					} else
 						FileUtils.numOfDocFile = initialNumOfDocFile;
 				} catch (NumberFormatException nfe) {
-					logger.error("Argument" + args[0] + " must be an integer!");
+					String errorMessage = "Argument" + args[0] + " must be an integer!";
+					System.err.println(errorMessage);
+					logger.error(errorMessage);
 					System.exit(-3);
 				}
 			}
@@ -55,7 +61,9 @@ public class DocUrlsRetriever
 			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testNewOrderedList5000.json")),
 							new FileOutputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testOutputFile.json")));
 		} catch (FileNotFoundException e) {
-			logger.error("InputFile not found!", e);
+			String errorMessage = "InputFile not found!";
+			System.err.println(errorMessage);
+			logger.error(errorMessage, e);
 			System.exit(-4);
 		}*/
 		
@@ -65,15 +73,19 @@ public class DocUrlsRetriever
 		try {
 			new CrawlerController();
 		} catch (RuntimeException e) {  // In case there was no input, or on Crawler4j's failure to be initialized, there will be thrown a RuntimeException, after logging the cause.
-			logger.error("There was a serious error! Output data is affected! Exiting..");
+			String errorMessage = "There was a serious error! Output data is affected! Exiting..";
+			System.err.println(errorMessage);
+			logger.error(errorMessage);
 			System.exit(-5);
 		}
 		
 		// Show statistics.
 		long inputUrlNum = FileUtils.getCurrentlyLoadedUrls();
     	if ( (FileUtils.skipFirstRow && (inputUrlNum < 0)) || (!FileUtils.skipFirstRow && (inputUrlNum == 0)) ) {
-    		logger.error("\"FileUtils.getCurrentlyLoadedUrls()\" is unexpectedly reporting that no urls were retrieved from input file! Output data may be affected! Exiting..");
-    		System.exit(-6);
+			String errorMessage = "\"FileUtils.getCurrentlyLoadedUrls()\" is unexpectedly reporting that no urls were retrieved from input file! Output data may be affected! Exiting..";
+			System.err.println(errorMessage);
+			logger.error(errorMessage);
+			System.exit(-6);
     	}
 		
 		logger.info("Total urls number in the input was: " + inputUrlNum);

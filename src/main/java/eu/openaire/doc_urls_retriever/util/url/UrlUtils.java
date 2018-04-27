@@ -243,7 +243,9 @@ public class UrlUtils
 	{
 		if ( isEmptyOfData ) {
 			if ( isFirstRun ) {
-				logger.error("Could not retrieve any urls from the inputFile!");
+				String errorMessage = "Could not retrieve any urls from the inputFile!";
+				System.err.println(errorMessage);
+				logger.error(errorMessage);
 				throw new RuntimeException();
 			} else {
 				logger.debug("Done loading " + FileUtils.getCurrentlyLoadedUrls() + " urls from the inputFile.");	// DEBUG!

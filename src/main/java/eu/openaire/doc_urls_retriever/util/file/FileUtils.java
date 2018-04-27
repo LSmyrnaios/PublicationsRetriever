@@ -68,9 +68,11 @@ public class FileUtils
 				// If the directory doesn't exist, try to (re)create it.
 				if ( !dir.exists() ) {
 					if ( !dir.mkdir() ) {   // Create the directory.
-						logger.error("Problem when creating the \"storeDocFilesDir\": \"" + storeDocFilesDir + "\"."
-										+ "\nThe docFiles will NOT be stored, but the docUrls will be retrieved and kept in the outputFile."
-										+ "\nIf this is not desired, please terminate the program and re-define the \"storeDocFilesDir\"");
+						String errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
+								+ "\nThe docFiles will NOT be stored, but the docUrls will be retrieved and kept in the outputFile."
+								+ "\nIf this is not desired, please terminate the program and re-define the \"storeDocFilesDir\"!";
+						System.err.println(errorMessage);
+						logger.error(errorMessage);
 						FileUtils.shouldDownloadDocFiles = false;
 					}
 				}
