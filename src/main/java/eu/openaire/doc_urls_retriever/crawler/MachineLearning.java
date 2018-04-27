@@ -166,7 +166,6 @@ public class MachineLearning
 			return;
 		
 		MachineLearning.successPathsMultiMap.put(docPagePath, docUrlPath);	// Add this pair in "successPathsMultiMap", if the key already exists then it will just add one more value to that key.
-		
 		MachineLearning.timesGatheredData ++;
 	}
 	
@@ -216,7 +215,6 @@ public class MachineLearning
 			
 			StringBuilder strB = new StringBuilder(150);
 			String guessedDocUrl = null;
-			
 			MachineLearning.urlsCheckedWithMLA ++;
 			
 			for ( String knownDocUrlPath : knownDocUrlPaths )
@@ -225,12 +223,11 @@ public class MachineLearning
 				strB.append(knownDocUrlPath);
 				strB.append(docIdStr);
 				strB.append(".pdf");
-				
 				guessedDocUrl = strB.toString();
 				
 				if ( UrlUtils.docUrls.contains(guessedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
 					UrlUtils.logTriple(pageUrl, guessedDocUrl, "", null);
-					logger.debug("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted (already found before) docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
+					logger.info("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted (already found before) docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
 					MachineLearning.docUrlsFoundByMLA ++;
 					return true;
 				}
@@ -240,7 +237,7 @@ public class MachineLearning
 					logger.debug("Going to check guessedDocUrl: " + guessedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");
 					
 					if ( HttpUtils.connectAndCheckMimeType(pageUrl, guessedDocUrl, null, false, true) ) {
-						logger.debug("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
+						logger.info("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
 						MachineLearning.docUrlsFoundByMLA ++;
 						return true;	// Note that we have already add it in the output links inside "connectAndCheckMimeType()".
 					}
@@ -248,9 +245,7 @@ public class MachineLearning
 				} catch (Exception e) {
 					// No special handling here, neither logging.. since it's expected that some "guessedDocUrls" will fail.
 				}
-				
 				strB.setLength(0);	// Clear the buffer before going to check the next path.
-				
 			}// end for-loop
 			
 			if ( HttpUtils.countAndBlockDomainAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, domainStr, timesToFailBeforeBlockedFromMLA) )
@@ -260,11 +255,9 @@ public class MachineLearning
 				
 				successPathsMultiMap.removeAll(pagePath);	// This domain was blocked, remove current non-needed paths-data. Note that we can't remove all of this domain's paths, since there is no mapping between a domain and its paths.
 			}
-			
 		}// end if
 		
 		// If we reach here, it means that either there is not available data to guess the docUrl, or that all of the guesses have failed.
-		
 		return false;	// We can't find its docUrl.. so we return false and continue by crawling this page.
 	}
 	

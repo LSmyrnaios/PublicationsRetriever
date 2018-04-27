@@ -73,7 +73,7 @@ public class PageCrawler extends WebCrawler
 		}
 		
 		if ( HttpUtils.checkIfPathIs403BlackListed(urlStr, currentUrlDomain) ) {
-			logger.warn("Preventing reaching 403ErrorCode with url: \"" + urlStr + "\"!");
+			logger.debug("Preventing reaching 403ErrorCode with url: \"" + urlStr + "\"!");
 			return null;
 		}
 		
@@ -112,7 +112,7 @@ public class PageCrawler extends WebCrawler
 		
 		String redirectUrlStr = url.toString();
 		if ( UrlUtils.docUrls.contains(redirectUrlStr) ) {	// If we got into an already-found docUrl, log it and return.
-			logger.debug("Re-crossing the already found docUrl: \"" + redirectUrlStr + "\"");
+			logger.info("Re-crossing the already found docUrl: \"" + redirectUrlStr + "\"");
 			if ( FileUtils.shouldDownloadDocFiles )
 				UrlUtils.logTriple(pageUrl, redirectUrlStr, "This file is probably already downloaded.", currentPageDomain);	// Inner methods are responsible to domain-retrieval if "null" is sent instead.
 			else

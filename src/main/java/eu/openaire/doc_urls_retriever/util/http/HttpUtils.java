@@ -148,7 +148,7 @@ public class HttpUtils
 		
 		try {
 			if ( blacklistedDomains.contains(domainStr) ) {
-		    	logger.warn("Preventing connecting to blacklistedHost: \"" + domainStr + "\"!");
+		    	logger.debug("Preventing connecting to blacklistedHost: \"" + domainStr + "\"!");
 		    	throw new RuntimeException();
 			}
 			
@@ -158,7 +158,7 @@ public class HttpUtils
 				throw new DomainWithUnsupportedHEADmethodException();
 			
 			if ( checkIfPathIs403BlackListed(resourceURL, domainStr) ) {
-				logger.warn("Preventing reaching 403ErrorCode with url: \"" + resourceURL + "\"!");
+				logger.debug("Preventing reaching 403ErrorCode with url: \"" + resourceURL + "\"!");
 				throw new RuntimeException();
 			}
 			
@@ -267,7 +267,7 @@ public class HttpUtils
 			blacklistedDomains.add(domainStr);
 			throw new DomainBlockedException();
     	} catch (Exception e) {
-			logger.warn("", e);
+			logger.error("", e);
 			if ( conn != null )
 				conn.disconnect();
 			throw new RuntimeException();
@@ -304,7 +304,7 @@ public class HttpUtils
 				{
 					redirectsNum ++;
 					if ( redirectsNum > HttpUtils.maxRedirects ) {
-						logger.warn("Redirects exceeded their limit (" + HttpUtils.maxRedirects + ") for: \"" + initialUrl + "\"");
+						logger.debug("Redirects exceeded their limit (" + HttpUtils.maxRedirects + ") for: \"" + initialUrl + "\"");
 						throw new RuntimeException();
 					}
 					
@@ -317,12 +317,12 @@ public class HttpUtils
 					String lowerCaseLocation = location.toLowerCase();
 					if ( calledForPageUrl ) {
 						if ( UrlUtils.shouldNotAcceptPageUrl(location, lowerCaseLocation) ) {
-							logger.warn("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
+							logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 							throw new RuntimeException();
 						}
 					}
 					else if ( PageCrawler.shouldNotAcceptInnerLink(location, lowerCaseLocation) ) {	// Else we are redirecting an innerPageLink.
-						logger.warn("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
+						logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 						throw new RuntimeException();
 					} else if ( lowerCaseLocation.contains("sharedsitesession") ) {    // either "getSharedSiteSession" or "consumeSharedSiteSession".
 						HttpUtils.blockSharedSiteSessionDomain(initialUrl, domainStr);
@@ -382,7 +382,7 @@ public class HttpUtils
 		} else
 			HttpUtils.blacklistedDomains.add(pageDomain);
 		
-		logger.warn("Domain: \"" + pageDomain + "\" was blocked after trying to cause a \"sharedSiteSession-redirectionPack\"!");
+		logger.debug("Domain: \"" + pageDomain + "\" was blocked after trying to cause a \"sharedSiteSession-redirectionPack\"!");
 	}
 	
 	
@@ -397,8 +397,8 @@ public class HttpUtils
 	public static void printFinalRedirectDataForWantedUrlType(String initialUrl, String finalUrl, String wantedUrlType, int redirectsNum)
 	{
 		if ( (wantedUrlType != null) && initialUrl.contains(wantedUrlType) ) {
-			logger.info("\"" + initialUrl + "\" DID: " + redirectsNum + " redirect(s)!");
-			logger.info("Final link is: \"" + finalUrl + "\"");
+			logger.debug("\"" + initialUrl + "\" DID: " + redirectsNum + " redirect(s)!");
+			logger.debug("Final link is: \"" + finalUrl + "\"");
 		}
 	}
 	

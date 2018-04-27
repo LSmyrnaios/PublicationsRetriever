@@ -1,11 +1,19 @@
 <configuration debug="false">
 
-    <appender name="File" class="ch.qos.logback.core.FileAppender">
+    <appender name="File" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>logs/DocUrlsRetriever.log</file>
-        <append>true</append>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>logs/DocUrlsRetriever.%i.log.zip</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>5</maxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>50MB</maxFileSize>
+        </triggeringPolicy>
         <encoder>
-            <charset>UTF-8</charset>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36}.%M\(@%line\) - %msg%n</pattern>
         </encoder>
     </appender>
 

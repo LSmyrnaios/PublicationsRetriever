@@ -451,9 +451,9 @@ public class UrlUtils
             if ( lowerCaseUrl.contains("jsessionid") )
                 finalDocUrl = UrlUtils.removeJsessionid(initialDocUrl);
 			
-            logger.debug("docUrl found: <" + finalDocUrl + ">");
+            logger.info("docUrl found: <" + finalDocUrl + ">");
             if ( FileUtils.shouldDownloadDocFiles && !comment.contains("DocFileNotRetrievedException") )	// If we set to download docFiles, then their fileNames will be in the "comment".
-				logger.debug("DocFile: \"" + comment + "\" seems to have been downloaded! Go check it out!");    // DEBUG!
+				logger.info("DocFile: \"" + comment + "\" has been downloaded.");
 			
 			sumOfDocUrlsFound++;
 			
