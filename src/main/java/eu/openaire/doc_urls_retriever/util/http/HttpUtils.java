@@ -47,7 +47,7 @@ public class HttpUtils
 	 * This method checks if a certain url can give us its mimeType, as well as if this mimeType is a docMimeType.
 	 * It automatically calls the "logUrl()" method for the valid docUrls, while it doesn't call it for non-success cases, thus allowing calling method to handle the case.
 	 * @param urlId
-	 * @param currentPage
+	 * @param sourceUrl
 	 * @param resourceURL
 	 * @param domainStr
 	 * @param calledForPageUrl
@@ -58,20 +58,20 @@ public class HttpUtils
 	 * @throws DomainBlockedException
 	 * @throws DomainWithUnsupportedHEADmethodException
 	 */
-	public static boolean connectAndCheckMimeType(String urlId, String currentPage, String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
+	public static boolean connectAndCheckMimeType(String urlId, String sourceUrl, String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
 													throws RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
 	{
 		HttpURLConnection conn = null;
 		try {
 			if ( domainStr == null )	// No info about domainStr from the calling method.. we have to find it here.
-				if ( (domainStr = UrlUtils.getDomainStr(resourceURL) ) == null )
+				if ( (domainStr = UrlUtils.getDomainStr(resourceURL) ) == null)
 					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
 			
 			conn = HttpUtils.openHttpConnection(resourceURL, domainStr, calledForPageUrl, calledForPossibleDocUrl);
 			
-			int responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP responce), inside openHttpConnection().
+			int responceCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP responce), inside openHttpConnection().
 			if ( (responceCode >= 300) && (responceCode <= 399) ) {   // If we have redirections..
-				conn = HttpUtils.handleRedirects(conn, responceCode, domainStr, calledForPageUrl, calledForPossibleDocUrl);	// Take care of redirects.
+				conn = HttpUtils.handleRedirects(urlId, sourceUrl, conn, responceCode, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // Take care of redirects.
 			}
 			else if ( (responceCode < 200) || (responceCode >= 400) ) {	// If we have error codes.
 				onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
@@ -95,26 +95,29 @@ public class HttpUtils
 			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition, conn) ) {
 				String fullPathFileName = "";
 				if ( FileUtils.shouldDownloadDocFiles ) {
-					try { fullPathFileName = downloadAndStoreDocFile(conn, domainStr, finalUrlStr); }
-					catch (DocFileNotRetrievedException dfnde) {
+					try {
+						fullPathFileName = downloadAndStoreDocFile(conn, domainStr, finalUrlStr);
+					} catch (DocFileNotRetrievedException dfnde) {
 						fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored.";
 						logger.warn(fullPathFileName, dfnde);
 					}
 				}
-				UrlUtils.logTriple(urlId, currentPage, finalUrlStr, fullPathFileName, domainStr);	// we send the urls, before and after potential redirections.
+				UrlUtils.logTriple(urlId, sourceUrl, finalUrlStr, fullPathFileName, domainStr);	// we send the urls, before and after potential redirections.
 				return true;
 			}
 			else if ( calledForPageUrl )	// Visit this url only if this method was called for an inputUrl.
-				PageCrawler.visit(urlId, finalUrlStr, conn);
+				PageCrawler.visit(urlId, sourceUrl, finalUrlStr, conn);
 			
+		} catch (AlreadyFoundDocUrlException afdue) {	// An already-found docUrl was discovered during redirections.
+			return true;	// It's already logged for the outputFile.
 		} catch (RuntimeException re) {
-			if ( currentPage.equals(resourceURL) )    // Log this error only for docPages, not innerLinks.
+			if ( sourceUrl.equals(resourceURL) )	// Log this error only for docPages, not innerLinks.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
 			throw re;
 		} catch (DomainBlockedException | DomainWithUnsupportedHEADmethodException | ConnTimeoutException e) {
 			throw e;
 		} catch (Exception e) {
-			if ( currentPage.equals(resourceURL) )	// Log this error only for docPages.
+			if ( sourceUrl.equals(resourceURL) )	// Log this error only for docPages.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
 			throw new RuntimeException();
 		} finally {
@@ -280,6 +283,8 @@ public class HttpUtils
     /**
      * This method takes an open connection for which there is a need for redirections.
      * It opens a new connection every time, up to the point we reach a certain number of redirections defined by "HttpUtils.maxRedirects".
+	 * @param urlId
+	 * @param sourceUrl
 	 * @param conn
 	 * @param responceCode
 	 * @param domainStr
@@ -291,8 +296,8 @@ public class HttpUtils
 	 * @throws DomainBlockedException
 	 * @throws DomainWithUnsupportedHEADmethodException
 	 */
-	public static HttpURLConnection handleRedirects(HttpURLConnection conn, int responceCode, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
-																			throws RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
+	public static HttpURLConnection handleRedirects(String urlId, String sourceUrl, HttpURLConnection conn, int responceCode, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
+																			throws AlreadyFoundDocUrlException, RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
 	{
 		int redirectsNum = 0;
 		String initialUrl = conn.getURL().toString();    // Keep initialUrl for logging and debugging.
@@ -329,7 +334,9 @@ public class HttpUtils
 						throw new DomainBlockedException();
 					}
 					
-					String targetUrlStr = UrlUtils.getFullyFormedUrl(null, location, conn.getURL());
+					String targetUrl = UrlUtils.getFullyFormedUrl(null, location, conn.getURL());
+					if ( targetUrl == null )
+						throw new RuntimeException();
 					
 					// FOR DEBUG -> Check to see what's happening with the redirect urls (location field types, as well as potential error redirects).
 					// Some domains use only the target-ending-path in their location field, while others use full target url.
@@ -337,17 +344,26 @@ public class HttpUtils
 						/*logger.debug("\n");
 						logger.debug("Redirect(s) num: " + redirectsNum);
 						logger.debug("Redirect code: " + conn.getResponseCode());
-						logger.debug("Base: " + base.toString());
+						logger.debug("Base: " + conn.getURL());
 						logger.debug("Location: " + location);
-						logger.debug("Target: " + targetUrlStr + "\n");*/
+						logger.debug("Target: " + targetUrl + "\n");*/
 					//}
 					
-					if ( !targetUrlStr.contains(HttpUtils.lastConnectedHost) )    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
-						if ( (domainStr = UrlUtils.getDomainStr(targetUrlStr)) == null )
+					if ( UrlUtils.docUrls.contains(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
+						logger.debug("Re-crossing the already found docUrl: \"" + targetUrl + "\"");
+						if ( FileUtils.shouldDownloadDocFiles )
+							UrlUtils.logTriple(urlId, sourceUrl, targetUrl, "This file is probably already downloaded.", domainStr);
+						else
+							UrlUtils.logTriple(urlId, sourceUrl, targetUrl, "", domainStr);
+						throw new AlreadyFoundDocUrlException();
+					}
+					
+					if ( !targetUrl.contains(HttpUtils.lastConnectedHost) )    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
+						if ( (domainStr = UrlUtils.getDomainStr(targetUrl)) == null )
 							throw new RuntimeException();    // The cause it's already logged inside "getDomainStr()".
 					
 					conn.disconnect();
-					conn = HttpUtils.openHttpConnection(targetUrlStr, domainStr, calledForPageUrl, calledForPossibleDocUrl);
+					conn = HttpUtils.openHttpConnection(targetUrl, domainStr, calledForPageUrl, calledForPossibleDocUrl);
 					
 					responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
 					
@@ -361,7 +377,7 @@ public class HttpUtils
 				}
 			}//while-loop.
 			
-		} catch (RuntimeException | ConnTimeoutException | DomainBlockedException | DomainWithUnsupportedHEADmethodException e) {    // We already logged the right messages.
+		} catch (AlreadyFoundDocUrlException | RuntimeException | ConnTimeoutException | DomainBlockedException | DomainWithUnsupportedHEADmethodException e) {    // We already logged the right messages.
 			conn.disconnect();
 			throw e;
 		} catch (Exception e) {

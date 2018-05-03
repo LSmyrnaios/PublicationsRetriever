@@ -28,11 +28,9 @@ public class CrawlerController
 			else
 				UrlUtils.loadAndCheckUrls();
 			
-			/*
 			// Here test individual urls.
-			String url = "";	// Give the url to test.
-			HttpUtils.connectAndCheckMimeType(url, url, null, true, false);
-			*/
+			/*String url = "";	// Give the url to test.
+			HttpUtils.connectAndCheckMimeType(null, url, url, url, null, true, false);*/
 			
 	        // Write any remaining urls from memory to disk.
 	        if ( FileUtils.quadrupleToBeLoggedOutputList.size() > 0 ) {

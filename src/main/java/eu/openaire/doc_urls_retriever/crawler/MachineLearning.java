@@ -175,13 +175,15 @@ public class MachineLearning
 	 * This method implements an M.L.A. (Machine Learning Algorithm), which uses previous success cases to predict the docUrl of a page, if this page gives us the ID of the document.
 	 * The idea is that we might get a url which shows info about the publication and as the same ID with the wanted docUrl, but ut just happens to be in a different directory (path).
 	 * So, before going and checking each and every one of the inner links, we should check if by using known paths that gave docUrls before (for the current spesific domain), we are able to take the docUrl immediately.
+	 * Note that we don't send the "domainStr" for the guessedDocUrls here, as at the moment an inner link might not be in the same "full-domain". We don't use TLDs at this moment. TODO - Investigate their potential.
 	 * Disclaimer: This is still in experimental stage.
 	 * @param urlId
+	 * @param sourceUrl
 	 * @param pageUrl
 	 * @param domainStr
 	 * @return true / false
 	 */
-	public static boolean guessInnerDocUrlUsingML(String urlId, String pageUrl, String domainStr)
+	public static boolean guessInnerDocUrlUsingML(String urlId, String sourceUrl, String pageUrl, String domainStr)
 	{
 		String pagePath = null;
 		Matcher urlMatcher = UrlUtils.URL_TRIPLE.matcher(pageUrl);
@@ -228,7 +230,7 @@ public class MachineLearning
 				guessedDocUrl = strB.toString();
 				
 				if ( UrlUtils.docUrls.contains(guessedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
-					UrlUtils.logTriple(urlId, pageUrl, guessedDocUrl, "", null);
+					UrlUtils.logTriple(urlId, sourceUrl, guessedDocUrl, "", null);
 					logger.info("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted (already found before) docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
 					MachineLearning.docUrlsFoundByMLA ++;
 					return true;
@@ -238,7 +240,7 @@ public class MachineLearning
 				try {
 					logger.debug("Going to check guessedDocUrl: " + guessedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");
 					
-					if ( HttpUtils.connectAndCheckMimeType(urlId, pageUrl, guessedDocUrl, null, false, true) ) {
+					if ( HttpUtils.connectAndCheckMimeType(urlId, sourceUrl, guessedDocUrl, null, false, true) ) {
 						logger.info("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
 						MachineLearning.docUrlsFoundByMLA ++;
 						return true;	// Note that we have already add it in the output links inside "connectAndCheckMimeType()".

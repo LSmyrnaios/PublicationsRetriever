@@ -245,7 +245,7 @@ public class UrlUtils
 				logger.error(errorMessage);
 				throw new RuntimeException();
 			} else {
-				logger.debug("Done loading " + FileUtils.getCurrentlyLoadedUrls() + " urls from the inputFile.");	// DEBUG!
+				logger.debug("Done processing " + FileUtils.getCurrentlyLoadedUrls() + " urls from the inputFile.");	// DEBUG!
 				return true;
 			}
 		} else
@@ -698,7 +698,9 @@ public class UrlUtils
 			
 			URL target = new URL(base, currentLink);
 			return target.toString();
+			
 		} catch (Exception e) {
+			logger.error("Error when producing fully-formedUrl for: " + currentLink);
 			return null;
 		}
 	}
