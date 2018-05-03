@@ -1,16 +1,9 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
-import edu.uci.ics.crawler4j.frontier.Frontier;
+//import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import edu.uci.ics.crawler4j.crawler.CrawlConfig;
-import edu.uci.ics.crawler4j.crawler.CrawlController;
-import edu.uci.ics.crawler4j.fetcher.PageFetcher;
-import edu.uci.ics.crawler4j.robotstxt.RobotstxtConfig;
-import edu.uci.ics.crawler4j.robotstxt.RobotstxtServer;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
-import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 
 
@@ -21,67 +14,28 @@ public class CrawlerController
 {	
 	private static final Logger logger = LoggerFactory.getLogger(CrawlerController.class);
 	
-	public static CrawlController controller;
-	private CrawlConfig config = new CrawlConfig();
-	
-	private String crawlStorageFolder = System.getProperty("user.dir") + "//src//main//resources//crawlerStorage";	// Change slashes later for linux..
-	
-	//public static DocIDServer docIdServer = null;	// Potentially useful when performing checks in urls added in the Crawler.
-	public static Frontier frontier = null;	// Potentially useful to know the number of pages (left to be crawled, are in memory waiting, already prosseced).
 	public static long urlsReachedCrawler = 0;	// Potentially useful for statistics.
 	public static boolean useIdUrlPairs = true;
 	
 	
-	/**
-	 * Configures and runs the Crawler.
-	 */
 	public CrawlerController() throws RuntimeException
 	{
-		// Configure crawler with some non-default values:
-		config.setMaxDepthOfCrawling(0);	// Crawl with a maximum depth of 0. Meaning that no inner link is allowed to be crawled.
-		config.setResumableCrawling(false);	// False for testing.. Later it should be set to true.. to handle crawling with crashes, better.
-		config.setCrawlStorageFolder(crawlStorageFolder);
-		config.setOnlineTldListUpdate(true);
-		config.setConnectionTimeout(HttpUtils.maxConnGETWaitingTime);	// Crawler4j uses the "HTTP GET" method, by default, as it always need to download the HTML.
-		config.setSocketTimeout(HttpUtils.maxConnGETWaitingTime);
-		config.setMaxDownloadSize(HttpUtils.maxAllowedContentSize);	// Default setting: 1048576 --> 10mb
-		config.setPolitenessDelay(HttpUtils.politenessDelay);
-		config.setIncludeBinaryContentInCrawling(true);	// Call "visit()" method even on binary content (which is not prohibited by "shouldVisit()" method) to check its contentType.
-		config.setProcessBinaryContentInCrawling(false);	// If set to "true", it processes more webPages like "xhtml" ones (Crawler4j processes html-only, unless instructed to process all), BUT, if it has to deal with actual binaryContent, it will be slower.
-		// Binary-content-rules in "shouldVisit()" still apply.
-		
-		int threadDelaySeconds = 5;	// This is used for Crawler4j to shutdown faster. Default is 10.
-		config.setThreadMonitoringDelaySeconds(threadDelaySeconds);
-		config.setCleanupDelaySeconds(threadDelaySeconds);
-		config.setThreadShutdownDelaySeconds(threadDelaySeconds);
-		
-		PageFetcher pageFetcher = new PageFetcher(config);
-		RobotstxtConfig robotstxtConfig = new RobotstxtConfig();
-		RobotstxtServer robotstxtServer = new RobotstxtServer(robotstxtConfig, pageFetcher);
-		
-		robotstxtConfig.setEnabled(false);	// Don't follow websites' instructions for robots (most of them will say no to crawlers except for GoogleBot). (Default value is: true)
+		logger.info("Starting crawler..");
 		
 		try {
-			controller = new CrawlController(config, pageFetcher, robotstxtServer);
-			
-			//CrawlerController.docIdServer = controller.getDocIdServer();	// Enable this code if we need special urls' check from the crawler.
-			CrawlerController.frontier = controller.getFrontier();	// Enable this code if we need to check pages' number in the crawler.
+			if ( MachineLearning.useMLA )
+				new MachineLearning();
 			
 			if ( CrawlerController.useIdUrlPairs )
 				UrlUtils.loadAndCheckIdUrlPairs();
 			else
 				UrlUtils.loadAndCheckUrls();
 			
-			CrawlerController.urlsReachedCrawler = CrawlerController.frontier.getNumberOfScheduledPages();	// If wanted for statistics, in the end.
-			logger.info("DocUrls found till now (at loading): " + UrlUtils.sumOfDocUrlsFound);
-			logger.info("Urls pending to be processed by the Crawler: " + CrawlerController.urlsReachedCrawler);
-			
-			if ( MachineLearning.useMLA )
-				new MachineLearning();
-			
-			// Start crawling and wait until finished.
-			logger.info("Starting crawler..");
-			controller.start(PageCrawler.class, 1);
+			/*
+			// Here test individual urls.
+			String url = "";	// Give the url to test.
+			HttpUtils.connectAndCheckMimeType(url, url, null, true, false);
+			*/
 			
 	        // Write any remaining urls from memory to disk.
 	        if ( FileUtils.tripleToBeLoggedOutputList.size() > 0 ) {

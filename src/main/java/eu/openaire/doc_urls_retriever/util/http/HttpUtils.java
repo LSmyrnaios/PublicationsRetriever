@@ -3,7 +3,6 @@ package eu.openaire.doc_urls_retriever.util.http;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import eu.openaire.doc_urls_retriever.exceptions.*;
-import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
@@ -92,7 +91,7 @@ public class HttpUtils
 			}
 			
 			String finalUrlStr = conn.getURL().toString();
-			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition, conn, null) ) {
+			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition, conn) ) {
 				String fullPathFileName = "";
 				if ( FileUtils.shouldDownloadDocFiles ) {
 					try { fullPathFileName = downloadAndStoreDocFileOutsideCrawler(conn, domainStr, finalUrlStr); }
@@ -105,10 +104,10 @@ public class HttpUtils
 				return true;
 			}
 			else if ( calledForPageUrl )	// Add it in the Crawler only if this method was called for an inputUrl.
-				CrawlerController.controller.addSeed(finalUrlStr);	// If this is not a valid url, Crawler4j will throw it away by itself.
-		
+				PageCrawler.visit(finalUrlStr, conn);
+			
 		} catch (RuntimeException re) {
-			if ( currentPage.equals(resourceURL) )    // Log this error only for docPages.
+			if ( currentPage.equals(resourceURL) )    // Log this error only for docPages, not innerLinks.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
 			throw re;
 		} catch (DomainBlockedException | DomainWithUnsupportedHEADmethodException | ConnTimeoutException e) {
@@ -329,9 +328,7 @@ public class HttpUtils
 						throw new DomainBlockedException();
 					}
 					
-					URL base = conn.getURL();
-					URL target = new URL(base, location);
-					String targetUrlStr = target.toString();
+					String targetUrlStr = UrlUtils.getFullyFormedUrl(null, location, conn.getURL());
 					
 					// FOR DEBUG -> Check to see what's happening with the redirect urls (location field types, as well as potential error redirects).
 					// Some domains use only the target-ending-path in their location field, while others use full target url.

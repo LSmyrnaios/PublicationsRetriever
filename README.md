@@ -1,16 +1,15 @@
 DocUrlsRetriever
 ================
-A program which finds the Document Urls from the given Publication Page Urls.<br/>
+A program which finds the Document Urls from the given Publication Page Urls and downloads the docFiles.<br/>
 
-It takes as input a JSON file with the pubPages and gives an output in JSON, which contains the pubPages with their docUrls and a comment, which is either empty, or it contains the docFileName (if we have set to store the docFiles), or, if there was any error which prevented the discovery of the docUrl, it contains the errorCause.<br/>
+It takes as input a JSON file with the pubPages and gives an output in JSON, which contains the pubPages with their docUrls and a comment, which is either empty, or it contains the docFileName (if we have set to download-&-store the docFiles), or, if there was any error which prevented the discovery of the docUrl, it contains the errorCause.<br/>
 
 PubPage: *the web page with the publication's data.*<br/> 
 DocUrl: *the url of the document file.*<br/>
 
-It currently uses [crawler4j](https://github.com/yasserg/crawler4j) to crawl the web pages.<br/>
 Many customizations were developed to make the program run efficiently, including advanced blocking techniques.<br/>
 
-It uses an experimental, newly-developed **M.L.A.(= Machine Learning Algorithm)**, which tries to guess the docUrl of a pubPage, based on previous findings.<br/>
+An experimental **M.L.A.(= Machine Learning Algorithm)** was developed, which tries to guess the docUrl of a pubPage, based on previous findings.<br/>
 
 Please note that **DocUrlsRetriever** is currently in **beta**, so you may encounter some issues.<br/>
 Keep in mind that it's best to run the program for a small set of urls (a few hundred maybe) at first, in order to see how it's operating and which parameters work best for you (timeouts, runOfMLA, domainsBlocking ect.).

@@ -36,16 +36,16 @@ public class FileUtils
 	private static String endOfLine = "\n";
 	public static int unretrievableInputLines = 0;	// For better statistics in the end.
     public static int unretrievableUrlsOnly = 0;
-    public static int groupCount = 5000;	// Just for testing.. TODO -> Later increase it..
+    public static int groupCount = 300;
 	
 	public static final List<TripleToBeLogged> tripleToBeLoggedOutputList = new ArrayList<>();
 	
 	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<String, Integer>();	// Holds docFileNa,es with their duplicatesNum.
 	
-	public static boolean shouldDownloadDocFiles = false;
-	public static final boolean shouldDeleteOlderDocFiles = true;	// Should we delete any older stored docFiles? This is useful for testing.
+	public static boolean shouldDownloadDocFiles = true;
+	public static final boolean shouldDeleteOlderDocFiles = false;	// Should we delete any older stored docFiles? This is useful for testing.
 	public static final boolean shouldUseOriginalDocFileNames = false;
-	public static final boolean shouldLogFullPathName = false;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
+	public static final boolean shouldLogFullPathName = true;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
 	public static int numOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremential system.
 	public static String storeDocFilesDir = "//media//lampros//HDD2GB//downloadedDocFiles";
 	public static int unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
