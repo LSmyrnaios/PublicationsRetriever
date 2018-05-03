@@ -47,7 +47,7 @@ public class FileUtils
 	public static final boolean shouldUseOriginalDocFileNames = false;
 	public static final boolean shouldLogFullPathName = true;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
 	public static int numOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremential system.
-	public static String storeDocFilesDir = "//media//lampros//HDD2GB//downloadedDocFiles";
+	public static String storeDocFilesDir = System.getProperty("user.dir") + "//docFiles";
 	public static int unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
 	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*(?:filename=(?:\\\")?)([\\w\\-\\.\\%\\_]+)[\\\"\\;]*.*");
 	
