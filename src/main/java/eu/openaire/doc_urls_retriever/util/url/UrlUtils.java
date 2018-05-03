@@ -174,7 +174,6 @@ public class UrlUtils
 				{
 					//logger.debug("     URL: " + retrievedUrl);	// DEBUG!
 					
-					neutralUrl = retrievedUrl;	// If no special-goodCase-url is found, this one will be used.
 					String lowerCaseUrl = retrievedUrl.toLowerCase();    // Only for string checking purposes, not supposed to reach any connection.
 					
 					if ( (retrievedUrl = handleUrlChecks(retrievedId, retrievedUrl, lowerCaseUrl)) == null )
@@ -205,7 +204,8 @@ public class UrlUtils
 					if ( (bestUrl == null) && !retrievedUrl.contains("doi.org") )	// If we find a nonDoiUrl keep it for possible later usage.
 						nonDoiUrl = retrievedUrl;	// To be un-commented later.. if bestUrl-rules are added.
 					
-				}// end-for
+					neutralUrl = retrievedUrl;	// If no special-goodCase-url is found, this one will be used.
+				}// end-url-for-loop
 				
 				if ( goToNextId )	// If we found an already-retrieved docUrl.
 					continue;
@@ -220,8 +220,10 @@ public class UrlUtils
 					urlToCheck = bestUrl;
 				else if ( nonDoiUrl != null )
 					urlToCheck = nonDoiUrl;
-				else
+				else if ( neutralUrl != null )
 					urlToCheck = neutralUrl;
+				else
+					continue;
 				
 				try {
 					HttpUtils.connectAndCheckMimeType(retrievedId, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);
@@ -229,8 +231,8 @@ public class UrlUtils
 					UrlUtils.logTriple(retrievedId, urlToCheck, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
 					UrlUtils.connProblematicUrls ++;
 				}
-			}// end for-loop
-        }// end while-loop
+			}// end id-for-loop
+        }// end loading-while-loop
 	}
 	
 	
