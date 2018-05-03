@@ -3,7 +3,6 @@ package eu.openaire.doc_urls_retriever.util.http;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import eu.openaire.doc_urls_retriever.exceptions.*;
-import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
@@ -47,6 +46,7 @@ public class HttpUtils
 	/**
 	 * This method checks if a certain url can give us its mimeType, as well as if this mimeType is a docMimeType.
 	 * It automatically calls the "logUrl()" method for the valid docUrls, while it doesn't call it for non-success cases, thus allowing calling method to handle the case.
+	 * @param urlId
 	 * @param currentPage
 	 * @param resourceURL
 	 * @param domainStr
@@ -58,7 +58,7 @@ public class HttpUtils
 	 * @throws DomainBlockedException
 	 * @throws DomainWithUnsupportedHEADmethodException
 	 */
-	public static boolean connectAndCheckMimeType(String currentPage, String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
+	public static boolean connectAndCheckMimeType(String urlId, String currentPage, String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
 													throws RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
 	{
 		HttpURLConnection conn = null;
@@ -92,23 +92,23 @@ public class HttpUtils
 			}
 			
 			String finalUrlStr = conn.getURL().toString();
-			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition, conn, null) ) {
+			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition, conn) ) {
 				String fullPathFileName = "";
 				if ( FileUtils.shouldDownloadDocFiles ) {
-					try { fullPathFileName = downloadAndStoreDocFileOutsideCrawler(conn, domainStr, finalUrlStr); }
+					try { fullPathFileName = downloadAndStoreDocFile(conn, domainStr, finalUrlStr); }
 					catch (DocFileNotRetrievedException dfnde) {
 						fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored.";
 						logger.warn(fullPathFileName, dfnde);
 					}
 				}
-				UrlUtils.logTriple(currentPage, finalUrlStr, fullPathFileName, domainStr);	// we send the urls, before and after potential redirections.
+				UrlUtils.logTriple(urlId, currentPage, finalUrlStr, fullPathFileName, domainStr);	// we send the urls, before and after potential redirections.
 				return true;
 			}
-			else if ( calledForPageUrl )	// Add it in the Crawler only if this method was called for an inputUrl.
-				CrawlerController.controller.addSeed(finalUrlStr);	// If this is not a valid url, Crawler4j will throw it away by itself.
-		
+			else if ( calledForPageUrl )	// Visit this url only if this method was called for an inputUrl.
+				PageCrawler.visit(urlId, finalUrlStr, conn);
+			
 		} catch (RuntimeException re) {
-			if ( currentPage.equals(resourceURL) )    // Log this error only for docPages.
+			if ( currentPage.equals(resourceURL) )    // Log this error only for docPages, not innerLinks.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
 			throw re;
 		} catch (DomainBlockedException | DomainWithUnsupportedHEADmethodException | ConnTimeoutException e) {
@@ -329,9 +329,7 @@ public class HttpUtils
 						throw new DomainBlockedException();
 					}
 					
-					URL base = conn.getURL();
-					URL target = new URL(base, location);
-					String targetUrlStr = target.toString();
+					String targetUrlStr = UrlUtils.getFullyFormedUrl(null, location, conn.getURL());
 					
 					// FOR DEBUG -> Check to see what's happening with the redirect urls (location field types, as well as potential error redirects).
 					// Some domains use only the target-ending-path in their location field, while others use full target url.
@@ -414,7 +412,7 @@ public class HttpUtils
 	 * @return
 	 * @throws DocFileNotRetrievedException
 	 */
-	public static String downloadAndStoreDocFileOutsideCrawler(HttpURLConnection conn, String domainStr, String docUrl)
+	public static String downloadAndStoreDocFile(HttpURLConnection conn, String domainStr, String docUrl)
 																										throws DocFileNotRetrievedException
 	{
 		try {

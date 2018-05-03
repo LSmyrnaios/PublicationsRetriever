@@ -5,18 +5,22 @@ import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 
 
 /**
- * This class is responsible to store the triple <sourceUrl, docUrl, errorCause> for it to be written in the outputFile.
+ * This class is responsible to store the quadruple <urlId, sourceUrl, docUrl, errorCause> for it to be written in the outputFile.
  * @author Lampros A. Smyrnaios
  */
-public class TripleToBeLogged
+public class QuadrupleToBeLogged
 {
+    private String urlId;
     private String sourceUrl;
     private String docUrl;
     private String comment;   // This will be an emptyString, unless there is an error causing the docUrl to be unreachable.
 
 
-    public TripleToBeLogged(String sourceUrl, String docUrl, String comment)
+    public QuadrupleToBeLogged(String urlId, String sourceUrl, String docUrl, String comment)
     {
+        if ( urlId == null )
+            urlId = "Unretrievable";
+        this.urlId = urlId;
         this.sourceUrl = sourceUrl;
         this.docUrl = docUrl;
         this.comment = comment;
@@ -31,7 +35,7 @@ public class TripleToBeLogged
      */
     public String toJsonString()
     {
-        return  FileUtils.jsonEncoder(this.sourceUrl, this.docUrl, this.comment);  // It may return null.
+        return  FileUtils.jsonEncoder(this.urlId, this.sourceUrl, this.docUrl, this.comment);  // It may return null.
     }
 
 }
