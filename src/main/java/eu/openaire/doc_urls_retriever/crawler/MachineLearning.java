@@ -31,8 +31,8 @@ public class MachineLearning
 	private static int latestMLADocUrlsFound = 0;
 	private static float leastSuccessPercentageForMLA = 60;	// The percentage which we want, in order to continue running the MLA.
 	private static int leastNumberOfUrlsToCheck = 1000;	// Least number of URLs to check before deciding if we should continue running it.
-	private static int timesToGatherDataBeforeStarting = 10000;	// 5,000 urls.
-	private static int urlsToWaitUntilRestartMLA = 100000;	// 100,000 urls
+	private static int timesToGatherDataBeforeStarting = 5000;	// 5,000 urls.
+	private static int urlsToWaitUntilRestartMLA = 30000;	// 30,000 urls
 	private static int endOfSleepNumOfUrls = 0;
 	private static int latestNumOfUrlsBeforePauseMLA = 0;
 	private static int latestSuccessBreakPoint = 0;
@@ -50,6 +50,7 @@ public class MachineLearning
 	/**
 	 * Initialize the Machine Learning Algorithm (MLA).
 	 * It ensures that for small input (i.e. for testing purposes) the MLA can run properly.
+	 * This percentages-settings work only if the intputNumOfUrls is known before running the MLA (and only the it should be called). Otherwise, the default values will be used.
 	 */
 	public MachineLearning()
 	{
@@ -112,7 +113,7 @@ public class MachineLearning
 		{
 			return true;	// Always continue in this case, as we don't have enough success-rate-data to decide otherwise.
 		}
-		else	// Decide depending on successPercentage for all of the urls which reached the crawler until now (this will be the case every time this is called, after we exceed the leastNumber)..
+		else	// Decide depending on successPercentage for all of the urls which reached the "PageCrawler.visit()" until now (this will be the case every time this is called, after we exceed the leastNumber)..
 		{
 			float curSuccessRate = (float)((docUrlsFoundByMLA - latestMLADocUrlsFound) * 100) / (urlsCheckedWithMLA - latestUrlsMLAChecked);
 			logger.debug("CurSuccessRate of MLA = " + curSuccessRate + "%");
@@ -175,11 +176,12 @@ public class MachineLearning
 	 * The idea is that we might get a url which shows info about the publication and as the same ID with the wanted docUrl, but ut just happens to be in a different directory (path).
 	 * So, before going and checking each and every one of the inner links, we should check if by using known paths that gave docUrls before (for the current spesific domain), we are able to take the docUrl immediately.
 	 * Disclaimer: This is still in experimental stage.
+	 * @param urlId
 	 * @param pageUrl
 	 * @param domainStr
 	 * @return true / false
 	 */
-	public static boolean guessInnerDocUrlUsingML(String pageUrl, String domainStr)
+	public static boolean guessInnerDocUrlUsingML(String urlId, String pageUrl, String domainStr)
 	{
 		String pagePath = null;
 		Matcher urlMatcher = UrlUtils.URL_TRIPLE.matcher(pageUrl);
@@ -226,7 +228,7 @@ public class MachineLearning
 				guessedDocUrl = strB.toString();
 				
 				if ( UrlUtils.docUrls.contains(guessedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
-					UrlUtils.logTriple(pageUrl, guessedDocUrl, "", null);
+					UrlUtils.logTriple(urlId, pageUrl, guessedDocUrl, "", null);
 					logger.info("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted (already found before) docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
 					MachineLearning.docUrlsFoundByMLA ++;
 					return true;
@@ -236,7 +238,7 @@ public class MachineLearning
 				try {
 					logger.debug("Going to check guessedDocUrl: " + guessedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");
 					
-					if ( HttpUtils.connectAndCheckMimeType(pageUrl, guessedDocUrl, null, false, true) ) {
+					if ( HttpUtils.connectAndCheckMimeType(urlId, pageUrl, guessedDocUrl, null, false, true) ) {
 						logger.info("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
 						MachineLearning.docUrlsFoundByMLA ++;
 						return true;	// Note that we have already add it in the output links inside "connectAndCheckMimeType()".

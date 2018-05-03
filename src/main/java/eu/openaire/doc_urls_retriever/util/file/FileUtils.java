@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimaps;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
-import eu.openaire.doc_urls_retriever.util.url.TripleToBeLogged;
+import eu.openaire.doc_urls_retriever.util.url.QuadrupleToBeLogged;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -38,7 +38,7 @@ public class FileUtils
     public static int unretrievableUrlsOnly = 0;
     public static int groupCount = 300;
 	
-	public static final List<TripleToBeLogged> tripleToBeLoggedOutputList = new ArrayList<>();
+	public static final List<QuadrupleToBeLogged> quadrupleToBeLoggedOutputList = new ArrayList<>();
 	
 	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<String, Integer>();	// Holds docFileNa,es with their duplicatesNum.
 	
@@ -130,11 +130,6 @@ public class FileUtils
 				continue;
 			}
 			
-			// TODO - Find a way to keep track of the redirections over the input pages, in order to match the id of the original-input-docPage, with the redirected-final-docPage.
-			// So that the docUrl in the output will match to the ID of the inputDocPage.
-			// Currently there is no control over the correlation of pre-redirected pages and after-redirected ones, as Crawler4j, which handles this process doesn't keep track of such thing.
-			// So the output currently contains the redirected-final-docPages with their docUrls.
-			
 			idAndUrlMappedInput.putAll(Multimaps.forMap(inputIdUrlPair));    // Keep mapping to be put in the outputFile later.
 		}
 		
@@ -177,23 +172,25 @@ public class FileUtils
 
 	/**
 	 * This method encodes json members into a Json object and returns its String representation..
-	 * @param sourceUrl String
+	 * @param urlId String
+	 * @param sourceUrl
 	 * @param docUrl String
 	 * @param comment String
 	 * @return jsonString
 	 */
-	public static String jsonEncoder(String sourceUrl, String docUrl, String comment)
+	public static String jsonEncoder(String urlId, String sourceUrl, String docUrl, String comment)
 	{
 		JSONArray jsonArray;
 		try {
-			JSONObject firstJsonObject = new JSONObject().put("sourceUrl", sourceUrl);
-			JSONObject secondJsonObject = new JSONObject().put("docUrl", docUrl);
-			JSONObject thirdJsonObject = new JSONObject().put("comment", comment);	// The comment will be empty, if there is no error or if there is no docFileName.
+			JSONObject firstJsonObject = new JSONObject().put("id", urlId);
+			JSONObject secondJsonObject = new JSONObject().put("sourceUrl", sourceUrl);
+			JSONObject thirdJsonObject = new JSONObject().put("docUrl", docUrl);
+			JSONObject fourthJsonObject = new JSONObject().put("comment", comment);	// The comment will be empty, if there is no error or if there is no docFileName.
 			
 			// Care about the order of the elements by using a JSONArray (otherwise it's uncertain which one will be where).
-			jsonArray = new JSONArray().put(firstJsonObject).put(secondJsonObject).put(thirdJsonObject);
+			jsonArray = new JSONArray().put(firstJsonObject).put(secondJsonObject).put(thirdJsonObject).put(fourthJsonObject);
 		} catch (Exception e) {	// If there was an encoding problem.
-			logger.error("Failed to encode jsonLine: \"" + sourceUrl + ", " + docUrl + ", " + comment + "\"", e);
+			logger.error("Failed to encode jsonLine: \"" + urlId + ", " + sourceUrl + ", " + docUrl + ", " + comment + "\"", e);
 			return null;
 		}
 		
@@ -207,14 +204,14 @@ public class FileUtils
 	 */
 	public static void writeToFile()
 	{
-		int numberOfTriples = FileUtils.tripleToBeLoggedOutputList.size();
+		int numberOfTriples = FileUtils.quadrupleToBeLoggedOutputList.size();
 		StringBuilder strB = new StringBuilder(numberOfTriples * 350);  // 350: the maximum expected length for a source-doc-error triple..
 
 		String tempJsonString = null;
 
-		for ( TripleToBeLogged triple : FileUtils.tripleToBeLoggedOutputList)
+		for ( QuadrupleToBeLogged quadruple : FileUtils.quadrupleToBeLoggedOutputList)
 		{
-            tempJsonString = triple.toJsonString();
+            tempJsonString = quadruple.toJsonString();
 			if ( tempJsonString == null )	// If there was an encoding error, move on..
 				continue;
 			
@@ -225,7 +222,7 @@ public class FileUtils
 		printStream.print(strB.toString());
 		printStream.flush();
 		
-		FileUtils.tripleToBeLoggedOutputList.clear();	// Clear to keep in memory only <groupCount> values at a time.
+		FileUtils.quadrupleToBeLoggedOutputList.clear();	// Clear to keep in memory only <groupCount> values at a time.
 		
 		logger.debug("Finished writing to the outputFile.. " + numberOfTriples + " set(s) of (\"SourceUrl\", \"DocUrl\")");
 	}

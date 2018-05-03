@@ -118,19 +118,17 @@ public class UrlUtils
 			{
 				String lowerCaseUrl = retrievedUrl.toLowerCase();	// Only for string checking purposes, not supposed to reach any connection.
 				
-				if ( (retrievedUrl = handleUrlCheckAtLoading(retrievedUrl, lowerCaseUrl)) == null )
+				if ( (retrievedUrl = handleUrlChecks(null, retrievedUrl, lowerCaseUrl)) == null )
 					continue;
 				
-				// After utl-type checks, see if this is a possibleDocUlr and if so, connect to it. Otherwise, add it to the crawler and move on.
 				boolean isPossibleDocUrl = false;
-				
 				if ( UrlUtils.DOC_URL_FILTER.matcher(lowerCaseUrl).matches() )
 					isPossibleDocUrl = true;
 				
 				try {
-					HttpUtils.connectAndCheckMimeType(retrievedUrl, retrievedUrl, null, true, isPossibleDocUrl);    // If it's not a docUrl, it's still added in the crawler but inside this method, in order to add the final-redirected-free url.
+					HttpUtils.connectAndCheckMimeType(null, retrievedUrl, retrievedUrl, null, true, isPossibleDocUrl);
 				} catch (Exception e) {
-					UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
+					UrlUtils.logTriple(null, retrievedUrl, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
 					UrlUtils.connProblematicUrls ++;
 				}
 			}// end for-loop
@@ -179,21 +177,21 @@ public class UrlUtils
 					neutralUrl = retrievedUrl;	// If no special-goodCase-url is found, this one will be used.
 					String lowerCaseUrl = retrievedUrl.toLowerCase();    // Only for string checking purposes, not supposed to reach any connection.
 					
-					if ( (retrievedUrl = handleUrlCheckAtLoading(retrievedUrl, lowerCaseUrl)) == null )
+					if ( (retrievedUrl = handleUrlChecks(retrievedId, retrievedUrl, lowerCaseUrl)) == null )
 						continue;
 					
 					if ( UrlUtils.docUrls.contains(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
 						logger.debug("Re-crossing (before connecting to it) the already found docUrl: \"" + retrievedUrl + "\"");
 						if ( FileUtils.shouldDownloadDocFiles )
-							UrlUtils.logTriple(retrievedUrl, retrievedUrl, "This file is probably already downloaded.", null);
+							UrlUtils.logTriple(retrievedId, retrievedUrl, retrievedUrl, "This file is probably already downloaded.", null);
 						else
-							UrlUtils.logTriple(retrievedUrl, retrievedUrl, "", null);
+							UrlUtils.logTriple(retrievedId, retrievedUrl, retrievedUrl, "", null);
 						goToNextId = true;
 						break;
 					}
 					
 					// Check if it's a possible-DocUrl, if so, this is the only url which will be checked from this group, unless there's a canonicalization problem.
-					if ( UrlUtils.DOC_URL_FILTER.matcher(lowerCaseUrl).matches() )	// If it probably a docUrl, check it right away. (This way we avoid the expensive Crawler4j's process)
+					if ( UrlUtils.DOC_URL_FILTER.matcher(lowerCaseUrl).matches() )
 					{
 						//logger.debug("Possible docUrl: " + retrievedUrl);
 						possibleDocUrl = retrievedUrl;
@@ -226,9 +224,9 @@ public class UrlUtils
 					urlToCheck = neutralUrl;
 				
 				try {
-					HttpUtils.connectAndCheckMimeType(urlToCheck, urlToCheck, null, true, isPossibleDocUrl);    // If it's not a docUrl, it's still added in the crawler but inside this method, in order to add the final-redirected-free url.
+					HttpUtils.connectAndCheckMimeType(retrievedId, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);
 				} catch (Exception e) {
-					UrlUtils.logTriple(urlToCheck, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
+					UrlUtils.logTriple(retrievedId, urlToCheck, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
 					UrlUtils.connProblematicUrls ++;
 				}
 			}// end for-loop
@@ -256,31 +254,33 @@ public class UrlUtils
 	/**
 	 * This method checks if the given url is either of unwantedType or if it's a duplicate in the input, while removing the potential jsessionid from the url.
 	 * It returns the givenUrl without the jsessionidPart if this url is accepted for connection/crawling, otherwise, it returns "null".
+	 * @param urlId
 	 * @param retrievedUrl
 	 * @param lowerCaseUrl
 	 * @return the non-jsessionid-url-string / null for unwanted-duplicate-url
 	 */
-	public static String handleUrlCheckAtLoading(String retrievedUrl, String lowerCaseUrl)
+	public static String handleUrlChecks(String urlId, String retrievedUrl, String lowerCaseUrl)
 	{
 		String currentUrlDomain = UrlUtils.getDomainStr(retrievedUrl);
 		if ( currentUrlDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
-			logger.warn("Problematic URL in \"PageCrawler.handleUrlBeforeProcess()\": \"" + retrievedUrl + "\"");
-			UrlUtils.logTriple(retrievedUrl, retrievedUrl, "Discarded in PageCrawler.handleUrlBeforeProcess() method, after the occurrence of a domain-retrieval error.", null);
+			logger.warn("Problematic URL in \"UrlUtils.handleUrlChecks()\": \"" + retrievedUrl + "\"");
+			UrlUtils.logTriple(urlId, retrievedUrl, retrievedUrl, "Discarded in UrlUtils.handleUrlChecks() method, after the occurrence of a domain-retrieval error.", null);
 			return null;
 		}
 		
 		if ( HttpUtils.blacklistedDomains.contains(currentUrlDomain) ) {	// Check if it has been blackListed after running inner links' checks.
-			logger.debug("Crawler4j will avoid to connect to blackListed domain: \"" + currentUrlDomain + "\"");
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded in PageCrawler.handleUrlBeforeProcess() method, as its domain was found blackListed.", null);
+			logger.debug("We will avoid to connect to blackListed domain: \"" + currentUrlDomain + "\"");
+			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "Discarded in UrlUtils.handleUrlChecks() method, as its domain was found blackListed.", null);
 			return null;
 		}
 		
 		if ( HttpUtils.checkIfPathIs403BlackListed(retrievedUrl, currentUrlDomain) ) {
 			logger.debug("Preventing reaching 403ErrorCode with url: \"" + retrievedUrl + "\"!");
+			UrlUtils.logTriple(urlId, retrievedUrl, retrievedUrl, "Discarded in \"UrlUtils.handleUrlChecks()\" as it had a blackListed urlPath.", null);
 			return null;
 		}
 		
-		if ( matchesUnwantedUrlType(retrievedUrl, lowerCaseUrl) )
+		if ( matchesUnwantedUrlType(urlId, retrievedUrl, lowerCaseUrl) )
 			return null;	// The url-logging is happening inside this method (per urlType).
 		
 		// Remove "jsessionid" for urls. Most of them, if not all, will already be expired.
@@ -291,7 +291,7 @@ public class UrlUtils
 		if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
 			logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already been seen!");
 			UrlUtils.inputDuplicatesNum ++;
-			UrlUtils.logTriple(retrievedUrl, "duplicate", "Discarded at loading time, as it's a duplicate.", null);
+			UrlUtils.logTriple(urlId, retrievedUrl, "duplicate", "Discarded in UrlUtils.handleUrlChecks(), as it's a duplicate.", null);
 			return null;
 		}
 		
@@ -311,88 +311,89 @@ public class UrlUtils
 	 * This method takes the "retrievedUrl" from the inputFile and the "lowerCaseUrl" that comes out the retrieved one.
 	 * It then checks if the "lowerCaseUrl" matched certain criteria representing the unwanted urls' types. It uses the "retrievedUrl" for proper logging.
 	 * If these criteria match, then it logs the url and returns "true", otherwise, it returns "false".
+	 * @param urlId
 	 * @param lowerCaseUrl
 	 * @return true/false
 	 */
-	public static boolean matchesUnwantedUrlType(String retrievedUrl, String lowerCaseUrl)
+	public static boolean matchesUnwantedUrlType(String urlId, String retrievedUrl, String lowerCaseUrl)
 	{
 		if ( lowerCaseUrl.contains("frontiersin.org") || lowerCaseUrl.contains("tandfonline.com") ) {	// Avoid JavaScript-powered domains, other than the "sciencedirect.com", which is counted separately.
 			UrlUtils.javascriptPageUrls++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to a JavaScript-using domain, other than.", null);
+			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "Discarded after matching to a JavaScript-using domain, other than.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("sciencedirect.com") ) {	// These urls are in JavaScript, having dynamic links which we cannot currently retrieve.
 			UrlUtils.sciencedirectUrls ++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to the JavaScript-using domain \"sciencedirect.com\".", null);
+			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "Discarded after matching to the JavaScript-using domain \"sciencedirect.com\".", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("elsevier.com") ) {	// The plain "elsevier.com" and the "journals.elsevier.com" don't give docUrls.
 			// The "linkinghub.elsevier.com" is redirecting to "sciencedirect.com".
 			// Note that we still accept the "elsevier.es" pageUrls, which give docUrls.
 			UrlUtils.elsevierUnwantedUrls ++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to the unwanted \"elsevier.com\" domain.", null);
+			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "Discarded after matching to the unwanted \"elsevier.com\" domain.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("europepmc.org") || lowerCaseUrl.contains("ncbi.nlm.nih.gov") ) {	// Avoid known-crawler-sensitive domains.
 			UrlUtils.crawlerSensitiveDomains ++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to a crawler-sensitive domain.", null);
+			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "Discarded after matching to a crawler-sensitive domain.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("doaj.org/toc/") ) {	// Avoid resultPages.
 			UrlUtils.doajResultPageUrls ++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to the Results-directory: \"doaj.org/toc/\".", null);
+			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "Discarded after matching to the Results-directory: \"doaj.org/toc/\".", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("dlib.org") || lowerCaseUrl.contains("saberes.fcecon.unr.edu.ar") ) {    // Avoid HTML docUrls.
 			UrlUtils.pagesWithHtmlDocUrls++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to an HTML-docUrls site.", null);
+			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "Discarded after matching to an HTML-docUrls site.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("rivisteweb.it") || lowerCaseUrl.contains("wur.nl") || lowerCaseUrl.contains("remeri.org.mx")
 				|| lowerCaseUrl.contains("cam.ac.uk") || lowerCaseUrl.contains("scindeks.ceon.rs") || lowerCaseUrl.contains("egms.de") ) {	// Avoid pages known to not provide docUrls (just metadata).
 			UrlUtils.pagesNotProvidingDocUrls ++;												// Keep "remeri" subDomain of "org.mx", as the TLD is having a lot of different sites.
-			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to the non docUrls-providing site \"rivisteweb.it\".", null);
+			UrlUtils.logTriple(urlId, retrievedUrl,"unreachable", "Discarded after matching to the non docUrls-providing site \"rivisteweb.it\".", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("bibliotecadigital.uel.br") ) {	// Avoid domains requiring login to access docUrls.
 			UrlUtils.pagesRequireLoginToAccessDocFiles++;
-			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to a domain which needs login to access docFiles.", null);
+			UrlUtils.logTriple(urlId, retrievedUrl,"unreachable", "Discarded after matching to a domain which needs login to access docFiles.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("/view/") || lowerCaseUrl.contains("scielosp.org") || lowerCaseUrl.contains("dk.um.si")
 				|| lowerCaseUrl.contains("jorr.org") ) {	// Avoid crawling pages with larger depth.
 			UrlUtils.pagesWithLargerCrawlingDepth ++;
-			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to an increasedCrawlingDepth-site.", null);
+			UrlUtils.logTriple(urlId, retrievedUrl,"unreachable", "Discarded after matching to an increasedCrawlingDepth-site.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("doi.org/https://doi.org/") && lowerCaseUrl.contains("pangaea.") ) {	// PANGAEA. urls with problematic form and non docUrl inner links.
 			UrlUtils.pangaeaUrls ++;
-			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to \"PANGAEA.\" urls with invalid form and non-docUrls in their inner links.", null);
+			UrlUtils.logTriple(urlId, retrievedUrl,"unreachable", "Discarded after matching to \"PANGAEA.\" urls with invalid form and non-docUrls in their inner links.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("200.17.137.108") ) {	// Known domains with connectivity problems.
 			UrlUtils.connProblematicUrls ++;
-			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to known urls with connectivity problems.", null);
+			UrlUtils.logTriple(urlId, retrievedUrl,"unreachable", "Discarded after matching to known urls with connectivity problems.", null);
 			return true;
 		}
 		/*else if ( lowerCaseUrl.contains("handle.net") || lowerCaseUrl.contains("doors.doshisha.ac.jp") || lowerCaseUrl.contains("opac-ir.lib.osaka-kyoiku.ac.jp") ) {	// Slow urls (taking more than 3secs to connect).
 			UrlUtils.longToRespondUrls ++;
-			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to domain, known to take long to respond.", null);
+			UrlUtils.logTriple(urlId, retrievedUrl,"unreachable", "Discarded after matching to domain, known to take long to respond.", null);
 			return true;
 		}*/
 		else if ( lowerCaseUrl.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
 			HttpUtils.blockSharedSiteSessionDomain(retrievedUrl, null);
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "It was discarded after participating in a \" sharedSiteSession-redirectionPack\".", null);
+			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "It was discarded after participating in a \" sharedSiteSession-redirectionPack\".", null);
 			return false;	// Do not visit it.
 		}
 		else if ( UrlUtils.DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.DOI_ORG_PARENTHESIS_FILTER.matcher(lowerCaseUrl).matches() ) {
 			UrlUtils.doiOrgToScienceDirect ++;
-			UrlUtils.logTriple(retrievedUrl,"unreachable", "Discarded after matching to a urlType of \"doi.org\", which redirects to \"sciencedirect.com\".", null);
+			UrlUtils.logTriple(urlId, retrievedUrl,"unreachable", "Discarded after matching to a urlType of \"doi.org\", which redirects to \"sciencedirect.com\".", null);
 			return true;
 		}
 		else if ( shouldNotAcceptPageUrl(retrievedUrl, lowerCaseUrl) ) {
 			UrlUtils.urlsWithUnwantedForm ++;
-			UrlUtils.logTriple(retrievedUrl, "unreachable", "Discarded after matching to unwantedType-regex-rules.", null);
+			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "Discarded after matching to unwantedType-regex-rules.", null);
 			return true;
 		}
 		else
@@ -424,12 +425,13 @@ public class UrlUtils
 
     /**
      * This method logs the outputEntry to be written, as well as the docUrlPath (if non-empty String) and adds entries in the blackList.
+	 * @param urlId
 	 * @param sourceUrl
 	 * @param initialDocUrl
 	 * @param comment
 	 * @param domain (it may be null)
 	 */
-    public static void logTriple(String sourceUrl, String initialDocUrl, String comment, String domain)
+    public static void logTriple(String urlId, String sourceUrl, String initialDocUrl, String comment, String domain)
     {
         String finalDocUrl = initialDocUrl;
 		
@@ -456,9 +458,9 @@ public class UrlUtils
             duplicateUrls.add(sourceUrl);	 // Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future..
         }	// We don't add docUrls here, as we want them to be separate for checking purposes.
 		
-        FileUtils.tripleToBeLoggedOutputList.add(new TripleToBeLogged(sourceUrl, finalDocUrl, comment));	// Log it to be written later.
+		FileUtils.quadrupleToBeLoggedOutputList.add(new QuadrupleToBeLogged(urlId, sourceUrl, finalDocUrl, comment));	// Log it to be written later in the outputFile.
 		
-        if ( FileUtils.tripleToBeLoggedOutputList.size() == FileUtils.groupCount )	// Write to file every time we have a group of <groupCount> triples.
+        if ( FileUtils.quadrupleToBeLoggedOutputList.size() == FileUtils.groupCount )	// Write to file every time we have a group of <groupCount> triples.
             FileUtils.writeToFile();
     }
 

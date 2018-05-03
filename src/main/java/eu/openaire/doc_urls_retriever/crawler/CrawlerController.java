@@ -23,9 +23,6 @@ public class CrawlerController
 		logger.info("Starting crawler..");
 		
 		try {
-			if ( MachineLearning.useMLA )
-				new MachineLearning();
-			
 			if ( CrawlerController.useIdUrlPairs )
 				UrlUtils.loadAndCheckIdUrlPairs();
 			else
@@ -38,7 +35,7 @@ public class CrawlerController
 			*/
 			
 	        // Write any remaining urls from memory to disk.
-	        if ( FileUtils.tripleToBeLoggedOutputList.size() > 0 ) {
+	        if ( FileUtils.quadrupleToBeLoggedOutputList.size() > 0 ) {
 	        	logger.debug("Writing last set(s) of (\"SourceUrl\", \"DocUrl\"), to disk.");
 	        	FileUtils.writeToFile();
 	        }

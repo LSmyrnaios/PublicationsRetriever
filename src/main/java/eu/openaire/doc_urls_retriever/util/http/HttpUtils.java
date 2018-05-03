@@ -46,6 +46,7 @@ public class HttpUtils
 	/**
 	 * This method checks if a certain url can give us its mimeType, as well as if this mimeType is a docMimeType.
 	 * It automatically calls the "logUrl()" method for the valid docUrls, while it doesn't call it for non-success cases, thus allowing calling method to handle the case.
+	 * @param urlId
 	 * @param currentPage
 	 * @param resourceURL
 	 * @param domainStr
@@ -57,7 +58,7 @@ public class HttpUtils
 	 * @throws DomainBlockedException
 	 * @throws DomainWithUnsupportedHEADmethodException
 	 */
-	public static boolean connectAndCheckMimeType(String currentPage, String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
+	public static boolean connectAndCheckMimeType(String urlId, String currentPage, String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
 													throws RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
 	{
 		HttpURLConnection conn = null;
@@ -94,17 +95,17 @@ public class HttpUtils
 			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition, conn) ) {
 				String fullPathFileName = "";
 				if ( FileUtils.shouldDownloadDocFiles ) {
-					try { fullPathFileName = downloadAndStoreDocFileOutsideCrawler(conn, domainStr, finalUrlStr); }
+					try { fullPathFileName = downloadAndStoreDocFile(conn, domainStr, finalUrlStr); }
 					catch (DocFileNotRetrievedException dfnde) {
 						fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored.";
 						logger.warn(fullPathFileName, dfnde);
 					}
 				}
-				UrlUtils.logTriple(currentPage, finalUrlStr, fullPathFileName, domainStr);	// we send the urls, before and after potential redirections.
+				UrlUtils.logTriple(urlId, currentPage, finalUrlStr, fullPathFileName, domainStr);	// we send the urls, before and after potential redirections.
 				return true;
 			}
-			else if ( calledForPageUrl )	// Add it in the Crawler only if this method was called for an inputUrl.
-				PageCrawler.visit(finalUrlStr, conn);
+			else if ( calledForPageUrl )	// Visit this url only if this method was called for an inputUrl.
+				PageCrawler.visit(urlId, finalUrlStr, conn);
 			
 		} catch (RuntimeException re) {
 			if ( currentPage.equals(resourceURL) )    // Log this error only for docPages, not innerLinks.
@@ -411,7 +412,7 @@ public class HttpUtils
 	 * @return
 	 * @throws DocFileNotRetrievedException
 	 */
-	public static String downloadAndStoreDocFileOutsideCrawler(HttpURLConnection conn, String domainStr, String docUrl)
+	public static String downloadAndStoreDocFile(HttpURLConnection conn, String domainStr, String docUrl)
 																										throws DocFileNotRetrievedException
 	{
 		try {
