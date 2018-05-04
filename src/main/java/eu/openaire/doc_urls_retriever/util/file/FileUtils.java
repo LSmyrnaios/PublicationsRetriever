@@ -331,6 +331,7 @@ public class FileUtils
 				}
 			}
 			
+			FileUtils.numOfDocFile ++;
 			return docFile;
 			
 		} catch (DocFileNotRetrievedException dfnre) {

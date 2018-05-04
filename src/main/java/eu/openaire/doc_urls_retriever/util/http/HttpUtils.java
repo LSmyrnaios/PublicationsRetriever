@@ -431,11 +431,12 @@ public class HttpUtils
 	public static String downloadAndStoreDocFile(HttpURLConnection conn, String domainStr, String docUrl)
 																										throws DocFileNotRetrievedException
 	{
+		boolean reconnected = false;
 		try {
 			if ( conn.getRequestMethod().equals("HEAD") ) {    // If the connection happened with "HEAD" we have to re-connect with "GET" to download the docFile
 				// No call of "conn.disconnect()" here, as we will connect to the same server.
 				conn = openHttpConnection(docUrl, domainStr, false, true);
-				
+				reconnected = true;
 				int responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP responce), inside openHttpConnection().
 				if ( (responceCode < 200) || (responceCode >= 400) ) {    // If we have unwanted/error codes.
 					onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
@@ -464,7 +465,7 @@ public class HttpUtils
 			logger.warn("", e);
 			throw new DocFileNotRetrievedException();
 		} finally {
-			if ( conn != null )
+			if ( reconnected )	// Otherwise the given-previous connection will be closed by the calling method.
 				conn.disconnect();
 		}
 	}

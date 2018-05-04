@@ -1,8 +1,8 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
-//import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+//import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 
@@ -30,7 +30,7 @@ public class CrawlerController
 			
 			// Here test individual urls.
 			/*String url = "";	// Give the url to test.
-			HttpUtils.connectAndCheckMimeType(null, url, url, url, null, true, false);*/
+			HttpUtils.connectAndCheckMimeType(null, url, url, url, true, false);*/
 			
 	        // Write any remaining urls from memory to disk.
 	        if ( FileUtils.quadrupleToBeLoggedOutputList.size() > 0 ) {

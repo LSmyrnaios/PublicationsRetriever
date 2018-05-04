@@ -7,12 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // Used for testing with non-standard input/output.
-/*
-import java.io.File;
+/*import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-*/
+import java.io.FileOutputStream;*/
 
 
 /**
@@ -28,7 +26,7 @@ public class DocUrlsRetriever
 	
     public static void main( String[] args )
     {
-    	// If we will download docFile and use custom-fileNames.. retrieve the starting docFileName for this program's instance.
+		// If we will download docFile and use custom-fileNames.. retrieve the starting docFileName for this program's instance.
 		if ( FileUtils.shouldDownloadDocFiles && !FileUtils.shouldUseOriginalDocFileNames ) {
 			if ( args.length > 1 ) {
 				String errorMessage = "You have to give only one argument, to be used as the starting fileName for the docFileNames!";
@@ -58,7 +56,7 @@ public class DocUrlsRetriever
     	
     	// Use testing input/output files.
 		/*try {
-			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//sampleCleanUrls3000-2.json")),
+			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//sampleCleanUrls3000.json")),
 							new FileOutputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testOutputFile.json")));
 		} catch (FileNotFoundException e) {
 			String errorMessage = "InputFile not found!";
@@ -91,8 +89,12 @@ public class DocUrlsRetriever
 		logger.info("Total urls number in the input was: " + inputUrlNum);
 		logger.info("From which, " + CrawlerController.urlsReachedCrawler + " reached the crawling stage (others were either detected as docUrls or where discarded at loading after matching to unwanted types).");
 		logger.info("Total docUrls found: " + UrlUtils.sumOfDocUrlsFound + ". That's about: " + UrlUtils.sumOfDocUrlsFound * (float)100 / inputUrlNum + "%");
-		if ( FileUtils.shouldDownloadDocFiles && !FileUtils.shouldUseOriginalDocFileNames ) {
-			int numOfStoredDocFiles = FileUtils.numOfDocFile - (initialNumOfDocFile -1);
+		if ( FileUtils.shouldDownloadDocFiles ) {
+			int numOfStoredDocFiles = 0;
+			if ( FileUtils.shouldUseOriginalDocFileNames )
+				numOfStoredDocFiles = FileUtils.numOfDocFile - (initialNumOfDocFile -1);
+			else
+				numOfStoredDocFiles = (FileUtils.numOfDocFile -1) - (initialNumOfDocFile -1);
 			logger.info("From which docUrls, we were able to retrieve: " + numOfStoredDocFiles + " docFiles. That's about: " + numOfStoredDocFiles * (float)100 / UrlUtils.sumOfDocUrlsFound +"%");
 		}
 		logger.info("About: " + UrlUtils.crawlerSensitiveDomains * (float)100 / inputUrlNum + "% (" + UrlUtils.crawlerSensitiveDomains  + " urls) were from known crawler-sensitive domains.");
@@ -118,5 +120,5 @@ public class DocUrlsRetriever
         // Then... just close the open streams (imported and exported content) and exit.
         FileUtils.closeStreams();
     }
-
+	
 }
