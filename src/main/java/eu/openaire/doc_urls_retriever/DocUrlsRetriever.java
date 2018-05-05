@@ -95,7 +95,8 @@ public class DocUrlsRetriever
 				numOfStoredDocFiles = FileUtils.numOfDocFile - (initialNumOfDocFile -1);
 			else
 				numOfStoredDocFiles = (FileUtils.numOfDocFile -1) - (initialNumOfDocFile -1);
-			logger.info("From which docUrls, we were able to retrieve: " + numOfStoredDocFiles + " docFiles. That's about: " + numOfStoredDocFiles * (float)100 / UrlUtils.sumOfDocUrlsFound +"%");
+			logger.info("From which docUrls, we were able to retrieve: " + numOfStoredDocFiles + " docFiles. That's about: " + numOfStoredDocFiles * (float)100 / UrlUtils.sumOfDocUrlsFound +"%."
+					+" The un-retrieved docFiles were either belonging to already-found docUrls or they had content-issues.");
 		}
 		logger.info("About: " + UrlUtils.crawlerSensitiveDomains * (float)100 / inputUrlNum + "% (" + UrlUtils.crawlerSensitiveDomains  + " urls) were from known crawler-sensitive domains.");
 		logger.info("About: " + UrlUtils.javascriptPageUrls * (float)100 / inputUrlNum + "% (" + UrlUtils.javascriptPageUrls + " urls) were from a JavaScript-powered domain, other than the \"sciencedirect.com\", which has dynamic links.");

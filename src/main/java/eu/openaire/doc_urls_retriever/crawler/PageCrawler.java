@@ -51,7 +51,7 @@ public class PageCrawler
 			String innerLink = el.attr("href");
 			if ( !innerLink.isEmpty()
 					&& !innerLink.equals("\\/") && !innerLink.equals("#")
-					&& !innerLink.contains("mailto:") && !innerLink.toLowerCase().contains("javascript:") ) {
+					&& !innerLink.startsWith("mailto:") && !innerLink.startsWith("tel:") && !innerLink.toLowerCase().startsWith("javascript:") ) {
 				//logger.debug("InnerLink: " + innerLink);
 				urls.add(innerLink);
 			}

@@ -2,6 +2,7 @@ package eu.openaire.doc_urls_retriever.util.file;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.apache.commons.io.FileUtils.deleteDirectory;
-import static org.apache.commons.io.FileUtils.writeByteArrayToFile;
 
 
 /**
@@ -37,6 +37,7 @@ public class FileUtils
 	public static int unretrievableInputLines = 0;	// For better statistics in the end.
     public static int unretrievableUrlsOnly = 0;
     public static int groupCount = 300;
+    public static int maxStoringWaitingTime = 15000;	// 15sec
 	
 	public static final List<QuadrupleToBeLogged> quadrupleToBeLoggedOutputList = new ArrayList<>();
 	
@@ -230,18 +231,13 @@ public class FileUtils
 	
 	/**
 	 * This method is responsible for storing the docFiles and store them in permanent storage.
-	 * @param contentData
+	 * @param inStream
 	 * @param docUrl
 	 * @param contentDisposition
 	 * @throws DocFileNotRetrievedException
 	 */
-	public static String storeDocFile(byte[] contentData, String docUrl, String contentDisposition) throws DocFileNotRetrievedException
+	public static String storeDocFile(InputStream inStream, String docUrl, String contentDisposition) throws DocFileNotRetrievedException
 	{
-		if ( contentData.length == 0 ) {
-			logger.warn("ContentData for docUrl: \"" + docUrl + "\" was zero!");
-			throw new DocFileNotRetrievedException();
-		}
-		
 		File docFile;
 		try {
 			if ( FileUtils.shouldUseOriginalDocFileNames)
@@ -249,7 +245,27 @@ public class FileUtils
 			else
 				docFile = new File(storeDocFilesDir + File.separator + (numOfDocFile++) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
 			
-			writeByteArrayToFile(docFile, contentData, 0, contentData.length, false);	// apache.commons.io.FileUtils
+			FileOutputStream outStream = new FileOutputStream(docFile);
+			
+			int bytesRead = -1;
+			byte[] buffer = new byte[3145728];	// 3Mb
+			long startTime = System.nanoTime();
+			while ( (bytesRead = inStream.read(buffer)) != -1 )
+			{
+				if ( TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) > FileUtils.maxStoringWaitingTime ) {
+					logger.warn("Storing docFile from docUrl: \"" + docUrl + "\" took over "+ TimeUnit.MILLISECONDS.toSeconds(FileUtils.maxStoringWaitingTime) + "secs!");
+					if ( !docFile.delete() )
+						logger.error("Error when deleting the half-retrieved file from docUrl: " + docUrl);
+					numOfDocFile --;	// Revert number, as this docFile was not retrieved.
+					throw new DocFileNotRetrievedException();
+				}
+				else
+					outStream.write(buffer, 0, bytesRead);
+			}
+			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
+			
+			inStream.close();
+			outStream.close();
 			
 			if ( FileUtils.shouldLogFullPathName )
 				return docFile.getAbsolutePath();	// Return the fullPathName.

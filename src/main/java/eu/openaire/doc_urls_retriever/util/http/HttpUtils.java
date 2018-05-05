@@ -6,7 +6,6 @@ import eu.openaire.doc_urls_retriever.exceptions.*;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -174,13 +173,13 @@ public class HttpUtils
 			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// Either for just-webPages or for docUrls, we want to use "GET" in order to download the content.
 					|| (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles) ) {
 				conn.setRequestMethod("GET");    // Go directly with "GET".
-				conn.setReadTimeout(HttpUtils.maxConnGETWaitingTime);
 				conn.setConnectTimeout(HttpUtils.maxConnGETWaitingTime);
+				conn.setReadTimeout(HttpUtils.maxConnGETWaitingTime);
 			}
 			else {
 				conn.setRequestMethod("HEAD");    // Else, try "HEAD" (it may be either a domain that supports "HEAD", or a new domain, for which we have no info yet).
-				conn.setReadTimeout(maxConnHEADWaitingTime);
 				conn.setConnectTimeout(maxConnHEADWaitingTime);
+				conn.setReadTimeout(maxConnHEADWaitingTime);
 			}
 			
 			if ( (politenessDelay > 0) && domainStr.contains(lastConnectedHost) )	// If this is the last-visited domain, sleep a bit before re-connecting to it.
@@ -209,8 +208,8 @@ public class HttpUtils
 				conn = (HttpURLConnection) url.openConnection();
 				
 				conn.setRequestMethod("GET");	// To reach here, it means that the HEAD method is unsupported.
-				conn.setReadTimeout(maxConnGETWaitingTime);
 				conn.setConnectTimeout(maxConnGETWaitingTime);
+				conn.setReadTimeout(maxConnGETWaitingTime);
 				conn.setInstanceFollowRedirects(false);
 				
 				if ( politenessDelay > 0 )
@@ -457,7 +456,7 @@ public class HttpUtils
 			}
 			
 			// Write the downloaded bytes to the docFile and return the docFileName.
-			return FileUtils.storeDocFile(IOUtils.toByteArray(conn.getInputStream()), docUrl, conn.getHeaderField("Content-Disposition"));
+			return FileUtils.storeDocFile(conn.getInputStream(), docUrl, conn.getHeaderField("Content-Disposition"));
 			
 		} catch (DocFileNotRetrievedException dfnre ) {
 			throw dfnre;
