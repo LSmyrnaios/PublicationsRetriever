@@ -239,20 +239,22 @@ public class FileUtils
 	public static String storeDocFile(InputStream inStream, String docUrl, String contentDisposition) throws DocFileNotRetrievedException
 	{
 		File docFile;
+		FileOutputStream outStream = null;
 		try {
 			if ( FileUtils.shouldUseOriginalDocFileNames)
 				docFile = getDocFileWithOriginalFileName(docUrl, contentDisposition);
 			else
 				docFile = new File(storeDocFilesDir + File.separator + (numOfDocFile++) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
 			
-			FileOutputStream outStream = new FileOutputStream(docFile);
+			outStream = new FileOutputStream(docFile);
 			
 			int bytesRead = -1;
 			byte[] buffer = new byte[3145728];	// 3Mb
 			long startTime = System.nanoTime();
 			while ( (bytesRead = inStream.read(buffer)) != -1 )
 			{
-				if ( TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) > FileUtils.maxStoringWaitingTime ) {
+				long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
+				if ( (elapsedTime > FileUtils.maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {
 					logger.warn("Storing docFile from docUrl: \"" + docUrl + "\" took over "+ TimeUnit.MILLISECONDS.toSeconds(FileUtils.maxStoringWaitingTime) + "secs!");
 					if ( !docFile.delete() )
 						logger.error("Error when deleting the half-retrieved file from docUrl: " + docUrl);
@@ -264,9 +266,6 @@ public class FileUtils
 			}
 			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
 			
-			inStream.close();
-			outStream.close();
-			
 			if ( FileUtils.shouldLogFullPathName )
 				return docFile.getAbsolutePath();	// Return the fullPathName.
 			else
@@ -277,6 +276,19 @@ public class FileUtils
 		} catch (Exception ioe) {
 			logger.warn("", ioe);
 			throw new DocFileNotRetrievedException();
+		} finally {
+			try {
+				if ( inStream != null )
+					inStream.close();
+			} catch (Exception e) {
+				logger.error("", e);
+			}
+			try {
+				if ( outStream != null )
+					outStream.close();
+			} catch (Exception e) {
+				logger.error("", e);
+			}
 		}
 	}
 	
