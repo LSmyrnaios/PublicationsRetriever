@@ -182,15 +182,19 @@ public class PageCrawler
             lowerCaseLink = urlToCheck.toLowerCase();
             if ( UrlUtils.DOC_URL_FILTER.matcher(lowerCaseLink).matches() )
 			{
-				if ( shouldNotAcceptInnerLink(urlToCheck, lowerCaseLink) )	// Avoid false-positives, such as images (a common one: ".../pdf.png").
+				if ( shouldNotAcceptInnerLink(urlToCheck, lowerCaseLink) ) {    // Avoid false-positives, such as images (a common one: ".../pdf.png").
+					UrlUtils.duplicateUrls.add(urlToCheck);
 					continue;	// Disclaimer: This way we might lose some docUrls like this: "http://repositorio.ipen.br:8080/xmlui/themes/Mirage/images/Portaria-387.pdf".
+				}
 				
 				//logger.debug("InnerPossibleDocLink to connect with: " + urlToCheck);	// DEBUG!
 				try {
 					if ( HttpUtils.connectAndCheckMimeType(urlId, sourceUrl, urlToCheck, currentPageDomain, false, true) )	// We log the docUrl inside this method.
 						return;
-					else
+					else {
+						UrlUtils.duplicateUrls.add(urlToCheck);
 						continue;
+					}
 				} catch (RuntimeException re) {
 					UrlUtils.duplicateUrls.add(urlToCheck);    // Don't check it ever again..
 					continue;
@@ -226,6 +230,8 @@ public class PageCrawler
 			try {
 				if ( HttpUtils.connectAndCheckMimeType(urlId, sourceUrl, currentLink, currentPageDomain, false, false) )	// We log the docUrl inside this method.
 					return;
+				else
+					UrlUtils.duplicateUrls.add(currentLink);
 			} catch (DomainBlockedException dbe) {
 				logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
 				UrlUtils.logTriple(urlId, sourceUrl, "unreachable", "Logged in PageCrawler.visit() method, as its domain was blocked during crawling.", null);
