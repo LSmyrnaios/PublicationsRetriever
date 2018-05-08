@@ -29,7 +29,7 @@ public class UrlUtils
 	
 	public static final Pattern URL_DIRECTORY_FILTER =
 			Pattern.compile(".*\\/(?:profile|login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|post\\/|send\\/|shop\\/|import|bookmark|announcement|rss|feed|about|faq|wiki|news|events|cart|support|sitemap|license|disclaimer|polic(?:y|ies)|privacy|terms|help|law"
-							+ "|(?:my|your)?account|user|aut(?:h)?or|editor|citation|review|external|statistics|application|permission|ethic|conta(?:c)?t|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|people"
+							+ "|(?:my|your)?account|user|fund|aut(?:h)?or|editor|citation|review|external|statistics|application|permission|ethic|conta(?:c)?t|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|people"
 							+ "|error|(?:mis|ab)use|gateway|sorryserver|notfound|404\\.(?:\\w)?htm).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
 	
@@ -126,9 +126,9 @@ public class UrlUtils
 					isPossibleDocUrl = true;
 				
 				try {
-					HttpUtils.connectAndCheckMimeType(null, retrievedUrl, retrievedUrl, null, true, isPossibleDocUrl);
+					HttpUtils.connectAndCheckMimeType(null, retrievedUrl, retrievedUrl, retrievedUrl, null, true, isPossibleDocUrl);
 				} catch (Exception e) {
-					UrlUtils.logTriple(null, retrievedUrl, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
+					UrlUtils.logQuadruple(null, retrievedUrl, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
 					UrlUtils.connProblematicUrls ++;
 				}
 			}// end for-loop
@@ -182,9 +182,9 @@ public class UrlUtils
 					if ( UrlUtils.docUrls.contains(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
 						logger.debug("Re-crossing (before connecting to it) the already found docUrl: \"" + retrievedUrl + "\"");
 						if ( FileUtils.shouldDownloadDocFiles )
-							UrlUtils.logTriple(retrievedId, retrievedUrl, retrievedUrl, "This file is probably already downloaded.", null);
+							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, "This file is probably already downloaded.", null);
 						else
-							UrlUtils.logTriple(retrievedId, retrievedUrl, retrievedUrl, "", null);
+							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, "", null);
 						goToNextId = true;
 						break;
 					}
@@ -226,9 +226,9 @@ public class UrlUtils
 					continue;
 				
 				try {
-					HttpUtils.connectAndCheckMimeType(retrievedId, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);
+					HttpUtils.connectAndCheckMimeType(retrievedId, urlToCheck, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);
 				} catch (Exception e) {
-					UrlUtils.logTriple(retrievedId, urlToCheck, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
+					UrlUtils.logQuadruple(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
 					UrlUtils.connProblematicUrls ++;
 				}
 			}// end id-for-loop
@@ -266,19 +266,19 @@ public class UrlUtils
 		String currentUrlDomain = UrlUtils.getDomainStr(retrievedUrl);
 		if ( currentUrlDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"UrlUtils.handleUrlChecks()\": \"" + retrievedUrl + "\"");
-			UrlUtils.logTriple(urlId, retrievedUrl, retrievedUrl, "Discarded in UrlUtils.handleUrlChecks() method, after the occurrence of a domain-retrieval error.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, retrievedUrl, "Discarded in UrlUtils.handleUrlChecks() method, after the occurrence of a domain-retrieval error.", null);
 			return null;
 		}
 		
 		if ( HttpUtils.blacklistedDomains.contains(currentUrlDomain) ) {	// Check if it has been blackListed after running inner links' checks.
 			logger.debug("We will avoid to connect to blackListed domain: \"" + currentUrlDomain + "\"");
-			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "Discarded in UrlUtils.handleUrlChecks() method, as its domain was found blackListed.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in UrlUtils.handleUrlChecks() method, as its domain was found blackListed.", null);
 			return null;
 		}
 		
 		if ( HttpUtils.checkIfPathIs403BlackListed(retrievedUrl, currentUrlDomain) ) {
 			logger.debug("Preventing reaching 403ErrorCode with url: \"" + retrievedUrl + "\"!");
-			UrlUtils.logTriple(urlId, retrievedUrl, retrievedUrl, "Discarded in \"UrlUtils.handleUrlChecks()\" as it had a blackListed urlPath.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, retrievedUrl, "Discarded in \"UrlUtils.handleUrlChecks()\" as it had a blackListed urlPath.", null);
 			return null;
 		}
 		
@@ -293,7 +293,7 @@ public class UrlUtils
 		if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
 			logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already been seen!");
 			UrlUtils.inputDuplicatesNum ++;
-			UrlUtils.logTriple(urlId, retrievedUrl, "duplicate", "Discarded in UrlUtils.handleUrlChecks(), as it's a duplicate.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "duplicate", "Discarded in UrlUtils.handleUrlChecks(), as it's a duplicate.", null);
 			return null;
 		}
 		
@@ -321,61 +321,61 @@ public class UrlUtils
 	{
 		if ( lowerCaseUrl.contains("frontiersin.org") || lowerCaseUrl.contains("tandfonline.com") ) {	// Avoid JavaScript-powered domains, other than the "sciencedirect.com", which is counted separately.
 			UrlUtils.javascriptPageUrls++;
-			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "Discarded after matching to a JavaScript-using domain, other than.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to a JavaScript-using domain, other than.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("sciencedirect.com") ) {	// These urls are in JavaScript, having dynamic links which we cannot currently retrieve.
 			UrlUtils.sciencedirectUrls ++;
-			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "Discarded after matching to the JavaScript-using domain \"sciencedirect.com\".", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to the JavaScript-using domain \"sciencedirect.com\".", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("elsevier.com") ) {	// The plain "elsevier.com" and the "journals.elsevier.com" don't give docUrls.
 			// The "linkinghub.elsevier.com" is redirecting to "sciencedirect.com".
 			// Note that we still accept the "elsevier.es" pageUrls, which give docUrls.
 			UrlUtils.elsevierUnwantedUrls ++;
-			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "Discarded after matching to the unwanted \"elsevier.com\" domain.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to the unwanted \"elsevier.com\" domain.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("europepmc.org") || lowerCaseUrl.contains("ncbi.nlm.nih.gov") ) {	// Avoid known-crawler-sensitive domains.
 			UrlUtils.crawlerSensitiveDomains ++;
-			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "Discarded after matching to a crawler-sensitive domain.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to a crawler-sensitive domain.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("doaj.org/toc/") ) {	// Avoid resultPages.
 			UrlUtils.doajResultPageUrls ++;
-			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "Discarded after matching to the Results-directory: \"doaj.org/toc/\".", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to the Results-directory: \"doaj.org/toc/\".", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("dlib.org") || lowerCaseUrl.contains("saberes.fcecon.unr.edu.ar") ) {    // Avoid HTML docUrls.
 			UrlUtils.pagesWithHtmlDocUrls++;
-			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "Discarded after matching to an HTML-docUrls site.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to an HTML-docUrls site.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("rivisteweb.it") || lowerCaseUrl.contains("wur.nl") || lowerCaseUrl.contains("remeri.org.mx")
 				|| lowerCaseUrl.contains("cam.ac.uk") || lowerCaseUrl.contains("scindeks.ceon.rs") || lowerCaseUrl.contains("egms.de") ) {	// Avoid pages known to not provide docUrls (just metadata).
 			UrlUtils.pagesNotProvidingDocUrls ++;												// Keep "remeri" subDomain of "org.mx", as the TLD is having a lot of different sites.
-			UrlUtils.logTriple(urlId, retrievedUrl,"unreachable", "Discarded after matching to the non docUrls-providing site \"rivisteweb.it\".", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to the non docUrls-providing site \"rivisteweb.it\".", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("bibliotecadigital.uel.br") ) {	// Avoid domains requiring login to access docUrls.
 			UrlUtils.pagesRequireLoginToAccessDocFiles++;
-			UrlUtils.logTriple(urlId, retrievedUrl,"unreachable", "Discarded after matching to a domain which needs login to access docFiles.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to a domain which needs login to access docFiles.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("/view/") || lowerCaseUrl.contains("scielosp.org") || lowerCaseUrl.contains("dk.um.si")
 				|| lowerCaseUrl.contains("jorr.org") ) {	// Avoid crawling pages with larger depth.
 			UrlUtils.pagesWithLargerCrawlingDepth ++;
-			UrlUtils.logTriple(urlId, retrievedUrl,"unreachable", "Discarded after matching to an increasedCrawlingDepth-site.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to an increasedCrawlingDepth-site.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("doi.org/https://doi.org/") && lowerCaseUrl.contains("pangaea.") ) {	// PANGAEA. urls with problematic form and non docUrl inner links.
 			UrlUtils.pangaeaUrls ++;
-			UrlUtils.logTriple(urlId, retrievedUrl,"unreachable", "Discarded after matching to \"PANGAEA.\" urls with invalid form and non-docUrls in their inner links.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to \"PANGAEA.\" urls with invalid form and non-docUrls in their inner links.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("200.17.137.108") ) {	// Known domains with connectivity problems.
 			UrlUtils.connProblematicUrls ++;
-			UrlUtils.logTriple(urlId, retrievedUrl,"unreachable", "Discarded after matching to known urls with connectivity problems.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to known urls with connectivity problems.", null);
 			return true;
 		}
 		/*else if ( lowerCaseUrl.contains("handle.net") || lowerCaseUrl.contains("doors.doshisha.ac.jp") || lowerCaseUrl.contains("opac-ir.lib.osaka-kyoiku.ac.jp") ) {	// Slow urls (taking more than 3secs to connect).
@@ -385,17 +385,17 @@ public class UrlUtils
 		}*/
 		else if ( lowerCaseUrl.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
 			HttpUtils.blockSharedSiteSessionDomain(retrievedUrl, null);
-			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "It was discarded after participating in a \" sharedSiteSession-redirectionPack\".", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "It was discarded after participating in a \" sharedSiteSession-redirectionPack\".", null);
 			return false;	// Do not visit it.
 		}
 		else if ( UrlUtils.DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.DOI_ORG_PARENTHESIS_FILTER.matcher(lowerCaseUrl).matches() ) {
 			UrlUtils.doiOrgToScienceDirect ++;
-			UrlUtils.logTriple(urlId, retrievedUrl,"unreachable", "Discarded after matching to a urlType of \"doi.org\", which redirects to \"sciencedirect.com\".", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to a urlType of \"doi.org\", which redirects to \"sciencedirect.com\".", null);
 			return true;
 		}
 		else if ( shouldNotAcceptPageUrl(retrievedUrl, lowerCaseUrl) ) {
 			UrlUtils.urlsWithUnwantedForm ++;
-			UrlUtils.logTriple(urlId, retrievedUrl, "unreachable", "Discarded after matching to unwantedType-regex-rules.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to unwantedType-regex-rules.", null);
 			return true;
 		}
 		else
@@ -429,11 +429,12 @@ public class UrlUtils
      * This method logs the outputEntry to be written, as well as the docUrlPath (if non-empty String) and adds entries in the blackList.
 	 * @param urlId
 	 * @param sourceUrl
+	 * @param pageUrl
 	 * @param initialDocUrl
 	 * @param comment
 	 * @param domain (it may be null)
 	 */
-    public static void logTriple(String urlId, String sourceUrl, String initialDocUrl, String comment, String domain)
+    public static void logQuadruple(String urlId, String sourceUrl, String pageUrl, String initialDocUrl, String comment, String domain)
     {
         String finalDocUrl = initialDocUrl;
 		
@@ -452,7 +453,7 @@ public class UrlUtils
 			
             // Gather data for the MLA, if we decide to have it enabled.
             if ( MachineLearning.useMLA )
-				MachineLearning.gatherMLData(domain, sourceUrl, finalDocUrl);
+				MachineLearning.gatherMLData(domain, pageUrl, finalDocUrl);
 			
             docUrls.add(finalDocUrl);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
         }

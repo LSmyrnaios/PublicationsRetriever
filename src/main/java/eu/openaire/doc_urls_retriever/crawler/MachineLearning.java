@@ -3,6 +3,7 @@ package eu.openaire.doc_urls_retriever.crawler;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
+import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
@@ -230,8 +231,11 @@ public class MachineLearning
 				guessedDocUrl = strB.toString();
 				
 				if ( UrlUtils.docUrls.contains(guessedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
-					UrlUtils.logTriple(urlId, sourceUrl, guessedDocUrl, "", null);
 					logger.info("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted (already found before) docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
+					if ( FileUtils.shouldDownloadDocFiles )
+						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, guessedDocUrl, "This file is probably already downloaded.", null);
+					else
+						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, guessedDocUrl, "", null);
 					MachineLearning.docUrlsFoundByMLA ++;
 					return true;
 				}
@@ -240,7 +244,7 @@ public class MachineLearning
 				try {
 					logger.debug("Going to check guessedDocUrl: " + guessedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");
 					
-					if ( HttpUtils.connectAndCheckMimeType(urlId, sourceUrl, guessedDocUrl, null, false, true) ) {
+					if ( HttpUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, guessedDocUrl, null, false, true) ) {
 						logger.info("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
 						MachineLearning.docUrlsFoundByMLA ++;
 						return true;	// Note that we have already add it in the output links inside "connectAndCheckMimeType()".

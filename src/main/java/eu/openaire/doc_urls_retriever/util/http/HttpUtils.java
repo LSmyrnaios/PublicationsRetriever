@@ -47,6 +47,7 @@ public class HttpUtils
 	 * It automatically calls the "logUrl()" method for the valid docUrls, while it doesn't call it for non-success cases, thus allowing calling method to handle the case.
 	 * @param urlId
 	 * @param sourceUrl
+	 * @param pageUrl
 	 * @param resourceURL
 	 * @param domainStr
 	 * @param calledForPageUrl
@@ -57,7 +58,7 @@ public class HttpUtils
 	 * @throws DomainBlockedException
 	 * @throws DomainWithUnsupportedHEADmethodException
 	 */
-	public static boolean connectAndCheckMimeType(String urlId, String sourceUrl, String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
+	public static boolean connectAndCheckMimeType(String urlId, String sourceUrl, String pageUrl, String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
 													throws RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
 	{
 		HttpURLConnection conn = null;
@@ -70,7 +71,7 @@ public class HttpUtils
 			
 			int responceCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP responce), inside openHttpConnection().
 			if ( (responceCode >= 300) && (responceCode <= 399) ) {   // If we have redirections..
-				conn = HttpUtils.handleRedirects(urlId, sourceUrl, conn, responceCode, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // Take care of redirects.
+				conn = HttpUtils.handleRedirects(urlId, sourceUrl, pageUrl, conn, responceCode, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // Take care of redirects.
 			}
 			else if ( (responceCode < 200) || (responceCode >= 400) ) {	// If we have error codes.
 				onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
@@ -101,7 +102,7 @@ public class HttpUtils
 						logger.warn(fullPathFileName, dfnde);
 					}
 				}
-				UrlUtils.logTriple(urlId, sourceUrl, finalUrlStr, fullPathFileName, domainStr);	// we send the urls, before and after potential redirections.
+				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, domainStr);	// we send the urls, before and after potential redirections.
 				return true;
 			}
 			else if ( calledForPageUrl ) {    // Visit this url only if this method was called for an inputUrl.
@@ -109,19 +110,19 @@ public class HttpUtils
 					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, conn);
 				else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" will not be visited!");
-					UrlUtils.logTriple(urlId, sourceUrl, "unreachable", "It was discarded in \"HttpUtils.connectAndCheckMimeType()\", after not matching to a docUrl nor to an htm/text-like page.", domainStr);
+					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in \"HttpUtils.connectAndCheckMimeType()\", after not matching to a docUrl nor to an htm/text-like page.", domainStr);
 				}
 			}
 		} catch (AlreadyFoundDocUrlException afdue) {	// An already-found docUrl was discovered during redirections.
 			return true;	// It's already logged for the outputFile.
 		} catch (RuntimeException re) {
-			if ( sourceUrl.equals(resourceURL) )	// Log this error only for docPages, not innerLinks.
+			if ( calledForPageUrl )	// Log this error only for docPages, not innerLinks.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
 			throw re;
 		} catch (DomainBlockedException | DomainWithUnsupportedHEADmethodException | ConnTimeoutException e) {
 			throw e;
 		} catch (Exception e) {
-			if ( sourceUrl.equals(resourceURL) )	// Log this error only for docPages.
+			if ( calledForPageUrl )	// Log this error only for docPages.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
 			throw new RuntimeException();
 		} finally {
@@ -268,7 +269,7 @@ public class HttpUtils
 		} catch (SocketException se) {
 			String seMsg = se.getMessage();
 			if ( seMsg != null )
-				logger.warn(se.getMessage() + " This SocketException was recieved after trying to connect with the domain: \"" + domainStr + "\"");
+				logger.warn("\"" + se.getMessage() + "\". This SocketException was recieved after trying to connect with the domain: \"" + domainStr + "\"");
 			if ( conn != null )
 				conn.disconnect();
 			blacklistedDomains.add(domainStr);
@@ -289,6 +290,7 @@ public class HttpUtils
      * It opens a new connection every time, up to the point we reach a certain number of redirections defined by "HttpUtils.maxRedirects".
 	 * @param urlId
 	 * @param sourceUrl
+	 * @param pageUrl
 	 * @param conn
 	 * @param responceCode
 	 * @param domainStr
@@ -300,7 +302,7 @@ public class HttpUtils
 	 * @throws DomainBlockedException
 	 * @throws DomainWithUnsupportedHEADmethodException
 	 */
-	public static HttpURLConnection handleRedirects(String urlId, String sourceUrl, HttpURLConnection conn, int responceCode, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
+	public static HttpURLConnection handleRedirects(String urlId, String sourceUrl, String pageUrl, HttpURLConnection conn, int responceCode, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
 																			throws AlreadyFoundDocUrlException, RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
 	{
 		int redirectsNum = 0;
@@ -356,9 +358,9 @@ public class HttpUtils
 					if ( UrlUtils.docUrls.contains(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
 						logger.debug("Re-crossing the already found docUrl: \"" + targetUrl + "\"");
 						if ( FileUtils.shouldDownloadDocFiles )
-							UrlUtils.logTriple(urlId, sourceUrl, targetUrl, "This file is probably already downloaded.", domainStr);
+							UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, "This file is probably already downloaded.", domainStr);
 						else
-							UrlUtils.logTriple(urlId, sourceUrl, targetUrl, "", domainStr);
+							UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, "", domainStr);
 						throw new AlreadyFoundDocUrlException();
 					}
 					
@@ -530,6 +532,14 @@ public class HttpUtils
 		String pathStr = UrlUtils.getPathStr(urlStr);
 		
 		if ( pathStr != null ) {
+			
+			if ( UrlUtils.PLAIN_DOMAIN_FILTER.matcher(pathStr).matches() ) {	// If this path is the initial-domain-path, block the whole domain.
+				HttpUtils.blacklistedDomains.add(domainStr);
+				if ( HttpUtils.domainsMultimapWithPaths403BlackListed.containsKey(domainStr) )	// Check if there were any other paths of this domain which were previously blocked.
+					HttpUtils.domainsMultimapWithPaths403BlackListed.removeAll(domainStr);	// No need to keep its paths anymore.
+				return;
+			}
+			
 			HttpUtils.domainsMultimapWithPaths403BlackListed.put(domainStr, pathStr);    // Put the new path to be blocked.
 			logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code.");
 			
