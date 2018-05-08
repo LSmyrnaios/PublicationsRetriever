@@ -104,9 +104,14 @@ public class HttpUtils
 				UrlUtils.logTriple(urlId, sourceUrl, finalUrlStr, fullPathFileName, domainStr);	// we send the urls, before and after potential redirections.
 				return true;
 			}
-			else if ( calledForPageUrl )	// Visit this url only if this method was called for an inputUrl.
-				PageCrawler.visit(urlId, sourceUrl, finalUrlStr, conn);
-			
+			else if ( calledForPageUrl ) {    // Visit this url only if this method was called for an inputUrl.
+				if ( (mimeType != null) && (mimeType.contains("htm") || mimeType.contains("text")) )
+					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, conn);
+				else {
+					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" will not be visited!");
+					UrlUtils.logTriple(urlId, sourceUrl, "unreachable", "It was discarded in \"HttpUtils.connectAndCheckMimeType()\", after not matching to a docUrl nor to an htm/text-like page.", domainStr);
+				}
+			}
 		} catch (AlreadyFoundDocUrlException afdue) {	// An already-found docUrl was discovered during redirections.
 			return true;	// It's already logged for the outputFile.
 		} catch (RuntimeException re) {
