@@ -363,7 +363,7 @@ public class UrlUtils
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("/view/") || lowerCaseUrl.contains("scielosp.org") || lowerCaseUrl.contains("dk.um.si")
-				|| lowerCaseUrl.contains("jorr.org") ) {	// Avoid crawling pages with larger depth.
+				|| lowerCaseUrl.contains("jorr.org") || lowerCaseUrl.contains("redalyc.org") ) {	// Avoid crawling pages with larger depth.
 			UrlUtils.pagesWithLargerCrawlingDepth ++;
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to an increasedCrawlingDepth-site.", null);
 			return true;
@@ -514,7 +514,7 @@ public class UrlUtils
 			// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
 			return	(contentDisposition.contains("attachment") && contentDisposition.contains("pdf"));
 		}
-		else {
+		else {	// This is not expected to be reached. Keep it for method-reusability.
     		logger.warn("No mimeType, nor Content-Disposition, were able to be retrieved for url: " + urlStr);
 			return false;
 		}

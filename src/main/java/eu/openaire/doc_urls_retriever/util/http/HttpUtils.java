@@ -26,6 +26,8 @@ public class HttpUtils
 	public static final HashSet<String> blacklistedDomains = new HashSet<String>();	// Domains with which we don't want to connect again.
 	public static final HashMap<String, Integer> timesDomainsReturned5XX = new HashMap<String, Integer>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
 	public static final HashMap<String, Integer> timesDomainsHadTimeoutEx = new HashMap<String, Integer>();
+	public static final HashMap<String, Integer> timesDomainsReturnedNoType = new HashMap<String, Integer>();	// Domain which returned no content-type not content disposition in their responce and amount of times they did.
+	public static final HashMap<String, Integer> timesDomainsHadInputNotBeingDocNorPage = new HashMap<String, Integer>();
 	public static final SetMultimap<String, String> domainsMultimapWithPaths403BlackListed = HashMultimap.create();	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
 	
 	public static String lastConnectedHost = "";
@@ -37,6 +39,8 @@ public class HttpUtils
     private static final int timesToHave5XXerrorCodeBeforeBlocked = 3;
     private static final int timesToHaveTimeoutExBeforeBlocked = 3;
     private static final int numberOf403BlockedPathsBeforeBlocked = 3;
+    private static final int timesToReturnNoTypeBeforeBlocked = 10;
+	private static final int timesToHaveNoDocNorPageInputBeforeBlocked = 10;
     
 	public static final int maxAllowedContentSize = 1073741824;	// 1Gb
 	private static final boolean shouldNOTacceptGETmethodForUncategorizedInnerLinks = true;
@@ -85,9 +89,14 @@ public class HttpUtils
 			
 			if ( mimeType == null ) {
 				contentDisposition = conn.getHeaderField("Content-Disposition");
-				if ( (contentDisposition == null) && !calledForPageUrl ) {	// If there is no clue for its type and this method is called for innerLinks, throw exception, otherwise, on pageUrls, give them a chance to be parsed and crawled.
+				if ( contentDisposition == null ) {
 					logger.warn("No ContentType nor ContentDisposition, were able to be retrieved from url: " + conn.getURL().toString());
-					throw new RuntimeException();	// We can't retrieve any clue. This is not desired.
+					if ( countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, HttpUtils.timesDomainsReturnedNoType, domainStr, HttpUtils.timesToReturnNoTypeBeforeBlocked) ) {
+						logger.warn("Domain: " + domainStr + " was blocked after returning no Type-info more than " + HttpUtils.timesToReturnNoTypeBeforeBlocked + " times.");
+						throw new DomainBlockedException();
+					}
+					else
+						throw new RuntimeException();	// We can't retrieve any clue. This is not desired.
 				}
 			}
 			
@@ -106,12 +115,14 @@ public class HttpUtils
 				return true;
 			}
 			else if ( calledForPageUrl ) {    // Visit this url only if this method was called for an inputUrl.
-				if ( (mimeType != null) && (mimeType.contains("htm") || mimeType.contains("text")) )
+				if ( (mimeType != null) && (mimeType.contains("htm") || mimeType.contains("text")) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
 					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, conn);
 				else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" will not be visited!");
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in \"HttpUtils.connectAndCheckMimeType()\", after not matching to a docUrl nor to an htm/text-like page.", domainStr);
-				}
+					if ( countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, HttpUtils.timesDomainsHadInputNotBeingDocNorPage, domainStr, HttpUtils.timesToHaveNoDocNorPageInputBeforeBlocked) )
+						logger.warn("Domain: " + domainStr + " was blocked after having no Doc nor Pages in the input more than " + HttpUtils.timesToReturnNoTypeBeforeBlocked + " times.");
+				}	// We log the quadruple here, as there is connection-kind-of problem here.. it's just us considering it an unwanted case. We don't throw "DomainBlockedException()", as we don't handle it for inputUrls (it would also log the quadruple twice with diff comments).
 			}
 		} catch (AlreadyFoundDocUrlException afdue) {	// An already-found docUrl was discovered during redirections.
 			return true;	// It's already logged for the outputFile.
