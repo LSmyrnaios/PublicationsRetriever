@@ -65,6 +65,8 @@ public class UrlUtils
 	
 	public static final Pattern DOI_ORG_PARENTHESIS_FILTER = Pattern.compile(".+[doi.org]\\/[\\d]{2}\\.[\\d]{4}\\/[\\w]*[\\d]{4}\\-[\\d]{3}(?:[\\d]|[\\w])[\\(][\\d]{2}[\\)][\\d]{5}\\-(?:[\\d]|[\\w])");	// Same reason as above.
 	
+	public static final Pattern DOI_ORG_JTO_FILTER = Pattern.compile(".+[doi.org]\\/[\\d]{2}\\.[\\d]{4}\\/.*[jto]\\..+");	// doi.org urls which has this form and redirect to "sciencedirect.com".
+	
 	public static int sumOfDocUrlsFound = 0;	// Change it back to simple int if finally in singleThread mode
 	public static int inputDuplicatesNum = 0;
 	
@@ -388,7 +390,8 @@ public class UrlUtils
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "It was discarded after participating in a \" sharedSiteSession-redirectionPack\".", null);
 			return false;	// Do not visit it.
 		}
-		else if ( UrlUtils.DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.DOI_ORG_PARENTHESIS_FILTER.matcher(lowerCaseUrl).matches() ) {
+		else if ( UrlUtils.DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.DOI_ORG_PARENTHESIS_FILTER.matcher(lowerCaseUrl).matches()
+				|| UrlUtils.DOI_ORG_JTO_FILTER.matcher(lowerCaseUrl).matches() ) {
 			UrlUtils.doiOrgToScienceDirect ++;
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to a urlType of \"doi.org\", which redirects to \"sciencedirect.com\".", null);
 			return true;

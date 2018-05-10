@@ -78,7 +78,7 @@ public class HttpUtils
 				conn = HttpUtils.handleRedirects(urlId, sourceUrl, pageUrl, conn, responceCode, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // Take care of redirects.
 			}
 			else if ( (responceCode < 200) || (responceCode >= 400) ) {	// If we have error codes.
-				onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
+				onErrorStatusCode(resourceURL, domainStr, responceCode);
 				throw new RuntimeException();	// This is only thrown if a "DomainBlockedException" is catched.
 			}
 			// Else it's an HTTP 2XX SUCCESS CODE.
@@ -542,15 +542,8 @@ public class HttpUtils
 	{
 		String pathStr = UrlUtils.getPathStr(urlStr);
 		
-		if ( pathStr != null ) {
-			
-			if ( UrlUtils.PLAIN_DOMAIN_FILTER.matcher(pathStr).matches() ) {	// If this path is the initial-domain-path, block the whole domain.
-				HttpUtils.blacklistedDomains.add(domainStr);
-				if ( HttpUtils.domainsMultimapWithPaths403BlackListed.containsKey(domainStr) )	// Check if there were any other paths of this domain which were previously blocked.
-					HttpUtils.domainsMultimapWithPaths403BlackListed.removeAll(domainStr);	// No need to keep its paths anymore.
-				return;
-			}
-			
+		if ( pathStr != null )
+		{
 			HttpUtils.domainsMultimapWithPaths403BlackListed.put(domainStr, pathStr);    // Put the new path to be blocked.
 			logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code.");
 			
