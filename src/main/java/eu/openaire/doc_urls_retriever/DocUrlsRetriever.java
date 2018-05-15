@@ -78,13 +78,18 @@ public class DocUrlsRetriever
 		}
 		
 		// Show statistics.
-		long inputUrlNum = FileUtils.getCurrentlyLoadedUrls();
-    	if ( (FileUtils.skipFirstRow && (inputUrlNum < 0)) || (!FileUtils.skipFirstRow && (inputUrlNum == 0)) ) {
-			String errorMessage = "\"FileUtils.getCurrentlyLoadedUrls()\" is unexpectedly reporting that no urls were retrieved from input file! Output data may be affected! Exiting..";
-			System.err.println(errorMessage);
-			logger.error(errorMessage);
-			System.exit(-6);
-    	}
+		long inputUrlNum = 0;
+		if ( CrawlerController.useIdUrlPairs )
+			inputUrlNum = UrlUtils.numOfIDs;	// For each ID we check only one of its urls anyway.
+		else {
+			inputUrlNum = FileUtils.getCurrentlyLoadedUrls();
+			if ( (FileUtils.skipFirstRow && (inputUrlNum < 0)) || (!FileUtils.skipFirstRow && (inputUrlNum == 0)) ) {
+				String errorMessage = "\"FileUtils.getCurrentlyLoadedUrls()\" is unexpectedly reporting that no urls were retrieved from input file! Output data may be affected! Exiting..";
+				System.err.println(errorMessage);
+				logger.error(errorMessage);
+				System.exit(-6);
+			}
+		}
 		
 		logger.info("Total urls number in the input was: " + inputUrlNum);
 		logger.info("From which, " + CrawlerController.urlsReachedCrawler + " reached the crawling stage (others were either detected as docUrls or where discarded at loading after matching to unwanted types).");

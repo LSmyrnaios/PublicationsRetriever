@@ -1,7 +1,5 @@
 package eu.openaire.doc_urls_retriever.util.url;
 
-import eu.openaire.doc_urls_retriever.util.file.FileUtils;
-
 
 
 /**
@@ -19,7 +17,8 @@ public class QuadrupleToBeLogged
     public QuadrupleToBeLogged(String urlId, String sourceUrl, String docUrl, String comment)
     {
         if ( urlId == null )
-            urlId = "Unretrievable";
+            urlId = "unretrievable";
+        
         this.urlId = urlId;
         this.sourceUrl = sourceUrl;
         this.docUrl = docUrl;
@@ -29,13 +28,20 @@ public class QuadrupleToBeLogged
 
     /**
      * This method returns this object in a jsonString.
-     * It uses the "FileUtils.jsonEncoder()" to encode the members of this class into a jsonLine.
-     * It returns that jsonLine, otherwise, null if there was an encoding error.
      * @return jsonString
      */
     public String toJsonString()
     {
-        return  FileUtils.jsonEncoder(this.urlId, this.sourceUrl, this.docUrl, this.comment);  // It may return null.
+        StringBuilder strB = new StringBuilder(400);
+        
+        strB.append("{");
+        strB.append("\"id\":\"").append(this.urlId).append("\",");
+        strB.append("\"sourceUrl\":\"").append(this.sourceUrl).append("\",");
+        strB.append("\"docUrl\":\"").append(this.docUrl).append("\",");
+        strB.append("\"comment\":\"").append(this.comment).append("\"");
+        strB.append("}");
+        
+        return strB.toString();
     }
 
 }

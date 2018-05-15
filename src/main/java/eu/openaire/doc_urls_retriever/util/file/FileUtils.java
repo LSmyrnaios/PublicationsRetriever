@@ -11,7 +11,6 @@ import com.google.common.collect.Multimaps;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.doc_urls_retriever.util.url.QuadrupleToBeLogged;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -169,34 +168,6 @@ public class FileUtils
 
 		return returnIdUrlMap;
 	}
-
-
-	/**
-	 * This method encodes json members into a Json object and returns its String representation..
-	 * @param urlId String
-	 * @param sourceUrl
-	 * @param docUrl String
-	 * @param comment String
-	 * @return jsonString
-	 */
-	public static String jsonEncoder(String urlId, String sourceUrl, String docUrl, String comment)
-	{
-		JSONArray jsonArray;
-		try {
-			JSONObject firstJsonObject = new JSONObject().put("id", urlId);
-			JSONObject secondJsonObject = new JSONObject().put("sourceUrl", sourceUrl);
-			JSONObject thirdJsonObject = new JSONObject().put("docUrl", docUrl);
-			JSONObject fourthJsonObject = new JSONObject().put("comment", comment);	// The comment will be empty, if there is no error or if there is no docFileName.
-			
-			// Care about the order of the elements by using a JSONArray (otherwise it's uncertain which one will be where).
-			jsonArray = new JSONArray().put(firstJsonObject).put(secondJsonObject).put(thirdJsonObject).put(fourthJsonObject);
-		} catch (Exception e) {	// If there was an encoding problem.
-			logger.error("Failed to encode jsonLine: \"" + urlId + ", " + sourceUrl + ", " + docUrl + ", " + comment + "\"", e);
-			return null;
-		}
-		
-		return jsonArray.toString();	// Return the jsonLine.
-	}
 	
 	
 	/**
@@ -208,15 +179,9 @@ public class FileUtils
 		int numberOfTriples = FileUtils.quadrupleToBeLoggedOutputList.size();
 		StringBuilder strB = new StringBuilder(numberOfTriples * 350);  // 350: the maximum expected length for a source-doc-error triple..
 
-		String tempJsonString = null;
-
 		for ( QuadrupleToBeLogged quadruple : FileUtils.quadrupleToBeLoggedOutputList)
 		{
-            tempJsonString = quadruple.toJsonString();
-			if ( tempJsonString == null )	// If there was an encoding error, move on..
-				continue;
-			
-			strB.append(tempJsonString);
+			strB.append(quadruple.toJsonString());
 			strB.append(endOfLine);
 		}
 		
@@ -419,5 +384,5 @@ public class FileUtils
 		
 		return urlGroup;
 	}
-
+	
 }

@@ -374,6 +374,10 @@ public class HttpUtils
 							UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, "", domainStr);
 						throw new AlreadyFoundDocUrlException();
 					}
+					else if ( calledForPageUrl && targetUrl.contains("elsevier.com") ) {	// Avoid pageUrls redirecting to "elsevier.com" (mostly "doi.org"-urls).
+						logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + targetUrl + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
+						throw new RuntimeException();
+					}
 					
 					if ( !targetUrl.contains(HttpUtils.lastConnectedHost) )    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
 						if ( (domainStr = UrlUtils.getDomainStr(targetUrl)) == null )

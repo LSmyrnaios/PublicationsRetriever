@@ -31,8 +31,9 @@ public class CrawlerController
 			// Here test individual urls.
 			//String url = "http://repositorio.ipen.br:8080/xmlui/bitstream/handle/123456789/11176/09808.pdf?sequence=1&isAllowed=y";
 			//String url = "https://ris.utwente.nl/ws/portalfiles/portal/5118887";
-			/*String url = "http://biblioteca.ucm.es/tesis/19972000/X/0/X0040301.pdf";
-			HttpUtils.connectAndCheckMimeType(null, url, url, url, true, false);*/
+			//String url = "http://biblioteca.ucm.es/tesis/19972000/X/0/X0040301.pdf";
+			/*String url = "http://vddb.library.lt/fedora/get/LT-eLABa-0001:E.02~2008~D_20080618_115819-91936/DS.005.0.02.ETD";
+			HttpUtils.connectAndCheckMimeType(null, url, url, url, null, true, false);*/
 			
 	        // Write any remaining urls from memory to disk.
 	        if ( FileUtils.quadrupleToBeLoggedOutputList.size() > 0 ) {
