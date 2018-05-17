@@ -32,13 +32,15 @@ public class HttpUtils
 	
 	public static String lastConnectedHost = "";
 	public static final int politenessDelay = 0;	// Time to wait before connecting to the same host again.
-	public static final int maxConnHEADWaitingTime = 3000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
-	public static final int maxConnGETWaitingTime = 5000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
-	private static final int maxRedirects = 3;	// It's not worth waiting for more than 3, in general.. except if we turn out missing a lot of them.. test every case and decide..
-    										// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
-    private static final int timesToHave5XXerrorCodeBeforeBlocked = 3;
-    private static final int timesToHaveTimeoutExBeforeBlocked = 3;
-    private static final int numberOf403BlockedPathsBeforeBlocked = 3;
+	public static final int maxConnHEADWaitingTime = 5000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
+	public static final int maxConnGETWaitingTime = 10000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
+	
+	private static final int maxRedirectsForPageUrls = 5;// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
+	private static final int maxRedirectsForInnerLinks = 2;	// Inner-DOC-Links shouldn't take more than 2 redirects.
+ 
+	private static final int timesToHave5XXerrorCodeBeforeBlocked = 5;
+    private static final int timesToHaveTimeoutExBeforeBlocked = 5;
+    private static final int numberOf403BlockedPathsBeforeBlocked = 5;
     private static final int timesToReturnNoTypeBeforeBlocked = 10;
 	private static final int timesToHaveNoDocNorPageInputBeforeBlocked = 10;
     
@@ -50,9 +52,9 @@ public class HttpUtils
 	 * This method checks if a certain url can give us its mimeType, as well as if this mimeType is a docMimeType.
 	 * It automatically calls the "logUrl()" method for the valid docUrls, while it doesn't call it for non-success cases, thus allowing calling method to handle the case.
 	 * @param urlId
-	 * @param sourceUrl
-	 * @param pageUrl
-	 * @param resourceURL
+	 * @param sourceUrl	// The inputUrl
+	 * @param pageUrl	// May be the inputUrl or a redirected version of it.
+	 * @param resourceURL	// May be the inputUrl or an innerLink of that inputUrl.
 	 * @param domainStr
 	 * @param calledForPageUrl
 	 * @param calledForPossibleDocUrl
@@ -75,7 +77,7 @@ public class HttpUtils
 			
 			int responceCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP responce), inside openHttpConnection().
 			if ( (responceCode >= 300) && (responceCode <= 399) ) {   // If we have redirections..
-				conn = HttpUtils.handleRedirects(urlId, sourceUrl, pageUrl, conn, responceCode, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // Take care of redirects.
+				conn = HttpUtils.handleRedirects(urlId, sourceUrl, pageUrl, resourceURL, conn, responceCode, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // Take care of redirects.
 			}
 			else if ( (responceCode < 200) || (responceCode >= 400) ) {	// If we have error codes.
 				onErrorStatusCode(resourceURL, domainStr, responceCode);
@@ -119,7 +121,7 @@ public class HttpUtils
 					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, conn);
 				else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" will not be visited!");
-					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in \"HttpUtils.connectAndCheckMimeType()\", after not matching to a docUrl nor to an htm/text-like page.", domainStr);
+					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpUtils.connectAndCheckMimeType()', after not matching to a docUrl nor to an htm/text-like page.", domainStr);
 					if ( countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, HttpUtils.timesDomainsHadInputNotBeingDocNorPage, domainStr, HttpUtils.timesToHaveNoDocNorPageInputBeforeBlocked) )
 						logger.warn("Domain: " + domainStr + " was blocked after having no Doc nor Pages in the input more than " + HttpUtils.timesToReturnNoTypeBeforeBlocked + " times.");
 				}	// We log the quadruple here, as there is connection-kind-of problem here.. it's just us considering it an unwanted case. We don't throw "DomainBlockedException()", as we don't handle it for inputUrls (it would also log the quadruple twice with diff comments).
@@ -185,7 +187,7 @@ public class HttpUtils
 			
 			conn = (HttpURLConnection) url.openConnection();
 			
-			conn.setInstanceFollowRedirects(false);	// We manage redirects on our own, in order to control redirectsNum as well as to be able to handle single http to https redirect without having to do a network redirect.
+			conn.setInstanceFollowRedirects(false);	// We manage redirects on our own, in order to control redirectsNum, as well as to avoid redirecting to unwantedUrls.
 			
 			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// Either for just-webPages or for docUrls, we want to use "GET" in order to download the content.
 					|| (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles) ) {
@@ -298,35 +300,49 @@ public class HttpUtils
 	
     /**
      * This method takes an open connection for which there is a need for redirections.
-     * It opens a new connection every time, up to the point we reach a certain number of redirections defined by "HttpUtils.maxRedirects".
+     * It opens a new connection every time, up to the point we reach a certain number of redirections defined by "maxRedirects".
 	 * @param urlId
 	 * @param sourceUrl
 	 * @param pageUrl
+	 * @param innerLink
 	 * @param conn
 	 * @param responceCode
 	 * @param domainStr
 	 * @param calledForPageUrl
 	 * @param calledForPossibleDocUrl
 	 * @return Last open connection. If there was any problem, it returns "null".
+	 * @throws AlreadyFoundDocUrlException
 	 * @throws RuntimeException
 	 * @throws ConnTimeoutException
 	 * @throws DomainBlockedException
 	 * @throws DomainWithUnsupportedHEADmethodException
 	 */
-	public static HttpURLConnection handleRedirects(String urlId, String sourceUrl, String pageUrl, HttpURLConnection conn, int responceCode, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
+	public static HttpURLConnection handleRedirects(String urlId, String sourceUrl, String pageUrl, String innerLink, HttpURLConnection conn, int responceCode, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
 																			throws AlreadyFoundDocUrlException, RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
 	{
-		int redirectsNum = 0;
-		String initialUrl = conn.getURL().toString();    // Keep initialUrl for logging and debugging.
+		int curRedirectsNum = 0;
+		int maxRedirects = 0;
+		String initialUrl = null;
+		String urlType = null;	// Used for logging.
+		
+		if ( calledForPageUrl ) {
+			maxRedirects = maxRedirectsForPageUrls;
+			initialUrl = sourceUrl;// Keep initialUrl for logging and debugging.
+			urlType = "pageUrl";
+		} else {
+			maxRedirects = maxRedirectsForInnerLinks;
+			initialUrl = innerLink;
+			urlType = "innerLink";
+		}
 		
 		try {
 			while ( true )
 			{
 				if ( responceCode >= 300 && responceCode <= 307 && responceCode != 306 && responceCode != 304 )    // Redirect code.
 				{
-					redirectsNum ++;
-					if ( redirectsNum > HttpUtils.maxRedirects ) {
-						logger.debug("Redirects exceeded their limit (" + HttpUtils.maxRedirects + ") for: \"" + initialUrl + "\"");
+					curRedirectsNum ++;
+					if ( curRedirectsNum > maxRedirects ) {
+						logger.debug("Redirects exceeded their limit (" + maxRedirects + ") for " + urlType + ": \"" + initialUrl + "\"");
 						throw new RuntimeException();
 					}
 					
@@ -359,7 +375,7 @@ public class HttpUtils
 					// Some domains use only the target-ending-path in their location field, while others use full target url.
 					//if ( conn.getURL().toString().contains("<urlType>") ) {	// Debug a certain domain.
 						/*logger.debug("\n");
-						logger.debug("Redirect(s) num: " + redirectsNum);
+						logger.debug("Redirect(s) num: " + curRedirectsNum);
 						logger.debug("Redirect code: " + conn.getResponseCode());
 						logger.debug("Base: " + conn.getURL());
 						logger.debug("Location: " + location);
@@ -389,7 +405,7 @@ public class HttpUtils
 					responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
 					
 					if ( (responceCode >= 200) && (responceCode <= 299) ) {
-						//printFinalRedirectDataForWantedUrlType(initialUrl, conn.getURL().toString(), null, redirectsNum);	// DEBUG!
+						//printFinalRedirectDataForWantedUrlType(initialUrl, conn.getURL().toString(), null, curRedirectsNum);	// DEBUG!
 						return conn;    // It's an "HTTP SUCCESS", return immediately.
 					}
 				} else {

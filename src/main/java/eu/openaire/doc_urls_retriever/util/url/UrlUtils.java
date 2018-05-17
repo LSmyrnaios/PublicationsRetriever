@@ -30,7 +30,7 @@ public class UrlUtils
 	public static final Pattern URL_DIRECTORY_FILTER =
 			Pattern.compile(".*\\/(?:profile|login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|post\\/|send\\/|shop\\/|watch|import|bookmark|announcement|rss|feed|about|faq|wiki|news|events|cart|support|sitemap|license|disclaimer|polic(?:y|ies)|privacy|terms|help|law"
 							+ "|(?:my|your)?account|user|fund|aut(?:h)?or|editor|citation|review|external|statistics|application|permission|ethic|conta(?:c)?t|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|people"
-							+ "|error|(?:mis|ab)use|gateway|sorryserver|notfound|404\\.(?:\\w)?htm).*");
+							+ "|error|(?:mis|ab)use|gateway|sorryserver|cookieabsent|notfound|404\\.(?:\\w)?htm).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
 	
 	public static final Pattern CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER = Pattern.compile(".+\\.(?:doc|docx|ppt|pptx)(?:\\?.+)?$");	// Doc-extensions which are currently unsupported.
@@ -274,19 +274,19 @@ public class UrlUtils
 		String currentUrlDomain = UrlUtils.getDomainStr(retrievedUrl);
 		if ( currentUrlDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"UrlUtils.handleUrlChecks()\": \"" + retrievedUrl + "\"");
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, retrievedUrl, "Discarded in UrlUtils.handleUrlChecks() method, after the occurrence of a domain-retrieval error.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, retrievedUrl, "Discarded in 'UrlUtils.handleUrlChecks()' method, after the occurrence of a domain-retrieval error.", null);
 			return null;
 		}
 		
 		if ( HttpUtils.blacklistedDomains.contains(currentUrlDomain) ) {	// Check if it has been blackListed after running inner links' checks.
 			logger.debug("We will avoid to connect to blackListed domain: \"" + currentUrlDomain + "\"");
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in \'UrlUtils.handleUrlChecks()\' method, as its domain was found blackListed.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' method, as its domain was found blackListed.", null);
 			return null;
 		}
 		
 		if ( HttpUtils.checkIfPathIs403BlackListed(retrievedUrl, currentUrlDomain) ) {
 			logger.debug("Preventing reaching 403ErrorCode with url: \"" + retrievedUrl + "\"!");
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, retrievedUrl, "Discarded in \'UrlUtils.handleUrlChecks()\' as it had a blackListed urlPath.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, retrievedUrl, "Discarded in 'UrlUtils.handleUrlChecks()' as it had a blackListed urlPath.", null);
 			return null;
 		}
 		
@@ -301,7 +301,7 @@ public class UrlUtils
 		if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
 			logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already been seen!");
 			UrlUtils.inputDuplicatesNum ++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "duplicate", "Discarded in \'UrlUtils.handleUrlChecks()\', as it's a duplicate.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "duplicate", "Discarded in 'UrlUtils.handleUrlChecks()', as it's a duplicate.", null);
 			return null;
 		}
 		
@@ -334,14 +334,14 @@ public class UrlUtils
 		}
 		else if ( lowerCaseUrl.contains("sciencedirect.com") ) {	// These urls are in JavaScript, having dynamic links which we cannot currently retrieve.
 			UrlUtils.sciencedirectUrls ++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to the JavaScript-using domain \'sciencedirect.com\'.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to the JavaScript-using domain 'sciencedirect.com'.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("elsevier.com") ) {	// The plain "elsevier.com" and the "journals.elsevier.com" don't give docUrls.
 			// The "linkinghub.elsevier.com" is redirecting to "sciencedirect.com".
 			// Note that we still accept the "elsevier.es" pageUrls, which give docUrls.
 			UrlUtils.elsevierUnwantedUrls ++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to the unwanted \'elsevier.com\' domain.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to the unwanted 'elsevier.com' domain.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("europepmc.org") || lowerCaseUrl.contains("ncbi.nlm.nih.gov") ) {	// Avoid known-crawler-sensitive domains.
@@ -351,7 +351,7 @@ public class UrlUtils
 		}
 		else if ( lowerCaseUrl.contains("doaj.org/toc/") ) {	// Avoid resultPages.
 			UrlUtils.doajResultPageUrls ++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to the Results-directory: \'doaj.org/toc/\'.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to the Results-directory: 'doaj.org/toc/'.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("dlib.org") || lowerCaseUrl.contains("saberes.fcecon.unr.edu.ar") ) {    // Avoid HTML docUrls.
@@ -362,7 +362,7 @@ public class UrlUtils
 		else if ( lowerCaseUrl.contains("rivisteweb.it") || lowerCaseUrl.contains("wur.nl") || lowerCaseUrl.contains("remeri.org.mx")
 				|| lowerCaseUrl.contains("cam.ac.uk") || lowerCaseUrl.contains("scindeks.ceon.rs") || lowerCaseUrl.contains("egms.de") ) {	// Avoid pages known to not provide docUrls (just metadata).
 			UrlUtils.pagesNotProvidingDocUrls ++;												// Keep "remeri" subDomain of "org.mx", as the TLD is having a lot of different sites.
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to the non docUrls-providing site \'rivisteweb.it\'.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to the non docUrls-providing site 'rivisteweb.it'.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("bibliotecadigital.uel.br") ) {	// Avoid domains requiring login to access docUrls.
@@ -378,7 +378,7 @@ public class UrlUtils
 		}
 		else if ( lowerCaseUrl.contains("doi.org/https://doi.org/") && lowerCaseUrl.contains("pangaea.") ) {	// PANGAEA. urls with problematic form and non docUrl inner links.
 			UrlUtils.pangaeaUrls ++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to \'PANGAEA.\' urls with invalid form and non-docUrls in their inner links.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to 'PANGAEA.' urls with invalid form and non-docUrls in their inner links.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("200.17.137.108") ) {	// Known domains with connectivity problems.
@@ -393,13 +393,13 @@ public class UrlUtils
 		}*/
 		else if ( lowerCaseUrl.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
 			HttpUtils.blockSharedSiteSessionDomain(retrievedUrl, null);
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "It was discarded after participating in a \'sharedSiteSession-redirectionPack\'.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "It was discarded after participating in a 'sharedSiteSession-redirectionPack'.", null);
 			return false;	// Do not visit it.
 		}
 		else if ( UrlUtils.DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.DOI_ORG_PARENTHESIS_FILTER.matcher(lowerCaseUrl).matches()
 				|| UrlUtils.DOI_ORG_JTO_FILTER.matcher(lowerCaseUrl).matches() ) {
 			UrlUtils.doiOrgToScienceDirect ++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to a urlType of \'doi.org\', which redirects to \'sciencedirect.com\'.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to a urlType of 'doi.org', which redirects to 'sciencedirect.com'.", null);
 			return true;
 		}
 		else if ( shouldNotAcceptPageUrl(retrievedUrl, lowerCaseUrl) ) {
@@ -695,10 +695,16 @@ public class UrlUtils
 	}
 	
 	
+	/**
+	 * This method constructs fully-formed urls, as they may be relative-links.
+	 * @param pageUrl
+	 * @param currentLink
+	 * @param URLTypeUrl
+	 * @return
+	 */
 	public static String getFullyFormedUrl(String pageUrl, String currentLink, URL URLTypeUrl)
 	{
-		// These cases are currently handled by Jsoup-Itself, although we might want to handle them for ourselves for performance (condicional-)
-		try {    // Construct fully-formed urls (cause they may be )
+		try {
 			URL base = null;
 			
 			if ( URLTypeUrl != null )
