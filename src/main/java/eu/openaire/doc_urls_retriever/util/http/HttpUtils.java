@@ -24,6 +24,7 @@ public class HttpUtils
 	
 	public static final HashSet<String> domainsWithUnsupportedHeadMethod = new HashSet<String>();
 	public static final HashSet<String> blacklistedDomains = new HashSet<String>();	// Domains with which we don't want to connect again.
+	public static final HashMap<String, Integer> timesPathsReturned403 = new HashMap<String, Integer>();
 	public static final HashMap<String, Integer> timesDomainsReturned5XX = new HashMap<String, Integer>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
 	public static final HashMap<String, Integer> timesDomainsHadTimeoutEx = new HashMap<String, Integer>();
 	public static final HashMap<String, Integer> timesDomainsReturnedNoType = new HashMap<String, Integer>();	// Domain which returned no content-type not content disposition in their responce and amount of times they did.
@@ -37,7 +38,8 @@ public class HttpUtils
 	
 	private static final int maxRedirectsForPageUrls = 5;// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
 	private static final int maxRedirectsForInnerLinks = 2;	// Inner-DOC-Links shouldn't take more than 2 redirects.
- 
+	
+	private static final int timesPathToHave403errorCodeBeforeBlocked = 3;
 	private static final int timesToHave5XXerrorCodeBeforeBlocked = 5;
     private static final int timesToHaveTimeoutExBeforeBlocked = 5;
     private static final int numberOf403BlockedPathsBeforeBlocked = 5;
@@ -117,7 +119,12 @@ public class HttpUtils
 				return true;
 			}
 			else if ( calledForPageUrl ) {    // Visit this url only if this method was called for an inputUrl.
-				if ( (mimeType != null) && (mimeType.contains("htm") || mimeType.contains("text")) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
+				if ( finalUrlStr.contains("viewcontent.cgi") ) {	// If this "viewcontent.cgi" isn't a docUrl, then don't check its innerLinks. Check this: "https://docs.lib.purdue.edu/cgi/viewcontent.cgi?referer=&httpsredir=1&params=/context/physics_articles/article/1964/type/native/&path_info="
+					logger.warn("Unwanted pageUrl: \"" + finalUrlStr + "\" will not be visited!");
+					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpUtils.connectAndCheckMimeType()', after matching to a non-docUrl with 'viewcontent.cgi'.", domainStr);
+					return false;
+				}
+				else if ( (mimeType != null) && (mimeType.contains("htm") || mimeType.contains("text")) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
 					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, conn);
 				else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" will not be visited!");
@@ -561,10 +568,11 @@ public class HttpUtils
 	public static void on403ErrorCode(String urlStr, String domainStr) throws DomainBlockedException
 	{
 		String pathStr = UrlUtils.getPathStr(urlStr);
+		if ( pathStr == null )
+			return;
 		
-		if ( pathStr != null )
+		if ( HttpUtils.countAndBlockPathAfterTimes(domainsMultimapWithPaths403BlackListed, timesPathsReturned403, pathStr, domainStr, timesPathToHave403errorCodeBeforeBlocked ) )
 		{
-			HttpUtils.domainsMultimapWithPaths403BlackListed.put(domainStr, pathStr);    // Put the new path to be blocked.
 			logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code.");
 			
 			// Block the whole domain if it has more than a certain number of blocked paths.
@@ -577,8 +585,20 @@ public class HttpUtils
 			}
 		}
 	}
-
-
+	
+	
+	public static boolean countAndBlockPathAfterTimes(SetMultimap<String, String> domainsWithPaths, HashMap<String, Integer> pathsWithTimes, String pathStr, String domainStr, int timesBeforeBlocked)
+	{
+		if ( countAndGetTimes(pathsWithTimes, pathStr) > timesBeforeBlocked ) {
+			domainsWithPaths.put(domainStr, pathStr);	// Add this path in the list of blocked paths of this domain.
+			pathsWithTimes.remove(pathStr);	// No need to keep the count for a blocked path.
+			return true;
+		}
+		else
+			return false;
+	}
+	
+	
 	/**
 	 * This method check if there was ever a url from the given/current domain, which returned an HTTP 403 Eroor Code.
 	 * If there was, it retrieves the directory path of the given/current url and checks if it caused an 403 Error Code before.
@@ -595,9 +615,8 @@ public class HttpUtils
 			String pathStr = UrlUtils.getPathStr(urlStr);
 			if ( pathStr == null )	// If there is a problem retrieving this athStr, return false;
 				return false;
-
-			if ( domainsMultimapWithPaths403BlackListed.get(domainStr).contains(pathStr) )
-				return true;
+			
+			return domainsMultimapWithPaths403BlackListed.get(domainStr).contains(pathStr);
 		}
 		return false;
 	}
@@ -634,19 +653,25 @@ public class HttpUtils
      */
 	public static boolean countAndBlockDomainAfterTimes(HashSet<String> blackList, HashMap<String, Integer> domainsWithTimes, String domainStr, int timesBeforeBlock)
 	{
-		int curTimes = 1;
-		if ( domainsWithTimes.containsKey(domainStr) )
-			curTimes += domainsWithTimes.get(domainStr);
-		
-		domainsWithTimes.put(domainStr, curTimes);
-		
-		if ( curTimes > timesBeforeBlock ) {
+		if ( countAndGetTimes(domainsWithTimes, domainStr) > timesBeforeBlock ) {
 			blackList.add(domainStr);    // Block this domain.
 			domainsWithTimes.remove(domainStr);	// Remove counting-data.
 			return true;	// This domain was blocked.
 		}
 		else
 			return false;	// It wasn't blocked.
+	}
+	
+	
+	public static int countAndGetTimes(HashMap<String, Integer> itemWithTimes, String itemToCount)
+	{
+		int curTimes = 1;
+		if ( itemWithTimes.containsKey(itemToCount) )
+			curTimes += itemWithTimes.get(itemToCount);
+		
+		itemWithTimes.put(itemToCount, curTimes);
+		
+		return curTimes;
 	}
 	
 	

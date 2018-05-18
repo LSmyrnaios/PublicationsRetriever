@@ -34,12 +34,10 @@ public class QuadrupleToBeLogged
     {
         StringBuilder strB = new StringBuilder(400);
         
-        strB.append("{");
-        strB.append("\"id\":\"").append(this.urlId).append("\",");
+        strB.append("{\"id\":\"").append(this.urlId).append("\",");
         strB.append("\"sourceUrl\":\"").append(this.sourceUrl).append("\",");
         strB.append("\"docUrl\":\"").append(this.docUrl).append("\",");
-        strB.append("\"comment\":\"").append(this.comment).append("\"");
-        strB.append("}");
+        strB.append("\"comment\":\"").append(this.comment).append("\"}");
         
         return strB.toString();
     }
