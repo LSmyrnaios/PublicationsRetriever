@@ -59,7 +59,7 @@ public class UrlUtils
     // "DOC_URL_FILTER" works for lowerCase Strings (we make sure they are in lowerCase before we check).
     // Note that we still need to check if it's an alive link and if it's actually a docUrl (though it's mimeType).
 	
-	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("([\\w]+\\/[\\w\\+\\-\\.]+)(?:\\;.+)?");
+	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("(?:\\((?:\\')?)?([\\w]+\\/[\\w\\+\\-\\.]+).*");
 	
 	public static final Pattern DOI_ORG_J_FILTER = Pattern.compile(".+[doi.org]\\/[\\d]{2}\\.[\\d]{4}\\/[j]\\..+");	// doi.org urls which has this form and redirect to "sciencedirect.com".
 	
@@ -501,9 +501,10 @@ public class UrlUtils
 			}
 			
 			String plainMimeType = mimeType;	// Make sure we don't cause any NPE later on..
-			if ( mimeType.contains("charset") )
+			if ( mimeType.contains("charset")
+				|| mimeType.startsWith("(") )	// See: https://www.mamsie.bbk.ac.uk/articles/10.16995/sim.138/galley/134/download/
 			{
-				plainMimeType = removeCharsetFromMimeType(mimeType);
+				plainMimeType = getPlainMimeType(mimeType);
 				
 				if ( plainMimeType == null ) {    // If there was any error removing the charset, still try to save any docMimeType (currently pdf-only).
 					logger.warn("Url with problematic mimeType was: " + urlStr);
@@ -531,12 +532,12 @@ public class UrlUtils
     
 	
 	/**
-	 * This method receives the mimeType and returns it without the "charset" part.
+	 * This method receives the mimeType and returns it without the "parentheses" ot the "charset" part.
 	 * If there is any error, it returns null.
 	 * @param mimeType
 	 * @return charset-free mimeType
 	 */
-	public static String removeCharsetFromMimeType(String mimeType)
+	public static String getPlainMimeType(String mimeType)
 	{
 		String plainMimeType = null;
 		Matcher mimeMatcher = null;
@@ -544,7 +545,7 @@ public class UrlUtils
 		try {
 			mimeMatcher = MIME_TYPE_FILTER.matcher(mimeType);
 		} catch (NullPointerException npe) {	// There should never be an NPE...
-			logger.debug("NPE was thrown after calling \"Matcher\" in \"removeCharsetFromMimeType()\" with \"null\" value!");
+			logger.debug("NPE was thrown after calling \"Matcher\" in \"getPlainMimeType()\" with \"null\" value!");
 			return null;
 		}
 		

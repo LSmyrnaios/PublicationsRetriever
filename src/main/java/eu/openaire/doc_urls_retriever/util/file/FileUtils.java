@@ -214,7 +214,7 @@ public class FileUtils
 			outStream = new FileOutputStream(docFile);
 			
 			int bytesRead = -1;
-			byte[] buffer = new byte[3145728];	// 3Mb
+			byte[] buffer = new byte[3145728];	// 3Mb (average docFiles-size)
 			long startTime = System.nanoTime();
 			while ( (bytesRead = inStream.read(buffer)) != -1 )
 			{
