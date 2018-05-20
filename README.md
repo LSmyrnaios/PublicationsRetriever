@@ -35,6 +35,5 @@ To run the application you should navigate to the ***target*** directory, which 
 
 Customizations
 --------------
-- You can set **crawler4j's** customizations in ***CrawlerController.java***.
 - You can set **file-related** customizations (including the ability to store the docFiles) in ***FileUtils.java***.
 - You can set **httpConnection-related** customizations in ***HttpUtils.java***.

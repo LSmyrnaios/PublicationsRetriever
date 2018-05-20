@@ -135,8 +135,8 @@ public class FileUtils
 		
 		return idAndUrlMappedInput;
 	}
-
-
+	
+	
 	/**
 	 * This method decodes a Jason String into its members.
 	 * @param jsonLine String
@@ -158,14 +158,16 @@ public class FileUtils
 			logger.warn("JSONException caught when tried to retrieve values from jsonLine: \"" + jsonLine + "\"", je);
 			return null;
 		}
-
-		if ( idStr.isEmpty() && urlStr.isEmpty() )	// Allow one of them to be empty but not both. If ID is empty, then we still don't lose the URL.
-			return null;	// If url is empty, we will still see the ID in the output and possible find its missing URL later.
-        else if ( urlStr.isEmpty() )    // Keep track of lines with an id, but, with no url.
-            FileUtils.unretrievableUrlsOnly++;
-
+		
+        if ( urlStr.isEmpty() ) {
+			if ( idStr.isEmpty() )	// Allow one of them to be empty but not both. If ID is empty, then we still don't lose the URL.
+				return null;	// If url is empty, we will still see the ID in the output and possible find its missing URL later.
+			else
+				FileUtils.unretrievableUrlsOnly ++;    // Keep track of lines with an id, but, with no url.
+		}
+        
 		returnIdUrlMap.put(idStr, urlStr);
-
+		
 		return returnIdUrlMap;
 	}
 	
@@ -282,7 +284,7 @@ public class FileUtils
 		if ( shouldAcceptOnlyPDFs )
 			dotFileExtension*/ = ".pdf";
 		/*else {	// TODO - Later we might accept also other fileTypes.
-			if ( contentyType != null )
+			if ( contentType != null )
 				// Use the Content-Type to determine the extension. A multi-mapping between mimeTypes and fileExtensions is needed.
 			else
 				// Use the subString as last resort, although not reliable! (subString after the last "." will not work if the fileName doesn't include an extension).
