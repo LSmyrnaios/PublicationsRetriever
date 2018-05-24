@@ -56,7 +56,7 @@ public class DocUrlsRetriever
     	
     	// Use testing input/output files.
 		/*try {
-			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//sampleCleanUrls3000.json")),
+			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testRandomNewList1000.csv")),
 							new FileOutputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testOutputFile.json")));
 		} catch (FileNotFoundException e) {
 			String errorMessage = "InputFile not found!";

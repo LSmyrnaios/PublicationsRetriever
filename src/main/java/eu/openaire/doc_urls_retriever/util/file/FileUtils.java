@@ -36,7 +36,7 @@ public class FileUtils
 	public static int unretrievableInputLines = 0;	// For better statistics in the end.
     public static int unretrievableUrlsOnly = 0;
     public static int groupCount = 300;
-    public static int maxStoringWaitingTime = 20000;	// 20sec
+    public static int maxStoringWaitingTime = 30000;	// 30sec
 	
 	public static final List<QuadrupleToBeLogged> quadrupleToBeLoggedOutputList = new ArrayList<>();
 	
