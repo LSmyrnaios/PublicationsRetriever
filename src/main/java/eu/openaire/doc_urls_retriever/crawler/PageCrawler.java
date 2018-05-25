@@ -297,7 +297,7 @@ public class PageCrawler
 			
 			// We now have the "sciencedirect.com" url (either from the beginning or after silentRedirect).
 			
-			logger.debug("Sciencedirect-url: " + pageUrl);
+			logger.debug("ScienceDirect-url: " + pageUrl);
 			String html = getHtmlString(conn);
 			Matcher metaDocUrlMatcher = SCIENCEDIRECT_META_DOC_URL.matcher(html);
 			if ( metaDocUrlMatcher.find() )
@@ -310,6 +310,7 @@ public class PageCrawler
 				//logger.debug("MetaDocUrl: " + metaDocUrl);	// DEBUG!
 				
 				// Get the new html..
+				// We don't disconnect the previous one, since they both are in the same domain (see JavaDocs).
 				conn = HttpUtils.handleConnection(urlId, sourceUrl, pageUrl, metaDocUrl, pageDomain, true, false);
 				
 				//logger.debug("Url after connecting: " + conn.getURL().toString());
@@ -346,6 +347,12 @@ public class PageCrawler
 		} catch (Exception e) {
 			logger.error("" + e);
 			return false;
+		}
+		finally {
+			// If the initial pageDomain was different from "sciencedirect.com", close the "sciencedirect.com"-connection here.
+			// Otherwise, if it came as a "sciencedirect.com", it will be closed where it was first created, meaning in "HttpUtils.connectAndCheckMimeType()".
+			if ( !pageDomain.equals("sciencedirect.com") )
+				conn.disconnect();	// Disconnect from the final-"sciencedirect.com"-connection.
 		}
 	}
 	

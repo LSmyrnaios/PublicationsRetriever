@@ -1,5 +1,6 @@
 package eu.openaire.doc_urls_retriever.util.url;
 
+import org.apache.commons.lang3.StringUtils;
 
 
 /**
@@ -12,20 +13,20 @@ public class QuadrupleToBeLogged
     private String sourceUrl;
     private String docUrl;
     private String comment;   // This will be an emptyString, unless there is an error causing the docUrl to be unreachable.
-
-
+    
+    
     public QuadrupleToBeLogged(String urlId, String sourceUrl, String docUrl, String comment)
     {
         if ( urlId == null )
             urlId = "unretrievable";
         
         this.urlId = urlId;
-        this.sourceUrl = sourceUrl;
+        this.sourceUrl = StringUtils.replace(sourceUrl, "\"", "\\\"");  // The input may have non-expected '\"'
         this.docUrl = docUrl;
         this.comment = comment;
     }
-
-
+    
+    
     /**
      * This method returns this object in a jsonString.
      * @return jsonString
@@ -41,5 +42,5 @@ public class QuadrupleToBeLogged
         
         return strB.toString();
     }
-
+    
 }
