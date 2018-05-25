@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLException;
+import java.io.IOException;
 import java.net.*;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -75,17 +76,7 @@ public class HttpUtils
 				if ( (domainStr = UrlUtils.getDomainStr(resourceURL) ) == null)
 					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
 			
-			conn = HttpUtils.openHttpConnection(resourceURL, domainStr, calledForPageUrl, calledForPossibleDocUrl);
-			
-			int responceCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP responce), inside openHttpConnection().
-			if ( (responceCode >= 300) && (responceCode <= 399) ) {   // If we have redirections..
-				conn = HttpUtils.handleRedirects(urlId, sourceUrl, pageUrl, resourceURL, conn, responceCode, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // Take care of redirects.
-			}
-			else if ( (responceCode < 200) || (responceCode >= 400) ) {	// If we have error codes.
-				onErrorStatusCode(resourceURL, domainStr, responceCode);
-				throw new RuntimeException();	// This is only thrown if a "DomainBlockedException" is catched.
-			}
-			// Else it's an HTTP 2XX SUCCESS CODE.
+			conn = handleConnection(urlId, sourceUrl, pageUrl, resourceURL, domainStr, calledForPageUrl, calledForPossibleDocUrl);
 			
 			// Check if we are able to find the mime type, if not then try "Content-Disposition".
 			String mimeType = conn.getContentType();
@@ -103,6 +94,8 @@ public class HttpUtils
 						throw new RuntimeException();	// We can't retrieve any clue. This is not desired.
 				}
 			}
+			
+			//logger.debug("MimeType: " + mimeType);	// DEBUG!
 			
 			String finalUrlStr = conn.getURL().toString();
 			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition, conn) ) {
@@ -153,6 +146,25 @@ public class HttpUtils
 		return false;
 	}
 
+	
+	public static HttpURLConnection handleConnection(String urlId, String sourceUrl, String pageUrl, String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
+										throws AlreadyFoundDocUrlException, RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException, IOException
+	{
+		HttpURLConnection conn = HttpUtils.openHttpConnection(resourceURL, domainStr, calledForPageUrl, calledForPossibleDocUrl);
+		
+		int responceCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP responce), inside openHttpConnection().
+		if ( (responceCode >= 300) && (responceCode <= 399) ) {   // If we have redirections..
+			conn = HttpUtils.handleRedirects(urlId, sourceUrl, pageUrl, resourceURL, conn, responceCode, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // Take care of redirects.
+		}
+		else if ( (responceCode < 200) || (responceCode >= 400) ) {	// If we have error codes.
+			onErrorStatusCode(resourceURL, domainStr, responceCode);
+			throw new RuntimeException();	// This is only thrown if a "DomainBlockedException" is catched.
+		}
+		// Else it's an HTTP 2XX SUCCESS CODE.
+		
+		return conn;
+	}
+	
 
 	/**
      * This method sets up a connection with the given url, using the "HEAD" method. If the server doesn't support "HEAD", it logs it, then it resets the connection and tries again using "GET".
@@ -397,10 +409,10 @@ public class HttpUtils
 							UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, "", domainStr);
 						throw new AlreadyFoundDocUrlException();
 					}
-					else if ( calledForPageUrl && targetUrl.contains("elsevier.com") ) {	// Avoid pageUrls redirecting to "elsevier.com" (mostly "doi.org"-urls).
+					/*else if ( calledForPageUrl && targetUrl.contains("elsevier.com") ) {	// Avoid pageUrls redirecting to "elsevier.com" (mostly "doi.org"-urls).
 						logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + targetUrl + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 						throw new RuntimeException();
-					}
+					}*/
 					
 					if ( !targetUrl.contains(HttpUtils.lastConnectedHost) )    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
 						if ( (domainStr = UrlUtils.getDomainStr(targetUrl)) == null )

@@ -6,6 +6,8 @@ import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.exceptions.ConnTimeoutException;
@@ -28,6 +30,11 @@ import org.slf4j.LoggerFactory;
 public class PageCrawler
 {
 	private static final Logger logger = LoggerFactory.getLogger(PageCrawler.class);
+	
+	// Sciencedirect regexes. Use "find()" with those (they work best).
+	public static final Pattern SCIENCEDIRECT_META_DOC_URL = Pattern.compile("(?:<meta name=\"citation_pdf_url\"[\\s]*content=\")((?:http)(?:.*)(?:\\.pdf))(?:\"[\\s]*/>)");
+	public static final Pattern SCIENCEDIRECT_FINAL_DOC_URL = Pattern.compile("(?:window.location[\\s]+\\=[\\s]+\\')(.*)(?:\\'\\;)");
+	
 	public static int totalPagesReachedCrawling = 0;	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their innerLinks checked.
 	
 	public static final HashMap<String, Integer> timesDomainNotGivingInnerLinks = new HashMap<String, Integer>();
@@ -69,6 +76,7 @@ public class PageCrawler
 			
 			String inputLine;
 			while ( (inputLine = br.readLine()) != null ) {
+				//logger.debug("InputHTMLline: " + inputLine);	// DEBUG!
 				strB.append(inputLine);
 			}
 			br.close();
@@ -113,6 +121,14 @@ public class PageCrawler
 			return;
 		}
 		
+		if ( currentPageDomain.equals("linkinghub.elsevier.com") || currentPageDomain.equals("sciencedirect.com") ) {	// Be-careful if we move-on changing the retrieving of the domain of a url.
+			if ( !handleScienceDirectFamilyUrls(urlId, sourceUrl, pageUrl, currentPageDomain, conn) ) {
+				logger.warn("Problem when handling \"sciencedirect.com\" urls.");
+				UrlUtils.logQuadruple(urlId, sourceUrl, null, null, "Discarded in 'PageCrawler.visit()' method, when a 'sciencedirect.com'-url was not able to be handled correctly.", null);
+			}
+			return;	// We always return in ths case.
+		}
+		
 	    // Check if we want to use AND if so, if we should run, the MLA.
 		if ( MachineLearning.useMLA ) {
 			PageCrawler.totalPagesReachedCrawling ++;	// Used for M.L.A.'s execution-manipulation.
@@ -146,7 +162,6 @@ public class PageCrawler
 		//if ( pageUrl.contains("<url>") )
 		/*for ( String url : currentPageLinks )
 			logger.debug(url);*/
-		
 		
 		HashSet<String> remainingLinks = new HashSet<>();
 		String urlToCheck = null;
@@ -254,6 +269,114 @@ public class PageCrawler
 		UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as no docUrl was found inside.", null);
 		if ( HttpUtils.countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingDocUrls, currentPageDomain, PageCrawler.timesToGiveNoDocUrlsBeforeBlocked) )
 			logger.debug("Domain: " + currentPageDomain + " was blocked after giving no docUrls more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
+	}
+	
+	
+	/**
+	 * This method handles the JavaScriptSites of "sciencedirect.com"-family. It retrieves the docLinks hiding inside.
+	 * It returns true if the docUrl was found, otherwise, it returns false.
+	 * Note that these docUrl d not last long, since they are produced based on timestamp and jsessionid. After a while they just redirect to the pageUrl.
+	 * @param urlId
+	 * @param sourceUrl
+	 * @param pageUrl
+	 * @param pageDomain
+	 * @param conn
+	 * @return true/false
+	 */
+	public static boolean handleScienceDirectFamilyUrls(String urlId, String sourceUrl, String pageUrl, String pageDomain, HttpURLConnection conn)
+	{
+		try {
+			// Handle "linkinghub.elsevier.com" urls which contain javaScriptRedirect..
+			if ( pageDomain.equals("linkinghub.elsevier.com") ) {
+				//UrlUtils.elsevierLinks ++;
+				if ( (pageUrl = silentRedirectElsevierToScienseRedirect(pageUrl)) != null )
+					conn = HttpUtils.handleConnection(urlId, sourceUrl, pageUrl, pageUrl, pageDomain, true, false);
+				else
+					return false;
+			}
+			
+			// We now have the "sciencedirect.com" url (either from the beginning or after silentRedirect).
+			
+			logger.debug("Sciencedirect-url: " + pageUrl);
+			String html = getHtmlString(conn);
+			Matcher metaDocUrlMatcher = SCIENCEDIRECT_META_DOC_URL.matcher(html);
+			if ( metaDocUrlMatcher.find() )
+			{
+				String metaDocUrl = metaDocUrlMatcher.group(1);
+				if ( metaDocUrl.isEmpty() ) {
+					logger.error("Could not retrieve the finalDocUrl from a \"sciencedirect.com\" url!");
+					return false;
+				}
+				//logger.debug("MetaDocUrl: " + metaDocUrl);	// DEBUG!
+				
+				// Get the new html..
+				conn = HttpUtils.handleConnection(urlId, sourceUrl, pageUrl, metaDocUrl, pageDomain, true, false);
+				
+				//logger.debug("Url after connecting: " + conn.getURL().toString());
+				//logger.debug("MimeType: " + conn.getContentType());
+				
+				html = getHtmlString(conn);    // Take the new html.
+				Matcher finalDocUrlMatcher = SCIENCEDIRECT_FINAL_DOC_URL.matcher(html);
+				if ( finalDocUrlMatcher.find() )
+				{
+					String finalDocUrl = finalDocUrlMatcher.group(1);
+					if ( finalDocUrl.isEmpty() ) {
+						logger.error("Could not retrieve the finalDocUrl from a \"sciencedirect.com\" url!");
+						return false;
+					}
+					//logger.debug("FinalDocUrl: " + finalDocUrl);	// DEBUG!
+					
+					// Check and/or download the docUrl. These urls are one-time-links, meaning that after a while they will just redirect to their pageUrl.
+					if ( HttpUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, finalDocUrl, pageDomain, false, true) )    // We log the docUrl inside this method.
+						return true;
+					else {
+						logger.warn("LookedUp finalDocUrl: \"" + finalDocUrl + "\" was not an actual docUrl!");
+						return false;
+					}
+				} else {
+					logger.warn("The finalDocLink could not be matched!");
+					logger.debug("HTML-code:\n" + html);
+					return false;
+				}
+			} else {
+				logger.warn("The metaDocLink could not be matched!");
+				logger.debug("HTML-code:\n" + html);
+				return false;
+			}
+		} catch (Exception e) {
+			logger.error("" + e);
+			return false;
+		}
+	}
+	
+	
+	/**
+	 * This method recieves a url from "linkinghub.elsevier.com" and returns it's matched url in "sciencedirect.com".
+	 * We do this because the "linkinghub.elsevier.com" urls have a javaScript redirect inside which we are not able to handle without doing html scraping.
+	 * If there is any error this method returns the URL it first recieved.
+	 * @param linkingElsevierUrl
+	 * @return
+	 */
+	public static String silentRedirectElsevierToScienseRedirect(String linkingElsevierUrl)
+	{
+		if ( !linkingElsevierUrl.contains("linkinghub.elsevier.com") ) // If this method was called for the wrong url, then just return it.
+			return linkingElsevierUrl;
+		
+		String idStr = null;
+		Matcher matcher = UrlUtils.URL_TRIPLE.matcher(linkingElsevierUrl);
+		if ( matcher.matches() ) {
+			idStr = matcher.group(3);
+			if ( idStr == null || idStr.isEmpty() ) {
+				logger.warn("Unexpected id-missing case for: " + linkingElsevierUrl);
+				return linkingElsevierUrl;
+			}
+		}
+		else {
+			logger.warn("Unexpected \"URL_TRIPLE\" mismatch for: " + linkingElsevierUrl);
+			return linkingElsevierUrl;
+		}
+		
+		return ("https://www.sciencedirect.com/science/article/pii/" + idStr);
 	}
 	
 }

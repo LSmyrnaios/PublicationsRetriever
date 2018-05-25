@@ -332,12 +332,12 @@ public class UrlUtils
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to a JavaScript-using domain, other than.", null);
 			return true;
 		}
-		else if ( lowerCaseUrl.contains("sciencedirect.com") ) {	// These urls are in JavaScript, having dynamic links which we cannot currently retrieve.
+		/*else if ( lowerCaseUrl.contains("sciencedirect.com") ) {	// These urls are in JavaScript, having dynamic links which we cannot currently retrieve.
 			UrlUtils.sciencedirectUrls ++;
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to the JavaScript-using domain 'sciencedirect.com'.", null);
 			return true;
-		}
-		else if ( lowerCaseUrl.contains("elsevier.com") ) {	// The plain "elsevier.com" and the "journals.elsevier.com" don't give docUrls.
+		}*/
+		else if ( lowerCaseUrl.contains("www.elsevier.com") ) {	// The plain "elsevier.com" and the "journals.elsevier.com" don't give docUrls.
 			// The "linkinghub.elsevier.com" is redirecting to "sciencedirect.com".
 			// Note that we still accept the "elsevier.es" pageUrls, which give docUrls.
 			UrlUtils.elsevierUnwantedUrls ++;
@@ -371,7 +371,7 @@ public class UrlUtils
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("/view/") || lowerCaseUrl.contains("scielosp.org") || lowerCaseUrl.contains("dk.um.si") || lowerCaseUrl.contains("apospublications.com")
-				|| lowerCaseUrl.contains("jorr.org") || lowerCaseUrl.contains("redalyc.org") ) {	// Avoid crawling pages with larger depth.
+				|| lowerCaseUrl.contains("jorr.org") || lowerCaseUrl.contains("redalyc.org") ) {	// Avoid crawling pages with larger depth (innerPagesToDocUrls or Previews of docUrls).
 			UrlUtils.pagesWithLargerCrawlingDepth ++;
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to an increasedCrawlingDepth-site.", null);
 			return true;
@@ -396,12 +396,12 @@ public class UrlUtils
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "It was discarded after participating in a 'sharedSiteSession-redirectionPack'.", null);
 			return false;	// Do not visit it.
 		}
-		else if ( UrlUtils.DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.DOI_ORG_PARENTHESIS_FILTER.matcher(lowerCaseUrl).matches()
+		/*else if ( UrlUtils.DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.DOI_ORG_PARENTHESIS_FILTER.matcher(lowerCaseUrl).matches()
 				|| UrlUtils.DOI_ORG_JTO_FILTER.matcher(lowerCaseUrl).matches() ) {
 			UrlUtils.doiOrgToScienceDirect ++;
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to a urlType of 'doi.org', which redirects to 'sciencedirect.com'.", null);
 			return true;
-		}
+		}*/
 		else if ( shouldNotAcceptPageUrl(retrievedUrl, lowerCaseUrl) ) {
 			UrlUtils.urlsWithUnwantedForm ++;
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to unwantedType-regex-rules.", null);
@@ -626,7 +626,6 @@ public class UrlUtils
 		
 		return pathStr;
 	}
-	
 	
 	
 	/**
