@@ -95,14 +95,18 @@ public class HttpUtils
 				}
 			}
 			
+			String finalUrlStr = conn.getURL().toString();
+			
+			//logger.debug("Url: " + finalUrlStr);	// DEBUG!
 			//logger.debug("MimeType: " + mimeType);	// DEBUG!
 			
-			String finalUrlStr = conn.getURL().toString();
 			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition, conn) ) {
+				logger.info("docUrl found: <" + finalUrlStr + ">");
 				String fullPathFileName = "";
 				if ( FileUtils.shouldDownloadDocFiles ) {
 					try {
 						fullPathFileName = downloadAndStoreDocFile(conn, domainStr, finalUrlStr);
+						logger.info("DocFile: \"" + fullPathFileName + "\" has been downloaded.");
 					} catch (DocFileNotRetrievedException dfnde) {
 						fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored.";
 						logger.warn(fullPathFileName, dfnde);
@@ -402,7 +406,7 @@ public class HttpUtils
 					//}
 					
 					if ( UrlUtils.docUrls.contains(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
-						logger.debug("Re-crossing the already found docUrl: \"" + targetUrl + "\"");
+						logger.info("re-crossed docUrl found: <" + targetUrl + ">");
 						if ( FileUtils.shouldDownloadDocFiles )
 							UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, "This file is probably already downloaded.", domainStr);
 						else

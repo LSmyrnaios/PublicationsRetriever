@@ -232,6 +232,7 @@ public class MachineLearning
 				
 				if ( UrlUtils.docUrls.contains(guessedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
 					logger.info("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted (already found before) docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
+					logger.info("re-crossed docUrl found: <" + guessedDocUrl + ">");
 					if ( FileUtils.shouldDownloadDocFiles )
 						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, guessedDocUrl, "This file is probably already downloaded.", null);
 					else

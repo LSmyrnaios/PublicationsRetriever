@@ -58,7 +58,8 @@ public class PageCrawler
 			String innerLink = el.attr("href");
 			if ( !innerLink.isEmpty()
 					&& !innerLink.equals("\\/") && !innerLink.equals("#")
-					&& !innerLink.startsWith("mailto:") && !innerLink.startsWith("tel:") && !innerLink.toLowerCase().startsWith("javascript:") ) {
+					&& !innerLink.startsWith("mailto:") && !innerLink.startsWith("tel:") && !innerLink.toLowerCase().startsWith("javascript:")
+					&& !innerLink.startsWith("{openurl}") ) {
 				//logger.debug("InnerLink: " + innerLink);
 				urls.add(innerLink);
 			}
@@ -134,7 +135,7 @@ public class PageCrawler
 			PageCrawler.totalPagesReachedCrawling ++;	// Used for M.L.A.'s execution-manipulation.
 			if ( MachineLearning.shouldRunMLA(currentPageDomain) )
 				if ( MachineLearning.guessInnerDocUrlUsingML(urlId, sourceUrl, pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
-					return;	// If we were able to find the right path.. and hit a docUrl successfully.. return.
+					return;	// If we were able to find the right path.. and hit a docUrl successfully.. return. The Quadruple is already logged.
 		}
 		
 		String pageContentType = conn.getContentType();
@@ -186,7 +187,7 @@ public class PageCrawler
 				continue;
 			
             if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
-				logger.debug("Re-crossing the already found docUrl: \"" + urlToCheck + "\"");
+				logger.info("re-crossed docUrl found: <" + urlToCheck + ">");
 				if ( FileUtils.shouldDownloadDocFiles )
 					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, "This file is probably already downloaded.", currentPageDomain);
 				else

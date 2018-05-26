@@ -28,7 +28,7 @@ public class UrlUtils
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
 	public static final Pattern URL_DIRECTORY_FILTER =
-			Pattern.compile(".*\\/(?:profile|login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|post\\/|send\\/|shop\\/|watch|import|bookmark|announcement|rss|feed|about|faq|wiki|news|events|cart|support|sitemap|license|disclaimer|polic(?:y|ies)|privacy|terms|help|law"
+			Pattern.compile(".*\\/(?:profile|login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|post\\/|send\\/|shop\\/|watch|import|bookmark|announcement|rss|feed|about|faq|wiki|news|events|cart|support|sitemap|htmlmap|license|disclaimer|polic(?:y|ies)|privacy|terms|help|law"
 							+ "|(?:my|your)?account|user|fund|aut(?:h)?or|editor|citation|review|external|statistics|application|permission|ethic|conta(?:c)?t|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|people|(?:the)?press"
 							+ "|error|(?:mis|ab)use|gateway|sorryserver|cookieabsent|notfound|404\\.(?:\\w)?htm).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
@@ -188,7 +188,7 @@ public class UrlUtils
 						continue;
 					
 					if ( UrlUtils.docUrls.contains(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
-						logger.debug("Re-crossing (before connecting to it) the already found docUrl: \"" + retrievedUrl + "\"");
+						logger.info("re-crossed docUrl found: <" + urlToCheck + ">");
 						if ( FileUtils.shouldDownloadDocFiles )
 							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, "This file is probably already downloaded.", null);
 						else
@@ -454,10 +454,6 @@ public class UrlUtils
             if ( lowerCaseUrl.contains("jsessionid") )
                 finalDocUrl = UrlUtils.removeJsessionid(initialDocUrl);
 			
-            logger.info("docUrl found: <" + finalDocUrl + ">");
-            if ( FileUtils.shouldDownloadDocFiles && !comment.contains("DocFileNotRetrievedException") )	// If we set to download docFiles, then their fileNames will be in the "comment".
-				logger.info("DocFile: \"" + comment + "\" has been downloaded.");
-			
 			sumOfDocUrlsFound++;
 			
             // Gather data for the MLA, if we decide to have it enabled.
@@ -490,7 +486,7 @@ public class UrlUtils
 		{
 			if ( mimeType.contains("System.IO.FileInfo") ) {	// Check this out: "http://www.esocialsciences.org/Download/repecDownload.aspx?fname=Document110112009530.6423303.pdf&fcategory=Articles&AId=2279&fref=repec", ιt has: "System.IO.FileInfo".
 				// In this case, we want first to try the "Content-Disposition", as it's more trustworthy. If that's not available, use the urlStr as the last resort.
-				if ( conn != null )	// If we came here from the "HttpUtils".
+				if ( conn != null )	// Just to be sure we avoid an NPE.
 					contentDisposition = conn.getHeaderField("Content-Disposition");
 				// else it will be "null".
 				
@@ -515,7 +511,14 @@ public class UrlUtils
 			if ( knownDocTypes.contains(plainMimeType) )
 				return true;
 			else
-				return	((plainMimeType.equals("application/octet-stream") || plainMimeType.contains("unknown")) && urlStr.toLowerCase().contains("pdf"));
+				if ( plainMimeType.equals("application/octet-stream") || plainMimeType.equals("application/save") || plainMimeType.contains("unknown") ) {
+					if ( (contentDisposition = conn.getHeaderField("Content-Disposition")) != null )
+						return	contentDisposition.contains("pdf");
+					else
+						return	urlStr.toLowerCase().contains("pdf");
+				}
+				else
+					return false;
 				// This is a special case. (see: "https://kb.iu.edu/d/agtj" for "octet" info.
 				// and an example for "unknown" : "http://imagebank.osa.org/getExport.xqy?img=OG0kcC5vZS0yMy0xNy0yMjE0OS1nMDAy&xtype=pdf&article=oe-23-17-22149-g002")
 				// TODO - When we will accept more docTypes, match it also against other docTypes, not just "pdf".
