@@ -33,7 +33,7 @@ public class PageCrawler
 	private static final Logger logger = LoggerFactory.getLogger(PageCrawler.class);
 	
 	// Sciencedirect regexes. Use "find()" with those (they work best).
-	public static final Pattern SCIENCEDIRECT_META_DOC_URL = Pattern.compile("(?:<meta name=\"citation_pdf_url\"[\\s]*content=\")((?:http)(?:.*)(?:\\.pdf))(?:\"[\\s]*/>)");
+	public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta name=\"citation_pdf_url\"[\\s]*content=\")((?:http)(?:.*)(?:\\.pdf))(?:\"[\\s]*/>)");
 	public static final Pattern SCIENCEDIRECT_FINAL_DOC_URL = Pattern.compile("(?:window.location[\\s]+\\=[\\s]+\\')(.*)(?:\\'\\;)");
 	
 	public static final Pattern JAVASCRIPT_DOC_LINK = Pattern.compile("(?:javascript\\:pdflink.*\\')(http.+)(?:\\'\\,.*)");
@@ -47,14 +47,12 @@ public class PageCrawler
 	public static final int timesToGiveNoDocUrlsBeforeBlocked = 10;
 	
 	
-	public static HashSet<String> getOutgoingUrls(HttpURLConnection conn) throws JavaScriptDocLinkFoundException, Exception
+	public static HashSet<String> getOutgoingUrls(String pageHtml) throws JavaScriptDocLinkFoundException
 	{
 		HashSet<String> urls = new HashSet<>();
 		
-		String html = getHtmlString(conn);	// It may throw an exception, which will be passed-on.
-		
 		// Get the innerLinks using "Jsoup".
-		Document document = Jsoup.parse(html);
+		Document document = Jsoup.parse(pageHtml);
 		Elements linksOnPage = document.select("a[href]");
 		
 		for (Element el : linksOnPage ) {
@@ -75,11 +73,9 @@ public class PageCrawler
 					else	// It's a javaScriptLink which we don't treat.
 						continue;
 				}
-				
 				urls.add(innerLink);
 			}
 		}
-		
 		return urls;
 	}
 	
@@ -145,6 +141,37 @@ public class PageCrawler
 			return;	// We always return in ths case.
 		}
 		
+		String pageContentType = conn.getContentType();
+		HashSet<String> currentPageLinks = null;
+		String pageHtml = null;
+		
+		try {	// Get the pageHtml to parse the page.
+			pageHtml = getHtmlString(conn);
+		} catch (Exception e) {
+			logger.debug("Could not retrieve the innerLinks for pageUrl: " + pageUrl);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its innerLinks. Its contentType is: '" + pageContentType + "'", null);
+			return;
+		}
+		
+		// Check if the docLink is provided in a metaTag and connect to it directly.
+		try {
+			Matcher metaDocUrlMatcher = META_DOC_URL.matcher(pageHtml);
+			if ( metaDocUrlMatcher.find() ) {
+				String metaDocUrl = metaDocUrlMatcher.group(1);
+				if ( metaDocUrl.isEmpty() ) {
+					logger.error("Could not retrieve the metaDocUrl, continue by crawling the pageUrl.");
+				}
+				else {	// Connect to it directly.
+					if ( !HttpUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, currentPageDomain, false, true) )	// We log the docUrl inside this method.
+						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved metaDocUrl: <" + metaDocUrl + "> was not a docUrl.", null);
+					return;
+				}
+			}
+		} catch (Exception e) {	// After connecting to the metaDocUrl.
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag url.", null);
+			return;
+		}
+		
 	    // Check if we want to use AND if so, if we should run, the MLA.
 		if ( MachineLearning.useMLA ) {
 			PageCrawler.totalPagesReachedCrawling ++;	// Used for M.L.A.'s execution-manipulation.
@@ -153,11 +180,8 @@ public class PageCrawler
 					return;	// If we were able to find the right path.. and hit a docUrl successfully.. return. The Quadruple is already logged.
 		}
 		
-		String pageContentType = conn.getContentType();
-	    HashSet<String> currentPageLinks = null;
-		
 		try {
-			currentPageLinks = getOutgoingUrls(conn);
+			currentPageLinks = getOutgoingUrls(pageHtml);
 		} catch (JavaScriptDocLinkFoundException jsdlfe) {
 			String javaScriptDocLink = jsdlfe.getMessage();
 			if ( javaScriptDocLink == null ) {
@@ -174,7 +198,7 @@ public class PageCrawler
 				return;
 			}
 		} catch (Exception e) {
-			logger.debug("Could not retrieve the innerLinks for pgeUrl: " + pageUrl);
+			logger.debug("Could not retrieve the innerLinks for pageUrl: " + pageUrl);
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its innerLinks. Its contentType is: '" + pageContentType + "'", null);
 			return;
 		}
@@ -330,12 +354,12 @@ public class PageCrawler
 			
 			logger.debug("ScienceDirect-url: " + pageUrl);
 			String html = getHtmlString(conn);
-			Matcher metaDocUrlMatcher = SCIENCEDIRECT_META_DOC_URL.matcher(html);
+			Matcher metaDocUrlMatcher = META_DOC_URL.matcher(html);
 			if ( metaDocUrlMatcher.find() )
 			{
 				String metaDocUrl = metaDocUrlMatcher.group(1);
 				if ( metaDocUrl.isEmpty() ) {
-					logger.error("Could not retrieve the finalDocUrl from a \"sciencedirect.com\" url!");
+					logger.error("Could not retrieve the metaDocUrl from a \"sciencedirect.com\" url!");
 					return false;
 				}
 				//logger.debug("MetaDocUrl: " + metaDocUrl);	// DEBUG!
