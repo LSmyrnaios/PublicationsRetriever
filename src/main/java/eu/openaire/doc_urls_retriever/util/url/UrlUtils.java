@@ -233,7 +233,7 @@ public class UrlUtils
 				else
 					continue;
 				
-				try {
+				try {	// Check if it's a docUrl, if not, it gets crawled.
 					HttpUtils.connectAndCheckMimeType(retrievedId, urlToCheck, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);
 				} catch (Exception e) {
 					UrlUtils.logQuadruple(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null);

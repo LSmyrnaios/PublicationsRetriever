@@ -13,6 +13,7 @@ import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.exceptions.ConnTimeoutException;
 import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
 import eu.openaire.doc_urls_retriever.exceptions.DomainWithUnsupportedHEADmethodException;
+import eu.openaire.doc_urls_retriever.exceptions.JavaScriptDocLinkFoundException;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
@@ -35,6 +36,8 @@ public class PageCrawler
 	public static final Pattern SCIENCEDIRECT_META_DOC_URL = Pattern.compile("(?:<meta name=\"citation_pdf_url\"[\\s]*content=\")((?:http)(?:.*)(?:\\.pdf))(?:\"[\\s]*/>)");
 	public static final Pattern SCIENCEDIRECT_FINAL_DOC_URL = Pattern.compile("(?:window.location[\\s]+\\=[\\s]+\\')(.*)(?:\\'\\;)");
 	
+	public static final Pattern JAVASCRIPT_DOC_LINK = Pattern.compile("(?:javascript\\:pdflink.*\\')(http.+)(?:\\'\\,.*)");
+	
 	public static int totalPagesReachedCrawling = 0;	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their innerLinks checked.
 	
 	public static final HashMap<String, Integer> timesDomainNotGivingInnerLinks = new HashMap<String, Integer>();
@@ -44,7 +47,7 @@ public class PageCrawler
 	public static final int timesToGiveNoDocUrlsBeforeBlocked = 10;
 	
 	
-	public static HashSet<String> getOutgoingUrls(HttpURLConnection conn) throws Exception
+	public static HashSet<String> getOutgoingUrls(HttpURLConnection conn) throws JavaScriptDocLinkFoundException, Exception
 	{
 		HashSet<String> urls = new HashSet<>();
 		
@@ -58,9 +61,21 @@ public class PageCrawler
 			String innerLink = el.attr("href");
 			if ( !innerLink.isEmpty()
 					&& !innerLink.equals("\\/") && !innerLink.equals("#")
-					&& !innerLink.startsWith("mailto:") && !innerLink.startsWith("tel:") && !innerLink.toLowerCase().startsWith("javascript:")
-					&& !innerLink.startsWith("{openurl}") ) {
+					&& !innerLink.startsWith("mailto:") && !innerLink.startsWith("tel:") && !innerLink.startsWith("{openurl}") ) {
+				
 				//logger.debug("InnerLink: " + innerLink);
+				String lowerCaseLink = innerLink.toLowerCase();
+				if ( lowerCaseLink.startsWith("javascript:") ) {
+					String pdfLink = null;
+					Matcher pdfLinkMatcher = JAVASCRIPT_DOC_LINK.matcher(lowerCaseLink);
+					if ( pdfLinkMatcher.matches() ) {
+						pdfLink = pdfLinkMatcher.group(1);
+						throw new JavaScriptDocLinkFoundException(pdfLink);    // If it's 'null', we treat it when handling this exception.
+					}
+					else	// It's a javaScriptLink which we don't treat.
+						continue;
+				}
+				
 				urls.add(innerLink);
 			}
 		}
@@ -143,9 +158,24 @@ public class PageCrawler
 		
 		try {
 			currentPageLinks = getOutgoingUrls(conn);
+		} catch (JavaScriptDocLinkFoundException jsdlfe) {
+			String javaScriptDocLink = jsdlfe.getMessage();
+			if ( javaScriptDocLink == null ) {
+				logger.debug("JavaScriptLink was not retrieved!");
+				UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its innerLinks. Its contentType is: '" + pageContentType + "'", null);
+				return;
+			}
+			try {
+				if ( !HttpUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, javaScriptDocLink, currentPageDomain, false, true) )	// We log the docUrl inside this method.
+					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved JavaScriptDocLink: <" + javaScriptDocLink + "> was not a docUrl.", null);
+				return;
+			} catch (Exception e) {
+				UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved JavaScriptDocLink: <" + javaScriptDocLink + "> had connectivity problems.", null);
+				return;
+			}
 		} catch (Exception e) {
 			logger.debug("Could not retrieve the innerLinks for pgeUrl: " + pageUrl);
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, as there was a problem retrieving its innerLinks. Its contentType is: '" + pageContentType + "'", null);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its innerLinks. Its contentType is: '" + pageContentType + "'", null);
 			return;
 		}
 
