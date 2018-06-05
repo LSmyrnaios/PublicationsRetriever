@@ -1,15 +1,12 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
-import edu.uci.ics.crawler4j.url.URLCanonicalizer;
-import eu.openaire.doc_urls_retriever.exceptions.ConnTimeoutException;
-import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
-import eu.openaire.doc_urls_retriever.exceptions.DomainWithUnsupportedHEADmethodException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 
+import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
+import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import java.nio.charset.StandardCharsets;
 
 
