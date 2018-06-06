@@ -508,10 +508,14 @@ public class UrlUtils
 				}
 			}
 			
+			//logger.debug("Url: " + urlStr);	// DEBUG!
+			//logger.debug("PlainMimeType: " + plainMimeType);	// DEBUG!
+			
 			if ( knownDocTypes.contains(plainMimeType) )
 				return true;
 			else
-				if ( plainMimeType.equals("application/octet-stream") || plainMimeType.equals("application/save") || plainMimeType.contains("unknown") ) {
+				if ( plainMimeType.equals("application/octet-stream") || plainMimeType.equals("application/save")
+						|| plainMimeType.contains("application/force-download") || plainMimeType.contains("unknown") ) {
 					if ( (contentDisposition = conn.getHeaderField("Content-Disposition")) != null )
 						return	contentDisposition.contains("pdf");
 					else

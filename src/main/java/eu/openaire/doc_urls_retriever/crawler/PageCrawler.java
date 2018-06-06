@@ -88,7 +88,7 @@ public class PageCrawler
 			
 			String inputLine;
 			while ( (inputLine = br.readLine()) != null ) {
-				//logger.debug("InputHTMLline: " + inputLine);	// DEBUG!
+				//logger.debug(inputLine);	// DEBUG!
 				strB.append(inputLine);
 			}
 			br.close();
