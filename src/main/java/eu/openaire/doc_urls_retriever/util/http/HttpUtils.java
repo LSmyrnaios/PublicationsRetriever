@@ -542,7 +542,7 @@ public class HttpUtils
 	{
 		if ( (errorStatusCode == 500) && domainStr.contains("handle.net") ) {    // Don't take the 500 of "handle.net", into consideration, it returns many times 500, where it should return 404.. so don't treat it like a 500.
 			//logger.warn("\"handle.com\" returned 500 where it should return 404.. so we will treat it like a 404.");    // See an example: "https://hdl.handle.net/10655/10123".
-			errorStatusCode = 404;	// Set it to 404 to be handled as such, if any rule  for 404s is to be added later.
+			errorStatusCode = 404;	// Set it to 404 to be handled as such, if any rule for 404s is to be added later.
 		}
 		
 		if ( (errorStatusCode >= 400) && (errorStatusCode <= 499) ) {	// Client Error.

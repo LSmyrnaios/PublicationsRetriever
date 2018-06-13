@@ -24,7 +24,7 @@ public class UrlUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(UrlUtils.class);
 	
-	public static final Pattern URL_TRIPLE = Pattern.compile("(.+:\\/\\/(?:www(?:(?:\\w+)?\\.)?)?([\\w\\.\\-]+)(?:[\\:\\d]+)?(?:.*\\/)?(?:[\\w\\.\\,\\-\\_\\%\\:\\~]*\\?[\\w\\.\\,\\-\\_\\%\\:\\~]+\\=)?)(.+)?");
+	public static final Pattern URL_TRIPLE = Pattern.compile("(.+:\\/\\/(?:www(?:(?:\\w+)?\\.)?)?([\\w\\.\\-]+)(?:[\\:\\d]+)?(?:.*\\/)?(?:[\\w\\.\\,\\-\\_\\%\\:\\;\\~]*\\?[\\w\\.\\,\\-\\_\\%\\:\\;\\~]+\\=)?)(.+)?");
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
 	public static final Pattern URL_DIRECTORY_FILTER =
@@ -497,7 +497,7 @@ public class UrlUtils
 			}
 			
 			String plainMimeType = mimeType;	// Make sure we don't cause any NPE later on..
-			if ( mimeType.contains("charset")
+			if ( mimeType.contains("charset") || mimeType.contains("name")
 				|| mimeType.startsWith("(") )	// See: https://www.mamsie.bbk.ac.uk/articles/10.16995/sim.138/galley/134/download/
 			{
 				plainMimeType = getPlainMimeType(mimeType);
@@ -514,7 +514,7 @@ public class UrlUtils
 			if ( knownDocTypes.contains(plainMimeType) )
 				return true;
 			else
-				if ( plainMimeType.equals("application/octet-stream") || plainMimeType.equals("application/save")
+				if ( plainMimeType.contains("application/octet-stream") || plainMimeType.contains("application/save")
 						|| plainMimeType.contains("application/force-download") || plainMimeType.contains("unknown") ) {
 					if ( (contentDisposition = conn.getHeaderField("Content-Disposition")) != null )
 						return	contentDisposition.contains("pdf");

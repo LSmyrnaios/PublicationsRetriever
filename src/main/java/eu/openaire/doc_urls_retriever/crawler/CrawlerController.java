@@ -62,7 +62,10 @@ public class CrawlerController
 		//String url = "http://www.teses.usp.br/teses/disponiveis/5/5160/tde-08092009-112640/pt-br.php";
 		//String url = "http://www.lib.kobe-u.ac.jp/infolib/meta_pub/G0000003kernel_81004636";
 		//String url = "https://link.springer.com/article/10.1186/s12889-016-3866-3";
-		String url = "http://ajcmicrob.com/en/index.html";
+		//String url = "http://ajcmicrob.com/en/index.html";
+		//String url = "http://kar.kent.ac.uk/57872/1/Fudge-Modern_slavery_%26_migrant_workers.pdf";
+		//String url = "http://summit.sfu.ca/item/12554";
+		String url = "http://summit.sfu.ca/item/5894";
 		
 		String urlToCheck = url;
 		/*if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(url, null, StandardCharsets.UTF_8)) == null ) {

@@ -110,7 +110,7 @@ public class DocUrlsRetriever
 		logger.info("Αbout: " + UrlUtils.elsevierUnwantedUrls * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.elsevierUnwantedUrls + " urls) were from, or reached after redirects, the unwanted domain: \"elsevier.com\", which either doesn't provide docUrls in its docPages, or it redirects to \"sciencedirect.com\", thus being avoided to be crawled.");
 		logger.info("Αbout: " + UrlUtils.doajResultPageUrls * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.doajResultPageUrls + " urls) were \"doaj.org/toc/\" urls, which are resultPages, thus being avoided to be crawled.");
 		logger.info("Αbout: " + UrlUtils.pagesWithHtmlDocUrls * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.pagesWithHtmlDocUrls + " urls) were docUrls, but, in HTML, thus being avoided to be crawled.");
-		logger.info("About: " + UrlUtils.pagesRequireLoginToAccessDocFiles * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.pagesRequireLoginToAccessDocFiles + " urls) were of domains which require login to access docFiles.");
+		logger.info("About: " + UrlUtils.pagesRequireLoginToAccessDocFiles * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.pagesRequireLoginToAccessDocFiles + " urls) were of domains which are known to require login to access docFiles, thus, they were blocked before being connected.");
 		logger.info("About: " + UrlUtils.pagesWithLargerCrawlingDepth * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.pagesWithLargerCrawlingDepth + " urls) were docPages which have their docUrl deeper inside their server, thus being currently avoided.");
 		logger.info("About: " + UrlUtils.pangaeaUrls * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.pangaeaUrls + " urls) were \"PANGAEA.\" with invalid form and non-docUrls in their inner links.");
 		logger.info("About: " + UrlUtils.connProblematicUrls * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.connProblematicUrls + " urls) were pages which had connectivity problems.");
@@ -121,7 +121,7 @@ public class DocUrlsRetriever
 		
 		long problematicUrlsNum = UrlUtils.crawlerSensitiveDomains + UrlUtils.javascriptPageUrls + UrlUtils.sciencedirectUrls + UrlUtils.doiOrgToScienceDirect + UrlUtils.elsevierUnwantedUrls + UrlUtils.doajResultPageUrls + UrlUtils.pagesWithHtmlDocUrls + UrlUtils.pagesRequireLoginToAccessDocFiles
 									+ UrlUtils.pagesWithLargerCrawlingDepth + UrlUtils.pangaeaUrls + UrlUtils.urlsWithUnwantedForm + UrlUtils.connProblematicUrls + UrlUtils.pagesNotProvidingDocUrls + UrlUtils.longToRespondUrls + UrlUtils.inputDuplicatesNum;
-		logger.info("From the " + inputCheckedUrlNum + " urls in the input, the " + problematicUrlsNum + " of them (about " + problematicUrlsNum * (float)100 / inputCheckedUrlNum + "%) were problematic (sum of the all of the above cases).");
+		logger.info("From the " + inputCheckedUrlNum + " urls checked from the input, the " + problematicUrlsNum + " of them (about " + problematicUrlsNum * (float)100 / inputCheckedUrlNum + "%) were problematic (sum of the all of the above cases).");
 		
         // Then... just close the open streams (imported and exported content) and exit.
         FileUtils.closeStreams();

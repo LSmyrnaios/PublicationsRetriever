@@ -33,7 +33,7 @@ public class PageCrawler
 	private static final Logger logger = LoggerFactory.getLogger(PageCrawler.class);
 	
 	// Sciencedirect regexes. Use "find()" with those (they work best).
-	public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta name=\"citation_pdf_url\"[\\s]*content=\")((?:http)(?:.*)(?:\\.pdf))(?:\"[\\s]*/>)");
+	public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta[\\s]*name=\"citation_pdf_url\"[\\s]*content=\")([http][\\w\\/\\.\\,\\-\\_\\%\\&\\;\\:\\~\\?\\=]+)(?:\"[\\s]*/>)");
 	public static final Pattern SCIENCEDIRECT_FINAL_DOC_URL = Pattern.compile("(?:window.location[\\s]+\\=[\\s]+\\')(.*)(?:\\'\\;)");
 	
 	public static final Pattern JAVASCRIPT_DOC_LINK = Pattern.compile("(?:javascript\\:pdflink.*\\')(http.+)(?:\\'\\,.*)");
@@ -162,8 +162,9 @@ public class PageCrawler
 					logger.error("Could not retrieve the metaDocUrl, continue by crawling the pageUrl.");
 				}
 				else {	// Connect to it directly.
+					//logger.debug("MetaDocUrl: " + metaDocUrl);	// DEBUG!
 					if ( !HttpUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, currentPageDomain, false, true) )	// We log the docUrl inside this method.
-						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved metaDocUrl: <" + metaDocUrl + "> was not a docUrl.", null);
+						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved metaDocUrl was not a docUrl.", null);
 					return;
 				}
 			}
@@ -390,13 +391,13 @@ public class PageCrawler
 						return false;
 					}
 				} else {
-					logger.warn("The finalDocLink could not be matched!");
-					logger.debug("HTML-code:\n" + html);
+					logger.warn("The finalDocLink could not be found!");
+					//logger.debug("HTML-code:\n" + html);	// DEBUG!
 					return false;
 				}
 			} else {
-				logger.warn("The metaDocLink could not be matched!");
-				logger.debug("HTML-code:\n" + html);
+				logger.warn("The metaDocLink could not be found!");	// It's possible if the document only available after paying (https://www.sciencedirect.com/science/article/pii/S1094202598900527)
+				//logger.debug("HTML-code:\n" + html);	// DEBUG!
 				return false;
 			}
 		} catch (Exception e) {
