@@ -36,7 +36,7 @@ public class FileUtils
 	public static int unretrievableInputLines = 0;	// For better statistics in the end.
     public static int unretrievableUrlsOnly = 0;
     public static int groupCount = 300;
-    public static int maxStoringWaitingTime = 30000;	// 30sec
+    public static int maxStoringWaitingTime = 45000;	// 45sec
 	
 	public static final List<QuadrupleToBeLogged> quadrupleToBeLoggedOutputList = new ArrayList<>();
 	
@@ -225,7 +225,7 @@ public class FileUtils
 					logger.warn("Storing docFile from docUrl: \"" + docUrl + "\" took over "+ TimeUnit.MILLISECONDS.toSeconds(FileUtils.maxStoringWaitingTime) + "secs!");
 					if ( !docFile.delete() )
 						logger.error("Error when deleting the half-retrieved file from docUrl: " + docUrl);
-					numOfDocFile --;	// Revert number, as this docFile was not retrieved.
+					numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 					throw new DocFileNotRetrievedException();
 				}
 				else

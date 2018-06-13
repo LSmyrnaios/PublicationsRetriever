@@ -32,17 +32,19 @@ public class HttpUtils
 	public static final HashMap<String, Integer> timesDomainsHadInputNotBeingDocNorPage = new HashMap<String, Integer>();
 	public static final SetMultimap<String, String> domainsMultimapWithPaths403BlackListed = HashMultimap.create();	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
 	
+	public static int domainsBlockedDueToSSLException = 0;
+	
 	public static String lastConnectedHost = "";
 	public static final int politenessDelay = 0;	// Time to wait before connecting to the same host again.
-	public static final int maxConnHEADWaitingTime = 5000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
-	public static final int maxConnGETWaitingTime = 10000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
+	public static final int maxConnHEADWaitingTime = 10000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
+	public static final int maxConnGETWaitingTime = 15000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
 	
-	private static final int maxRedirectsForPageUrls = 5;// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
+	private static final int maxRedirectsForPageUrls = 7;// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
 	private static final int maxRedirectsForInnerLinks = 2;	// Inner-DOC-Links shouldn't take more than 2 redirects.
 	
 	private static final int timesPathToHave403errorCodeBeforeBlocked = 3;
-	private static final int timesToHave5XXerrorCodeBeforeBlocked = 5;
-    private static final int timesToHaveTimeoutExBeforeBlocked = 5;
+	private static final int timesToHave5XXerrorCodeBeforeBlocked = 10;
+    private static final int timesToHaveTimeoutExBeforeBlocked = 10;
     private static final int numberOf403BlockedPathsBeforeBlocked = 5;
     private static final int timesToReturnNoTypeBeforeBlocked = 10;
 	private static final int timesToHaveNoDocNorPageInputBeforeBlocked = 10;
@@ -124,7 +126,7 @@ public class HttpUtils
 				else if ( (mimeType != null) && (mimeType.contains("htm") || mimeType.contains("text")) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
 					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, conn);
 				else {
-					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" will not be visited!");
+					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" will not be visited! Its mimeType was: " + mimeType);
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpUtils.connectAndCheckMimeType()', after not matching to a docUrl nor to an htm/text-like page.", domainStr);
 					if ( countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, HttpUtils.timesDomainsHadInputNotBeingDocNorPage, domainStr, HttpUtils.timesToHaveNoDocNorPageInputBeforeBlocked) )
 						logger.warn("Domain: " + domainStr + " was blocked after having no Doc nor Pages in the input more than " + HttpUtils.timesToReturnNoTypeBeforeBlocked + " times.");
@@ -301,6 +303,7 @@ public class HttpUtils
 			// TODO - For "SSLProtocolException", see more about it's possible handling here: https://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0/14884941#14884941
 			// TODO - Maybe I should make another list where only urls in https, from these domains, would be blocked.
 			blacklistedDomains.add(domainStr);
+			domainsBlockedDueToSSLException ++;
 			throw new DomainBlockedException();
 		} catch (SocketException se) {
 			String seMsg = se.getMessage();
