@@ -33,7 +33,7 @@ public class PageCrawler
 	private static final Logger logger = LoggerFactory.getLogger(PageCrawler.class);
 	
 	// Sciencedirect regexes. Use "find()" with those (they work best).
-	public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta[\\s]*name=\"citation_pdf_url\"[\\s]*content=\")([http][\\w\\/\\.\\,\\-\\_\\%\\&\\;\\:\\~\\?\\=]+)(?:\"[\\s]*/>)");
+	public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta[\\s]*name=\"(?:citation_pdf_url|eprints.document_url)\"[\\s]*content=\")([http][\\w\\/\\.\\,\\-\\_\\%\\&\\;\\:\\~\\?\\=]+)(?:\"[\\s]*/>)");
 	public static final Pattern SCIENCEDIRECT_FINAL_DOC_URL = Pattern.compile("(?:window.location[\\s]+\\=[\\s]+\\')(.*)(?:\\'\\;)");
 	
 	public static final Pattern JAVASCRIPT_DOC_LINK = Pattern.compile("(?:javascript\\:pdflink.*\\')(http.+)(?:\\'\\,.*)");
@@ -43,7 +43,7 @@ public class PageCrawler
 	public static final HashMap<String, Integer> timesDomainNotGivingInnerLinks = new HashMap<String, Integer>();
 	public static final HashMap<String, Integer> timesDomainNotGivingDocUrls = new HashMap<String, Integer>();
 	
-	public static final int timesToGiveNoInnerLinksBegoreBlocked = 5;
+	public static final int timesToGiveNoInnerLinksBeforeBlocked = 5;
 	public static final int timesToGiveNoDocUrlsBeforeBlocked = 10;
 	
 	
@@ -55,7 +55,7 @@ public class PageCrawler
 		Document document = Jsoup.parse(pageHtml);
 		Elements linksOnPage = document.select("a[href]");
 		
-		for (Element el : linksOnPage ) {
+		for ( Element el : linksOnPage ) {
 			String innerLink = el.attr("href");
 			if ( !innerLink.isEmpty()
 					&& !innerLink.equals("\\/") && !innerLink.equals("#")
@@ -209,8 +209,8 @@ public class PageCrawler
 		if ( currentPageLinks.isEmpty() ) {	// If no links were retrieved (e.g. the pageUrl was some kind of non-page binary content)
 			logger.warn("No links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, as no links were able to be retrieved from it. Its contentType is: '" + pageContentType + "'", null);
-			if ( HttpUtils.countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingInnerLinks, currentPageDomain, PageCrawler.timesToGiveNoInnerLinksBegoreBlocked) )
-				logger.debug("Domain: " + currentPageDomain + " was blocked after giving no innerLinks more than " + PageCrawler.timesToGiveNoInnerLinksBegoreBlocked + " times.");
+			if ( HttpUtils.countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingInnerLinks, currentPageDomain, PageCrawler.timesToGiveNoInnerLinksBeforeBlocked) )
+				logger.debug("Domain: " + currentPageDomain + " was blocked after giving no innerLinks more than " + PageCrawler.timesToGiveNoInnerLinksBeforeBlocked + " times.");
 			return;
 		}
 		

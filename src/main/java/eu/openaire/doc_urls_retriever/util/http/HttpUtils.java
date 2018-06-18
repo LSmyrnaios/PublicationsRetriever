@@ -75,7 +75,7 @@ public class HttpUtils
 		HttpURLConnection conn = null;
 		try {
 			if ( domainStr == null )	// No info about domainStr from the calling method.. we have to find it here.
-				if ( (domainStr = UrlUtils.getDomainStr(resourceURL) ) == null)
+				if ( (domainStr = UrlUtils.getDomainStr(resourceURL)) == null )
 					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
 			
 			conn = handleConnection(urlId, sourceUrl, pageUrl, resourceURL, domainStr, calledForPageUrl, calledForPossibleDocUrl);
@@ -126,7 +126,7 @@ public class HttpUtils
 				else if ( (mimeType != null) && (mimeType.contains("htm") || mimeType.contains("text")) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
 					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, conn);
 				else {
-					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" will not be visited! Its mimeType was: " + mimeType);
+					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" with mimeType: \"" + mimeType + "\" will not be visited!");
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpUtils.connectAndCheckMimeType()', after not matching to a docUrl nor to an htm/text-like page.", domainStr);
 					if ( countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, HttpUtils.timesDomainsHadInputNotBeingDocNorPage, domainStr, HttpUtils.timesToHaveNoDocNorPageInputBeforeBlocked) )
 						logger.warn("Domain: " + domainStr + " was blocked after having no Doc nor Pages in the input more than " + HttpUtils.timesToReturnNoTypeBeforeBlocked + " times.");
