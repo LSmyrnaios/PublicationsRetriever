@@ -61,11 +61,12 @@ public class UrlUtils
 	
 	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("(?:\\((?:\\')?)?([\\w]+\\/[\\w\\+\\-\\.]+).*");
 	
+	/*
+	public static final Pattern SCIENCEDIRECT_DOMAINS = Pattern.compile(".+:\\/\\/.*(?:sciencedirect|linkinghub.elsevier)(?:.com\\/.+)");
 	public static final Pattern DOI_ORG_J_FILTER = Pattern.compile(".+[doi.org]\\/[\\d]{2}\\.[\\d]{4}\\/[j]\\..+");	// doi.org urls which has this form and redirect to "sciencedirect.com".
-	
 	public static final Pattern DOI_ORG_PARENTHESIS_FILTER = Pattern.compile(".+[doi.org]\\/[\\d]{2}\\.[\\d]{4}\\/[\\w]*[\\d]{4}\\-[\\d]{3}(?:[\\d]|[\\w])[\\(][\\d]{2}[\\)][\\d]{5}\\-(?:[\\d]|[\\w])");	// Same reason as above.
-	
 	public static final Pattern DOI_ORG_JTO_FILTER = Pattern.compile(".+[doi.org]\\/[\\d]{2}\\.[\\d]{4}\\/.*[jto]\\..+");	// doi.org urls which has this form and redirect to "sciencedirect.com".
+	*/
 	
 	public static int sumOfDocUrlsFound = 0;	// Change it back to simple int if finally in singleThread mode
 	public static int inputDuplicatesNum = 0;
@@ -83,8 +84,7 @@ public class UrlUtils
 	public static int pagesWithHtmlDocUrls = 0;
 	public static int pagesRequireLoginToAccessDocFiles = 0;
 	public static int pagesWithLargerCrawlingDepth = 0;	// Pages with their docUrl behind an inner "view" page.
-	public static int longToRespondUrls = 0;	// Urls belonging to domains which take too long to respond.
-	public static int doiOrgToScienceDirect = 0;	// Urls from "doi.org" which redirect to "sciencedirect.com".
+	public static int longToRespondUrls = 0;	// Urls belonging to domains which take too long to respon
 	public static int urlsWithUnwantedForm = 0;	// (plain domains, unwanted page-extensions ect.)
 	public static int pangaeaUrls = 0;	// These urls are in false form by default, but even if they weren't or we transform them, PANGAEA. only gives datasets, not fulltext.
 	public static int connProblematicUrls = 0;	// Urls known to have connectivity problems, such as long conn times etc.
@@ -332,12 +332,7 @@ public class UrlUtils
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to a JavaScript-using domain, other than.", null);
 			return true;
 		}
-		/*else if ( lowerCaseUrl.contains("sciencedirect.com") ) {	// These urls are in JavaScript, having dynamic links which we cannot currently retrieve.
-			UrlUtils.sciencedirectUrls ++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to the JavaScript-using domain 'sciencedirect.com'.", null);
-			return true;
-		}*/
-		else if ( lowerCaseUrl.contains("www.elsevier.com") ) {	// The plain "elsevier.com" and the "journals.elsevier.com" don't give docUrls.
+		else if ( lowerCaseUrl.contains("www.elsevier.com") || lowerCaseUrl.contains("journals.elsevier.com") ) {	// The plain "www.elsevier.com" and the "journals.elsevier.com" don't give docUrls.
 			// The "linkinghub.elsevier.com" is redirecting to "sciencedirect.com".
 			// Note that we still accept the "elsevier.es" pageUrls, which give docUrls.
 			UrlUtils.elsevierUnwantedUrls ++;
@@ -394,12 +389,13 @@ public class UrlUtils
 		else if ( lowerCaseUrl.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
 			HttpUtils.blockSharedSiteSessionDomain(retrievedUrl, null);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "It was discarded after participating in a 'sharedSiteSession-redirectionPack'.", null);
-			return false;	// Do not visit it.
+			return true;
 		}
-		/*else if ( UrlUtils.DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.DOI_ORG_PARENTHESIS_FILTER.matcher(lowerCaseUrl).matches()
+		/*else if ( UrlUtils.SCIENCEDIRECT_DOMAINS.matcher(lowerCaseUrl).matches()
+				|| UrlUtils.DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.DOI_ORG_PARENTHESIS_FILTER.matcher(lowerCaseUrl).matches()
 				|| UrlUtils.DOI_ORG_JTO_FILTER.matcher(lowerCaseUrl).matches() ) {
-			UrlUtils.doiOrgToScienceDirect ++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to a urlType of 'doi.org', which redirects to 'sciencedirect.com'.", null);
+			UrlUtils.sciencedirectUrls ++;
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to 'sciencedirect.com'-family urls.", null);
 			return true;
 		}*/
 		else if ( shouldNotAcceptPageUrl(retrievedUrl, lowerCaseUrl) ) {

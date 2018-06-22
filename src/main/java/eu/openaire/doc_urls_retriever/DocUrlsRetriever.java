@@ -106,8 +106,7 @@ public class DocUrlsRetriever
 		}
 		logger.info("About: " + UrlUtils.crawlerSensitiveDomains * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.crawlerSensitiveDomains  + " urls) were from known crawler-sensitive domains.");
 		logger.info("About: " + UrlUtils.javascriptPageUrls * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.javascriptPageUrls + " urls) were from a JavaScript-powered domain, other than the \"sciencedirect.com\", which has dynamic links.");
-		logger.info("About: " + UrlUtils.sciencedirectUrls * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.sciencedirectUrls + " urls) were from the JavaScript-powered domain \"sciencedirect.com\", which has dynamic links.");
-		logger.info("About: " + UrlUtils.doiOrgToScienceDirect * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.doiOrgToScienceDirect + " urls) were of a certain type of \"doi.org\" urls which would redirect to \"sciencedirect.com\", thus being avoided to be crawled.");
+		//logger.info("About: " + UrlUtils.sciencedirectUrls * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.sciencedirectUrls + " urls) were from the \"sciencedirect.com\"-family urls, with dynamic links.");
 		logger.info("Αbout: " + UrlUtils.elsevierUnwantedUrls * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.elsevierUnwantedUrls + " urls) were from, or reached after redirects, the unwanted domain: \"elsevier.com\", which either doesn't provide docUrls in its docPages, or it redirects to \"sciencedirect.com\", thus being avoided to be crawled.");
 		logger.info("Αbout: " + UrlUtils.doajResultPageUrls * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.doajResultPageUrls + " urls) were \"doaj.org/toc/\" urls, which are resultPages, thus being avoided to be crawled.");
 		logger.info("Αbout: " + UrlUtils.pagesWithHtmlDocUrls * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.pagesWithHtmlDocUrls + " urls) were docUrls, but, in HTML, thus being avoided to be crawled.");
@@ -120,7 +119,7 @@ public class DocUrlsRetriever
 		logger.info("About: " + UrlUtils.urlsWithUnwantedForm * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.urlsWithUnwantedForm + " urls) were urls which are plain-domains, have unwanted url-extensions, ect...");
 		logger.info("About: " + UrlUtils.inputDuplicatesNum * (float)100 / inputCheckedUrlNum + "% (" + UrlUtils.inputDuplicatesNum + " urls) were duplicates in the input file.");
 		
-		long problematicUrlsNum = UrlUtils.crawlerSensitiveDomains + UrlUtils.javascriptPageUrls + UrlUtils.sciencedirectUrls + UrlUtils.doiOrgToScienceDirect + UrlUtils.elsevierUnwantedUrls + UrlUtils.doajResultPageUrls + UrlUtils.pagesWithHtmlDocUrls + UrlUtils.pagesRequireLoginToAccessDocFiles
+		long problematicUrlsNum = UrlUtils.crawlerSensitiveDomains + UrlUtils.javascriptPageUrls /*+ UrlUtils.sciencedirectUrls*/ + UrlUtils.elsevierUnwantedUrls + UrlUtils.doajResultPageUrls + UrlUtils.pagesWithHtmlDocUrls + UrlUtils.pagesRequireLoginToAccessDocFiles
 									+ UrlUtils.pagesWithLargerCrawlingDepth + UrlUtils.pangaeaUrls + UrlUtils.urlsWithUnwantedForm + UrlUtils.connProblematicUrls + UrlUtils.pagesNotProvidingDocUrls + UrlUtils.longToRespondUrls + UrlUtils.inputDuplicatesNum;
 		logger.info("From the " + inputCheckedUrlNum + " urls checked from the input, the " + problematicUrlsNum + " of them (about " + problematicUrlsNum * (float)100 / inputCheckedUrlNum + "%) were problematic (sum of the all of the above cases).");
 		

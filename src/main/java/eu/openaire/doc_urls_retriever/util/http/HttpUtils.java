@@ -36,15 +36,15 @@ public class HttpUtils
 	
 	public static String lastConnectedHost = "";
 	public static final int politenessDelay = 0;	// Time to wait before connecting to the same host again.
-	public static final int maxConnHEADWaitingTime = 10000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
-	public static final int maxConnGETWaitingTime = 15000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
+	public static final int maxConnHEADWaitingTime = 15000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
+	public static final int maxConnGETWaitingTime = 20000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
 	
 	private static final int maxRedirectsForPageUrls = 7;// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
 	private static final int maxRedirectsForInnerLinks = 2;	// Inner-DOC-Links shouldn't take more than 2 redirects.
 	
 	private static final int timesPathToHave403errorCodeBeforeBlocked = 3;
 	private static final int timesToHave5XXerrorCodeBeforeBlocked = 10;
-    private static final int timesToHaveTimeoutExBeforeBlocked = 10;
+    private static final int timesToHaveTimeoutExBeforeBlocked = 25;
     private static final int numberOf403BlockedPathsBeforeBlocked = 5;
     private static final int timesToReturnNoTypeBeforeBlocked = 10;
 	private static final int timesToHaveNoDocNorPageInputBeforeBlocked = 10;
@@ -311,8 +311,9 @@ public class HttpUtils
 				logger.warn("\"" + se.getMessage() + "\". This SocketException was recieved after trying to connect with the domain: \"" + domainStr + "\"");
 			if ( conn != null )
 				conn.disconnect();
-			blacklistedDomains.add(domainStr);
-			throw new DomainBlockedException();
+			//blacklistedDomains.add(domainStr);
+			//throw new DomainBlockedException();
+			throw new RuntimeException();
     	} catch (Exception e) {
 			logger.error("", e);
 			if ( conn != null )
