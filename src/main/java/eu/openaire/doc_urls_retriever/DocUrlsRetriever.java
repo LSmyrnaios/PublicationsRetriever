@@ -3,6 +3,7 @@ package eu.openaire.doc_urls_retriever;
 import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
+import eu.openaire.doc_urls_retriever.util.url.LoadAndCheckUrls;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,7 +82,7 @@ public class DocUrlsRetriever
 		// Show statistics.
 		long inputCheckedUrlNum = 0;
 		if ( CrawlerController.useIdUrlPairs )
-			inputCheckedUrlNum = UrlUtils.numOfIDs;	// For each ID we check only one of its urls anyway.
+			inputCheckedUrlNum = LoadAndCheckUrls.numOfIDs;	// For each ID we check only one of its urls anyway.
 		else {
 			inputCheckedUrlNum = FileUtils.getCurrentlyLoadedUrls();
 			if ( (FileUtils.skipFirstRow && (inputCheckedUrlNum < 0)) || (!FileUtils.skipFirstRow && (inputCheckedUrlNum == 0)) ) {

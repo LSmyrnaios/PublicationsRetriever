@@ -1,13 +1,12 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
+import eu.openaire.doc_urls_retriever.util.url.LoadAndCheckUrls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 
 import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
-import edu.uci.ics.crawler4j.url.URLCanonicalizer;
-import java.nio.charset.StandardCharsets;
 
 
 /**
@@ -27,9 +26,9 @@ public class CrawlerController
 		
 		try {
 			if ( CrawlerController.useIdUrlPairs )
-				UrlUtils.loadAndCheckIdUrlPairs();
+				LoadAndCheckUrls.loadAndCheckIdUrlPairs();
 			else
-				UrlUtils.loadAndCheckUrls();
+				LoadAndCheckUrls.loadAndCheckUrls();
 			
 			//runIndividualTests();
 			
