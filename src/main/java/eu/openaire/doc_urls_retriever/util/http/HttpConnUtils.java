@@ -94,7 +94,7 @@ public class HttpConnUtils
 			//logger.debug("Url: " + finalUrlStr);	// DEBUG!
 			//logger.debug("MimeType: " + mimeType);	// DEBUG!
 			
-			if ( UrlUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition, conn) ) {
+			if ( ConnSupportUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition, conn) ) {
 				logger.info("docUrl found: <" + finalUrlStr + ">");
 				String fullPathFileName = "";
 				if ( FileUtils.shouldDownloadDocFiles ) {
@@ -386,7 +386,7 @@ public class HttpConnUtils
 						throw new DomainBlockedException();
 					}
 					
-					String targetUrl = UrlUtils.getFullyFormedUrl(null, location, conn.getURL());
+					String targetUrl = ConnSupportUtils.getFullyFormedUrl(null, location, conn.getURL());
 					if ( targetUrl == null )
 						throw new RuntimeException();
 					

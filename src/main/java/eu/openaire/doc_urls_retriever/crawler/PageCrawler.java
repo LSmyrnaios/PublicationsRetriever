@@ -1,7 +1,5 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -81,28 +79,6 @@ public class PageCrawler
 	}
 	
 	
-	public static String getHtmlString(HttpURLConnection conn) throws Exception
-	{
-		try {
-			StringBuilder strB = new StringBuilder(30000);	// We give an initial size to optimize performance.
-			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-			
-			String inputLine;
-			while ( (inputLine = br.readLine()) != null ) {
-				//logger.debug(inputLine);	// DEBUG!
-				strB.append(inputLine);
-			}
-			br.close();
-			
-			return strB.toString();
-			
-		} catch (Exception e) {
-			logger.error("", e);
-			throw e;
-		}
-	}
-	
-	
 	public static boolean shouldNotAcceptInnerLink(String linkStr, String lowerCaseLink)
 	{
 		String lowerCaseUrl = null;
@@ -147,7 +123,7 @@ public class PageCrawler
 		String pageHtml = null;
 		
 		try {	// Get the pageHtml to parse the page.
-			pageHtml = getHtmlString(conn);
+			pageHtml = ConnSupportUtils.getHtmlString(conn);
 		} catch (Exception e) {
 			logger.debug("Could not retrieve the innerLinks for pageUrl: " + pageUrl);
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its innerLinks. Its contentType is: '" + pageContentType + "'", null);
@@ -355,7 +331,7 @@ public class PageCrawler
 			// We now have the "sciencedirect.com" url (either from the beginning or after silentRedirect).
 			
 			logger.debug("ScienceDirect-url: " + pageUrl);
-			String html = getHtmlString(conn);
+			String html = ConnSupportUtils.getHtmlString(conn);
 			Matcher metaDocUrlMatcher = META_DOC_URL.matcher(html);
 			if ( metaDocUrlMatcher.find() )
 			{
@@ -373,7 +349,7 @@ public class PageCrawler
 				//logger.debug("Url after connecting: " + conn.getURL().toString());
 				//logger.debug("MimeType: " + conn.getContentType());
 				
-				html = getHtmlString(conn);    // Take the new html.
+				html = ConnSupportUtils.getHtmlString(conn);    // Take the new html.
 				Matcher finalDocUrlMatcher = SCIENCEDIRECT_FINAL_DOC_URL.matcher(html);
 				if ( finalDocUrlMatcher.find() )
 				{

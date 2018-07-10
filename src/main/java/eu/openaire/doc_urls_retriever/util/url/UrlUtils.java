@@ -1,7 +1,5 @@
 package eu.openaire.doc_urls_retriever.util.url;
 
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -59,8 +57,6 @@ public class UrlUtils
     // "DOC_URL_FILTER" works for lowerCase Strings (we make sure they are in lowerCase before we check).
     // Note that we still need to check if it's an alive link and if it's actually a docUrl (though it's mimeType).
 	
-	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("(?:\\((?:\\')?)?([\\w]+\\/[\\w\\+\\-\\.]+).*");
-	
 	/*
 	public static final Pattern SCIENCEDIRECT_DOMAINS = Pattern.compile(".+:\\/\\/.*(?:sciencedirect|linkinghub.elsevier)(?:.com\\/.+)");
 	public static final Pattern DOI_ORG_J_FILTER = Pattern.compile(".+[doi.org]\\/[\\d]{2}\\.[\\d]{4}\\/[j]\\..+");	// doi.org urls which has this form and redirect to "sciencedirect.com".
@@ -73,7 +69,6 @@ public class UrlUtils
 	
 	public static final HashSet<String> duplicateUrls = new HashSet<String>();
 	public static final HashSet<String> docUrls = new HashSet<String>();
-	public static final HashSet<String> knownDocTypes = new HashSet<String>();
 	
 	// Counters for certain unwanted domains. We show statistics in the end.
 	public static int javascriptPageUrls = 0;
@@ -89,11 +84,6 @@ public class UrlUtils
 	public static int pangaeaUrls = 0;	// These urls are in false form by default, but even if they weren't or we transform them, PANGAEA. only gives datasets, not fulltext.
 	public static int connProblematicUrls = 0;	// Urls known to have connectivity problems, such as long conn times etc.
 	public static int pagesNotProvidingDocUrls = 0;
-	
-	static {
-		logger.debug("Setting knownDocTypes. Currently testing only \".pdf\" type.");
-		knownDocTypes.add("application/pdf");	// For the moment we care only for the pdf type.
-	}
 	
 	
 	/**
@@ -302,105 +292,7 @@ public class UrlUtils
         if ( FileUtils.quadrupleToBeLoggedOutputList.size() == FileUtils.groupCount )	// Write to file every time we have a group of <groupCount> triples.
             FileUtils.writeToFile();
     }
-
-
-    /**
-     * This method takes a url and its mimeType and checks if it's a document mimeType or not.
-     * @param urlStr
-     * @param mimeType
-     * @param contentDisposition
-	 * @return boolean
-     */
-    public static boolean hasDocMimeType(String urlStr, String mimeType, String contentDisposition, HttpURLConnection conn)
-    {
-    	if ( mimeType != null )
-		{
-			if ( mimeType.contains("System.IO.FileInfo") ) {	// Check this out: "http://www.esocialsciences.org/Download/repecDownload.aspx?fname=Document110112009530.6423303.pdf&fcategory=Articles&AId=2279&fref=repec", ιt has: "System.IO.FileInfo".
-				// In this case, we want first to try the "Content-Disposition", as it's more trustworthy. If that's not available, use the urlStr as the last resort.
-				if ( conn != null )	// Just to be sure we avoid an NPE.
-					contentDisposition = conn.getHeaderField("Content-Disposition");
-				// else it will be "null".
-				
-				if ( contentDisposition != null )
-					return	contentDisposition.contains("pdf");	// TODO - add more types as needed.
-				else
-					return	urlStr.toLowerCase().contains("pdf");
-			}
-			
-			String plainMimeType = mimeType;	// Make sure we don't cause any NPE later on..
-			if ( mimeType.contains("charset") || mimeType.contains("name")
-				|| mimeType.startsWith("(") )	// See: https://www.mamsie.bbk.ac.uk/articles/10.16995/sim.138/galley/134/download/
-			{
-				plainMimeType = getPlainMimeType(mimeType);
-				
-				if ( plainMimeType == null ) {    // If there was any error removing the charset, still try to save any docMimeType (currently pdf-only).
-					logger.warn("Url with problematic mimeType was: " + urlStr);
-					return	urlStr.toLowerCase().contains("pdf");
-				}
-			}
-			
-			//logger.debug("Url: " + urlStr);	// DEBUG!
-			//logger.debug("PlainMimeType: " + plainMimeType);	// DEBUG!
-			
-			if ( knownDocTypes.contains(plainMimeType) )
-				return true;
-			else
-				if ( plainMimeType.contains("application/octet-stream") || plainMimeType.contains("application/save")
-						|| plainMimeType.contains("application/force-download") || plainMimeType.contains("unknown") ) {
-					if ( (contentDisposition = conn.getHeaderField("Content-Disposition")) != null )
-						return	contentDisposition.contains("pdf");
-					else
-						return	urlStr.toLowerCase().contains("pdf");
-				}
-				else
-					return false;
-				// This is a special case. (see: "https://kb.iu.edu/d/agtj" for "octet" info.
-				// and an example for "unknown" : "http://imagebank.osa.org/getExport.xqy?img=OG0kcC5vZS0yMy0xNy0yMjE0OS1nMDAy&xtype=pdf&article=oe-23-17-22149-g002")
-				// TODO - When we will accept more docTypes, match it also against other docTypes, not just "pdf".
-		}
-		else if ( contentDisposition != null ) {	// If the mimeType was not retrieve, then try the "Content Disposition".
-			// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
-			return	(contentDisposition.contains("attachment") && contentDisposition.contains("pdf"));
-		}
-		else {	// This is not expected to be reached. Keep it for method-reusability.
-    		logger.warn("No mimeType, nor Content-Disposition, were able to be retrieved for url: " + urlStr);
-			return false;
-		}
-    }
     
-	
-	/**
-	 * This method receives the mimeType and returns it without the "parentheses" ot the "charset" part.
-	 * If there is any error, it returns null.
-	 * @param mimeType
-	 * @return charset-free mimeType
-	 */
-	public static String getPlainMimeType(String mimeType)
-	{
-		String plainMimeType = null;
-		Matcher mimeMatcher = null;
-		
-		try {
-			mimeMatcher = MIME_TYPE_FILTER.matcher(mimeType);
-		} catch (NullPointerException npe) {	// There should never be an NPE...
-			logger.debug("NPE was thrown after calling \"Matcher\" in \"getPlainMimeType()\" with \"null\" value!");
-			return null;
-		}
-		
-		if ( mimeMatcher.matches() ) {
-			plainMimeType = mimeMatcher.group(1);
-			if ( plainMimeType == null || plainMimeType.isEmpty() ) {
-				logger.warn("Unexpected null or empty value returned by \"mimeMatcher.group(1)\" for mimeType: \"" + mimeType + "\".");
-				return null;
-			}
-		} else {
-			logger.warn("Unexpected MIME_TYPE_FILTER's (" + mimeMatcher.toString() + ") mismatch for mimeType: \"" + mimeType + "\"");
-			return null;
-		}
-		
-		return plainMimeType;
-	}
-	
 	
 	/**
 	 * This method returns the domain of the given url, in lowerCase (for better comparison).
@@ -530,33 +422,6 @@ public class UrlUtils
 		}
 		else
 			return finalUrl;
-	}
-	
-	
-	/**
-	 * This method constructs fully-formed urls, as they may be relative-links.
-	 * @param pageUrl
-	 * @param currentLink
-	 * @param URLTypeUrl
-	 * @return
-	 */
-	public static String getFullyFormedUrl(String pageUrl, String currentLink, URL URLTypeUrl)
-	{
-		try {
-			URL base = null;
-			
-			if ( URLTypeUrl != null )
-				base = URLTypeUrl;
-			else
-				new URL(pageUrl);
-			
-			URL target = new URL(base, currentLink);
-			return target.toString();
-			
-		} catch (Exception e) {
-			logger.error("Error when producing fully-formedUrl for: " + currentLink);
-			return null;
-		}
 	}
 	
 }
