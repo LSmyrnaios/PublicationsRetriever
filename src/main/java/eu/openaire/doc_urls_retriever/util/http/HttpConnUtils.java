@@ -378,7 +378,7 @@ public class HttpConnUtils
 							throw new RuntimeException();
 						}
 					}
-					else if ( PageCrawler.shouldNotAcceptInnerLink(location, lowerCaseLocation) ) {	// Else we are redirecting an innerPageLink.
+					else if ( UrlUtils.shouldNotAcceptInnerLink(location, lowerCaseLocation) ) {	// Else we are redirecting an innerPageLink.
 						logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 						throw new RuntimeException();
 					} else if ( lowerCaseLocation.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".

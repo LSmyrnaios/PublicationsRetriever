@@ -254,8 +254,28 @@ public class UrlUtils
 				|| UrlUtils.CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseUrl).matches();	// TODO - To be removed when these docExtensions get supported.
 	}
 	
-
-    /**
+	
+	public static boolean shouldNotAcceptInnerLink(String linkStr, String lowerCaseLink)
+	{
+		String lowerCaseUrl = null;
+		
+		if ( lowerCaseLink == null )
+			lowerCaseUrl = linkStr.toLowerCase();
+		else
+			lowerCaseUrl = lowerCaseLink;
+		
+		return	UrlUtils.URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.INNER_LINKS_KEYWORDS_FILTER.matcher(lowerCaseUrl).matches()
+				|| UrlUtils.SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
+				|| UrlUtils.INNER_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.INNER_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseUrl).matches()
+				|| UrlUtils.PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches()
+				|| UrlUtils.CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseUrl).matches();	// TODO - To be removed when these docExtensions get supported.
+		
+		// The following checks are obsolete here, as we already use it inside "visit()" method. Still keep it here, as it makes our intentions clearer.
+		// !lowerCaseUrl.contains(referringPageDomain)	// Don't check this link if it belongs in a different domain than the referringPage's one.
+	}
+	
+	
+	/**
      * This method logs the outputEntry to be written, as well as the docUrlPath (if non-empty String) and adds entries in the blackList.
 	 * @param urlId
 	 * @param sourceUrl
@@ -275,7 +295,7 @@ public class UrlUtils
             if ( lowerCaseUrl.contains("jsessionid") )
                 finalDocUrl = UrlUtils.removeJsessionid(initialDocUrl);
 			
-			sumOfDocUrlsFound++;
+			sumOfDocUrlsFound ++;
 			
             // Gather data for the MLA, if we decide to have it enabled.
             if ( MachineLearning.useMLA )
