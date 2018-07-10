@@ -15,6 +15,8 @@ import eu.openaire.doc_urls_retriever.exceptions.JavaScriptDocLinkFoundException
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
+import eu.openaire.doc_urls_retriever.util.url.LoadAndCheckUrls;
+import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -144,9 +146,9 @@ public class PageCrawler
             }
             
             lowerCaseLink = urlToCheck.toLowerCase();
-            if ( UrlUtils.DOC_URL_FILTER.matcher(lowerCaseLink).matches() )
+            if ( LoadAndCheckUrls.DOC_URL_FILTER.matcher(lowerCaseLink).matches() )
 			{
-				if ( UrlUtils.shouldNotAcceptInnerLink(urlToCheck, lowerCaseLink) ) {    // Avoid false-positives, such as images (a common one: ".../pdf.png").
+				if ( UrlTypeChecker.shouldNotAcceptInnerLink(urlToCheck, lowerCaseLink) ) {    // Avoid false-positives, such as images (a common one: ".../pdf.png").
 					UrlUtils.duplicateUrls.add(urlToCheck);
 					continue;	// Disclaimer: This way we might lose some docUrls like this: "http://repositorio.ipen.br:8080/xmlui/themes/Mirage/images/Portaria-387.pdf".
 				}
@@ -184,7 +186,7 @@ public class PageCrawler
 		for ( String currentLink : remainingLinks )	// Here we don't re-check already-checked links, as they were removed.
 		{
 			// We re-check here, as, in the fast-loop not all of the links are checked against this.
-			if ( UrlUtils.shouldNotAcceptInnerLink(currentLink, null) ) {	// If this link matches certain blackListed criteria, move on..
+			if ( UrlTypeChecker.shouldNotAcceptInnerLink(currentLink, null) ) {	// If this link matches certain blackListed criteria, move on..
 				//logger.debug("Avoided link: " + currentLink );
 				UrlUtils.duplicateUrls.add(currentLink);
 				continue;
@@ -218,39 +220,6 @@ public class PageCrawler
 		UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as no docUrl was found inside.", null);
 		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingDocUrls, currentPageDomain, PageCrawler.timesToGiveNoDocUrlsBeforeBlocked) )
 			logger.debug("Domain: " + currentPageDomain + " was blocked after giving no docUrls more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
-	}
-	
-	
-	public static HashSet<String> getOutgoingUrls(String pageHtml) throws JavaScriptDocLinkFoundException
-	{
-		HashSet<String> urls = new HashSet<>();
-		
-		// Get the innerLinks using "Jsoup".
-		Document document = Jsoup.parse(pageHtml);
-		Elements linksOnPage = document.select("a[href]");
-		
-		for ( Element el : linksOnPage ) {
-			String innerLink = el.attr("href");
-			if ( !innerLink.isEmpty()
-					&& !innerLink.equals("\\/") && !innerLink.equals("#")
-					&& !innerLink.startsWith("mailto:") && !innerLink.startsWith("tel:") && !innerLink.startsWith("{openurl}") ) {
-				
-				//logger.debug("InnerLink: " + innerLink);
-				String lowerCaseLink = innerLink.toLowerCase();
-				if ( lowerCaseLink.startsWith("javascript:") ) {
-					String pdfLink = null;
-					Matcher pdfLinkMatcher = JAVASCRIPT_DOC_LINK.matcher(lowerCaseLink);
-					if ( pdfLinkMatcher.matches() ) {
-						pdfLink = pdfLinkMatcher.group(1);
-						throw new JavaScriptDocLinkFoundException(pdfLink);    // If it's 'null', we treat it when handling this exception.
-					}
-					else	// It's a javaScriptLink which we don't treat.
-						continue;
-				}
-				urls.add(innerLink);
-			}
-		}
-		return urls;
 	}
 	
 	
@@ -293,6 +262,39 @@ public class PageCrawler
 	}
 	
 	
+	public static HashSet<String> getOutgoingUrls(String pageHtml) throws JavaScriptDocLinkFoundException
+	{
+		HashSet<String> urls = new HashSet<>();
+		
+		// Get the innerLinks using "Jsoup".
+		Document document = Jsoup.parse(pageHtml);
+		Elements linksOnPage = document.select("a[href]");
+		
+		for ( Element el : linksOnPage ) {
+			String innerLink = el.attr("href");
+			if ( !innerLink.isEmpty()
+					&& !innerLink.equals("\\/") && !innerLink.equals("#")
+					&& !innerLink.startsWith("mailto:") && !innerLink.startsWith("tel:") && !innerLink.startsWith("{openurl}") ) {
+				
+				//logger.debug("InnerLink: " + innerLink);
+				String lowerCaseLink = innerLink.toLowerCase();
+				if ( lowerCaseLink.startsWith("javascript:") ) {
+					String pdfLink = null;
+					Matcher pdfLinkMatcher = JAVASCRIPT_DOC_LINK.matcher(lowerCaseLink);
+					if ( pdfLinkMatcher.matches() ) {
+						pdfLink = pdfLinkMatcher.group(1);
+						throw new JavaScriptDocLinkFoundException(pdfLink);    // If it's 'null', we treat it when handling this exception.
+					}
+					else	// It's a javaScriptLink which we don't treat.
+						continue;
+				}
+				urls.add(innerLink);
+			}
+		}
+		return urls;
+	}
+	
+	
 	public static void handleJavaScriptDocLink(String urlId, String sourceUrl, String pageUrl, String currentPageDomain, String pageContentType, JavaScriptDocLinkFoundException jsdlfe)
 	{
 		String javaScriptDocLink = jsdlfe.getMessage();
@@ -301,6 +303,7 @@ public class PageCrawler
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its innerLinks. Its contentType is: '" + pageContentType + "'", null);
 		}
 		else {
+			//logger.debug("Going to check JavaScriptDocLink: " + javaScriptDocLink);	// DEBUG!
 			try {
 				if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, javaScriptDocLink, currentPageDomain, false, true) )	// We log the docUrl inside this method.
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved JavaScriptDocLink: <" + javaScriptDocLink + "> was not a docUrl.", null);

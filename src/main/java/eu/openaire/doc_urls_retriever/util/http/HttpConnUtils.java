@@ -3,6 +3,7 @@ package eu.openaire.doc_urls_retriever.util.http;
 import eu.openaire.doc_urls_retriever.exceptions.*;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
+import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -373,12 +374,12 @@ public class HttpConnUtils
 					
 					String lowerCaseLocation = location.toLowerCase();
 					if ( calledForPageUrl ) {
-						if ( UrlUtils.shouldNotAcceptPageUrl(location, lowerCaseLocation) ) {
+						if ( UrlTypeChecker.shouldNotAcceptPageUrl(location, lowerCaseLocation) ) {
 							logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 							throw new RuntimeException();
 						}
 					}
-					else if ( UrlUtils.shouldNotAcceptInnerLink(location, lowerCaseLocation) ) {	// Else we are redirecting an innerPageLink.
+					else if ( UrlTypeChecker.shouldNotAcceptInnerLink(location, lowerCaseLocation) ) {	// Else we are redirecting an innerPageLink.
 						logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 						throw new RuntimeException();
 					} else if ( lowerCaseLocation.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
