@@ -15,7 +15,8 @@ import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
 import eu.openaire.doc_urls_retriever.exceptions.DomainWithUnsupportedHEADmethodException;
 import eu.openaire.doc_urls_retriever.exceptions.JavaScriptDocLinkFoundException;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
-import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
+import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
+import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -163,7 +164,7 @@ public class PageCrawler
 				}
 				else {	// Connect to it directly.
 					//logger.debug("MetaDocUrl: " + metaDocUrl);	// DEBUG!
-					if ( !HttpUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, currentPageDomain, false, true) )	// We log the docUrl inside this method.
+					if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, currentPageDomain, false, true) )	// We log the docUrl inside this method.
 						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved metaDocUrl was not a docUrl.", null);
 					return;
 				}
@@ -191,7 +192,7 @@ public class PageCrawler
 				return;
 			}
 			try {
-				if ( !HttpUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, javaScriptDocLink, currentPageDomain, false, true) )	// We log the docUrl inside this method.
+				if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, javaScriptDocLink, currentPageDomain, false, true) )	// We log the docUrl inside this method.
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved JavaScriptDocLink: <" + javaScriptDocLink + "> was not a docUrl.", null);
 				return;
 			} catch (Exception e) {
@@ -209,7 +210,7 @@ public class PageCrawler
 		if ( currentPageLinks.isEmpty() ) {	// If no links were retrieved (e.g. the pageUrl was some kind of non-page binary content)
 			logger.warn("No links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, as no links were able to be retrieved from it. Its contentType is: '" + pageContentType + "'", null);
-			if ( HttpUtils.countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingInnerLinks, currentPageDomain, PageCrawler.timesToGiveNoInnerLinksBeforeBlocked) )
+			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingInnerLinks, currentPageDomain, PageCrawler.timesToGiveNoInnerLinksBeforeBlocked) )
 				logger.debug("Domain: " + currentPageDomain + " was blocked after giving no innerLinks more than " + PageCrawler.timesToGiveNoInnerLinksBeforeBlocked + " times.");
 			return;
 		}
@@ -260,7 +261,7 @@ public class PageCrawler
 				
 				//logger.debug("InnerPossibleDocLink to connect with: " + urlToCheck);	// DEBUG!
 				try {
-					if ( HttpUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, urlToCheck, currentPageDomain, false, true) )	// We log the docUrl inside this method.
+					if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, urlToCheck, currentPageDomain, false, true) )	// We log the docUrl inside this method.
 						return;
 					else {
 						UrlUtils.duplicateUrls.add(urlToCheck);
@@ -299,7 +300,7 @@ public class PageCrawler
 			
 			//logger.debug("InnerLink to connect with: " + currentLink);	// DEBUG!
 			try {
-				if ( HttpUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, currentLink, currentPageDomain, false, false) )	// We log the docUrl inside this method.
+				if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, currentLink, currentPageDomain, false, false) )	// We log the docUrl inside this method.
 					return;
 				else
 					UrlUtils.duplicateUrls.add(currentLink);
@@ -323,7 +324,7 @@ public class PageCrawler
 		// If we get here it means that this pageUrl is not a docUrl itself, nor it contains a docUrl..
 		logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
 		UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as no docUrl was found inside.", null);
-		if ( HttpUtils.countAndBlockDomainAfterTimes(HttpUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingDocUrls, currentPageDomain, PageCrawler.timesToGiveNoDocUrlsBeforeBlocked) )
+		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingDocUrls, currentPageDomain, PageCrawler.timesToGiveNoDocUrlsBeforeBlocked) )
 			logger.debug("Domain: " + currentPageDomain + " was blocked after giving no docUrls more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
 	}
 	
@@ -346,7 +347,7 @@ public class PageCrawler
 			if ( pageDomain.equals("linkinghub.elsevier.com") ) {
 				//UrlUtils.elsevierLinks ++;
 				if ( (pageUrl = silentRedirectElsevierToScienseRedirect(pageUrl)) != null )
-					conn = HttpUtils.handleConnection(urlId, sourceUrl, pageUrl, pageUrl, pageDomain, true, false);
+					conn = HttpConnUtils.handleConnection(urlId, sourceUrl, pageUrl, pageUrl, pageDomain, true, false);
 				else
 					return false;
 			}
@@ -367,7 +368,7 @@ public class PageCrawler
 				
 				// Get the new html..
 				// We don't disconnect the previous one, since they both are in the same domain (see JavaDocs).
-				conn = HttpUtils.handleConnection(urlId, sourceUrl, pageUrl, metaDocUrl, pageDomain, true, false);
+				conn = HttpConnUtils.handleConnection(urlId, sourceUrl, pageUrl, metaDocUrl, pageDomain, true, false);
 				
 				//logger.debug("Url after connecting: " + conn.getURL().toString());
 				//logger.debug("MimeType: " + conn.getContentType());
@@ -384,7 +385,7 @@ public class PageCrawler
 					//logger.debug("FinalDocUrl: " + finalDocUrl);	// DEBUG!
 					
 					// Check and/or download the docUrl. These urls are one-time-links, meaning that after a while they will just redirect to their pageUrl.
-					if ( HttpUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, finalDocUrl, pageDomain, false, true) )    // We log the docUrl inside this method.
+					if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, finalDocUrl, pageDomain, false, true) )    // We log the docUrl inside this method.
 						return true;
 					else {
 						logger.warn("LookedUp finalDocUrl: \"" + finalDocUrl + "\" was not an actual docUrl!");
@@ -406,7 +407,7 @@ public class PageCrawler
 		}
 		finally {
 			// If the initial pageDomain was different from "sciencedirect.com", close the "sciencedirect.com"-connection here.
-			// Otherwise, if it came as a "sciencedirect.com", it will be closed where it was first created, meaning in "HttpUtils.connectAndCheckMimeType()".
+			// Otherwise, if it came as a "sciencedirect.com", it will be closed where it was first created, meaning in "HttpConnUtils.connectAndCheckMimeType()".
 			if ( !pageDomain.equals("sciencedirect.com") )
 				conn.disconnect();	// Disconnect from the final-"sciencedirect.com"-connection.
 		}

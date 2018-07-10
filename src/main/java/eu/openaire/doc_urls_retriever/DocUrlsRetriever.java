@@ -2,7 +2,7 @@ package eu.openaire.doc_urls_retriever;
 
 import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
-import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
+import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
 import eu.openaire.doc_urls_retriever.util.url.LoadAndCheckUrls;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
@@ -124,7 +124,7 @@ public class DocUrlsRetriever
 									+ UrlUtils.pagesWithLargerCrawlingDepth + UrlUtils.pangaeaUrls + UrlUtils.urlsWithUnwantedForm + UrlUtils.connProblematicUrls + UrlUtils.pagesNotProvidingDocUrls + UrlUtils.longToRespondUrls + UrlUtils.inputDuplicatesNum;
 		logger.info("From the " + inputCheckedUrlNum + " urls checked from the input, the " + problematicUrlsNum + " of them (about " + problematicUrlsNum * (float)100 / inputCheckedUrlNum + "%) were problematic (sum of the all of the above cases).");
 		
-		logger.info("The number of domains blocked after an \"SSL Exception\" was: " + HttpUtils.domainsBlockedDueToSSLException);
+		logger.info("The number of domains blocked after an \"SSL Exception\" was: " + HttpConnUtils.domainsBlockedDueToSSLException);
 		
         // Then... just close the open streams (imported and exported content) and exit.
         FileUtils.closeStreams();

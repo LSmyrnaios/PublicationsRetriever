@@ -2,7 +2,7 @@ package eu.openaire.doc_urls_retriever.util.url;
 
 import com.google.common.collect.HashMultimap;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
-import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
+import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +53,7 @@ public class LoadAndCheckUrls
 					isPossibleDocUrl = true;
 				
 				try {
-					HttpUtils.connectAndCheckMimeType(null, retrievedUrl, retrievedUrl, retrievedUrl, null, true, isPossibleDocUrl);
+					HttpConnUtils.connectAndCheckMimeType(null, retrievedUrl, retrievedUrl, retrievedUrl, null, true, isPossibleDocUrl);
 				} catch (Exception e) {
 					UrlUtils.logQuadruple(null, retrievedUrl, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
 					UrlUtils.connProblematicUrls ++;
@@ -157,7 +157,7 @@ public class LoadAndCheckUrls
 					continue;
 				
 				try {	// Check if it's a docUrl, if not, it gets crawled.
-					HttpUtils.connectAndCheckMimeType(retrievedId, urlToCheck, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);
+					HttpConnUtils.connectAndCheckMimeType(retrievedId, urlToCheck, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);
 				} catch (Exception e) {
 					UrlUtils.logQuadruple(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
 					UrlUtils.connProblematicUrls ++;

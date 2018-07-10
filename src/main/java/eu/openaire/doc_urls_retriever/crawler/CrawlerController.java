@@ -1,12 +1,11 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
+import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
 import eu.openaire.doc_urls_retriever.util.url.LoadAndCheckUrls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
-
-import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
 
 
 /**
@@ -75,7 +74,7 @@ public class CrawlerController
 		}*/
 		
 		try {
-			HttpUtils.connectAndCheckMimeType(null, urlToCheck, urlToCheck, urlToCheck, null, true, false);
+			HttpConnUtils.connectAndCheckMimeType(null, urlToCheck, urlToCheck, urlToCheck, null, true, false);
 		} catch (Exception e) {
 			UrlUtils.logQuadruple(null, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
 		}

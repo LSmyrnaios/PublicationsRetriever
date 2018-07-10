@@ -6,11 +6,11 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.google.common.collect.HashMultimap;
 import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
 
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
-import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
+import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
+import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,13 +113,13 @@ public class UrlUtils
 			return null;
 		}
 		
-		if ( HttpUtils.blacklistedDomains.contains(currentUrlDomain) ) {	// Check if it has been blackListed after running inner links' checks.
+		if ( HttpConnUtils.blacklistedDomains.contains(currentUrlDomain) ) {	// Check if it has been blackListed after running inner links' checks.
 			logger.debug("We will avoid to connect to blackListed domain: \"" + currentUrlDomain + "\"");
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' method, as its domain was found blackListed.", null);
 			return null;
 		}
 		
-		if ( HttpUtils.checkIfPathIs403BlackListed(retrievedUrl, currentUrlDomain) ) {
+		if ( ConnSupportUtils.checkIfPathIs403BlackListed(retrievedUrl, currentUrlDomain) ) {
 			logger.debug("Preventing reaching 403ErrorCode with url: \"" + retrievedUrl + "\"!");
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, retrievedUrl, "Discarded in 'UrlUtils.handleUrlChecks()' as it had a blackListed urlPath.", null);
 			return null;
@@ -222,7 +222,7 @@ public class UrlUtils
 			return true;
 		}*/
 		else if ( lowerCaseUrl.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
-			HttpUtils.blockSharedSiteSessionDomain(retrievedUrl, null);
+			ConnSupportUtils.blockSharedSiteSessionDomain(retrievedUrl, null);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "It was discarded after participating in a 'sharedSiteSession-redirectionPack'.", null);
 			return true;
 		}

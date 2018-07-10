@@ -4,7 +4,8 @@ package eu.openaire.doc_urls_retriever.crawler;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
-import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
+import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
+import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -245,7 +246,7 @@ public class MachineLearning
 				try {
 					logger.debug("Going to check guessedDocUrl: " + guessedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");
 					
-					if ( HttpUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, guessedDocUrl, null, false, true) ) {
+					if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, guessedDocUrl, null, false, true) ) {
 						logger.info("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
 						MachineLearning.docUrlsFoundByMLA ++;
 						return true;	// Note that we have already add it in the output links inside "connectAndCheckMimeType()".
@@ -257,7 +258,7 @@ public class MachineLearning
 				strB.setLength(0);	// Clear the buffer before going to check the next path.
 			}// end for-loop
 			
-			if ( HttpUtils.countAndBlockDomainAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, domainStr, timesToFailBeforeBlockedFromMLA) )
+			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, domainStr, timesToFailBeforeBlockedFromMLA) )
 			{
 				logger.debug("Domain: \"" + domainStr + "\" was blocked from being accessed again by the MLA, after proved to be incompatible "
 						+ timesToFailBeforeBlockedFromMLA + " times.");
