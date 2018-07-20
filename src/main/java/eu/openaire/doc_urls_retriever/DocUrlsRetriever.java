@@ -25,7 +25,9 @@ import java.io.FileOutputStream;*/
 public class DocUrlsRetriever
 {
 	private static final Logger logger = LoggerFactory.getLogger(DocUrlsRetriever.class);
+	
 	private static int initialNumOfDocFile = 0;
+	
 	
     public static void main( String[] args )
     {
@@ -56,6 +58,9 @@ public class DocUrlsRetriever
 				}
 			}
 		}
+		
+		// Use standard input/output.
+		new FileUtils(System.in, System.out);
     	
     	// Use testing input/output files.
 		/*try {
@@ -68,9 +73,6 @@ public class DocUrlsRetriever
 			System.exit(-4);
 		}*/
 		
-		// Use standard input/output.
-		new FileUtils(System.in, System.out);
-		
 		try {
 			new CrawlerController();
 		} catch (RuntimeException e) {  // In case there was no input, or on Crawler4j's failure to be initialized, there will be thrown a RuntimeException, after logging the cause.
@@ -80,7 +82,15 @@ public class DocUrlsRetriever
 			System.exit(-5);
 		}
 		
-		// Show statistics.
+		showStatistics();
+		
+		// Close the open streams (imported and exported content).
+		FileUtils.closeStreams();
+    }
+	
+	
+	static private void showStatistics()
+	{
 		long inputCheckedUrlNum = 0;
 		if ( CrawlerController.useIdUrlPairs )
 			inputCheckedUrlNum = LoadAndCheckUrls.numOfIDs;	// For each ID we check only one of its urls anyway.
@@ -122,13 +132,10 @@ public class DocUrlsRetriever
 		logger.info("About: " + LoadAndCheckUrls.inputDuplicatesNum * (float)100 / inputCheckedUrlNum + "% (" + LoadAndCheckUrls.inputDuplicatesNum + " urls) were duplicates in the input file.");
 		
 		long problematicUrlsNum = UrlTypeChecker.crawlerSensitiveDomains + UrlTypeChecker.javascriptPageUrls /*+ UrlTypeChecker.sciencedirectUrls*/ + UrlTypeChecker.elsevierUnwantedUrls + UrlTypeChecker.doajResultPageUrls + UrlTypeChecker.pagesWithHtmlDocUrls + UrlTypeChecker.pagesRequireLoginToAccessDocFiles
-									+ UrlTypeChecker.pagesWithLargerCrawlingDepth + UrlTypeChecker.pangaeaUrls + UrlTypeChecker.urlsWithUnwantedForm + LoadAndCheckUrls.connProblematicUrls + UrlTypeChecker.pagesNotProvidingDocUrls + UrlTypeChecker.longToRespondUrls + LoadAndCheckUrls.inputDuplicatesNum;
+				+ UrlTypeChecker.pagesWithLargerCrawlingDepth + UrlTypeChecker.pangaeaUrls + UrlTypeChecker.urlsWithUnwantedForm + LoadAndCheckUrls.connProblematicUrls + UrlTypeChecker.pagesNotProvidingDocUrls + UrlTypeChecker.longToRespondUrls + LoadAndCheckUrls.inputDuplicatesNum;
 		logger.info("From the " + inputCheckedUrlNum + " urls checked from the input, the " + problematicUrlsNum + " of them (about " + problematicUrlsNum * (float)100 / inputCheckedUrlNum + "%) were problematic (sum of the all of the above cases).");
 		
 		logger.info("The number of domains blocked after an \"SSL Exception\" was: " + HttpConnUtils.domainsBlockedDueToSSLException);
-		
-        // Then... just close the open streams (imported and exported content) and exit.
-        FileUtils.closeStreams();
-    }
+	}
 	
 }
