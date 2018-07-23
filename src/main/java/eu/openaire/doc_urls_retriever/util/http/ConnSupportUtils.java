@@ -42,7 +42,7 @@ public class ConnSupportUtils
 	public static final HashSet<String> knownDocTypes = new HashSet<String>();
 	static {
 		logger.debug("Setting knownDocTypes. Currently testing only \".pdf\" type.");
-		knownDocTypes.add("application/pdf");	// For the moment we care only for the pdf type.
+		knownDocTypes.add("application/pdf");	// For the moment we support only the pdf docType.
 	}
 	
 	

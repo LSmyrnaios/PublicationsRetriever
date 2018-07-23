@@ -109,7 +109,7 @@ public class MachineLearning
 	
 	
 	/**
-	 * This method checks if we should keep running the MLA.
+	 * This method checks if we should continue running predictions using the MLA.
 	 * Since the MLA is still experimental and it doesn't work on all domains, we take measures to stop running it, if it doesn't succeed.
 	 * It returns "true", either when we don't have reached a specific testing number, or when the MLA was succesfull for most of the previous cases.
 	 * It returns "false", when it still hasn't gathered sufficient data, or when the MLA failed to have a specific success-rate (which leads to "sleep-mode"), or if the MLA is already in "sleep-mode".
