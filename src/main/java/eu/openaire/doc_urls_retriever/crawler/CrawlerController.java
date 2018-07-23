@@ -1,13 +1,11 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
+import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
+import eu.openaire.doc_urls_retriever.util.url.LoadAndCheckUrls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
-
-import eu.openaire.doc_urls_retriever.util.http.HttpUtils;
-import edu.uci.ics.crawler4j.url.URLCanonicalizer;
-import java.nio.charset.StandardCharsets;
 
 
 /**
@@ -27,9 +25,9 @@ public class CrawlerController
 		
 		try {
 			if ( CrawlerController.useIdUrlPairs )
-				UrlUtils.loadAndCheckIdUrlPairs();
+				LoadAndCheckUrls.loadAndCheckIdUrlPairs();
 			else
-				UrlUtils.loadAndCheckUrls();
+				LoadAndCheckUrls.loadAndCheckUrls();
 			
 			//runIndividualTests();
 			
@@ -64,10 +62,9 @@ public class CrawlerController
 		//String url = "https://link.springer.com/article/10.1186/s12889-016-3866-3";
 		//String url = "http://ajcmicrob.com/en/index.html";
 		//String url = "http://kar.kent.ac.uk/57872/1/Fudge-Modern_slavery_%26_migrant_workers.pdf";
-		//String url = "http://summit.sfu.ca/item/12554";
+		String url = "http://summit.sfu.ca/item/12554";	// MetaDocUrl.
 		//String url = "http://www.journal.ac/sub/view2/273";
-		//String url = "https://www.youtube.com/watch?v=KuW2VMNArKs";
-		String url = "http://epic.awi.de/5818/";
+		//String url = "http://epic.awi.de/5818/";
 		
 		String urlToCheck = url;
 		/*if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(url, null, StandardCharsets.UTF_8)) == null ) {
@@ -76,7 +73,7 @@ public class CrawlerController
 		}*/
 		
 		try {
-			HttpUtils.connectAndCheckMimeType(null, urlToCheck, urlToCheck, urlToCheck, null, true, false);
+			HttpConnUtils.connectAndCheckMimeType(null, urlToCheck, urlToCheck, urlToCheck, null, true, false);
 		} catch (Exception e) {
 			UrlUtils.logQuadruple(null, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
 		}
