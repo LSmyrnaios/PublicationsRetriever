@@ -18,7 +18,7 @@ import java.util.regex.Matcher;
 
 /**
  * This class aims to provide a Machine Learning Algorithm (M.L.A.) with methods to gather important data, use tha data to guess a result and control the execution of the algorithm.
- * Disclaimer: This is still in experimental stage. Some domains cannot be supported.
+ * Disclaimer: This is still in experimental stage. Some domains are not supported.
  * @author Lampros A. Smyrnaios
  */
 public class MachineLearning
@@ -48,7 +48,6 @@ public class MachineLearning
 	private static final int timesToFailBeforeBlockedFromMLA = 10;
 	
 	
-	
 	/**
 	 * Initialize the Machine Learning Algorithm (MLA).
 	 * It ensures that for small input (i.e. for testing purposes) the MLA can run properly.
@@ -76,6 +75,40 @@ public class MachineLearning
 	
 	
 	/**
+	 * This method gathers docPagePath and docUrlPath data, for succesfull docUrl-found-cases.
+	 * This data is used by "UrlUtils.guessInnerDocUrl()".
+	 * @param domain
+	 * @param docPage
+	 * @param docUrl
+	 */
+	public static void gatherMLData(String domain, String docPage, String docUrl)
+	{
+		if ( domain == null )
+			if ( (domain = UrlUtils.getDomainStr(docUrl)) == null )
+				return;
+		
+		if ( domainsBlockedFromMLA.contains(domain) )
+			return;
+		
+		if ( docPage.equals(docUrl) )	// It will be equal if the "docPage" is a docUrl itself.
+			return;	// No need to log anything.
+		
+		// Get the paths of the docPage and the docUrl and put them inside "successDomainPathsMultiMap".
+		
+		String docPagePath = UrlUtils.getPathStr(docPage);
+		if ( docPagePath == null )
+			return;
+		
+		String docUrlPath = UrlUtils.getPathStr(docUrl);
+		if ( (docUrlPath == null) || docUrlPath.equals(docPagePath) )	// Avoid holding unnecessary/unwanted data.
+			return;
+		
+		MachineLearning.successPathsMultiMap.put(docPagePath, docUrlPath);	// Add this pair in "successPathsMultiMap", if the key already exists then it will just add one more value to that key.
+		MachineLearning.timesGatheredData ++;
+	}
+	
+	
+	/**
 	 * This method checks if we should keep running the MLA.
 	 * Since the MLA is still experimental and it doesn't work on all domains, we take measures to stop running it, if it doesn't succeed.
 	 * It returns "true", either when we don't have reached a specific testing number, or when the MLA was succesfull for most of the previous cases.
@@ -83,7 +116,7 @@ public class MachineLearning
 	 * @param domainStr
 	 * @return true/false
 	 */
-	public static boolean shouldRunMLA(String domainStr)
+	public static boolean shouldRunPrediction(String domainStr)
 	{
 		if ( domainsBlockedFromMLA.contains(domainStr) ) {    // Check if this domain is not compatible with the MLA.
 			logger.debug("Avoiding the execution of the MLA for incompatible domain: \"" + domainStr + "\".");
@@ -140,41 +173,7 @@ public class MachineLearning
 	
 	
 	/**
-	 * This method gathers docPagePath and docUrlPath data, for succesfull docUrl-found-cases.
-	 * This data is used by "UrlUtils.guessInnerDocUrl()".
-	 * @param domain
-	 * @param docPage
-	 * @param docUrl
-	 */
-	public static void gatherMLData(String domain, String docPage, String docUrl)
-	{
-		if ( domain == null )
-			if ( (domain = UrlUtils.getDomainStr(docUrl)) == null )
-				return;
-		
-		if ( domainsBlockedFromMLA.contains(domain) )
-			return;
-		
-		if ( docPage.equals(docUrl) )	// It will be equal if the "docPage" is a docUrl itself.
-			return;	// No need to log anything.
-		
-		// Get the paths of the docPage and the docUrl and put them inside "successDomainPathsMultiMap".
-		
-		String docPagePath = UrlUtils.getPathStr(docPage);
-		if ( docPagePath == null )
-			return;
-		
-		String docUrlPath = UrlUtils.getPathStr(docUrl);
-		if ( (docUrlPath == null) || docUrlPath.equals(docPagePath) )	// Avoid holding unnecessary/unwanted data.
-			return;
-		
-		MachineLearning.successPathsMultiMap.put(docPagePath, docUrlPath);	// Add this pair in "successPathsMultiMap", if the key already exists then it will just add one more value to that key.
-		MachineLearning.timesGatheredData ++;
-	}
-	
-	
-	/**
-	 * This method implements an M.L.A. (Machine Learning Algorithm), which uses previous success cases to predict the docUrl of a page, if this page gives us the ID of the document.
+	 * This method tries to predict the docUrl of a page, if this page gives us the ID of the document, based on previous success cases.
 	 * The idea is that we might get a url which shows info about the publication and as the same ID with the wanted docUrl, but ut just happens to be in a different directory (path).
 	 * So, before going and checking each and every one of the inner links, we should check if by using known paths that gave docUrls before (for the current spesific domain), we are able to take the docUrl immediately.
 	 * Note that we don't send the "domainStr" for the guessedDocUrls here, as at the moment an inner link might not be in the same "full-domain". We don't use TLDs at this moment. TODO - Investigate their potential.
@@ -185,7 +184,7 @@ public class MachineLearning
 	 * @param domainStr
 	 * @return true / false
 	 */
-	public static boolean guessInnerDocUrlUsingML(String urlId, String sourceUrl, String pageUrl, String domainStr)
+	public static boolean predictInnerDocUrl(String urlId, String sourceUrl, String pageUrl, String domainStr)
 	{
 		String pagePath = null;
 		Matcher urlMatcher = UrlUtils.URL_TRIPLE.matcher(pageUrl);
@@ -210,7 +209,7 @@ public class MachineLearning
 				successPathsMultiMap.removeAll(pagePath);	// This domain was blocked, remove current non-needed paths-data.
 				return false;
 			}
-			else if ( pathsSize > 3 )    // It's not worth risking connecting with more than 3 "guessedDocUrl"s, for which their success is non-granted.
+			else if ( pathsSize > 3 )    // It's not worth risking connecting with more than 3 "predictedDocUrl"s, for which their success is non-granted.
 				return false;    // The difference here is that we avoid making the connections but we leave the data as it is.. this way we allow whole domains to be blocked based on docPaths' size.
 			
 			String docIdStr = urlMatcher.group(3);	// Group <3> is the ID.
@@ -220,7 +219,7 @@ public class MachineLearning
 			}
 			
 			StringBuilder strB = new StringBuilder(150);
-			String guessedDocUrl = null;
+			String predictedDocUrl = null;
 			MachineLearning.urlsCheckedWithMLA ++;
 			
 			for ( String knownDocUrlPath : knownDocUrlPaths )
@@ -229,37 +228,36 @@ public class MachineLearning
 				strB.append(knownDocUrlPath);
 				strB.append(docIdStr);
 				strB.append(".pdf");
-				guessedDocUrl = strB.toString();
+				predictedDocUrl = strB.toString();
 				
-				if ( UrlUtils.docUrls.contains(guessedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
-					logger.info("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted (already found before) docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
-					logger.info("re-crossed docUrl found: <" + guessedDocUrl + ">");
+				if ( UrlUtils.docUrls.contains(predictedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
+					logger.info("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted (already found before) docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
+					logger.info("re-crossed docUrl found: <" + predictedDocUrl + ">");
 					if ( FileUtils.shouldDownloadDocFiles )
-						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, guessedDocUrl, "This file is probably already downloaded.", null);
+						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, "This file is probably already downloaded.", null);
 					else
-						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, guessedDocUrl, "", null);
+						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, "", null);
 					MachineLearning.docUrlsFoundByMLA ++;
 					return true;
 				}
 				
 				// Check if it's a truly-alive docUrl.
 				try {
-					logger.debug("Going to check guessedDocUrl: " + guessedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");
+					logger.debug("Going to check predictedDocUrl: " + predictedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");
 					
-					if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, guessedDocUrl, null, false, true) ) {
-						logger.info("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + guessedDocUrl + "\"" );	// DEBUG!
+					if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, predictedDocUrl, null, false, true) ) {
+						logger.info("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
 						MachineLearning.docUrlsFoundByMLA ++;
 						return true;	// Note that we have already add it in the output links inside "connectAndCheckMimeType()".
 					}
-					logger.debug("Not valid docUrl after trying guessedDocUrl: " + guessedDocUrl + "\"");
+					logger.debug("Not valid docUrl after trying predictedDocUrl: " + predictedDocUrl + "\"");
 				} catch (Exception e) {
 					// No special handling here, neither logging.. since it's expected that some "guessedDocUrls" will fail.
 				}
 				strB.setLength(0);	// Clear the buffer before going to check the next path.
 			}// end for-loop
 			
-			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, domainStr, timesToFailBeforeBlockedFromMLA) )
-			{
+			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, domainStr, timesToFailBeforeBlockedFromMLA) ) {
 				logger.debug("Domain: \"" + domainStr + "\" was blocked from being accessed again by the MLA, after proved to be incompatible "
 						+ timesToFailBeforeBlockedFromMLA + " times.");
 				

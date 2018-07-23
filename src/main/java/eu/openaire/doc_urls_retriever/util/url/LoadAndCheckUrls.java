@@ -104,7 +104,7 @@ public class LoadAndCheckUrls
 				//logger.debug("ID: " + retrievedId);	// DEBUG!
 				
 				String possibleDocUrl = null;
-				String bestUrl = null;	// Best-case url
+				String bestNonDocUrl = null;	// Best-case url
 				String nonDoiUrl = null;	// Url which is not a best case, but it's not a slow-doi url either.
 				String neutralUrl = null;	// Just a neutral url.
 				String urlToCheck = null;
@@ -129,19 +129,18 @@ public class LoadAndCheckUrls
 					}
 					
 					// Check if it's a possible-DocUrl, if so, this is the only url which will be checked from this group, unless there's a canonicalization problem.
-					if ( DOC_URL_FILTER.matcher(lowerCaseUrl).matches() )
-					{
+					if ( DOC_URL_FILTER.matcher(lowerCaseUrl).matches() ) {
 						//logger.debug("Possible docUrl: " + retrievedUrl);
 						possibleDocUrl = retrievedUrl;
-						break;
+						break;	// This is the absolute-best-case, we go and connect directly.
 					}
 					
 					// Add this rule, if we accept the slow "hdl.handle.net"
 					if ( retrievedUrl.contains("/handle/") )	// If this url contains "/handle/" we know that it's a bestCaseUrl among urls from the domain "handle.net", which after redirects reaches the bestCaseUrl (containing "/handle/").
-						bestUrl = retrievedUrl;	// We can't just connect here, as the next url might be a possibleDocUrl.
+						bestNonDocUrl = retrievedUrl;	// We can't just connect here, as the next url might be a possibleDocUrl.
 					
-					if ( (bestUrl == null) && !retrievedUrl.contains("doi.org") )	// If we find a nonDoiUrl keep it for possible later usage.
-						nonDoiUrl = retrievedUrl;	// To be un-commented later.. if bestUrl-rules are added.
+					if ( (bestNonDocUrl == null) && !retrievedUrl.contains("doi.org") )	// If no other preferable url is found, we should prefer the nonDOI-one, if present, as the DOI-urls have lots of redirections.
+						nonDoiUrl = retrievedUrl;
 					
 					neutralUrl = retrievedUrl;	// If no special-goodCase-url is found, this one will be used.
 				}// end-url-for-loop
@@ -155,14 +154,14 @@ public class LoadAndCheckUrls
 					urlToCheck = possibleDocUrl;
 					isPossibleDocUrl = true;
 				}
-				else if ( bestUrl != null )
-					urlToCheck = bestUrl;
+				else if ( bestNonDocUrl != null )
+					urlToCheck = bestNonDocUrl;
 				else if ( nonDoiUrl != null )
 					urlToCheck = nonDoiUrl;
 				else if ( neutralUrl != null )
 					urlToCheck = neutralUrl;
 				else
-					continue;
+					continue;	// To the next ID, as no acceptable url was found for the current one.
 				
 				try {	// Check if it's a docUrl, if not, it gets crawled.
 					HttpConnUtils.connectAndCheckMimeType(retrievedId, urlToCheck, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);

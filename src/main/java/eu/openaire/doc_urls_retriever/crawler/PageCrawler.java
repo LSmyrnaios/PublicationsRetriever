@@ -85,8 +85,8 @@ public class PageCrawler
 	    // Check if we want to use AND if so, if we should run, the MLA.
 		if ( MachineLearning.useMLA ) {
 			PageCrawler.totalPagesReachedCrawling ++;	// Used for M.L.A.'s execution-manipulation.
-			if ( MachineLearning.shouldRunMLA(currentPageDomain) )
-				if ( MachineLearning.guessInnerDocUrlUsingML(urlId, sourceUrl, pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
+			if ( MachineLearning.shouldRunPrediction(currentPageDomain) )
+				if ( MachineLearning.predictInnerDocUrl(urlId, sourceUrl, pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
 					return;	// If we were able to find the right path.. and hit a docUrl successfully.. return. The Quadruple is already logged.
 		}
 		
