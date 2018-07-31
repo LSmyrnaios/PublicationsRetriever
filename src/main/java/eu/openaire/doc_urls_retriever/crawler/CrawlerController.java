@@ -15,7 +15,6 @@ public class CrawlerController
 {	
 	private static final Logger logger = LoggerFactory.getLogger(CrawlerController.class);
 	
-	public static long urlsReachedCrawler = 0;	// Potentially useful for statistics.
 	public static boolean useIdUrlPairs = true;
 	
 	

@@ -32,9 +32,11 @@ public class MachineLearning
 	
 	private static int latestMLADocUrlsFound = 0;
 	private static float leastSuccessPercentageForMLA = 60;	// The percentage which we want, in order to continue running the MLA.
+	
 	private static int leastNumberOfUrlsToCheck = 1000;	// Least number of URLs to check before deciding if we should continue running it.
 	private static int timesToGatherDataBeforeStarting = 5000;	// 5,000 urls.
 	private static int urlsToWaitUntilRestartMLA = 30000;	// 30,000 urls
+	
 	private static int endOfSleepNumOfUrls = 0;
 	private static int latestNumOfUrlsBeforePauseMLA = 0;
 	private static int latestSuccessBreakPoint = 0;
@@ -46,32 +48,6 @@ public class MachineLearning
 	private static final HashSet<String> domainsBlockedFromMLA = new HashSet<String>();
 	private static final HashMap<String, Integer> timesDomainsFailedInMLA = new HashMap<String, Integer>();
 	private static final int timesToFailBeforeBlockedFromMLA = 10;
-	
-	
-	/**
-	 * Initialize the Machine Learning Algorithm (MLA).
-	 * It ensures that for small input (i.e. for testing purposes) the MLA can run properly.
-	 * This percentages-settings work only if the intputNumOfUrls is known before running the MLA (and only the it should be called). Otherwise, the default values will be used.
-	 */
-	public MachineLearning()
-	{
-		long urlsInCrawler = CrawlerController.urlsReachedCrawler;
-		
-		// For small input, make sure the least number of urls to check every time is no more than 10% of the input.
-		int tenPercentOfUrlsInCrawler = (int)(urlsInCrawler * 10 / 100);
-		if ( leastNumberOfUrlsToCheck > tenPercentOfUrlsInCrawler )
-			leastNumberOfUrlsToCheck = tenPercentOfUrlsInCrawler;
-		
-		// For small input, make sure that we gather data for no more than 20% of the input, before starting the MLA.
-		int twentyPercentOfUrlsInCrawler = (int)(urlsInCrawler * 20 / 100);
-		if ( timesToGatherDataBeforeStarting > twentyPercentOfUrlsInCrawler )
-			timesToGatherDataBeforeStarting = twentyPercentOfUrlsInCrawler;
-		
-		// For small input, make sure the MLA can restart at least one time.
-		int thirtyPercentOfUrlsInCrawler = (int)(urlsInCrawler * 30 / 100);
-		if ( urlsToWaitUntilRestartMLA > thirtyPercentOfUrlsInCrawler )
-			urlsToWaitUntilRestartMLA = thirtyPercentOfUrlsInCrawler;
-	}
 	
 	
 	/**
