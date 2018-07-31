@@ -58,13 +58,8 @@ public class PageCrawler
 			return;
 		}
 		
-		if ( currentPageDomain.equals("linkinghub.elsevier.com") || currentPageDomain.equals("sciencedirect.com") ) {	// Be-careful if we move-on changing the retrieving of the domain of a url.
-			if ( !HandleScienceDirect.handleScienceDirectFamilyUrls(urlId, sourceUrl, pageUrl, currentPageDomain, conn) ) {
-				logger.warn("Problem when handling \"sciencedirect.com\" urls.");
-				UrlUtils.logQuadruple(urlId, sourceUrl, null, null, "Discarded in 'PageCrawler.visit()' method, when a 'sciencedirect.com'-url was not able to be handled correctly.", null);
-			}
-			return;	// We always return in ths case.
-		}
+		if ( HandleScienceDirect.checkIfAndHandleScienceDirect(urlId, sourceUrl, pageUrl, currentPageDomain, conn) )
+			return;	// We always return, if we have a kindOf-scienceDirect-url. The sourceUrl is already logged inside the called method.
 		
 		String pageContentType = conn.getContentType();
 		HashSet<String> currentPageLinks = null;
@@ -79,7 +74,7 @@ public class PageCrawler
 		}
 		
 		// Check if the docLink is provided in a metaTag and connect to it directly.
-		if ( handleMetaDocUrl(urlId, sourceUrl, pageUrl, currentPageDomain, pageHtml) )
+		if ( checkIfAndHandleMetaDocUrl(urlId, sourceUrl, pageUrl, currentPageDomain, pageHtml) )
 			return;	// The sourceUrl is already logged inside the called method.
 		
 	    // Check if we want to use AND if so, if we should run, the MLA.
@@ -235,7 +230,7 @@ public class PageCrawler
 	 * @param pageHtml
 	 * @return
 	 */
-	public static boolean handleMetaDocUrl(String urlId, String sourceUrl, String pageUrl, String currentPageDomain, String pageHtml)
+	public static boolean checkIfAndHandleMetaDocUrl(String urlId, String sourceUrl, String pageUrl, String currentPageDomain, String pageHtml)
 	{
 		// Check if the docLink is provided in a metaTag and connect to it directly.
 		try {

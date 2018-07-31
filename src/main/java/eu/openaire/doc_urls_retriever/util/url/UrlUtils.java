@@ -34,20 +34,20 @@ public class UrlUtils
 	 * @param urlId
 	 * @param sourceUrl
 	 * @param pageUrl
-	 * @param initialDocUrl
+	 * @param DocUrl
 	 * @param comment
 	 * @param domain (it may be null)
 	 */
-    public static void logQuadruple(String urlId, String sourceUrl, String pageUrl, String initialDocUrl, String comment, String domain)
+    public static void logQuadruple(String urlId, String sourceUrl, String pageUrl, String DocUrl, String comment, String domain)
     {
-        String finalDocUrl = initialDocUrl;
+        String finalDocUrl = DocUrl;
 		
         if ( !finalDocUrl.equals("unreachable") && !finalDocUrl.equals("duplicate") )	// If we have reached a docUrl..
         {
             // Remove "jsessionid" for urls for "cleaner" output.
 			String lowerCaseUrl = finalDocUrl.toLowerCase();
             if ( lowerCaseUrl.contains("jsessionid") )
-                finalDocUrl = UrlUtils.removeJsessionid(initialDocUrl);
+                finalDocUrl = UrlUtils.removeJsessionid(DocUrl);
 			
 			sumOfDocUrlsFound ++;
 			
