@@ -62,9 +62,7 @@ public class PageCrawler
 			return;	// We always return, if we have a kindOf-scienceDirect-url. The sourceUrl is already logged inside the called method.
 		
 		String pageContentType = conn.getContentType();
-		HashSet<String> currentPageLinks = null;
 		String pageHtml = null;
-		
 		try {	// Get the pageHtml to parse the page.
 			pageHtml = ConnSupportUtils.getHtmlString(conn);
 		} catch (Exception e) {
@@ -85,29 +83,9 @@ public class PageCrawler
 					return;	// If we were able to find the right path.. and hit a docUrl successfully.. return. The Quadruple is already logged.
 		}
 		
-		try {
-			currentPageLinks = getOutgoingUrls(pageHtml);
-		} catch (JavaScriptDocLinkFoundException jsdlfe) {
-			handleJavaScriptDocLink(urlId, sourceUrl, pageUrl, currentPageDomain, pageContentType, jsdlfe);
-			return;	// This JavaScriptDOcLink is the only docLink we will ever gonna get from this page. The sourceUrl is logged inside the called method.
-		} catch (Exception e) {
-			logger.debug("Could not retrieve the innerLinks for pageUrl: " + pageUrl);
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its innerLinks. Its contentType is: '" + pageContentType + "'", null);
-			return;
-		}
-		
-		//logger.debug("Num of links in: \"" + pageUrl + "\" is: " + currentPageLinks.size());
-		
-		if ( currentPageLinks.isEmpty() ) {	// If no links were retrieved (e.g. the pageUrl was some kind of non-page binary content)
-			logger.warn("No links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, as no links were able to be retrieved from it. Its contentType is: '" + pageContentType + "'", null);
-			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingInnerLinks, currentPageDomain, PageCrawler.timesToGiveNoInnerLinksBeforeBlocked) )
-				logger.debug("Domain: " + currentPageDomain + " was blocked after giving no innerLinks more than " + PageCrawler.timesToGiveNoInnerLinksBeforeBlocked + " times.");
-			return;
-		}
-		
-		//if ( pageUrl.contains(<keyWord> | <url>) )	// In case we want to print only on specific-pageTypes.
-			//printInnerLinksForDebugging(currentPageLinks);
+		HashSet<String> currentPageLinks = null;
+		if ( (currentPageLinks = retrieveInnerLinks(urlId, sourceUrl, pageUrl, currentPageDomain, pageHtml, pageContentType)) == null )
+			return;	// The necessary logging is handled inside.
 		
 		HashSet<String> remainingLinks = new HashSet<>();
 		String urlToCheck = null;
@@ -253,6 +231,37 @@ public class PageCrawler
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag url.", null);
 			return true;	// It was found and handled. Even if an exception was thrown, we don't want to check any other innerLinks in that page.
 		}
+	}
+	
+	
+	public static HashSet<String> retrieveInnerLinks(String urlId, String sourceUrl, String pageUrl, String currentPageDomain, String pageHtml, String pageContentType)
+	{
+		HashSet<String> currentPageLinks = null;
+		try {
+			currentPageLinks = getOutgoingUrls(pageHtml);
+		} catch (JavaScriptDocLinkFoundException jsdlfe) {
+			handleJavaScriptDocLink(urlId, sourceUrl, pageUrl, currentPageDomain, pageContentType, jsdlfe);
+			return null;	// This JavaScriptDocLink is the only docLink we will ever gonna get from this page. The sourceUrl is logged inside the called method.
+		} catch (Exception e) {
+			logger.debug("Could not retrieve the innerLinks for pageUrl: " + pageUrl);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its innerLinks. Its contentType is: '" + pageContentType + "'", null);
+			return null;
+		}
+		
+		//logger.debug("Num of links in: \"" + pageUrl + "\" is: " + currentPageLinks.size());
+		
+		if ( currentPageLinks.isEmpty() ) {	// If no links were retrieved (e.g. the pageUrl was some kind of non-page binary content)
+			logger.warn("No links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, as no links were able to be retrieved from it. Its contentType is: '" + pageContentType + "'", null);
+			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingInnerLinks, currentPageDomain, PageCrawler.timesToGiveNoInnerLinksBeforeBlocked) )
+				logger.debug("Domain: " + currentPageDomain + " was blocked after giving no innerLinks more than " + PageCrawler.timesToGiveNoInnerLinksBeforeBlocked + " times.");
+			return null;
+		}
+		
+		//if ( pageUrl.contains(<keyWord> | <url>) )	// In case we want to print only on specific-pageTypes.
+			//printInnerLinksForDebugging(currentPageLinks);
+		
+		return currentPageLinks;
 	}
 	
 	
