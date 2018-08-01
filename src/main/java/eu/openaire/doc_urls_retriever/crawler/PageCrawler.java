@@ -124,9 +124,8 @@ public class PageCrawler
 				continue;
 			}
 			
-            if ( !urlToCheck.contains(currentPageDomain)	// Make sure we avoid connecting to different domains, loginPages, or tracking links.
-				|| urlToCheck.contains("site=") || urlToCheck.contains("linkout") || urlToCheck.contains("login") || urlToCheck.contains("LinkListener") )
-            	continue;
+            if ( !urlToCheck.contains(currentPageDomain) )	// Make sure we avoid connecting to different domains.
+				continue;
 			
             if ( UrlUtils.duplicateUrls.contains(urlToCheck) )
 				continue;

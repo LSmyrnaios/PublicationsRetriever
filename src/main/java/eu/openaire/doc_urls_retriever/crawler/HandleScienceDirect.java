@@ -78,7 +78,9 @@ public class HandleScienceDirect
 			
 			// We now have the "sciencedirect.com" url (either from the beginning or after silentRedirect).
 			
-			logger.debug("ScienceDirect-url: " + pageUrl);
+			if ( isLinkinghubElsevier )	// Otherwise it's the same as the "visited"-one.
+				logger.debug("Produced ScienceDirect-url: " + pageUrl);
+			
 			String html = ConnSupportUtils.getHtmlString(conn);
 			Matcher metaDocUrlMatcher = PageCrawler.META_DOC_URL.matcher(html);
 			if ( metaDocUrlMatcher.find() )
