@@ -119,7 +119,7 @@ public class LoadAndCheckUrls
 						continue;
 					
 					if ( UrlUtils.docUrls.contains(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
-						logger.info("re-crossed docUrl found: <" + urlToCheck + ">");
+						logger.info("re-crossed docUrl found: <" + retrievedUrl + ">");
 						if ( FileUtils.shouldDownloadDocFiles )
 							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, "This file is probably already downloaded.", null);
 						else
