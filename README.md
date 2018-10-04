@@ -19,20 +19,34 @@ To install the application, navigate to the directory of the project, where the 
 Then enter this command in the terminal:<br/>
 ``mvn install``<br/>
 
-To run the application you should navigate to the ***target*** directory, which will be created by *MAVEN* and run the executable ***JAR*** file.<br/> 
-*Note: If you choose to download the docFiles and store them with numbers as their names, you can set the number of the first DocFile as an argument. Although this argument is optional and the number <1> will be the default number.*<br/>
+To run the application you should navigate to the ***target*** directory, which will be created by *MAVEN* and run the executable ***JAR*** file, while choosing the appropriate run-command.<br/> 
 
-**Run with standard input/output and logging in a *log file*:**<br/>
-``java -jar doc_urls_retriever-0.3-SNAPSHOT.jar <arg:firstDocFileNum> < 'stdIn:inputFile' > 'stdOut:outputFile'``<br/>
+**Run with standard input/output:**<br/>
+``java -jar doc_urls_retriever-0.3-SNAPSHOT.jar arg1:'-downloadDocFiles' arg2:'-firstDocFileNum' arg3:'NUM' arg4:'-docFilesStorage' arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``<br/>
 
-**Run with non-standard input/output:**<br/>
-- Inside ***DocUrlsRetriever.java***, change the code from ***standard input/output*** to ***testing input/output*** and give the wanted testInputFile.<br/>
+**Run with custom input/output:**<br/>
+- Inside ***DocUrlsRetriever.java***, change the related code from ***standard input/output*** to ***testing input/output*** and give the wanted testInputFile.<br/>
 - Inside ***CrawlerController()*** , choose the wanted input-handling method: either ***LoadAndCheckUrls.loadAndCheckIdUrlPairs()*** or the ***LoadAndCheckUrls.loadAndCheckUrls()*** .<br/>
 - If you want to see the logging-messages in the *Console*, open the ***resources/logback.xml*** and change the ***appender-ref***, from ***File*** to ***Console***.<br/>
 - Execute the program with the following command:<br/>
-``java -jar doc_urls_retriever-0.3-SNAPSHOT.jar <arg:firstDocFileNum>``
+``java -jar doc_urls_retriever-0.3-SNAPSHOT.jar arg1:'-downloadDocFiles' arg2:'-firstDocFileNum' arg3:'NUM' arg4:'-docFilesStorage' arg5:'storageDir'``
+
+**Arguments explanation:**<br/>
+- **-downloadDocFiles** will tell the program to download the DocFiles. The absence of this argument will cause the program to NOT download the docFiles, but just to find the DocUrls instead.
+- **-firstDocFileNum** and **NUM** will tell the program to use numbers as DocFileNames and the first DocFile will have the given number "*NUM*". The absence of this argument-group will cause the program to use the original-docFileNames.
+- **-docFilesStorage** and **storageDir** will tell the program to use the custom DocFilesStorageDir: *storageDir*. The absence of this argument will cause the program to use a pre-defined storageDir which is: "*./docFiles*".
+
+Examples
+--------------
+- You can test **DocUrlsRetriever** by running this example:
+``java -jar doc_urls_retriever-0.3-SNAPSHOT.jar -downloadDocFiles -firstDocFileNum 1 -docFilesStorage ../sample_output/DocFiles < ../sample_input/sample_input.json > ../sample_output/sample_output.json``
+This command will run the program with "**../sample_input/sample_input.json**" as input and "**../sample_output/sample_output.json**" as the output.
+The arguments used are:
+    - **-downloadDocFiles** which will tell the program to download the DocFiles.
+    - **-firstDocFileNum 1** which will tell the program to use numbers as DocFileNames and the first DocFile will have the number <*1*>.
+    - **-docFilesStorage ../sample_output/DocFiles** which will tell the program to use the custom DocFilesStorageDir: "*../sample_output/DocFiles*".
 
 Customizations
 --------------
-- You can set **file-related** customizations (including the ability to store the DocFiles) in ***FileUtils.java***.
+- You can set **file-related** customizations in ***FileUtils.java***.
 - You can set **connection-related** customizations in ***HttpConnUtils.java*** and ***ConnSupportUtils.java***.

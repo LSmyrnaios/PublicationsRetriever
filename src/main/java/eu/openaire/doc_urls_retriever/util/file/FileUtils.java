@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimaps;
+import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.doc_urls_retriever.util.url.QuadrupleToBeLogged;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
@@ -35,7 +36,7 @@ public class FileUtils
 	private static String endOfLine = "\n";
 	public static int unretrievableInputLines = 0;	// For better statistics in the end.
     public static int unretrievableUrlsOnly = 0;
-    public static int groupCount = 300;
+    public static int jsonGroupCount = 300;
     public static int maxStoringWaitingTime = 45000;	// 45sec
 	
 	public static final List<QuadrupleToBeLogged> quadrupleToBeLoggedOutputList = new ArrayList<>();
@@ -44,10 +45,10 @@ public class FileUtils
 	
 	public static boolean shouldDownloadDocFiles = true;
 	public static final boolean shouldDeleteOlderDocFiles = false;	// Should we delete any older stored docFiles? This is useful for testing.
-	public static final boolean shouldUseOriginalDocFileNames = false;
+	public static boolean shouldUseOriginalDocFileNames = false;
 	public static final boolean shouldLogFullPathName = true;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
 	public static int numOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremential system.
-	public static String storeDocFilesDir = System.getProperty("user.dir") + "//docFiles";
+	public static String storeDocFilesDir = System.getProperty("user.dir") + File.separator + "docFiles";
 	public static int unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
 	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*(?:filename=(?:\\\")?)([\\w\\-\\.\\%\\_]+)[\\\"\\;]*.*");
 	
@@ -68,12 +69,17 @@ public class FileUtils
 				// If the directory doesn't exist, try to (re)create it.
 				if ( !dir.exists() ) {
 					if ( !dir.mkdir() ) {   // Create the directory.
-						String errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
+						String errorMessage;
+						if ( DocUrlsRetriever.docFilesStorageGivenByUser )
+							errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
+									+ "\nPlease give a valid Directory-path.";
+						else	// User leaves the storageDir to be the default one.
+							errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
 								+ "\nThe docFiles will NOT be stored, but the docUrls will be retrieved and kept in the outputFile."
 								+ "\nIf this is not desired, please terminate the program and re-define the \"storeDocFilesDir\"!";
 						System.err.println(errorMessage);
 						logger.error(errorMessage);
-						FileUtils.shouldDownloadDocFiles = false;
+						System.exit(-8);
 					}
 				}
 			} catch (Exception e) {
@@ -108,7 +114,7 @@ public class FileUtils
 		
 		int curBeginning = FileUtils.fileIndex;
 		
-		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + groupCount)) )// While (!EOF) iterate through lines.
+		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + jsonGroupCount)) )// While (!EOF) iterate through lines.
 		{
 			//logger.debug("fileIndex: " + FileUtils.fileIndex);	// DEBUG!
 			
@@ -190,7 +196,7 @@ public class FileUtils
 		printStream.print(strB.toString());
 		printStream.flush();
 		
-		FileUtils.quadrupleToBeLoggedOutputList.clear();	// Clear to keep in memory only <groupCount> values at a time.
+		FileUtils.quadrupleToBeLoggedOutputList.clear();	// Clear to keep in memory only <jsonGroupCount> values at a time.
 		
 		logger.debug("Finished writing to the outputFile.. " + numberOfTriples + " set(s) of (\"SourceUrl\", \"DocUrl\")");
 	}
@@ -356,13 +362,13 @@ public class FileUtils
 	{
 		Collection<String> urlGroup = new HashSet<String>();
 		
-		// Take a group of <groupCount> urls from the file..
-		// If we are at the end and there are less than <groupCount>.. take as many as there are..
+		// Take a group of <jsonGroupCount> urls from the file..
+		// If we are at the end and there are less than <jsonGroupCount>.. take as many as there are..
 		
-		//logger.debug("Retrieving the next group of " + groupCount + " elements from the inputFile.");
+		//logger.debug("Retrieving the next group of " + jsonGroupCount + " elements from the inputFile.");
 		int curBeginning = FileUtils.fileIndex;
 		
-		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + groupCount)) )
+		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + jsonGroupCount)) )
 		{// While (!EOF) iterate through lines.
 			
 			// Take each line, remove potential double quotes.
@@ -382,7 +388,7 @@ public class FileUtils
 			
 			urlGroup.add(retrievedLineStr);
 		}
-		//logger.debug("FileUtils.fileIndex's value after taking urls after " + FileUtils.fileIndex / groupCount + " time(s), from input file: " + FileUtils.fileIndex);	// DEBUG!
+		//logger.debug("FileUtils.fileIndex's value after taking urls after " + FileUtils.fileIndex / jsonGroupCount + " time(s), from input file: " + FileUtils.fileIndex);	// DEBUG!
 		
 		return urlGroup;
 	}

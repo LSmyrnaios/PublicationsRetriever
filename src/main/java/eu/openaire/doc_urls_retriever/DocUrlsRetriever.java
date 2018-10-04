@@ -28,44 +28,20 @@ public class DocUrlsRetriever
 	
 	private static int initialNumOfDocFile = 0;
 	
+	public static  boolean docFilesStorageGivenByUser = false;
+	
 	
     public static void main( String[] args )
     {
-		// If we will download docFile and use custom-fileNames.. retrieve the starting docFileName for this program's instance.
-		if ( FileUtils.shouldDownloadDocFiles && !FileUtils.shouldUseOriginalDocFileNames ) {
-			if ( args.length > 1 ) {
-				String errorMessage = "You have to give only one argument, to be used as the starting fileName for the docFileNames!";
-				System.err.println(errorMessage);
-				logger.error(errorMessage);
-				System.exit(-1);
-			} else if ( args.length == 0 ) {
-				initialNumOfDocFile = 1;
-				FileUtils.numOfDocFile = initialNumOfDocFile;
-			} else {
-				try {
-					if ( (initialNumOfDocFile = Integer.parseInt(args[0])) <= 0 ) {
-						String errorMessage = "The starting-numOfDocFile must be above zero! Given one was: " + FileUtils.numOfDocFile;
-						System.err.println(errorMessage);
-						logger.error(errorMessage);
-						System.exit(-2);
-					} else
-						FileUtils.numOfDocFile = initialNumOfDocFile;
-				} catch (NumberFormatException nfe) {
-					String errorMessage = "Argument" + args[0] + " must be an integer!";
-					System.err.println(errorMessage);
-					logger.error(errorMessage);
-					System.exit(-3);
-				}
-			}
-		}
+		parseArgs(args);
 		
 		// Use standard input/output.
 		new FileUtils(System.in, System.out);
     	
     	// Use testing input/output files.
 		/*try {
-			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + "//src//main//resources//sampleCleanUrls3000.json")),
-							new FileOutputStream(new File(System.getProperty("user.dir") + "//src//main//resources//testOutputFile.json")));
+			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "sampleCleanUrls3000.json")),
+							new FileOutputStream(new File(System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "testOutputFile.json")));
 		} catch (FileNotFoundException e) {
 			String errorMessage = "InputFile not found!";
 			System.err.println(errorMessage);
@@ -87,6 +63,64 @@ public class DocUrlsRetriever
 		// Close the open streams (imported and exported content).
 		FileUtils.closeStreams();
     }
+    
+	
+	private static void parseArgs(String[] args)
+	{
+		if ( args.length > 5 ) {
+			String errMessage = "\"DocUrlsRetriever\" expected only up to 5 args, while you gave: " + args.length + "!";
+			logger.error(errMessage);
+			System.err.println(errMessage
+					+ "\nUsage: java -jar doc_urls_retriever-<VERSION>.jar -downloadDocFiles(OPTIONAL) -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' < 'input' > 'output'");
+			System.exit(-7);
+		}
+		
+		boolean downloadDocFiles = false;
+		boolean firstNumGiven = false;
+		
+		for ( short i=0; i < args.length; i++ )
+		{
+			switch ( args[i] )
+			{
+				case "-downloadDocFiles":
+					downloadDocFiles = true;
+					FileUtils.shouldDownloadDocFiles = downloadDocFiles;
+					break;
+				case "-firstDocFileNum":
+					try {
+						i ++;
+						DocUrlsRetriever.initialNumOfDocFile = Integer.parseInt(args[i]);
+						FileUtils.numOfDocFile = DocUrlsRetriever.initialNumOfDocFile;
+						firstNumGiven = true;
+						break;
+					} catch (NumberFormatException nfe) {
+						String errorMessage = "Argument \"-firstDocFileNum\" must be followed by an integer value! Given one was: \"" + args[i] + "\"";
+						System.err.println(errorMessage);
+						logger.error(errorMessage);
+						System.exit(-3);
+					}
+				case "-docFilesStorage":
+					i ++;
+					FileUtils.storeDocFilesDir = args[i];
+					DocUrlsRetriever.docFilesStorageGivenByUser = true;
+					break;
+				default:	// log & ignore arg
+					String errMessage = "Argument: \"" + args[i] + "\" was not expected!";
+					System.err.println(errMessage);
+					logger.error(errMessage);
+					break;
+			}
+		}
+		
+		if ( downloadDocFiles ) {
+			if ( !firstNumGiven ) {
+				logger.warn("No \"-firstDocFileNum\" argument was given. The original docFilesNames will be used.");
+				FileUtils.shouldUseOriginalDocFileNames = true;
+			}
+		}
+		else
+			FileUtils.shouldDownloadDocFiles = false;
+	}
 	
 	
 	static private void showStatistics()

@@ -63,7 +63,7 @@ public class UrlUtils
 		
 		FileUtils.quadrupleToBeLoggedOutputList.add(new QuadrupleToBeLogged(urlId, sourceUrl, finalDocUrl, comment));	// Log it to be written later in the outputFile.
 		
-        if ( FileUtils.quadrupleToBeLoggedOutputList.size() == FileUtils.groupCount )	// Write to file every time we have a group of <groupCount> triples.
+        if ( FileUtils.quadrupleToBeLoggedOutputList.size() == FileUtils.jsonGroupCount )	// Write to file every time we have a group of <jsonGroupCount> triples.
             FileUtils.writeToFile();
     }
     
