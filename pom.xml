@@ -90,14 +90,14 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>25.0-jre</version>
+      <version>26.0-jre</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>3.7</version>
+      <version>3.8.1</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
@@ -111,7 +111,7 @@
     <dependency>
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
-      <version>20180130</version>
+      <version>20180813</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/edu.uci.ics/crawler4j -->
