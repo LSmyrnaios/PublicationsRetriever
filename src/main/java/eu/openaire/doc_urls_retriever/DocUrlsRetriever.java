@@ -143,7 +143,7 @@ public class DocUrlsRetriever
 		if ( FileUtils.shouldDownloadDocFiles ) {
 			int numOfStoredDocFiles = 0;
 			if ( FileUtils.shouldUseOriginalDocFileNames )
-				numOfStoredDocFiles = FileUtils.numOfDocFile - (initialNumOfDocFile -1);
+				numOfStoredDocFiles = FileUtils.numOfDocFile;
 			else
 				numOfStoredDocFiles = (FileUtils.numOfDocFile -1) - (initialNumOfDocFile -1);
 			logger.info("From which docUrls, we were able to retrieve: " + numOfStoredDocFiles + " distinct docFiles. That's about: " + numOfStoredDocFiles * (float)100 / UrlUtils.sumOfDocUrlsFound +"%."

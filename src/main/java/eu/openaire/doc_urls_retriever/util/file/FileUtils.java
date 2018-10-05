@@ -50,7 +50,7 @@ public class FileUtils
 	public static int numOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremential system.
 	public static String storeDocFilesDir = System.getProperty("user.dir") + File.separator + "docFiles";
 	public static int unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
-	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*(?:filename=(?:\\\")?)([\\w\\-\\.\\%\\_]+)[\\\"\\;]*.*");
+	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*(?:filename=(?:\\\")?)([\\w\\-\\.\\,\\%\\_\\(\\)\\~\\:]+)[\\\"\\;]*.*");
 	
 	
 	public FileUtils(InputStream input, OutputStream output)
@@ -318,14 +318,14 @@ public class FileUtils
 					isDuplicate = true;
 				
 				if ( isDuplicate ) {
-					numbersOfDuplicateDocFileNames.put(docFileName, curDuplicateNum);
-					
 					// Construct final-DocFileName by renaming.
-					String preExtensionFileName = docFileName.substring(0, docFileName.lastIndexOf(".") - 1);
+					String preExtensionFileName = docFileName.substring(0, docFileName.lastIndexOf("."));
 					String newDocFileName = preExtensionFileName + "(" + curDuplicateNum + ")" + dotFileExtension;
 					saveDocFileFullPath = storeDocFilesDir + File.separator + newDocFileName;
 					File renamedDocFile = new File(saveDocFileFullPath);
-					if ( !docFile.renameTo(renamedDocFile) ) {
+					if ( docFile.renameTo(renamedDocFile) )	// Renaming was succesfull, store the "curDuplicateNum" for this base-"docFileName".
+						numbersOfDuplicateDocFileNames.put(docFileName, curDuplicateNum);
+					else {
 						logger.error("Renaming operation of \"" + docFileName + "\" to \"" + newDocFileName + "\" has failed!");
 						throw new DocFileNotRetrievedException();
 					}
