@@ -114,7 +114,7 @@ public class DocUrlsRetriever
 		
 		if ( downloadDocFiles ) {
 			if ( !firstNumGiven ) {
-				logger.warn("No \"-firstDocFileNum\" argument was given. The original docFilesNames will be used.");
+				logger.warn("No \"-firstDocFileNum\" argument was given. The original-docFilesNames will be used.");
 				FileUtils.shouldUseOriginalDocFileNames = true;
 			}
 		}
@@ -168,7 +168,7 @@ public class DocUrlsRetriever
 				+ UrlTypeChecker.pagesWithLargerCrawlingDepth + UrlTypeChecker.pangaeaUrls + UrlTypeChecker.urlsWithUnwantedForm + LoadAndCheckUrls.connProblematicUrls + UrlTypeChecker.pagesNotProvidingDocUrls + UrlTypeChecker.longToRespondUrls + LoadAndCheckUrls.inputDuplicatesNum;
 		logger.info("From the " + inputCheckedUrlNum + " urls checked from the input, the " + problematicUrlsNum + " of them (about " + problematicUrlsNum * (float)100 / inputCheckedUrlNum + "%) were problematic (sum of the all of the above cases).");
 		
-		logger.info("The number of domains blocked after an \"SSL Exception\" was: " + HttpConnUtils.domainsBlockedDueToSSLException);
+		logger.info("The number of domains blocked due to an \"SSL Exception\" was: " + HttpConnUtils.domainsBlockedDueToSSLException);
 	}
 	
 }

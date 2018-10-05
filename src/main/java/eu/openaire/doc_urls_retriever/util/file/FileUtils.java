@@ -1,6 +1,7 @@
 package eu.openaire.doc_urls_retriever.util.file;
 
 import java.io.*;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -151,9 +152,9 @@ public class FileUtils
 	public static HashMap<String, String> jsonDecoder(String jsonLine)
 	{
 		HashMap<String, String> returnIdUrlMap = new HashMap<String, String>();
-
+		
 		JSONObject jObj = new JSONObject(jsonLine); // Construct a JSONObject from the retrieved jsonLine.
-
+		
 		// Get ID and url and put them in the HashMap
 		String idStr = null;
 		String urlStr = null;
@@ -276,15 +277,30 @@ public class FileUtils
 			if ( fileNameMatcher.matches() ) {
 				docFileName = fileNameMatcher.group(1);	// Group<1> is the fileName.
 				if ( docFileName == null || docFileName.isEmpty() )
-					hasUnretrievableDocName = true;
+					docFileName = null;	// Ensure null-value for future checks.
 			}
-			else {
+			else
 				logger.warn("Unmatched Content-Disposition:  " + contentDisposition);
+		}
+		
+		// If we couldn't get the fileName from the "Content-Disposition", try getting it from the url.
+		if ( docFileName == null ) {
+			// Try to get the fileName from URL-Class-path, since the "UrlUtils.getDocIdStr()" -which is now used as last resort- may not give a valid docFileName.
+			try {
+				URL url = new URL(docUrl);
+				docFileName = new File(url.getPath()).getName();
+				if ( docFileName.isEmpty() )
+					hasUnretrievableDocName = true;
+			} catch (Exception e) {
+				logger.warn("Could not parse the docUrl: \"" + docUrl + "\"", e);
 				hasUnretrievableDocName = true;
+			}
+			
+			if ( hasUnretrievableDocName ) {	// If we still haven't retrieved the fileName..
+				docFileName = UrlUtils.getDocIdStr(docUrl);	// Extract the docID as the fileName from docUrl.
+				hasUnretrievableDocName = (docFileName == null);
 			}
 		}
-		else if ( (docFileName = UrlUtils.getDocIdStr(docUrl)) == null )	// Extract fileName from docUrl.
-				hasUnretrievableDocName = true;
 		
 		String dotFileExtension /*= "";
 		if ( shouldAcceptOnlyPDFs )
@@ -298,6 +314,8 @@ public class FileUtils
 		
 		if ( hasUnretrievableDocName )
 			docFileName = "unretrievableDocName(" + (++unretrievableDocNamesNum) + ")" + dotFileExtension;
+		
+		//logger.debug("docFileName: " + docFileName);
 		
 		try {
 			if ( !hasUnretrievableDocName && !docFileName.contains(dotFileExtension) )	// If there is no extension, add ".pdf" in the end. TODO - Later it can be extension-dependent.
