@@ -135,7 +135,7 @@ public class LoadAndCheckUrls
 						break;	// This is the absolute-best-case, we go and connect directly.
 					}
 					
-					// Add this rule, if we accept the slow "hdl.handle.net"
+					// Use this rule, if we accept the slow "hdl.handle.net"
 					if ( retrievedUrl.contains("/handle/") )	// If this url contains "/handle/" we know that it's a bestCaseUrl among urls from the domain "handle.net", which after redirects reaches the bestCaseUrl (containing "/handle/").
 						bestNonDocUrl = retrievedUrl;	// We can't just connect here, as the next url might be a possibleDocUrl.
 					
@@ -160,8 +160,11 @@ public class LoadAndCheckUrls
 					urlToCheck = nonDoiUrl;
 				else if ( neutralUrl != null )
 					urlToCheck = neutralUrl;
-				else
+				else {
+					logger.debug("No acceptable sourceUrl was found for ID: \"" + retrievedId + "\"");
+					UrlUtils.logQuadruple(retrievedId, "No acceptable sourceUrl.", null, "unreachable", "This ID had no acceptable sourceUrl to work with.", null);
 					continue;	// To the next ID, as no acceptable url was found for the current one.
+				}
 				
 				try {	// Check if it's a docUrl, if not, it gets crawled.
 					HttpConnUtils.connectAndCheckMimeType(retrievedId, urlToCheck, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);
