@@ -190,7 +190,7 @@ public class LoadAndCheckUrls
 		String currentUrlDomain = UrlUtils.getDomainStr(retrievedUrl);
 		if ( currentUrlDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"UrlUtils.handleUrlChecks()\": \"" + retrievedUrl + "\"");
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, retrievedUrl, "Discarded in 'UrlUtils.handleUrlChecks()' method, after the occurrence of a domain-retrieval error.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' method, after the occurrence of a domain-retrieval error.", null);
 			return null;
 		}
 		
@@ -202,7 +202,7 @@ public class LoadAndCheckUrls
 		
 		if ( ConnSupportUtils.checkIfPathIs403BlackListed(retrievedUrl, currentUrlDomain) ) {
 			logger.debug("Preventing reaching 403ErrorCode with url: \"" + retrievedUrl + "\"!");
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, retrievedUrl, "Discarded in 'UrlUtils.handleUrlChecks()' as it had a blackListed urlPath.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' as it had a blackListed urlPath.", null);
 			return null;
 		}
 		
