@@ -402,10 +402,10 @@ public class HttpConnUtils
 						logger.debug("Target: " + targetUrl + "\n");*/
 					//}
 					
-					if ( UrlUtils.docUrls.contains(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
+					if ( UrlUtils.docUrlsWithKeys.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
 						logger.info("re-crossed docUrl found: <" + targetUrl + ">");
 						if ( FileUtils.shouldDownloadDocFiles )
-							UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, "This file is probably already downloaded.", domainStr);
+							UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(targetUrl), domainStr);
 						else
 							UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, "", domainStr);
 						throw new AlreadyFoundDocUrlException();

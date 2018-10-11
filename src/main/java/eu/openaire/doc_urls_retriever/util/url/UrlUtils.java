@@ -26,12 +26,15 @@ public class UrlUtils
 	public static int sumOfDocUrlsFound = 0;	// Change it back to simple int if finally in singleThread mode
 	
 	public static final HashSet<String> duplicateUrls = new HashSet<String>();
-	public static final HashSet<String> docUrls = new HashSet<String>();
+	
+	public static final HashMap<String, String> docUrlsWithKeys = new HashMap<String, String>();	// Null keys are allowed (in case they are not available in the input).
+	
+	public static final String alreadyDownloadedByIDMessage = "This file is probably already downloaded from ID=";
 
 	
 	/**
      * This method logs the outputEntry to be written, as well as the docUrlPath (if non-empty String) and adds entries in the blackList.
-	 * @param urlId
+	 * @param urlId (it may be null if no id was provided in the input)
 	 * @param sourceUrl
 	 * @param pageUrl
 	 * @param DocUrl
@@ -55,7 +58,8 @@ public class UrlUtils
             if ( MachineLearning.useMLA )
 				MachineLearning.gatherMLData(domain, pageUrl, finalDocUrl);
 			
-            docUrls.add(finalDocUrl);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
+            if ( !comment.contains(UrlUtils.alreadyDownloadedByIDMessage) )	// Add this id, only if this is a first-crossed docUrl.
+				docUrlsWithKeys.put(finalDocUrl, urlId);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
         }
         else if ( !finalDocUrl.equals("duplicate") )	{// Else if this url is not a docUrl and has not been processed before..
             duplicateUrls.add(sourceUrl);	 // Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future..

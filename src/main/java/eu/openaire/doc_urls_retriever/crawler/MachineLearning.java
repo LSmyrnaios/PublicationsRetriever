@@ -206,11 +206,11 @@ public class MachineLearning
 				strB.append(".pdf");
 				predictedDocUrl = strB.toString();
 				
-				if ( UrlUtils.docUrls.contains(predictedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
+				if ( UrlUtils.docUrlsWithKeys.containsKey(predictedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
 					logger.info("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted (already found before) docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
 					logger.info("re-crossed docUrl found: <" + predictedDocUrl + ">");
 					if ( FileUtils.shouldDownloadDocFiles )
-						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, "This file is probably already downloaded.", null);
+						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(predictedDocUrl), null);
 					else
 						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, "", null);
 					MachineLearning.docUrlsFoundByMLA ++;

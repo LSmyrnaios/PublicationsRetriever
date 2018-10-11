@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 
+
 /**
  * This class contains the "loadAndCheck" code for the URLs.
  * @author Lampros A. Smyrnaios
@@ -118,10 +119,10 @@ public class LoadAndCheckUrls
 					if ( (retrievedUrl = handleUrlChecks(retrievedId, retrievedUrl, lowerCaseUrl)) == null )
 						continue;
 					
-					if ( UrlUtils.docUrls.contains(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
+					if ( UrlUtils.docUrlsWithKeys.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
 						logger.info("re-crossed docUrl found: <" + retrievedUrl + ">");
 						if ( FileUtils.shouldDownloadDocFiles )
-							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, "This file is probably already downloaded.", null);
+							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(retrievedUrl), null);
 						else
 							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, "", null);
 						goToNextId = true;

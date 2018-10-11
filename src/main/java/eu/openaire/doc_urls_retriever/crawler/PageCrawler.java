@@ -108,10 +108,10 @@ public class PageCrawler
             if ( UrlUtils.duplicateUrls.contains(urlToCheck) )
 				continue;
 			
-            if ( UrlUtils.docUrls.contains(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
+            if ( UrlUtils.docUrlsWithKeys.containsKey(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
 				logger.info("re-crossed docUrl found: <" + urlToCheck + ">");
 				if ( FileUtils.shouldDownloadDocFiles )
-					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, "This file is probably already downloaded.", currentPageDomain);
+					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(urlToCheck), currentPageDomain);
 				else
 					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, "", currentPageDomain);
                 return;
@@ -155,7 +155,7 @@ public class PageCrawler
 		
 		// If we reached here, it means that we couldn't find a docUrl the quick way.. so we have to check some (we exclude lots of them) of the inner links one by one.
 		
-		for ( String currentLink : remainingLinks )	// Here we don't re-check already-checked links, as they were removed.
+		for ( String currentLink : remainingLinks )	// Here we don't re-check already-checked links, as this is a new list.
 		{
 			// We re-check here, as, in the fast-loop not all of the links are checked against this.
 			if ( UrlTypeChecker.shouldNotAcceptInnerLink(currentLink, null) ) {	// If this link matches certain blackListed criteria, move on..
