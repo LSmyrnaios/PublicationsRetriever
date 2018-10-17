@@ -41,12 +41,12 @@ To run the application you should navigate to the ***target*** directory, which 
 Examples
 --------
 - You can check the functionality of **DocUrlsRetriever** by running this example:
-``java -jar doc_urls_retriever-0.3-SNAPSHOT.jar -downloadDocFiles -firstDocFileNum 1 -docFilesStorage ../sample_output/DocFiles < ../sample_input/sample_input.json > ../sample_output/sample_output.json``
-This command will run the program with "**../sample_input/sample_input.json**" as input and "**../sample_output/sample_output.json**" as the output.
+``java -jar doc_urls_retriever-0.3-SNAPSHOT.jar -downloadDocFiles -firstDocFileNum 1 -docFilesStorage ../example/sample_output/DocFiles < ../example/sample_input/sample_input.json > ../example/sample_output/sample_output.json``
+This command will run the program with "**../example/sample_input/sample_input.json**" as input and "**../example/sample_output/sample_output.json**" as the output.
 The arguments used are:
     - **-downloadDocFiles** which will tell the program to download the DocFiles.
     - **-firstDocFileNum 1** which will tell the program to use numbers as DocFileNames and the first DocFile will have the number <*1*>.
-    - **-docFilesStorage ../sample_output/DocFiles** which will tell the program to use the custom DocFilesStorageDir: "*../sample_output/DocFiles*".
+    - **-docFilesStorage ../example/sample_output/DocFiles** which will tell the program to use the custom DocFilesStorageDir: "*../example/sample_output/DocFiles*".
 
 Customizations
 --------------
