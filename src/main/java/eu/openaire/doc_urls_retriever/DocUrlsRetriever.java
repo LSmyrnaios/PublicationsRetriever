@@ -9,12 +9,6 @@ import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// Used for testing with non-standard input/output.
-/*import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;*/
-
 
 /**
  * This class contains the entry-point of this program. It calls methods to receive the url(s) (docPages) from an input file.
@@ -37,17 +31,6 @@ public class DocUrlsRetriever
 		
 		// Use standard input/output.
 		new FileUtils(System.in, System.out);
-    	
-    	// Use testing input/output files.
-		/*try {
-			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "sampleCleanUrls3000.json")),
-							new FileOutputStream(new File(System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "testOutputFile.json")));
-		} catch (FileNotFoundException e) {
-			String errorMessage = "InputFile not found!";
-			System.err.println(errorMessage);
-			logger.error(errorMessage, e);
-			System.exit(-4);
-		}*/
 		
 		try {
 			new CrawlerController();
@@ -65,7 +48,7 @@ public class DocUrlsRetriever
     }
     
 	
-	private static void parseArgs(String[] args)
+	public static void parseArgs(String[] args)
 	{
 		if ( args.length > 5 ) {
 			String errMessage = "\"DocUrlsRetriever\" expected only up to 5 args, while you gave: " + args.length + "!";
@@ -123,7 +106,7 @@ public class DocUrlsRetriever
 	}
 	
 	
-	static private void showStatistics()
+	public static void showStatistics()
 	{
 		long inputCheckedUrlNum = 0;
 		if ( CrawlerController.useIdUrlPairs )

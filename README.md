@@ -24,10 +24,12 @@ To run the application you should navigate to the ***target*** directory, which 
 **Run with standard input/output:**<br/>
 ``java -jar doc_urls_retriever-0.3-SNAPSHOT.jar arg1:'-downloadDocFiles' arg2:'-firstDocFileNum' arg3:'NUM' arg4:'-docFilesStorage' arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``<br/>
 
-**Run with custom input/output:**<br/>
-- Inside ***DocUrlsRetriever.java***, change the related code from ***standard input/output*** to ***testing input/output*** and give the wanted testInputFile.<br/>
+**Run tests with custom input/output:**<br/>
+- Inside ***pom.xml***, change the **mainClass** of **maven-shade-plugin** from "**DocUrlsRetriever**" to "**TestNonStandardInputOutput**".
+- Inside ***src/test/.../TestNonStandardInputOutput.java***, give the wanted testInput and testOutput files.<br/>
 - Inside ***CrawlerController()*** , choose the wanted input-handling method: either ***LoadAndCheckUrls.loadAndCheckIdUrlPairs()*** or the ***LoadAndCheckUrls.loadAndCheckUrls()*** .<br/>
 - If you want to see the logging-messages in the *Console*, open the ***resources/logback.xml*** and change the ***appender-ref***, from ***File*** to ***Console***.<br/>
+- Run ``mvn install`` to create the new ***JAR*** file.<br/>
 - Execute the program with the following command:<br/>
 ``java -jar doc_urls_retriever-0.3-SNAPSHOT.jar arg1:'-downloadDocFiles' arg2:'-firstDocFileNum' arg3:'NUM' arg4:'-docFilesStorage' arg5:'storageDir'``
 
@@ -37,8 +39,8 @@ To run the application you should navigate to the ***target*** directory, which 
 - **-docFilesStorage** and **storageDir** will tell the program to use the custom DocFilesStorageDir: *storageDir*. The absence of this argument will cause the program to use a pre-defined storageDir which is: "*./docFiles*".
 
 Examples
---------------
-- You can test **DocUrlsRetriever** by running this example:
+--------
+- You can check the functionality of **DocUrlsRetriever** by running this example:
 ``java -jar doc_urls_retriever-0.3-SNAPSHOT.jar -downloadDocFiles -firstDocFileNum 1 -docFilesStorage ../sample_output/DocFiles < ../sample_input/sample_input.json > ../sample_output/sample_output.json``
 This command will run the program with "**../sample_input/sample_input.json**" as input and "**../sample_output/sample_output.json**" as the output.
 The arguments used are:
