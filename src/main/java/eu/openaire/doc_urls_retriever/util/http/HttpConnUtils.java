@@ -367,9 +367,19 @@ public class HttpConnUtils
 					}
 					
 					String location = conn.getHeaderField("Location");
-					if ( location == null ) {
-						logger.warn("No \"Location\" field was found in the HTTP Header of \"" + conn.getURL().toString() + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
-						throw new RuntimeException();
+					if ( location == null )
+					{
+						if ( responceCode == 300 ) {	// The "Location"-header MAY be provided, giving the proposed link by the server.
+							// Go and parse the page and select one of the links to redirect to. Assign it to the "location".
+							if ( (location = ConnSupportUtils.getInternalLinkFromHTTP300Page(conn)) == null ) {
+								logger.warn("No \"link\" was retrieved from the HTTP-300-page: \"" + conn.getURL().toString() + "\".");
+								throw new RuntimeException();
+							}
+						}
+						else {	// It's unacceptable for codes > 300 to not provide the "location" field.
+							logger.warn("No \"Location\" field was found in the HTTP Header of \"" + conn.getURL().toString() + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
+							throw new RuntimeException();
+						}
 					}
 					
 					String lowerCaseLocation = location.toLowerCase();

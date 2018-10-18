@@ -2,8 +2,10 @@ package eu.openaire.doc_urls_retriever.util.http;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
+import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
+import eu.openaire.doc_urls_retriever.exceptions.JavaScriptDocLinkFoundException;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
@@ -13,6 +15,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.regex.Matcher;
@@ -194,6 +197,24 @@ public class ConnSupportUtils
 		} finally {
 			if ( reconnected )	// Otherwise the given-previous connection will be closed by the calling method.
 				conn.disconnect();
+		}
+	}
+	
+	
+	/**
+	 * This method recieves a pageUrl which gave an HTTP-300-code and extracts an internalLink out of the multiple choices provided.
+	 * @param conn
+	 * @return
+	 */
+	public static String getInternalLinkFromHTTP300Page(HttpURLConnection conn)
+	{
+		try {
+			return new ArrayList<>(PageCrawler.extractInternalLinksFromHtml(getHtmlString(conn))).get(0);
+		} catch (JavaScriptDocLinkFoundException jsdlfe) {
+			return jsdlfe.getMessage();	// Return the Javascript link.
+		} catch (Exception e) {
+			logger.error("", e);
+			return null;
 		}
 	}
 	
