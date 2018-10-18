@@ -276,9 +276,10 @@ public class PageCrawler
 		for ( Element el : linksOnPage ) {
 			String internalLink = el.attr("href");
 			if ( !internalLink.isEmpty()
-					&& !internalLink.equals("\\/") && !internalLink.equals("#")
-					&& !internalLink.startsWith("mailto:") && !internalLink.startsWith("tel:") && !internalLink.startsWith("{openurl}") ) {
-				
+					&& !internalLink.equals("\\/")
+					&& !internalLink.startsWith("#")
+					&& !internalLink.startsWith("mailto:") && !internalLink.startsWith("tel:") && !internalLink.startsWith("{openurl}") )
+			{
 				//logger.debug("InternalLink: " + internalLink);
 				String lowerCaseLink = internalLink.toLowerCase();
 				if ( lowerCaseLink.startsWith("javascript:") ) {
