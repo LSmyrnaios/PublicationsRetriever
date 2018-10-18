@@ -238,7 +238,7 @@ public class PageCrawler
 	{
 		HashSet<String> currentPageLinks = null;
 		try {
-			currentPageLinks = getOutgoingUrls(pageHtml);
+			currentPageLinks = extractInternalLinksFromHtml(pageHtml);
 		} catch (JavaScriptDocLinkFoundException jsdlfe) {
 			handleJavaScriptDocLink(urlId, sourceUrl, pageUrl, currentPageDomain, pageContentType, jsdlfe);
 			return null;	// This JavaScriptDocLink is the only docLink we will ever gonna get from this page. The sourceUrl is logged inside the called method.
@@ -265,7 +265,7 @@ public class PageCrawler
 	}
 	
 	
-	public static HashSet<String> getOutgoingUrls(String pageHtml) throws JavaScriptDocLinkFoundException
+	public static HashSet<String> extractInternalLinksFromHtml(String pageHtml) throws JavaScriptDocLinkFoundException
 	{
 		HashSet<String> urls = new HashSet<>();
 		
