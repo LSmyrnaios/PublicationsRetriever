@@ -8,6 +8,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 
+
+/**
+ * This class contains unit-testing for urls-connectivity.
+ * @author Lampros A. Smyrnaios
+ */
 public class UrlChecker {
 	
 	private static final Logger logger = LoggerFactory.getLogger(UrlChecker.class);

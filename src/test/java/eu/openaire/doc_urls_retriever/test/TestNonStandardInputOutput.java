@@ -13,13 +13,19 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 
 
+/**
+ * This class contains testing for all of the program's functionality, by using non-standard Input/Output.
+ * @author Lampros A. Smyrnaios
+ */
 public class TestNonStandardInputOutput  {
 	
 	private static final Logger logger = LoggerFactory.getLogger(TestNonStandardInputOutput.class);
 	
-	@Disabled
+	
+	@Disabled	// as we want to run it only on demand, since it's a huge test. Same for the following tests of this class.
 	@Test
-	public void testCustomInputOutput() {
+	public void testCustomInputOutputWithNums()
+	{
 		String[] args = new String[3];
 		args[0] = "-downloadDocFiles";
 		args[1] = "-firstDocFileNum";
@@ -28,6 +34,31 @@ public class TestNonStandardInputOutput  {
 		logger.info("Calling main method with these args: ");
 		for ( String arg: args )
 			logger.info("'" + arg + "'");
+		
+		main(args);
+	}
+	
+	
+	@Disabled
+	@Test
+	public void testCustomInputOutputWithOriginalDocFileNames()
+	{
+		String[] args = new String[1];
+		args[0] = "-downloadDocFiles";
+		
+		logger.info("Calling main method with this arg: " + args[0]);
+		
+		main(args);
+	}
+	
+	
+	@Disabled
+	@Test
+	public void testCustomInputOutputWithoutDownloading()
+	{
+		String[] args = new String[0];
+		
+		logger.info("Calling main method without any args");
 		
 		main(args);
 	}

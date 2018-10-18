@@ -12,9 +12,12 @@ import java.util.ArrayList;
 import static eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils.getHtmlString;
 import static eu.openaire.doc_urls_retriever.util.http.HttpConnUtils.handleConnection;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 
+/**
+ * This class contains unit-testing for internalLinks-extraction.
+ * @author Lampros A. Smyrnaios
+ */
 public class LinkExtraction {
 	
 	private static final Logger logger = LoggerFactory.getLogger(LinkExtraction.class);
