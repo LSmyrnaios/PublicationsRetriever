@@ -3,6 +3,8 @@ package eu.openaire.doc_urls_retriever.test;
 import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
 import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.File;
@@ -13,7 +15,22 @@ import java.io.FileOutputStream;
 
 public class TestNonStandardInputOutput  {
 	
-	private static final Logger logger = LoggerFactory.getLogger(DocUrlsRetriever.class);
+	private static final Logger logger = LoggerFactory.getLogger(TestNonStandardInputOutput.class);
+	
+	@Disabled
+	@Test
+	public void testCustomInputOutput() {
+		String[] args = new String[3];
+		args[0] = "-downloadDocFiles";
+		args[1] = "-firstDocFileNum";
+		args[2] = "1";
+		
+		logger.info("Calling main method with these args: ");
+		for ( String arg: args )
+			logger.info("'" + arg + "'");
+		
+		main(args);
+	}
 	
 	
 	public static void main( String[] args )
