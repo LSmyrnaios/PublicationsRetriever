@@ -52,7 +52,7 @@ public class MachineLearning
 	
 	/**
 	 * This method gathers docPagePath and docUrlPath data, for succesfull docUrl-found-cases.
-	 * This data is used by "UrlUtils.guessInnerDocUrl()".
+	 * This data is used by "MachineLearning.predictInternalDocUrl()".
 	 * @param domain
 	 * @param docPage
 	 * @param docUrl
@@ -151,8 +151,8 @@ public class MachineLearning
 	/**
 	 * This method tries to predict the docUrl of a page, if this page gives us the ID of the document, based on previous success cases.
 	 * The idea is that we might get a url which shows info about the publication and as the same ID with the wanted docUrl, but ut just happens to be in a different directory (path).
-	 * So, before going and checking each and every one of the inner links, we should check if by using known paths that gave docUrls before (for the current spesific domain), we are able to take the docUrl immediately.
-	 * Note that we don't send the "domainStr" for the guessedDocUrls here, as at the moment an inner link might not be in the same "full-domain". We don't use TLDs at this moment. TODO - Investigate their potential.
+	 * So, before going and checking each and every one of the internal links, we should check if by using known paths that gave docUrls before (for the current spesific domain), we are able to take the docUrl immediately.
+	 * Note that we don't send the "domainStr" for the guessedDocUrls here, as at the moment an internal link might not be in the same "full-domain". We don't use TLDs at this moment. TODO - Investigate their potential.
 	 * Disclaimer: This is still in experimental stage.
 	 * @param urlId
 	 * @param sourceUrl
@@ -160,7 +160,7 @@ public class MachineLearning
 	 * @param domainStr
 	 * @return true / false
 	 */
-	public static boolean predictInnerDocUrl(String urlId, String sourceUrl, String pageUrl, String domainStr)
+	public static boolean predictInternalDocUrl(String urlId, String sourceUrl, String pageUrl, String domainStr)
 	{
 		String pagePath = null;
 		Matcher urlMatcher = UrlUtils.URL_TRIPLE.matcher(pageUrl);

@@ -38,12 +38,12 @@ public class PageCrawler
 
 	public static final Pattern JAVASCRIPT_DOC_LINK = Pattern.compile("(?:javascript\\:pdflink.*\\')(http.+)(?:\\'\\,.*)");
 	
-	public static int totalPagesReachedCrawling = 0;	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their innerLinks checked.
+	public static int totalPagesReachedCrawling = 0;	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their internalLinks checked.
 	
-	public static final HashMap<String, Integer> timesDomainNotGivingInnerLinks = new HashMap<String, Integer>();
+	public static final HashMap<String, Integer> timesDomainNotGivingInternalLinks = new HashMap<String, Integer>();
 	public static final HashMap<String, Integer> timesDomainNotGivingDocUrls = new HashMap<String, Integer>();
 	
-	public static final int timesToGiveNoInnerLinksBeforeBlocked = 5;
+	public static final int timesToGiveNoInternalLinksBeforeBlocked = 5;
 	public static final int timesToGiveNoDocUrlsBeforeBlocked = 10;
 	
 	
@@ -66,8 +66,8 @@ public class PageCrawler
 		try {	// Get the pageHtml to parse the page.
 			pageHtml = ConnSupportUtils.getHtmlString(conn);
 		} catch (Exception e) {
-			logger.debug("Could not retrieve the innerLinks for pageUrl: " + pageUrl);
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its innerLinks. Its contentType is: '" + pageContentType + "'", null);
+			logger.debug("Could not retrieve the internalLinks for pageUrl: " + pageUrl);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its internalLinks. Its contentType is: '" + pageContentType + "'", null);
 			return;
 		}
 		
@@ -79,12 +79,12 @@ public class PageCrawler
 		if ( MachineLearning.useMLA ) {
 			PageCrawler.totalPagesReachedCrawling ++;	// Used for M.L.A.'s execution-manipulation.
 			if ( MachineLearning.shouldRunPrediction(currentPageDomain) )
-				if ( MachineLearning.predictInnerDocUrl(urlId, sourceUrl, pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
+				if ( MachineLearning.predictInternalDocUrl(urlId, sourceUrl, pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
 					return;	// If we were able to find the right path.. and hit a docUrl successfully.. return. The Quadruple is already logged.
 		}
 		
 		HashSet<String> currentPageLinks = null;
-		if ( (currentPageLinks = retrieveInnerLinks(urlId, sourceUrl, pageUrl, currentPageDomain, pageHtml, pageContentType)) == null )
+		if ( (currentPageLinks = retrieveInternalLinks(urlId, sourceUrl, pageUrl, currentPageDomain, pageHtml, pageContentType)) == null )
 			return;	// The necessary logging is handled inside.
 		
 		HashSet<String> remainingLinks = new HashSet<>();
@@ -95,9 +95,9 @@ public class PageCrawler
 		// Check if urls inside this page, match to a docUrl regex, if they do, try connecting with them and see if they truly are docUrls. If they are, return.
 		for ( String currentLink : currentPageLinks )
 		{
-			// Produce fully functional inner links, NOT inner paths or non-canonicalized.
+			// Produce fully functional internal links, NOT internal paths or non-canonicalized.
 			if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl, StandardCharsets.UTF_8)) == null ) {
-				logger.warn("Could not cannonicalize inner url: " + currentLink);
+				logger.warn("Could not cannonicalize internal url: " + currentLink);
 				UrlUtils.duplicateUrls.add(currentLink);
 				continue;
 			}
@@ -120,12 +120,12 @@ public class PageCrawler
             lowerCaseLink = urlToCheck.toLowerCase();
             if ( LoadAndCheckUrls.DOC_URL_FILTER.matcher(lowerCaseLink).matches() )
 			{
-				if ( UrlTypeChecker.shouldNotAcceptInnerLink(urlToCheck, lowerCaseLink) ) {    // Avoid false-positives, such as images (a common one: ".../pdf.png").
+				if ( UrlTypeChecker.shouldNotAcceptInternalLink(urlToCheck, lowerCaseLink) ) {    // Avoid false-positives, such as images (a common one: ".../pdf.png").
 					UrlUtils.duplicateUrls.add(urlToCheck);
 					continue;	// Disclaimer: This way we might lose some docUrls like this: "http://repositorio.ipen.br:8080/xmlui/themes/Mirage/images/Portaria-387.pdf".
 				}
 				
-				//logger.debug("InnerPossibleDocLink to connect with: " + urlToCheck);	// DEBUG!
+				//logger.debug("InternalPossibleDocLink to connect with: " + urlToCheck);	// DEBUG!
 				try {
 					if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, urlToCheck, currentPageDomain, false, true) )	// We log the docUrl inside this method.
 						return;
@@ -140,9 +140,9 @@ public class PageCrawler
 					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was blocked during crawling.", null);
 					return;
-				} catch (ConnTimeoutException cte) {	// In this case, it's unworthy to stay and check other innerLinks here.
+				} catch (ConnTimeoutException cte) {	// In this case, it's unworthy to stay and check other internalLinks here.
 					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after a potentialDocUrl caused a ConnTimeoutException.");
-					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as an innerLink of this page caused 'ConnTimeoutException'.", null);
+					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as an internalLink of this page caused 'ConnTimeoutException'.", null);
 					return;
 				} catch (Exception e) {	// The exception: "DomainWithUnsupportedHEADmethodException" should never be caught here, as we use "GET" for possibleDocUrls.
 					logger.error("" + e);
@@ -153,18 +153,18 @@ public class PageCrawler
             remainingLinks.add(urlToCheck);	// Add the fully-formed & accepted remaining links into a new hashSet to be iterated.
 		}// end for-loop
 		
-		// If we reached here, it means that we couldn't find a docUrl the quick way.. so we have to check some (we exclude lots of them) of the inner links one by one.
+		// If we reached here, it means that we couldn't find a docUrl the quick way.. so we have to check some (we exclude lots of them) of the internal links one by one.
 		
 		for ( String currentLink : remainingLinks )	// Here we don't re-check already-checked links, as this is a new list.
 		{
 			// We re-check here, as, in the fast-loop not all of the links are checked against this.
-			if ( UrlTypeChecker.shouldNotAcceptInnerLink(currentLink, null) ) {	// If this link matches certain blackListed criteria, move on..
+			if ( UrlTypeChecker.shouldNotAcceptInternalLink(currentLink, null) ) {	// If this link matches certain blackListed criteria, move on..
 				//logger.debug("Avoided link: " + currentLink );
 				UrlUtils.duplicateUrls.add(currentLink);
 				continue;
 			}
 			
-			//logger.debug("InnerLink to connect with: " + currentLink);	// DEBUG!
+			//logger.debug("InternalLink to connect with: " + currentLink);	// DEBUG!
 			try {
 				if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, currentLink, currentPageDomain, false, false) )	// We log the docUrl inside this method.
 					return;
@@ -178,9 +178,9 @@ public class PageCrawler
 				logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was caught to not support the HTTP HEAD method.");
 				UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was caught to not support the HTTP HEAD method.", null);
 				return;
-			} catch (ConnTimeoutException cte) {	// In this case, it's unworthy to stay and check other innerLinks here.
-				logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after an innerLink caused a ConnTimeoutException.");
-				UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as an innerLink of this page caused 'ConnTimeoutException'.", null);
+			} catch (ConnTimeoutException cte) {	// In this case, it's unworthy to stay and check other internalLinks here.
+				logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after an internalLink caused a ConnTimeoutException.");
+				UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as an internalLink of this page caused 'ConnTimeoutException'.", null);
 				return;
 			} catch (RuntimeException e) {
 				// No special handling here.. nor logging..
@@ -222,19 +222,19 @@ public class PageCrawler
 					//logger.debug("MetaDocUrl: " + metaDocUrl);	// DEBUG!
 					if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, currentPageDomain, false, true) )	// We log the docUrl inside this method.
 						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved metaDocUrl was not a docUrl.", null);
-					return true; 	// It should be the docUrl and it was handled.. so we don't continue checking the innerLink even if this wasn't a docUrl.
+					return true; 	// It should be the docUrl and it was handled.. so we don't continue checking the internalLink even if this wasn't a docUrl.
 				}
 			}
 			else
 				return false;	// It was not handled.
 		} catch (Exception e) {	// After connecting to the metaDocUrl.
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag url.", null);
-			return true;	// It was found and handled. Even if an exception was thrown, we don't want to check any other innerLinks in that page.
+			return true;	// It was found and handled. Even if an exception was thrown, we don't want to check any other internalLinks in that page.
 		}
 	}
 	
 	
-	public static HashSet<String> retrieveInnerLinks(String urlId, String sourceUrl, String pageUrl, String currentPageDomain, String pageHtml, String pageContentType)
+	public static HashSet<String> retrieveInternalLinks(String urlId, String sourceUrl, String pageUrl, String currentPageDomain, String pageHtml, String pageContentType)
 	{
 		HashSet<String> currentPageLinks = null;
 		try {
@@ -243,8 +243,8 @@ public class PageCrawler
 			handleJavaScriptDocLink(urlId, sourceUrl, pageUrl, currentPageDomain, pageContentType, jsdlfe);
 			return null;	// This JavaScriptDocLink is the only docLink we will ever gonna get from this page. The sourceUrl is logged inside the called method.
 		} catch (Exception e) {
-			logger.debug("Could not retrieve the innerLinks for pageUrl: " + pageUrl);
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its innerLinks. Its contentType is: '" + pageContentType + "'", null);
+			logger.debug("Could not retrieve the internalLinks for pageUrl: " + pageUrl);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its internalLinks. Its contentType is: '" + pageContentType + "'", null);
 			return null;
 		}
 		
@@ -253,13 +253,13 @@ public class PageCrawler
 		if ( currentPageLinks.isEmpty() ) {	// If no links were retrieved (e.g. the pageUrl was some kind of non-page binary content)
 			logger.warn("No links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, as no links were able to be retrieved from it. Its contentType is: '" + pageContentType + "'", null);
-			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingInnerLinks, currentPageDomain, PageCrawler.timesToGiveNoInnerLinksBeforeBlocked) )
-				logger.debug("Domain: " + currentPageDomain + " was blocked after giving no innerLinks more than " + PageCrawler.timesToGiveNoInnerLinksBeforeBlocked + " times.");
+			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingInternalLinks, currentPageDomain, PageCrawler.timesToGiveNoInternalLinksBeforeBlocked) )
+				logger.debug("Domain: " + currentPageDomain + " was blocked after giving no internalLinks more than " + PageCrawler.timesToGiveNoInternalLinksBeforeBlocked + " times.");
 			return null;
 		}
 		
 		//if ( pageUrl.contains(<keyWord> | <url>) )	// In case we want to print only on specific-pageTypes.
-			//printInnerLinksForDebugging(currentPageLinks);
+			//printInternalLinksForDebugging(currentPageLinks);
 		
 		return currentPageLinks;
 	}
@@ -269,18 +269,18 @@ public class PageCrawler
 	{
 		HashSet<String> urls = new HashSet<>();
 		
-		// Get the innerLinks using "Jsoup".
+		// Get the internalLinks using "Jsoup".
 		Document document = Jsoup.parse(pageHtml);
 		Elements linksOnPage = document.select("a[href]");
 		
 		for ( Element el : linksOnPage ) {
-			String innerLink = el.attr("href");
-			if ( !innerLink.isEmpty()
-					&& !innerLink.equals("\\/") && !innerLink.equals("#")
-					&& !innerLink.startsWith("mailto:") && !innerLink.startsWith("tel:") && !innerLink.startsWith("{openurl}") ) {
+			String internalLink = el.attr("href");
+			if ( !internalLink.isEmpty()
+					&& !internalLink.equals("\\/") && !internalLink.equals("#")
+					&& !internalLink.startsWith("mailto:") && !internalLink.startsWith("tel:") && !internalLink.startsWith("{openurl}") ) {
 				
-				//logger.debug("InnerLink: " + innerLink);
-				String lowerCaseLink = innerLink.toLowerCase();
+				//logger.debug("InternalLink: " + internalLink);
+				String lowerCaseLink = internalLink.toLowerCase();
 				if ( lowerCaseLink.startsWith("javascript:") ) {
 					String pdfLink = null;
 					Matcher pdfLinkMatcher = JAVASCRIPT_DOC_LINK.matcher(lowerCaseLink);
@@ -291,7 +291,7 @@ public class PageCrawler
 					else	// It's a javaScriptLink which we don't treat.
 						continue;
 				}
-				urls.add(innerLink);
+				urls.add(internalLink);
 			}
 		}
 		return urls;
@@ -303,7 +303,7 @@ public class PageCrawler
 		String javaScriptDocLink = jsdlfe.getMessage();
 		if ( javaScriptDocLink == null ) {
 			logger.debug("JavaScriptLink was not retrieved!");
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its innerLinks. Its contentType is: '" + pageContentType + "'", null);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its internalLinks. Its contentType is: '" + pageContentType + "'", null);
 		}
 		else {
 			//logger.debug("Going to check JavaScriptDocLink: " + javaScriptDocLink);	// DEBUG!
@@ -317,7 +317,7 @@ public class PageCrawler
 	}
 	
 	
-	public static void printInnerLinksForDebugging(HashSet<String> currentPageLinks)
+	public static void printInternalLinksForDebugging(HashSet<String> currentPageLinks)
 	{
 		for ( String url : currentPageLinks ) {
 			//if ( url.contains(<keyWord> | <url>) )	// In case we want to print only specific-linkTypes.

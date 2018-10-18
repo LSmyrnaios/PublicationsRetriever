@@ -195,7 +195,7 @@ public class LoadAndCheckUrls
 			return null;
 		}
 		
-		if ( HttpConnUtils.blacklistedDomains.contains(currentUrlDomain) ) {	// Check if it has been blackListed after running inner links' checks.
+		if ( HttpConnUtils.blacklistedDomains.contains(currentUrlDomain) ) {	// Check if it has been blackListed after running internal links' checks.
 			logger.debug("We will avoid to connect to blackListed domain: \"" + currentUrlDomain + "\"");
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' method, as its domain was found blackListed.", null);
 			return null;

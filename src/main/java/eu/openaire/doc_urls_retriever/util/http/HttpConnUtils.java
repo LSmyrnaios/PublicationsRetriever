@@ -37,13 +37,13 @@ public class HttpConnUtils
 	public static final int maxConnHEADWaitingTime = 15000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
 	
 	private static final int maxRedirectsForPageUrls = 7;// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
-	private static final int maxRedirectsForInnerLinks = 2;	// Inner-DOC-Links shouldn't take more than 2 redirects.
+	private static final int maxRedirectsForInternalLinks = 2;	// Internal-DOC-Links shouldn't take more than 2 redirects.
 	
     private static final int timesToReturnNoTypeBeforeBlocked = 10;
 	private static final int timesToHaveNoDocNorPageInputBeforeBlocked = 10;
     
 	public static final int maxAllowedContentSize = 1073741824;	// 1Gb
-	private static final boolean shouldNOTacceptGETmethodForUncategorizedInnerLinks = true;
+	private static final boolean shouldNOTacceptGETmethodForUncategorizedInternalLinks = true;
 	
 	
 	/**
@@ -52,7 +52,7 @@ public class HttpConnUtils
 	 * @param urlId
 	 * @param sourceUrl	// The inputUrl
 	 * @param pageUrl	// May be the inputUrl or a redirected version of it.
-	 * @param resourceURL	// May be the inputUrl or an innerLink of that inputUrl.
+	 * @param resourceURL	// May be the inputUrl or an internalLink of that inputUrl.
 	 * @param domainStr
 	 * @param calledForPageUrl
 	 * @param calledForPossibleDocUrl
@@ -111,7 +111,7 @@ public class HttpConnUtils
 				return true;
 			}
 			else if ( calledForPageUrl ) {	// Visit this url only if this method was called for an inputUrl.
-				if ( finalUrlStr.contains("viewcontent.cgi") ) {	// If this "viewcontent.cgi" isn't a docUrl, then don't check its innerLinks. Check this: "https://docs.lib.purdue.edu/cgi/viewcontent.cgi?referer=&httpsredir=1&params=/context/physics_articles/article/1964/type/native/&path_info="
+				if ( finalUrlStr.contains("viewcontent.cgi") ) {	// If this "viewcontent.cgi" isn't a docUrl, then don't check its internalLinks. Check this: "https://docs.lib.purdue.edu/cgi/viewcontent.cgi?referer=&httpsredir=1&params=/context/physics_articles/article/1964/type/native/&path_info="
 					logger.warn("Unwanted pageUrl: \"" + finalUrlStr + "\" will not be visited!");
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to a non-docUrl with 'viewcontent.cgi'.", domainStr);
 					return false;
@@ -128,7 +128,7 @@ public class HttpConnUtils
 		} catch (AlreadyFoundDocUrlException afdue) {	// An already-found docUrl was discovered during redirections.
 			return true;	// It's already logged for the outputFile.
 		} catch (RuntimeException re) {
-			if ( calledForPageUrl )	// Log this error only for docPages, not innerLinks.
+			if ( calledForPageUrl )	// Log this error only for docPages, not internalLinks.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
 			throw re;
 		} catch (DomainBlockedException | DomainWithUnsupportedHEADmethodException | ConnTimeoutException e) {
@@ -191,8 +191,8 @@ public class HttpConnUtils
 		    	throw new RuntimeException();
 			}
 			
-			// Check whether we don't accept "GET" method for uncategorizedInnerLinks and if this url is such a case.
-			if ( shouldNOTacceptGETmethodForUncategorizedInnerLinks
+			// Check whether we don't accept "GET" method for uncategorizedInternalLinks and if this url is such a case.
+			if ( shouldNOTacceptGETmethodForUncategorizedInternalLinks
 				&& !calledForPossibleDocUrl && domainsWithUnsupportedHeadMethod.contains(domainStr) )
 				throw new DomainWithUnsupportedHEADmethodException();
 			
@@ -237,7 +237,7 @@ public class HttpConnUtils
 				// This domain doesn't support "HEAD" method, log it and then check if we can retry with "GET" or not.
 				domainsWithUnsupportedHeadMethod.add(domainStr);
 				
-				if ( shouldNOTacceptGETmethodForUncategorizedInnerLinks && !calledForPossibleDocUrl )	// If we set not to retry with "GET" when we try uncategorizedInnerLinks, throw the related exception and stop the crawling of this page.
+				if ( shouldNOTacceptGETmethodForUncategorizedInternalLinks && !calledForPossibleDocUrl )	// If we set not to retry with "GET" when we try uncategorizedInternalLinks, throw the related exception and stop the crawling of this page.
 					throw new DomainWithUnsupportedHEADmethodException();
 				
 				// If we accept connection's retrying, using "GET", move on reconnecting.
@@ -324,7 +324,7 @@ public class HttpConnUtils
 	 * @param urlId
 	 * @param sourceUrl
 	 * @param pageUrl
-	 * @param innerLink
+	 * @param internalLink
 	 * @param conn
 	 * @param responceCode
 	 * @param domainStr
@@ -337,7 +337,7 @@ public class HttpConnUtils
 	 * @throws DomainBlockedException
 	 * @throws DomainWithUnsupportedHEADmethodException
 	 */
-	public static HttpURLConnection handleRedirects(String urlId, String sourceUrl, String pageUrl, String innerLink, HttpURLConnection conn, int responceCode, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
+	public static HttpURLConnection handleRedirects(String urlId, String sourceUrl, String pageUrl, String internalLink, HttpURLConnection conn, int responceCode, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
 																			throws AlreadyFoundDocUrlException, RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
 	{
 		int curRedirectsNum = 0;
@@ -350,9 +350,9 @@ public class HttpConnUtils
 			initialUrl = sourceUrl;	// Keep initialUrl for logging and debugging.
 			urlType = "pageUrl";
 		} else {
-			maxRedirects = maxRedirectsForInnerLinks;
-			initialUrl = innerLink;
-			urlType = "innerLink";
+			maxRedirects = maxRedirectsForInternalLinks;
+			initialUrl = internalLink;
+			urlType = "internalLink";
 		}
 		
 		try {
@@ -379,7 +379,7 @@ public class HttpConnUtils
 							throw new RuntimeException();
 						}
 					}
-					else if ( UrlTypeChecker.shouldNotAcceptInnerLink(location, lowerCaseLocation) ) {	// Else we are redirecting an innerPageLink.
+					else if ( UrlTypeChecker.shouldNotAcceptInternalLink(location, lowerCaseLocation) ) {	// Else we are redirecting an internalPageLink.
 						logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 						throw new RuntimeException();
 					} else if ( lowerCaseLocation.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".

@@ -26,16 +26,16 @@ public class UrlTypeChecker
 	
 	public static final Pattern PAGE_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|xml|rdf|bib|nt|refer|enw|ris|n3|csv|tsv|mso|dtl|svg|asc|txt|c|cc|cxx|cpp|java|py|xls(?:[\\w])?)(?:\\?.+)?$");
 	
-	public static final Pattern INNER_LINKS_KEYWORDS_FILTER = Pattern.compile(".*(?:doi.org|mailto:|\\?l(?:a)?n(?:g)?=|isallowed=n|site=|linkout|login|LinkListener).*");	// Plain key-words inside innerLinks-String. We avoid "doi.org" in inner links, as, after many redirects, they will reach the same pageUrl.
+	public static final Pattern INTERNAL_LINKS_KEYWORDS_FILTER = Pattern.compile(".*(?:doi.org|mailto:|\\?l(?:a)?n(?:g)?=|isallowed=n|site=|linkout|login|LinkListener).*");	// Plain key-words inside internalLinks-String. We avoid "doi.org" in internal links, as, after many redirects, they will reach the same pageUrl.
 	// The diff with the "login" being here, in compare with being in "URL_DIRECTORY_FILTER"-regex, is that it can be found in a random place inside a url.. not just as a directory..
 	
-	public static final Pattern INNER_LINKS_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|xml|rdf|bib|nt|refer|enw|ris|n3|csv|tsv|mso|dtl|svg|do|asc|txt|c|cc|cxx|cpp|java|py|xls(?:[\\w])?)(?:\\?.+)?$");
+	public static final Pattern INTERNAL_LINKS_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|xml|rdf|bib|nt|refer|enw|ris|n3|csv|tsv|mso|dtl|svg|do|asc|txt|c|cc|cxx|cpp|java|py|xls(?:[\\w])?)(?:\\?.+)?$");
 	// In the above, don't include .php and relative extensions, since even this can be a docUrl. For example: https://www.dovepress.com/getfile.php?fileID=5337
 	
 	// So, we make a new REGEX for these extensions, this time, without a potential argument in the end (e.g. ?id=XXX..), except for the potential "lang".
 	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:php|php2|php3|php4|php5|phtml|htm|html|shtml|xht|xhtm|xhtml|xml|rdf|bib|nt|refer|enw|ris|n3|csv|tsv|aspx|asp|jsp|do|asc|xls(?:[\\w])?)$");
 	
-	public static final Pattern INNER_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+format=(?:xml|htm|html|shtml|xht|xhtm|xhtml).*");
+	public static final Pattern INTERNAL_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+format=(?:xml|htm|html|shtml|xht|xhtm|xhtml).*");
 	
 	public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile(".+:\\/\\/.*(?:google|goo.gl|gstatic|facebook|twitter|youtube|linkedin|wordpress|s.w.org|ebay|bing|amazon\\.|wikipedia|myspace|yahoo|mail|pinterest|reddit|blog|tumblr"
 			+ "|evernote|skype|microsoft|adobe|buffer|digg|stumbleupon|addthis|delicious|dailymotion|gostats|blogger|copyright|friendfeed|newsvine|telegram|getpocket"
@@ -58,7 +58,7 @@ public class UrlTypeChecker
 	public static int doajResultPageUrls = 0;
 	public static int pagesWithHtmlDocUrls = 0;
 	public static int pagesRequireLoginToAccessDocFiles = 0;
-	public static int pagesWithLargerCrawlingDepth = 0;	// Pages with their docUrl behind an inner "view" page.
+	public static int pagesWithLargerCrawlingDepth = 0;	// Pages with their docUrl behind an internal "view" page.
 	public static int longToRespondUrls = 0;	// Urls belonging to domains which take too long to respon
 	public static int urlsWithUnwantedForm = 0;	// (plain domains, unwanted page-extensions ect.)
 	public static int pangaeaUrls = 0;	// These urls are in false form by default, but even if they weren't or we transform them, PANGAEA. only gives datasets, not fulltext.
@@ -114,14 +114,14 @@ public class UrlTypeChecker
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("/view/") || lowerCaseUrl.contains("scielosp.org") || lowerCaseUrl.contains("dk.um.si") || lowerCaseUrl.contains("apospublications.com")
-				|| lowerCaseUrl.contains("jorr.org") || lowerCaseUrl.contains("redalyc.org") ) {	// Avoid crawling pages with larger depth (innerPagesToDocUrls or Previews of docUrls).
+				|| lowerCaseUrl.contains("jorr.org") || lowerCaseUrl.contains("redalyc.org") ) {	// Avoid crawling pages with larger depth (internalPagesToDocUrls or Previews of docUrls).
 			pagesWithLargerCrawlingDepth ++;
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to an increasedCrawlingDepth-site.", null);
 			return true;
 		}
-		else if ( lowerCaseUrl.contains("doi.org/https://doi.org/") && lowerCaseUrl.contains("pangaea.") ) {	// PANGAEA. urls with problematic form and non docUrl inner links.
+		else if ( lowerCaseUrl.contains("doi.org/https://doi.org/") && lowerCaseUrl.contains("pangaea.") ) {	// PANGAEA. urls with problematic form and non docUrl internal links.
 			pangaeaUrls ++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to 'PANGAEA.' urls with invalid form and non-docUrls in their inner links.", null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to 'PANGAEA.' urls with invalid form and non-docUrls in their internal links.", null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("200.17.137.108") ) {	// Known domains with connectivity problems.
@@ -178,7 +178,7 @@ public class UrlTypeChecker
 	}
 	
 	
-	public static boolean shouldNotAcceptInnerLink(String linkStr, String lowerCaseLink)
+	public static boolean shouldNotAcceptInternalLink(String linkStr, String lowerCaseLink)
 	{
 		String lowerCaseUrl = null;
 		
@@ -187,9 +187,9 @@ public class UrlTypeChecker
 		else
 			lowerCaseUrl = lowerCaseLink;
 		
-		return	URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() || INNER_LINKS_KEYWORDS_FILTER.matcher(lowerCaseUrl).matches()
+		return	URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() || INTERNAL_LINKS_KEYWORDS_FILTER.matcher(lowerCaseUrl).matches()
 				|| SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() || PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
-				|| INNER_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches() || INNER_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseUrl).matches()
+				|| INTERNAL_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches() || INTERNAL_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseUrl).matches()
 				|| PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches()
 				|| CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseUrl).matches();	// TODO - To be removed when these docExtensions get supported.
 		
