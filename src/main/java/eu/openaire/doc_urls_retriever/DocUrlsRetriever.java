@@ -1,9 +1,8 @@
 package eu.openaire.doc_urls_retriever;
 
-import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
-import eu.openaire.doc_urls_retriever.util.url.LoadAndCheckUrls;
+import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
@@ -33,8 +32,8 @@ public class DocUrlsRetriever
 		new FileUtils(System.in, System.out);
 		
 		try {
-			new CrawlerController();
-		} catch (RuntimeException e) {  // In case there was no input, or on Crawler4j's failure to be initialized, there will be thrown a RuntimeException, after logging the cause.
+			new LoaderAndChecker();
+		} catch (RuntimeException e) {  // In case there was no input, a RuntimeException will be thrown, after logging the cause.
 			String errorMessage = "There was a serious error! Output data is affected! Exiting..";
 			System.err.println(errorMessage);
 			logger.error(errorMessage);
@@ -109,8 +108,8 @@ public class DocUrlsRetriever
 	public static void showStatistics()
 	{
 		long inputCheckedUrlNum = 0;
-		if ( CrawlerController.useIdUrlPairs )
-			inputCheckedUrlNum = LoadAndCheckUrls.numOfIDs;	// For each ID we check only one of its urls anyway.
+		if ( LoaderAndChecker.useIdUrlPairs )
+			inputCheckedUrlNum = LoaderAndChecker.numOfIDs;	// For each ID we check only one of its urls anyway.
 		else {
 			inputCheckedUrlNum = FileUtils.getCurrentlyLoadedUrls();
 			if ( (FileUtils.skipFirstRow && (inputCheckedUrlNum < 0)) || (!FileUtils.skipFirstRow && (inputCheckedUrlNum == 0)) ) {
@@ -141,14 +140,14 @@ public class DocUrlsRetriever
 		logger.info("About: " + UrlTypeChecker.pagesRequireLoginToAccessDocFiles * (float)100 / inputCheckedUrlNum + "% (" + UrlTypeChecker.pagesRequireLoginToAccessDocFiles + " urls) were of domains which are known to require login to access docFiles, thus, they were blocked before being connected.");
 		logger.info("About: " + UrlTypeChecker.pagesWithLargerCrawlingDepth * (float)100 / inputCheckedUrlNum + "% (" + UrlTypeChecker.pagesWithLargerCrawlingDepth + " urls) were docPages which have their docUrl deeper inside their server, thus being currently avoided.");
 		logger.info("About: " + UrlTypeChecker.pangaeaUrls * (float)100 / inputCheckedUrlNum + "% (" + UrlTypeChecker.pangaeaUrls + " urls) were \"PANGAEA.\" with invalid form and non-docUrls in their internal links.");
-		logger.info("About: " + LoadAndCheckUrls.connProblematicUrls * (float)100 / inputCheckedUrlNum + "% (" + LoadAndCheckUrls.connProblematicUrls + " urls) were pages which had connectivity problems.");
+		logger.info("About: " + LoaderAndChecker.connProblematicUrls * (float)100 / inputCheckedUrlNum + "% (" + LoaderAndChecker.connProblematicUrls + " urls) were pages which had connectivity problems.");
 		logger.info("About: " + UrlTypeChecker.pagesNotProvidingDocUrls * (float)100 / inputCheckedUrlNum + "% (" + UrlTypeChecker.pagesNotProvidingDocUrls + " urls) were pages which are known to not provide docUrls.");
 		logger.info("About: " + UrlTypeChecker.longToRespondUrls * (float)100 / inputCheckedUrlNum + "% (" + UrlTypeChecker.longToRespondUrls + " urls) were urls which belong to domains which take too long to respond.");
 		logger.info("About: " + UrlTypeChecker.urlsWithUnwantedForm * (float)100 / inputCheckedUrlNum + "% (" + UrlTypeChecker.urlsWithUnwantedForm + " urls) were urls which are plain-domains, have unwanted url-extensions, ect...");
-		logger.info("About: " + LoadAndCheckUrls.inputDuplicatesNum * (float)100 / inputCheckedUrlNum + "% (" + LoadAndCheckUrls.inputDuplicatesNum + " urls) were duplicates in the input file.");
+		logger.info("About: " + LoaderAndChecker.inputDuplicatesNum * (float)100 / inputCheckedUrlNum + "% (" + LoaderAndChecker.inputDuplicatesNum + " urls) were duplicates in the input file.");
 		
 		long problematicUrlsNum = UrlTypeChecker.crawlerSensitiveDomains + UrlTypeChecker.javascriptPageUrls /*+ UrlTypeChecker.sciencedirectUrls*/ + UrlTypeChecker.elsevierUnwantedUrls + UrlTypeChecker.doajResultPageUrls + UrlTypeChecker.pagesWithHtmlDocUrls + UrlTypeChecker.pagesRequireLoginToAccessDocFiles
-				+ UrlTypeChecker.pagesWithLargerCrawlingDepth + UrlTypeChecker.pangaeaUrls + UrlTypeChecker.urlsWithUnwantedForm + LoadAndCheckUrls.connProblematicUrls + UrlTypeChecker.pagesNotProvidingDocUrls + UrlTypeChecker.longToRespondUrls + LoadAndCheckUrls.inputDuplicatesNum;
+				+ UrlTypeChecker.pagesWithLargerCrawlingDepth + UrlTypeChecker.pangaeaUrls + UrlTypeChecker.urlsWithUnwantedForm + LoaderAndChecker.connProblematicUrls + UrlTypeChecker.pagesNotProvidingDocUrls + UrlTypeChecker.longToRespondUrls + LoaderAndChecker.inputDuplicatesNum;
 		logger.info("From the " + inputCheckedUrlNum + " urls checked from the input, the " + problematicUrlsNum + " of them (about " + problematicUrlsNum * (float)100 / inputCheckedUrlNum + "%) were problematic (sum of the all of the above cases).");
 		
 		logger.info("The number of domains blocked due to an \"SSL Exception\" was: " + HttpConnUtils.domainsBlockedDueToSSLException);

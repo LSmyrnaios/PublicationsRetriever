@@ -1,7 +1,7 @@
 package eu.openaire.doc_urls_retriever.test;
 
 import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
-import eu.openaire.doc_urls_retriever.crawler.CrawlerController;
+import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -80,8 +80,8 @@ public class TestNonStandardInputOutput  {
 		}
 		
 		try {
-			new CrawlerController();
-		} catch (RuntimeException e) {  // In case there was no input, or on Crawler4j's failure to be initialized, there will be thrown a RuntimeException, after logging the cause.
+			new LoaderAndChecker();
+		} catch (RuntimeException e) {  // In case there was no input, a RuntimeException will be thrown, after logging the cause.
 			String errorMessage = "There was a serious error! Output data is affected! Exiting..";
 			System.err.println(errorMessage);
 			logger.error(errorMessage);

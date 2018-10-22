@@ -15,7 +15,7 @@ import eu.openaire.doc_urls_retriever.exceptions.JavaScriptDocLinkFoundException
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
-import eu.openaire.doc_urls_retriever.util.url.LoadAndCheckUrls;
+import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.jsoup.Jsoup;
@@ -118,7 +118,7 @@ public class PageCrawler
             }
             
             lowerCaseLink = urlToCheck.toLowerCase();
-            if ( LoadAndCheckUrls.DOC_URL_FILTER.matcher(lowerCaseLink).matches() )
+            if ( LoaderAndChecker.DOC_URL_FILTER.matcher(lowerCaseLink).matches() )
 			{
 				if ( UrlTypeChecker.shouldNotAcceptInternalLink(urlToCheck, lowerCaseLink) ) {    // Avoid false-positives, such as images (a common one: ".../pdf.png").
 					UrlUtils.duplicateUrls.add(urlToCheck);

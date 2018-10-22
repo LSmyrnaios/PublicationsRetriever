@@ -125,7 +125,7 @@ public class UrlTypeChecker
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("200.17.137.108") ) {	// Known domains with connectivity problems.
-			LoadAndCheckUrls.connProblematicUrls ++;
+			LoaderAndChecker.connProblematicUrls ++;
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to known urls with connectivity problems.", null);
 			return true;
 		}

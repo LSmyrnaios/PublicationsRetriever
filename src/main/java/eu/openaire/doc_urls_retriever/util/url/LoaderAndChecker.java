@@ -18,9 +18,11 @@ import java.util.regex.Pattern;
  * This class contains the "loadAndCheck" code for the URLs.
  * @author Lampros A. Smyrnaios
  */
-public class LoadAndCheckUrls
+public class LoaderAndChecker
 {
-	private static final Logger logger = LoggerFactory.getLogger(LoadAndCheckUrls.class);
+	private static final Logger logger = LoggerFactory.getLogger(LoaderAndChecker.class);
+	
+	public static boolean useIdUrlPairs = true;
 	
 	public static final Pattern DOC_URL_FILTER = Pattern.compile(".+(pdf|download|/doc|document|(?:/|[?]|&)file|/fulltext|attachment|/paper|viewfile|viewdoc|/get|cgi/viewcontent.cgi?).*");
 	// "DOC_URL_FILTER" works for lowerCase Strings (we make sure they are in lowerCase before we check).
@@ -29,6 +31,31 @@ public class LoadAndCheckUrls
 	public static int numOfIDs = 0;	// The number of IDs existing in the input.
 	public static int connProblematicUrls = 0;	// Urls known to have connectivity problems, such as long conn-times etc.
 	public static int inputDuplicatesNum = 0;
+	
+	
+	public LoaderAndChecker() throws RuntimeException
+	{
+		logger.info("Starting DocUrlsRetriever..");
+		
+		try {
+			if ( useIdUrlPairs )
+				loadAndCheckIdUrlPairs();
+			else
+				loadAndCheckUrls();
+			
+		} catch (Exception e) {
+			logger.error("", e);
+			throw new RuntimeException(e);
+		}
+		finally {
+			// Write any remaining urls from memory to disk.
+			if ( !FileUtils.quadrupleToBeLoggedOutputList.isEmpty() ) {
+				logger.debug("Writing last set(s) of (\"SourceUrl\", \"DocUrl\"), to disk.");
+				FileUtils.writeToFile();
+			}
+		}
+	}
+	
 	
 	/**
 	 * This method loads the urls from the input file in memory and check their type.
@@ -217,7 +244,7 @@ public class LoadAndCheckUrls
 		// Check if it's a duplicate.
 		if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
 			logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already been seen!");
-			LoadAndCheckUrls.inputDuplicatesNum ++;
+			inputDuplicatesNum ++;
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "duplicate", "Discarded in 'UrlUtils.handleUrlChecks()', as it's a duplicate.", null);
 			return null;
 		}
