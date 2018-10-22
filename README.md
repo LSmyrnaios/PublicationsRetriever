@@ -27,7 +27,7 @@ To run the application you should navigate to the ***target*** directory, which 
 **Run tests with custom input/output:**<br/>
 - Inside ***pom.xml***, change the **mainClass** of **maven-shade-plugin** from "**DocUrlsRetriever**" to "**TestNonStandardInputOutput**".
 - Inside ***src/test/.../TestNonStandardInputOutput.java***, give the wanted testInput and testOutput files.<br/>
-- Inside ***CrawlerController()*** , choose the wanted input-handling method: either ***LoadAndCheckUrls.loadAndCheckIdUrlPairs()*** or the ***LoadAndCheckUrls.loadAndCheckUrls()*** .<br/>
+- Inside ***LoaderAndChecker()***, choose the wanted input-handling method: either the ***loadAndCheckIdUrlPairs()*** or the ***loadAndCheckUrls()***, by switching the *member-variable*: "**useIdUrlPairs**" between "*true*" and "*false*".<br/>
 - If you want to see the logging-messages in the *Console*, open the ***resources/logback.xml*** and change the ***appender-ref***, from ***File*** to ***Console***.<br/>
 - Run ``mvn install`` to create the new ***JAR*** file.<br/>
 - Execute the program with the following command:<br/>
