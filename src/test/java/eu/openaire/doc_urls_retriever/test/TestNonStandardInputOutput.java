@@ -21,6 +21,9 @@ public class TestNonStandardInputOutput  {
 	
 	private static final Logger logger = LoggerFactory.getLogger(TestNonStandardInputOutput.class);
 	
+	private static File inputFile = new File(System.getProperty("user.dir") + File.separator + "testing/sampleCleanUrls3000.json");
+	private static File outputFile = new File(System.getProperty("user.dir") + File.separator + "testing/testOutputFile.json");
+	
 	
 	@Disabled	// as we want to run it only on demand, since it's a huge test. Same for the following tests of this class.
 	@Test
@@ -70,13 +73,17 @@ public class TestNonStandardInputOutput  {
 		
 		// Use testing input/output files.
 		try {
-			new FileUtils(new FileInputStream(new File(System.getProperty("user.dir") + File.separator + "testing/sampleCleanUrls3000.json")),
-							new FileOutputStream(new File(System.getProperty("user.dir") + File.separator + "testing/testOutputFile.json")));
+			new FileUtils(new FileInputStream(inputFile), new FileOutputStream(outputFile));
 		} catch (FileNotFoundException e) {
 			String errorMessage = "InputFile not found!";
 			System.err.println(errorMessage);
 			logger.error(errorMessage, e);
 			System.exit(-4);
+		} catch (NullPointerException npe) {
+			String errorMessage = "No input and/or output file(s) w(as/ere) given!";
+			System.err.println(errorMessage);
+			logger.error(errorMessage, npe);
+			System.exit(-5);
 		}
 		
 		try {
@@ -85,7 +92,7 @@ public class TestNonStandardInputOutput  {
 			String errorMessage = "There was a serious error! Output data is affected! Exiting..";
 			System.err.println(errorMessage);
 			logger.error(errorMessage);
-			System.exit(-5);
+			System.exit(-6);
 		}
 		
 		DocUrlsRetriever.showStatistics();
