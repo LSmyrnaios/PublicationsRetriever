@@ -10,9 +10,9 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * This class contains the entry-point of this program. It calls methods to receive the url(s) (docPages) from an input file.
- * It then define from its HTTP-Header, if it's a download-ready file, or it needs further research with an html crawler.
- * After crawling is done, the results (docUrls) are written in the output file.
+ * This class contains the entry-point of this program, the "main()" method.
+ * The "main()" method calls other methods to set the input/output streams and retrieve the docUrls for each docPage in the inputFile.
+ * In the end, the outputFile consists of docPages along with their docUrls.
  * @author Lampros A. Smyrnaios
  */
 public class DocUrlsRetriever
@@ -21,7 +21,7 @@ public class DocUrlsRetriever
 	
 	private static int initialNumOfDocFile = 0;
 	
-	public static  boolean docFilesStorageGivenByUser = false;
+	public static boolean docFilesStorageGivenByUser = false;
 	
 	
     public static void main( String[] args )
@@ -47,10 +47,10 @@ public class DocUrlsRetriever
     }
     
 	
-	public static void parseArgs(String[] args)
+	public static void parseArgs(String[] mainArgs)
 	{
-		if ( args.length > 5 ) {
-			String errMessage = "\"DocUrlsRetriever\" expected only up to 5 args, while you gave: " + args.length + "!";
+		if ( mainArgs.length > 5 ) {
+			String errMessage = "\"DocUrlsRetriever\" expected only up to 5 arguments, while you gave: " + mainArgs.length + "!";
 			logger.error(errMessage);
 			System.err.println(errMessage
 					+ "\nUsage: java -jar doc_urls_retriever-<VERSION>.jar -downloadDocFiles(OPTIONAL) -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' < 'input' > 'output'");
@@ -60,9 +60,9 @@ public class DocUrlsRetriever
 		boolean downloadDocFiles = false;
 		boolean firstNumGiven = false;
 		
-		for ( short i=0; i < args.length; i++ )
+		for ( short i=0; i < mainArgs.length; i++ )
 		{
-			switch ( args[i] )
+			switch ( mainArgs[i] )
 			{
 				case "-downloadDocFiles":
 					downloadDocFiles = true;
@@ -71,23 +71,23 @@ public class DocUrlsRetriever
 				case "-firstDocFileNum":
 					try {
 						i ++;
-						DocUrlsRetriever.initialNumOfDocFile = Integer.parseInt(args[i]);
+						DocUrlsRetriever.initialNumOfDocFile = Integer.parseInt(mainArgs[i]);
 						FileUtils.numOfDocFile = DocUrlsRetriever.initialNumOfDocFile;
 						firstNumGiven = true;
 						break;
 					} catch (NumberFormatException nfe) {
-						String errorMessage = "Argument \"-firstDocFileNum\" must be followed by an integer value! Given one was: \"" + args[i] + "\"";
+						String errorMessage = "Argument \"-firstDocFileNum\" must be followed by an integer value! Given one was: \"" + mainArgs[i] + "\"";
 						System.err.println(errorMessage);
 						logger.error(errorMessage);
 						System.exit(-3);
 					}
 				case "-docFilesStorage":
 					i ++;
-					FileUtils.storeDocFilesDir = args[i];
+					FileUtils.storeDocFilesDir = mainArgs[i];
 					DocUrlsRetriever.docFilesStorageGivenByUser = true;
 					break;
 				default:	// log & ignore arg
-					String errMessage = "Argument: \"" + args[i] + "\" was not expected!";
+					String errMessage = "Argument: \"" + mainArgs[i] + "\" was not expected!";
 					System.err.println(errMessage);
 					logger.error(errMessage);
 					break;

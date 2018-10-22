@@ -294,7 +294,7 @@ public class HttpConnUtils
 			if ( conn != null )
 				conn.disconnect();
 			// TODO - For "SSLProtocolException", see more about it's possible handling here: https://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0/14884941#14884941
-			// TODO - Maybe I should make another list where only urls in https, from these domains, would be blocked.
+			// TODO - Maybe we should make another list where only urls in https, from these domains, would be blocked.
 			blacklistedDomains.add(domainStr);
 			domainsBlockedDueToSSLException ++;
 			throw new DomainBlockedException();

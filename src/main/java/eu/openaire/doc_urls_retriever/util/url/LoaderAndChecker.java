@@ -58,9 +58,10 @@ public class LoaderAndChecker
 	
 	
 	/**
-	 * This method loads the urls from the input file in memory and check their type.
+	 * This method loads the urls from the input file in memory, in packs.
+	 * If the loaded urls pass some checks, then they get connected to retrieve the docUrls
 	 * Then, the loaded urls will either reach the connection point, were they will be checked for a docMimeType or they will be send directly for crawling.
-	 * @throws RuntimeException
+	 * @throws RuntimeException if no input-urls were retrieved.
 	 */
 	public static void loadAndCheckUrls() throws RuntimeException
 	{
@@ -100,9 +101,9 @@ public class LoaderAndChecker
 	
 	
 	/**
-	 * This method loads the id-url pairs from the input file, in memory and check them. TODO - Add/Optimize documentation.
-	 * Then, the loaded urls will either reach the connection point, were they will be checked for a docMimeType or they will be send directly for crawling.
-	 * @throws RuntimeException
+	 * This method loads the id-url pairs from the input file in memory, in packs.
+	 * Then, it groups them per ID and selects the best url -after checks- of each-ID to connect-with and retrieve the docUrl.
+	 * @throws RuntimeException if no input-urls were retrieved.
 	 */
 	public static void loadAndCheckIdUrlPairs() throws RuntimeException
 	{
@@ -261,6 +262,15 @@ public class LoaderAndChecker
 	}
 	
 	
+	/**
+	 * This method checks if there is no more input-data and returns true in that case.
+	 * Otherwise, it returns false, if there is more input-data to be loaded.
+	 * A "RuntimeException" is thrown if no input-urls were retrieved in general.
+	 * @param isEmptyOfData
+	 * @param isFirstRun
+	 * @return finished loading / not finished
+	 * @throws RuntimeException
+	 */
 	public static boolean isFinishedLoading(boolean isEmptyOfData, boolean isFirstRun) throws RuntimeException
 	{
 		if ( isEmptyOfData ) {
