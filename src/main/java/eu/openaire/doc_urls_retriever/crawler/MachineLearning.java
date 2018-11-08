@@ -26,9 +26,6 @@ public class MachineLearning
 	private static final Logger logger = LoggerFactory.getLogger(MachineLearning.class);
 	
 	public static final boolean useMLA = false;	// Should we try the experimental-M.L.A.? This is intended to be like a "global switch", to use or not to use the MLA,  throughout the program's execution.
-	public static final SetMultimap<String, String> successPathsMultiMap = HashMultimap.create();	// Holds multiple values for any key, if a docPagePath(key) has many different docUrlPaths(values) for doc links.
-	public static int docUrlsFoundByMLA = 0;
-	// If we later want to show statistics, we should take into account only the number of the urls to which the MLA was tested against, not all of the urls in the inputFile.
 	
 	private static int latestMLADocUrlsFound = 0;
 	private static float leastSuccessPercentageForMLA = 60;	// The percentage which we want, in order to continue running the MLA.
@@ -41,9 +38,13 @@ public class MachineLearning
 	private static int latestNumOfUrlsBeforePauseMLA = 0;
 	private static int latestSuccessBreakPoint = 0;
 	private static int latestUrlsMLAChecked = 0;
-	private static boolean isInSleepMode = false;
 	private static int timesGatheredData = 0;
 	private static int urlsCheckedWithMLA = 0;
+	private static boolean isInSleepMode = false;
+	
+	public static final SetMultimap<String, String> successPathsMultiMap = HashMultimap.create();	// Holds multiple values for any key, if a docPagePath(key) has many different docUrlPaths(values) for doc links.
+	public static int docUrlsFoundByMLA = 0;
+	// If we later want to show statistics, we should take into account only the number of the urls to which the MLA was tested against, not all of the urls in the inputFile.
 	
 	private static final HashSet<String> domainsBlockedFromMLA = new HashSet<String>();
 	private static final HashMap<String, Integer> timesDomainsFailedInMLA = new HashMap<String, Integer>();
