@@ -49,7 +49,7 @@ public class LoaderAndChecker
 		}
 		finally {
 			// Write any remaining urls from memory to disk.
-			if ( !FileUtils.quadrupleToBeLoggedOutputList.isEmpty() ) {
+			if ( !FileUtils.quadrupleToBeLoggedList.isEmpty() ) {
 				logger.debug("Writing last set(s) of (\"SourceUrl\", \"DocUrl\"), to disk.");
 				FileUtils.writeToFile();
 			}

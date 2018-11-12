@@ -65,9 +65,9 @@ public class UrlUtils
             duplicateUrls.add(sourceUrl);	 // Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future..
         }	// We don't add docUrls here, as we want them to be separate for checking purposes.
 		
-		FileUtils.quadrupleToBeLoggedOutputList.add(new QuadrupleToBeLogged(urlId, sourceUrl, finalDocUrl, comment));	// Log it to be written later in the outputFile.
+		FileUtils.quadrupleToBeLoggedList.add(new QuadrupleToBeLogged(urlId, sourceUrl, finalDocUrl, comment));	// Log it to be written later in the outputFile.
 		
-        if ( FileUtils.quadrupleToBeLoggedOutputList.size() == FileUtils.jsonGroupCount )	// Write to file every time we have a group of <jsonGroupCount> quadruples.
+        if ( FileUtils.quadrupleToBeLoggedList.size() == FileUtils.jsonGroupCount )	// Write to file every time we have a group of <jsonGroupCount> quadruples.
             FileUtils.writeToFile();
     }
     

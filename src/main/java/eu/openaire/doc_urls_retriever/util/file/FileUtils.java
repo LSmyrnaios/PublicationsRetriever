@@ -40,7 +40,7 @@ public class FileUtils
     public static int jsonGroupCount = 300;
     public static int maxStoringWaitingTime = 45000;	// 45sec
 	
-	public static final List<QuadrupleToBeLogged> quadrupleToBeLoggedOutputList = new ArrayList<>();
+	public static final List<QuadrupleToBeLogged> quadrupleToBeLoggedList = new ArrayList<>(jsonGroupCount);
 	
 	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<String, Integer>();	// Holds docFileNa,es with their duplicatesNum.
 	
@@ -181,15 +181,15 @@ public class FileUtils
 	
 	
 	/**
-	 * This function writes new source-doc URL set in the output file.
-	 * Each time it's finished writing, it flushes the write stream and clears the urlTable.
+	 * This function writes new "quadruplesToBeLogged"(id-sourceUrl-docUrl-comment) in the output file.
+	 * Each time it's finished writing, it flushes the write-stream and clears the "quadrupleToBeLoggedList".
 	 */
 	public static void writeToFile()
 	{
-		int numberOfTriples = FileUtils.quadrupleToBeLoggedOutputList.size();
-		StringBuilder strB = new StringBuilder(numberOfTriples * 350);  // 350: the maximum expected length for a source-doc-error triple..
+		int numberOfQuadruples = FileUtils.quadrupleToBeLoggedList.size();
+		StringBuilder strB = new StringBuilder(numberOfQuadruples * 500);  // 500: the usual-maximum-expected-length for an <id-sourceUrl-docUrl-comment> quadruple.
 
-		for ( QuadrupleToBeLogged quadruple : FileUtils.quadrupleToBeLoggedOutputList)
+		for ( QuadrupleToBeLogged quadruple : FileUtils.quadrupleToBeLoggedList)
 		{
 			strB.append(quadruple.toJsonString());
 			strB.append(endOfLine);
@@ -198,9 +198,9 @@ public class FileUtils
 		printStream.print(strB.toString());
 		printStream.flush();
 		
-		FileUtils.quadrupleToBeLoggedOutputList.clear();	// Clear to keep in memory only <jsonGroupCount> values at a time.
+		FileUtils.quadrupleToBeLoggedList.clear();	// Clear to keep in memory only <jsonGroupCount> values at a time.
 		
-		logger.debug("Finished writing to the outputFile.. " + numberOfTriples + " set(s) of (\"SourceUrl\", \"DocUrl\")");
+		logger.debug("Finished writing to the outputFile.. " + numberOfQuadruples + " set(s) of (\"SourceUrl\", \"DocUrl\")");
 	}
 	
 	
