@@ -37,10 +37,10 @@ public class FileUtils
 	private static String endOfLine = "\n";
 	public static int unretrievableInputLines = 0;	// For better statistics in the end.
     public static int unretrievableUrlsOnly = 0;
-    public static int jsonGroupCount = 300;
+    public static int jsonGroupSize = 300;
     public static int maxStoringWaitingTime = 45000;	// 45sec
 	
-	public static final List<QuadrupleToBeLogged> quadrupleToBeLoggedList = new ArrayList<>(jsonGroupCount);
+	public static final List<QuadrupleToBeLogged> quadrupleToBeLoggedList = new ArrayList<>(jsonGroupSize);
 	
 	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<String, Integer>();	// Holds docFileNa,es with their duplicatesNum.
 	
@@ -116,7 +116,7 @@ public class FileUtils
 		
 		int curBeginning = FileUtils.fileIndex;
 		
-		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + jsonGroupCount)) )// While (!EOF) iterate through lines.
+		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + jsonGroupSize)) )// While (!EOF) iterate through lines.
 		{
 			//logger.debug("fileIndex: " + FileUtils.fileIndex);	// DEBUG!
 			
@@ -198,7 +198,7 @@ public class FileUtils
 		printStream.print(strB.toString());
 		printStream.flush();
 		
-		FileUtils.quadrupleToBeLoggedList.clear();	// Clear to keep in memory only <jsonGroupCount> values at a time.
+		FileUtils.quadrupleToBeLoggedList.clear();	// Clear to keep in memory only <jsonGroupSize> values at a time.
 		
 		logger.debug("Finished writing to the outputFile.. " + numberOfQuadruples + " set(s) of (\"SourceUrl\", \"DocUrl\")");
 	}
@@ -381,13 +381,13 @@ public class FileUtils
 	{
 		Collection<String> urlGroup = new HashSet<String>();
 		
-		// Take a group of <jsonGroupCount> urls from the file..
-		// If we are at the end and there are less than <jsonGroupCount>.. take as many as there are..
+		// Take a group of <jsonGroupSize> urls from the file..
+		// If we are at the end and there are less than <jsonGroupSize>.. take as many as there are..
 		
-		//logger.debug("Retrieving the next group of " + jsonGroupCount + " elements from the inputFile.");
+		//logger.debug("Retrieving the next group of " + jsonGroupSize + " elements from the inputFile.");
 		int curBeginning = FileUtils.fileIndex;
 		
-		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + jsonGroupCount)) )
+		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + jsonGroupSize)) )
 		{// While (!EOF) iterate through lines.
 			
 			// Take each line, remove potential double quotes.
@@ -407,7 +407,7 @@ public class FileUtils
 			
 			urlGroup.add(retrievedLineStr);
 		}
-		//logger.debug("FileUtils.fileIndex's value after taking urls after " + FileUtils.fileIndex / jsonGroupCount + " time(s), from input file: " + FileUtils.fileIndex);	// DEBUG!
+		//logger.debug("FileUtils.fileIndex's value after taking urls after " + FileUtils.fileIndex / jsonGroupSize + " time(s), from input file: " + FileUtils.fileIndex);	// DEBUG!
 		
 		return urlGroup;
 	}
