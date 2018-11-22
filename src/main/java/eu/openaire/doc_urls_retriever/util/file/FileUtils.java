@@ -169,8 +169,8 @@ public class FileUtils
 		
         if ( urlStr.isEmpty() ) {
 			if ( idStr.isEmpty() )	// Allow one of them to be empty but not both. If ID is empty, then we still don't lose the URL.
-				return null;	// If url is empty, we will still see the ID in the output and possible find its missing URL later.
-			else
+				return null;
+			else		// If url is empty but not the id, then we will still see the ID in the output and possible find its missing URL later.
 				FileUtils.unretrievableUrlsOnly ++;    // Keep track of lines with an id, but, with no url.
 		}
         

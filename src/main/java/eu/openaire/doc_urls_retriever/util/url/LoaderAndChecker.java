@@ -171,7 +171,7 @@ public class LoaderAndChecker
 					if ( (bestNonDocUrl == null) && !retrievedUrl.contains("doi.org") )	// If no other preferable url is found, we should prefer the nonDOI-one, if present, as the DOI-urls have lots of redirections.
 						nonDoiUrl = retrievedUrl;
 					
-					neutralUrl = retrievedUrl;	// If no special-goodCase-url is found, this one will be used.
+					neutralUrl = retrievedUrl;	// If no special-goodCase-url is found, this one will be used. Note that this will be null if no acceptable-url was found.
 				}// end-url-for-loop
 				
 				if ( goToNextId )	// If we found an already-retrieved docUrl.
@@ -192,7 +192,7 @@ public class LoaderAndChecker
 				else {
 					logger.debug("No acceptable sourceUrl was found for ID: \"" + retrievedId + "\"");
 					UrlUtils.logQuadruple(retrievedId, "No acceptable sourceUrl.", null, "unreachable", "This ID had no acceptable sourceUrl to work with.", null);
-					continue;	// To the next ID, as no acceptable url was found for the current one.
+					continue;
 				}
 				
 				try {	// Check if it's a docUrl, if not, it gets crawled.

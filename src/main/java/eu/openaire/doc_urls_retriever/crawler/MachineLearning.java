@@ -151,10 +151,10 @@ public class MachineLearning
 	
 	/**
 	 * This method tries to predict the docUrl of a page, if this page gives us the ID of the document, based on previous success cases.
-	 * The idea is that we might get a url which shows info about the publication and as the same ID with the wanted docUrl, but ut just happens to be in a different directory (path).
-	 * So, before going and checking each and every one of the internal links, we should check if by using known paths that gave docUrls before (for the current spesific domain), we are able to take the docUrl immediately.
-	 * Note that we don't send the "domainStr" for the guessedDocUrls here, as at the moment an internal link might not be in the same "full-domain". We don't use TLDs at this moment. TODO - Investigate their potential.
-	 * Disclaimer: This is still in experimental stage.
+	 * The idea is that we might get a url which shows info about the publication and has the same ID with the wanted docUrl, but it just happens to be in a different directory (path).
+	 * So, before going and checking each and every one of the internal links, we should check if by using known paths that gave docUrls before (for the current specific domain), we are able to retrieve the docUrl immediately.
+	 * Note that we don't send the "domainStr" for the guessedDocUrls here, as at the moment an internal link might not be in the same "full-domain". We don't make use of TLDs at the moment. TODO - Investigate their potential.
+	 * Disclaimer: This is still in experimental stage. The success-rate might not be high in some cases.
 	 * @param urlId
 	 * @param sourceUrl
 	 * @param pageUrl
