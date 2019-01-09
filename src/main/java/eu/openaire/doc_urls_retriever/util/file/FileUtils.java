@@ -32,12 +32,16 @@ public class FileUtils
 	
 	private static Scanner inputScanner;
 	private static PrintStream printStream;
+	
+	public static int jsonGroupSize = 300;
+	
+	private static StringBuilder strB = new StringBuilder(jsonGroupSize * 500);  // 500: the usual-maximum-expected-length for an <id-sourceUrl-docUrl-comment> quadruple.
+	
 	private static int fileIndex = 0;	// Index in the input file
 	public static final boolean skipFirstRow = false;	// Use this to skip the HeaderLine in a csv-kindOf-File.
 	private static String endOfLine = "\n";
 	public static int unretrievableInputLines = 0;	// For better statistics in the end.
     public static int unretrievableUrlsOnly = 0;
-    public static int jsonGroupSize = 300;
     public static int maxStoringWaitingTime = 45000;	// 45sec
 	
 	public static final List<QuadrupleToBeLogged> quadrupleToBeLoggedList = new ArrayList<>(jsonGroupSize);
@@ -170,7 +174,7 @@ public class FileUtils
         if ( urlStr.isEmpty() ) {
 			if ( idStr.isEmpty() )	// Allow one of them to be empty but not both. If ID is empty, then we still don't lose the URL.
 				return null;
-			else		// If url is empty but not the id, then we will still see the ID in the output and possible find its missing URL later.
+			else	// If url is empty but not the id, then we will still see the ID in the output and possible find its missing URL later.
 				FileUtils.unretrievableUrlsOnly ++;    // Keep track of lines with an id, but, with no url.
 		}
         
@@ -186,9 +190,6 @@ public class FileUtils
 	 */
 	public static void writeToFile()
 	{
-		int numberOfQuadruples = FileUtils.quadrupleToBeLoggedList.size();
-		StringBuilder strB = new StringBuilder(numberOfQuadruples * 500);  // 500: the usual-maximum-expected-length for an <id-sourceUrl-docUrl-comment> quadruple.
-
 		for ( QuadrupleToBeLogged quadruple : FileUtils.quadrupleToBeLoggedList)
 		{
 			strB.append(quadruple.toJsonString());
@@ -199,8 +200,9 @@ public class FileUtils
 		printStream.flush();
 		
 		FileUtils.quadrupleToBeLoggedList.clear();	// Clear to keep in memory only <jsonGroupSize> values at a time.
+		strB.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
 		
-		logger.debug("Finished writing to the outputFile.. " + numberOfQuadruples + " set(s) of (\"SourceUrl\", \"DocUrl\")");
+		logger.debug("Finished writing to the outputFile " + jsonGroupSize + " quadruples.");
 	}
 	
 	
@@ -333,7 +335,7 @@ public class FileUtils
 				if ( numbersOfDuplicateDocFileNames.containsKey(docFileName) ) {	// First check -in O(1)- if it's an already-known duplicate.
 					curDuplicateNum += numbersOfDuplicateDocFileNames.get(docFileName);
 					isDuplicate = true;
-				} else if ( docFile.exists() )	// If it's not an already-known duplicate, go check if it exists in the fileSystem.
+				} else if ( docFile.exists() )	// If it's not an already-known duplicate (this is the first duplicate-case for this file), go check if it exists in the fileSystem.
 					isDuplicate = true;
 				
 				if ( isDuplicate ) {

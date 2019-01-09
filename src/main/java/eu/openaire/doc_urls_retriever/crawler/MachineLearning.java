@@ -231,7 +231,7 @@ public class MachineLearning
 				} catch (Exception e) {
 					// No special handling here, neither logging.. since it's expected that some "guessedDocUrls" will fail.
 				}
-				strB.setLength(0);	// Clear the buffer before going to check the next path.
+				strB.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
 			}// end for-loop
 			
 			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, domainStr, timesToFailBeforeBlockedFromMLA) ) {
