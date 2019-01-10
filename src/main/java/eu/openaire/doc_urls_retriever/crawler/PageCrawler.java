@@ -54,7 +54,7 @@ public class PageCrawler
 		String currentPageDomain = UrlUtils.getDomainStr(pageUrl);
 		if ( currentPageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"PageCrawler.visit()\": \"" + pageUrl + "\"");
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, pageUrl, "Discarded in PageCrawler.visit() method, after the occurrence of a domain-retrieval error.", null);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, after the occurrence of a domain-retrieval error.", null);
 			return;
 		}
 		

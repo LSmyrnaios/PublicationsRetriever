@@ -45,7 +45,7 @@ public class HandleScienceDirect
 			}
 		} catch (FailedToHandleScienceDirectException sdhe) {
 			logger.warn("Problem when handling \"sciencedirect.com\" urls.");
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, null, "Discarded in 'PageCrawler.visit()' method, when a 'sciencedirect.com'-url was not able to be handled correctly.", null);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, when a 'sciencedirect.com'-url was not able to be handled correctly.", null);
 		}
 		return false;
 	}
