@@ -27,6 +27,8 @@ public class MachineLearning
 	
 	public static final boolean useMLA = false;	// Should we try the experimental-M.L.A.? This is intended to be like a "global switch", to use or not to use the MLA,  throughout the program's execution.
 	
+	private static StringBuilder strB = new StringBuilder(200);
+	
 	private static int latestMLADocUrlsFound = 0;
 	private static float leastSuccessPercentageForMLA = 60;	// The percentage which we want, in order to continue running the MLA.
 	
@@ -195,7 +197,6 @@ public class MachineLearning
 				return false;
 			}
 			
-			StringBuilder strB = new StringBuilder(150);
 			String predictedDocUrl = null;
 			MachineLearning.urlsCheckedWithMLA ++;
 			
@@ -206,9 +207,10 @@ public class MachineLearning
 				strB.append(docIdStr);
 				strB.append(".pdf");
 				predictedDocUrl = strB.toString();
+				strB.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
 				
 				if ( UrlUtils.docUrlsWithKeys.containsKey(predictedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
-					logger.info("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted (already found before) docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
+					logger.info("MachineLearningAlgorithm got a hit for pageUrl: \""+ pageUrl + "\"! Resulted (already found before) docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
 					logger.info("re-crossed docUrl found: <" + predictedDocUrl + ">");
 					if ( FileUtils.shouldDownloadDocFiles )
 						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(predictedDocUrl), null);
@@ -223,7 +225,7 @@ public class MachineLearning
 					logger.debug("Going to check predictedDocUrl: " + predictedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");
 					
 					if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, predictedDocUrl, null, false, true) ) {
-						logger.info("MachineLearningAlgorithm got a hit for: \""+ pageUrl + "\". Resulted docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
+						logger.info("MachineLearningAlgorithm got a hit for pageUrl: \""+ pageUrl + "\"! Resulted docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
 						MachineLearning.docUrlsFoundByMLA ++;
 						return true;	// Note that we have already add it in the output links inside "connectAndCheckMimeType()".
 					}
@@ -231,7 +233,6 @@ public class MachineLearning
 				} catch (Exception e) {
 					// No special handling here, neither logging.. since it's expected that some "guessedDocUrls" will fail.
 				}
-				strB.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
 			}// end for-loop
 			
 			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, domainStr, timesToFailBeforeBlockedFromMLA) ) {
