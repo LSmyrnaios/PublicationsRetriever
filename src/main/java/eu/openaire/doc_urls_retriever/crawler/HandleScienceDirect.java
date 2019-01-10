@@ -46,6 +46,7 @@ public class HandleScienceDirect
 		} catch (FailedToHandleScienceDirectException sdhe) {
 			logger.warn("Problem when handling \"sciencedirect.com\" urls.");
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, when a 'sciencedirect.com'-url was not able to be handled correctly.", null);
+			return true;	// All that could be done for this ScienceDirectFamilyUrl, was done, signal that it was handled.
 		}
 		return false;
 	}
@@ -76,7 +77,7 @@ public class HandleScienceDirect
 					throw new FailedToHandleScienceDirectException();
 			}
 			
-			// We now have the "sciencedirect.com" url (either from the beginning or after silentRedirect).
+			// We now have the "sciencedirect.com" url (either from the beginning or after "silent-redirect").
 			
 			if ( isLinkinghubElsevier )	// Otherwise it's the same as the "visited"-one.
 				logger.debug("Produced ScienceDirect-url: " + pageUrl);
@@ -92,7 +93,7 @@ public class HandleScienceDirect
 				}
 				//logger.debug("MetaDocUrl: " + metaDocUrl);    // DEBUG!
 				
-				// Get the new html..
+				// Get the new html after connecting to the "metaDocUrl".
 				// We don't disconnect the previous one, since they both are in the same domain (see JavaDocs).
 				conn = HttpConnUtils.handleConnection(urlId, sourceUrl, pageUrl, metaDocUrl, pageDomain, true, false);
 				
@@ -147,21 +148,18 @@ public class HandleScienceDirect
 	 */
 	public static String silentRedirectElsevierToScienseRedirect(String linkinghubElsevierUrl)
 	{
-		if ( !linkinghubElsevierUrl.contains("linkinghub.elsevier.com") ) // If this method was called for the wrong url, then just return it.
-			return linkinghubElsevierUrl;
-		
 		String idStr = null;
 		Matcher matcher = UrlUtils.URL_TRIPLE.matcher(linkinghubElsevierUrl);
 		if ( matcher.matches() ) {
 			idStr = matcher.group(3);
 			if ( idStr == null || idStr.isEmpty() ) {
 				logger.warn("Unexpected id-missing case for: " + linkinghubElsevierUrl);
-				return linkinghubElsevierUrl;
+				return null;
 			}
 		}
 		else {
 			logger.warn("Unexpected \"URL_TRIPLE\" mismatch for: " + linkinghubElsevierUrl);
-			return linkinghubElsevierUrl;
+			return null;
 		}
 		
 		return ("https://www.sciencedirect.com/science/article/pii/" + idStr);
