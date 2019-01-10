@@ -1,7 +1,7 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
 
-import eu.openaire.doc_urls_retriever.exceptions.FailedToHandleScienceDirectException;
+import eu.openaire.doc_urls_retriever.exceptions.FailedToProcessScienceDirectException;
 import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
@@ -43,7 +43,7 @@ public class HandleScienceDirect
 				HandleScienceDirect.handleScienceDirectFamilyUrls(urlId, sourceUrl, pageUrl, pageDomain, conn, false);
 				return true;
 			}
-		} catch (FailedToHandleScienceDirectException sdhe) {
+		} catch (FailedToProcessScienceDirectException sdhe) {
 			logger.warn("Problem when handling \"sciencedirect.com\" urls.");
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, when a 'sciencedirect.com'-url was not able to be handled correctly.", null);
 			return true;	// All that could be done for this ScienceDirectFamilyUrl, was done, signal that it was handled.
@@ -62,10 +62,10 @@ public class HandleScienceDirect
 	 * @param pageDomain
 	 * @param conn
 	 * @param isLinkinghubElsevier
-	 * @throws FailedToHandleScienceDirectException
+	 * @throws FailedToProcessScienceDirectException
 	 */
 	public static void handleScienceDirectFamilyUrls(String urlId, String sourceUrl, String pageUrl, String pageDomain, HttpURLConnection conn, boolean isLinkinghubElsevier)
-																						throws FailedToHandleScienceDirectException
+																						throws FailedToProcessScienceDirectException
 	{
 		try {
 			// Handle "linkinghub.elsevier.com" urls which contain javaScriptRedirect..
@@ -74,7 +74,7 @@ public class HandleScienceDirect
 				if ( (pageUrl = silentRedirectElsevierToScienseRedirect(pageUrl)) != null )
 					conn = HttpConnUtils.handleConnection(urlId, sourceUrl, pageUrl, pageUrl, pageDomain, true, false);
 				else
-					throw new FailedToHandleScienceDirectException();
+					throw new FailedToProcessScienceDirectException();
 			}
 			
 			// We now have the "sciencedirect.com" url (either from the beginning or after "silent-redirect").
@@ -89,7 +89,7 @@ public class HandleScienceDirect
 				String metaDocUrl = metaDocUrlMatcher.group(1);
 				if ( metaDocUrl.isEmpty() ) {
 					logger.error("Could not retrieve the metaDocUrl from a \"sciencedirect.com\" url!");
-					throw new FailedToHandleScienceDirectException();
+					throw new FailedToProcessScienceDirectException();
 				}
 				//logger.debug("MetaDocUrl: " + metaDocUrl);    // DEBUG!
 				
@@ -107,28 +107,31 @@ public class HandleScienceDirect
 					String finalDocUrl = finalDocUrlMatcher.group(1);
 					if ( finalDocUrl.isEmpty() ) {
 						logger.error("Could not retrieve the finalDocUrl from a \"sciencedirect.com\" url!");
-						throw new FailedToHandleScienceDirectException();
+						throw new FailedToProcessScienceDirectException();
 					}
 					//logger.debug("FinalDocUrl: " + finalDocUrl);    // DEBUG!
 					
 					// Check and/or download the docUrl. These urls are one-time-links, meaning that after a while they will just redirect to their pageUrl.
 					if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, finalDocUrl, pageDomain, false, true) ) {	// We log the docUrl inside this method.
 						logger.warn("LookedUp finalDocUrl: \"" + finalDocUrl + "\" was not an actual docUrl!");
-						throw new FailedToHandleScienceDirectException();
+						throw new FailedToProcessScienceDirectException();
 					}
 				} else {
 					logger.warn("The finalDocLink could not be found!");
 					//logger.debug("HTML-code:\n" + html);	// DEBUG!
-					throw new FailedToHandleScienceDirectException();
+					throw new FailedToProcessScienceDirectException();
 				}
 			} else {
 				logger.warn("The metaDocLink could not be found!");	// It's possible if the document only available after paying (https://www.sciencedirect.com/science/article/pii/S1094202598900527)
 				//logger.debug("HTML-code:\n" + html);    // DEBUG!
-				throw new FailedToHandleScienceDirectException();
+				throw new FailedToProcessScienceDirectException();
 			}
+		} catch (FailedToProcessScienceDirectException fthsde) {
+			logger.error("" + fthsde);
+			throw fthsde;
 		} catch (Exception e) {
 			logger.error("" + e);
-			throw new FailedToHandleScienceDirectException();
+			throw new FailedToProcessScienceDirectException();
 		}
 		finally {
 			// If the initial pageDomain was different from "sciencedirect.com", close the "sciencedirect.com"-connection here.
