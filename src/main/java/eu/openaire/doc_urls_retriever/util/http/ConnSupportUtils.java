@@ -29,6 +29,8 @@ public class ConnSupportUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(ConnSupportUtils.class);
 	
+	private static StringBuilder strB = new StringBuilder(30000);	// We give an initial size to optimize performance.
+	
 	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("(?:\\((?:\\')?)?([\\w]+\\/[\\w\\+\\-\\.]+).*");
 	
 	public static final HashMap<String, Integer> timesDomainsReturned5XX = new HashMap<String, Integer>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
@@ -394,7 +396,6 @@ public class ConnSupportUtils
 	public static String getHtmlString(HttpURLConnection conn) throws Exception
 	{
 		try {
-			StringBuilder strB = new StringBuilder(30000);	// We give an initial size to optimize performance.
 			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 			
 			String inputLine;
@@ -409,6 +410,9 @@ public class ConnSupportUtils
 		} catch (Exception e) {
 			logger.error("", e);
 			throw e;
+		}
+		finally {
+			strB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating.
 		}
 	}
 	

@@ -65,6 +65,7 @@ public class PageCrawler
 		String pageHtml = null;
 		try {	// Get the pageHtml to parse the page.
 			pageHtml = ConnSupportUtils.getHtmlString(conn);
+			//logger.debug(pageHtml);	// DEBUG!
 		} catch (Exception e) {
 			logger.debug("Could not retrieve the internalLinks for pageUrl: " + pageUrl);
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its internalLinks. Its contentType is: '" + pageContentType + "'", null);
