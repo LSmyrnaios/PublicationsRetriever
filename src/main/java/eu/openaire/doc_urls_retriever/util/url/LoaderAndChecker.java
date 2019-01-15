@@ -190,8 +190,7 @@ public class LoaderAndChecker
 				else if ( neutralUrl != null )
 					urlToCheck = neutralUrl;
 				else {
-					logger.debug("No acceptable sourceUrl was found for ID: \"" + retrievedId + "\"");
-					UrlUtils.logQuadruple(retrievedId, "No acceptable sourceUrl.", null, "unreachable", "This ID had no acceptable sourceUrl to work with.", null);
+					logger.debug("No acceptable sourceUrl was found for ID: \"" + retrievedId + "\".");
 					continue;
 				}
 				
