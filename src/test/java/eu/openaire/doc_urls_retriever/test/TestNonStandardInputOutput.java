@@ -11,6 +11,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.time.Duration;
+import java.time.Instant;
 
 
 /**
@@ -21,8 +23,8 @@ public class TestNonStandardInputOutput  {
 	
 	private static final Logger logger = LoggerFactory.getLogger(TestNonStandardInputOutput.class);
 	
-	private static File inputFile = new File(System.getProperty("user.dir") + File.separator + "testing/sampleCleanUrls3000.json");
-	private static File outputFile = new File(System.getProperty("user.dir") + File.separator + "testing/testOutputFile.json");
+	private static File inputFile = new File(System.getProperty("user.dir") + File.separator + "testing" + File.separator + "sampleCleanUrls3000.json");
+	private static File outputFile = new File(System.getProperty("user.dir") + File.separator + "testing" + File.separator + "testOutputFile.json");
 	
 	
 	@Disabled	// as we want to run it only on demand, since it's a huge test. Same for the following tests of this class.
@@ -86,6 +88,8 @@ public class TestNonStandardInputOutput  {
 			System.exit(-5);
 		}
 		
+		Instant startTime = Instant.now();
+		
 		try {
 			new LoaderAndChecker();
 		} catch (RuntimeException e) {  // In case there was no input, a RuntimeException will be thrown, after logging the cause.
@@ -95,7 +99,10 @@ public class TestNonStandardInputOutput  {
 			System.exit(-6);
 		}
 		
-		DocUrlsRetriever.showStatistics();
+		Instant finishTime = Instant.now();
+		long timeElapsedMillis = Duration.between(startTime, finishTime).toMillis();
+		
+		DocUrlsRetriever.showStatistics(timeElapsedMillis);
 		
 		// Close the open streams (imported and exported content).
 		FileUtils.closeStreams();

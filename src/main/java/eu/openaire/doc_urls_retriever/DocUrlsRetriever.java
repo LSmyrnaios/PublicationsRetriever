@@ -8,6 +8,9 @@ import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.Instant;
+
 
 /**
  * This class contains the entry-point of this program, the "main()" method.
@@ -30,7 +33,9 @@ public class DocUrlsRetriever
 		
 		// Use standard input/output.
 		new FileUtils(System.in, System.out);
-		
+	
+		Instant startTime = Instant.now();
+	
 		try {
 			new LoaderAndChecker();
 		} catch (RuntimeException e) {  // In case there was no input, a RuntimeException will be thrown, after logging the cause.
@@ -40,7 +45,10 @@ public class DocUrlsRetriever
 			System.exit(-5);
 		}
 		
-		showStatistics();
+		Instant finishTime = Instant.now();
+		long timeElapsedMillis = Duration.between(startTime, finishTime).toMillis();
+		
+		showStatistics(timeElapsedMillis);
 		
 		// Close the open streams (imported and exported content).
 		FileUtils.closeStreams();
@@ -105,7 +113,7 @@ public class DocUrlsRetriever
 	}
 	
 	
-	public static void showStatistics()
+	public static void showStatistics(long elapsedTimeInMillis)
 	{
 		long inputCheckedUrlNum = 0;
 		if ( LoaderAndChecker.useIdUrlPairs )
@@ -151,6 +159,66 @@ public class DocUrlsRetriever
 		logger.info("From the " + inputCheckedUrlNum + " urls checked from the input, the " + problematicUrlsNum + " of them (about " + problematicUrlsNum * (float)100 / inputCheckedUrlNum + "%) were problematic (sum of the all of the above cases).");
 		
 		logger.info("The number of domains blocked due to an \"SSL Exception\" was: " + HttpConnUtils.domainsBlockedDueToSSLException);
+		
+		
+		calculateAndPrintElapsedTime(elapsedTimeInMillis);
+	}
+	
+	
+	public static void calculateAndPrintElapsedTime(long timeElapsedMillis)
+	{
+		/*
+		Calculating time using the following method-example.
+			2904506 millis
+			secs = millis / 1000 = 2904506 / 1000 = 2904.506 secs = 2904secs + 506millis
+			remaining millis = 506
+			mins = secs / 60 = 2904 / 60 = 48.4 mins = 48mins + (0.4 * 60) secs = 48 mins + 24 secs
+			remaining secs = 24
+		 */
+		
+		// Millis - Secs
+		double timeElapsedSecs = (double)timeElapsedMillis / 1000;	// 0.006
+		long secs = (long)Math.floor(timeElapsedSecs);	// 0
+		long remainingMillis = (long)((timeElapsedSecs - secs) * 1000);	// (0.006 - 0) / 1000 = 0.006 * 1000 = 6
+		
+		String millisMessage = "";
+		if ( (secs > 0) && (remainingMillis > 0) )
+			millisMessage = " and " + remainingMillis + " milliseconds.";
+		else
+			millisMessage = timeElapsedMillis + " milliseconds.";
+		
+		// Secs - Mins
+		double timeElapsedMins = (double)secs / 60;
+		long mins = (long)Math.floor(timeElapsedMins);
+		long remainingSeconds = (long)((timeElapsedMins - mins) * 60);
+		
+		String secondsMessage = "";
+		if ( remainingSeconds > 0 )
+			secondsMessage = remainingSeconds + " seconds";
+		
+		// Mins - Hours
+		double timeElapsedHours = (double)mins / 60;
+		long hours = (long)Math.floor(timeElapsedHours);
+		long remainingMinutes = (long)((timeElapsedHours - hours) * 60);
+		
+		String minutesMessage = "";
+		if ( remainingMinutes > 0 )
+			minutesMessage = remainingMinutes + " minutes, ";
+		
+		// Hours - Days
+		double timeElapsedDays = (double)hours / 24;
+		long days = (long)Math.floor(timeElapsedDays);
+		long remainingHours = (long)((timeElapsedDays - days) * 24);
+		
+		String hoursMessage = "";
+		if ( remainingHours > 0 )
+			hoursMessage = remainingHours + " hours, ";
+		
+		String daysMessage = "";
+		if ( days > 0 )
+			daysMessage = days + " days, ";
+		
+		logger.info("The program finished after: " + daysMessage + hoursMessage + minutesMessage + secondsMessage + millisMessage);
 	}
 	
 }
