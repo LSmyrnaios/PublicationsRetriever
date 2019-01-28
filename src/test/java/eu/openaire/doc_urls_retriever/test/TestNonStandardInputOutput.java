@@ -11,7 +11,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.time.Duration;
 import java.time.Instant;
 
 
@@ -100,9 +99,8 @@ public class TestNonStandardInputOutput  {
 		}
 		
 		Instant finishTime = Instant.now();
-		long timeElapsedMillis = Duration.between(startTime, finishTime).toMillis();
 		
-		DocUrlsRetriever.showStatistics(timeElapsedMillis);
+		DocUrlsRetriever.showStatistics(startTime, finishTime);
 		
 		// Close the open streams (imported and exported content).
 		FileUtils.closeStreams();

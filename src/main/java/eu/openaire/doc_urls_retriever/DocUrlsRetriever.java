@@ -46,9 +46,8 @@ public class DocUrlsRetriever
 		}
 		
 		Instant finishTime = Instant.now();
-		long timeElapsedMillis = Duration.between(startTime, finishTime).toMillis();
 		
-		showStatistics(timeElapsedMillis);
+		showStatistics(startTime, finishTime);
 		
 		// Close the open streams (imported and exported content).
 		FileUtils.closeStreams();
@@ -113,7 +112,7 @@ public class DocUrlsRetriever
 	}
 	
 	
-	public static void showStatistics(long elapsedTimeInMillis)
+	public static void showStatistics(Instant startTime, Instant finishTime)
 	{
 		long inputCheckedUrlNum = 0;
 		if ( LoaderAndChecker.useIdUrlPairs )
@@ -160,12 +159,11 @@ public class DocUrlsRetriever
 		
 		logger.info("The number of domains blocked due to an \"SSL Exception\" was: " + HttpConnUtils.domainsBlockedDueToSSLException);
 		
-		
-		calculateAndPrintElapsedTime(elapsedTimeInMillis);
+		calculateAndPrintElapsedTime(startTime, finishTime);
 	}
 	
 	
-	public static void calculateAndPrintElapsedTime(long timeElapsedMillis)
+	public static void calculateAndPrintElapsedTime(Instant startTime, Instant finishTime)
 	{
 		/*
 		Calculating time using the following method-example.
@@ -175,6 +173,8 @@ public class DocUrlsRetriever
 			mins = secs / 60 = 2904 / 60 = 48.4 mins = 48mins + (0.4 * 60) secs = 48 mins + 24 secs
 			remaining secs = 24
 		 */
+		
+		long timeElapsedMillis = Duration.between(startTime, finishTime).toMillis();
 		
 		// Millis - Secs
 		double timeElapsedSecs = (double)timeElapsedMillis / 1000;	// 0.006

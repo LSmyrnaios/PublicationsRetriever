@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 
@@ -24,8 +23,6 @@ public class UrlChecker {
 	public void runIndividualTests()
 	{
 		// Here test individual urls.
-		
-		Instant start = Instant.now();
 		
 		ArrayList<String> urlList = new ArrayList<>();
 		
@@ -61,6 +58,8 @@ public class UrlChecker {
 		for ( String url: urlList )
 			logger.info(url);
 		
+		Instant start = Instant.now();
+		
 		for ( String url : urlList )
 		{
 			String urlToCheck = url;
@@ -77,9 +76,8 @@ public class UrlChecker {
 		}
 		
 		Instant finish = Instant.now();
-		long timeElapsedMillis = Duration.between(start, finish).toMillis();
 		
-		DocUrlsRetriever.calculateAndPrintElapsedTime(timeElapsedMillis);
+		DocUrlsRetriever.calculateAndPrintElapsedTime(start, finish);
 	}
 	
 }
