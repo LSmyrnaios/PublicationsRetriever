@@ -9,7 +9,6 @@ import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,7 +16,7 @@ import java.util.regex.Matcher;
 
 
 /**
- * This class aims to provide a Machine Learning Algorithm (M.L.A.) with methods to gather important data, use tha data to guess a result and control the execution of the algorithm.
+ * This class aims to provide a Machine Learning Algorithm (M.L.A.) with methods to gather important data, use tha data to predict a result and control the execution of the algorithm.
  * Disclaimer: This is still in experimental stage. Some domains are not supported.
  * @author Lampros A. Smyrnaios
  */
@@ -200,12 +199,12 @@ public class MachineLearning
 			String predictedDocUrl = null;
 			MachineLearning.urlsCheckedWithMLA ++;
 			
+			String urlEnding = docIdStr + ".pdf";
+			
 			for ( String knownDocUrlPath : knownDocUrlPaths )
 			{
 				// For every available docPath for this domain construct the expected docLink..
-				strB.append(knownDocUrlPath);
-				strB.append(docIdStr);
-				strB.append(".pdf");
+				strB.append(knownDocUrlPath).append(urlEnding);
 				predictedDocUrl = strB.toString();
 				strB.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
 				
@@ -231,7 +230,7 @@ public class MachineLearning
 					}
 					logger.debug("Not valid docUrl after trying predictedDocUrl: " + predictedDocUrl + "\"");
 				} catch (Exception e) {
-					// No special handling here, neither logging.. since it's expected that some "guessedDocUrls" will fail.
+					// No special handling here, neither logging.. since it's expected that some "predictedDocUrls" will fail.
 				}
 			}// end for-loop
 			
@@ -243,7 +242,7 @@ public class MachineLearning
 			}
 		}// end if
 		
-		// If we reach here, it means that either there is not available data to guess the docUrl, or that all of the guesses have failed.
+		// If we reach here, it means that either there is not available data to predict the docUrl, or that all of the predictions have failed.
 		return false;	// We can't find its docUrl.. so we return false and continue by crawling this page.
 	}
 	

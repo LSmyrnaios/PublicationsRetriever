@@ -46,10 +46,8 @@ public class QuadrupleToBeLogged
 		// Escape backSlash.
 		sourceUrl = StringUtils.replace(sourceUrl, "\\", "\\\\");	// http://koara.lib.keio.ac.jp/xoonips/modules/xoonips/detail.php?koara_id=pdf\AN00150430-00000039--001
 		
-		// Escape doubleQuotes.
-		sourceUrl = StringUtils.replace(sourceUrl, "\"", "\\\"");	// https://jual.nipissingu.ca/wp-content/uploads/sites/25/2016/03/v10202.pdf" rel="
-		
-		return sourceUrl;
+		// Escape doubleQuotes and return.
+		return StringUtils.replace(sourceUrl, "\"", "\\\"");	// https://jual.nipissingu.ca/wp-content/uploads/sites/25/2016/03/v10202.pdf" rel="
 	}
     
     
@@ -59,12 +57,12 @@ public class QuadrupleToBeLogged
      */
     public String toJsonString()
     {
-        StringBuilder strB = new StringBuilder(400);
+        StringBuilder strB = new StringBuilder(500);
         
-        strB.append("{\"id\":\"").append(this.urlId).append("\",");
-        strB.append("\"sourceUrl\":\"").append(this.sourceUrl).append("\",");
-        strB.append("\"docUrl\":\"").append(this.docUrl).append("\",");
-        strB.append("\"comment\":\"").append(this.comment).append("\"}");
+        strB.append("{\"id\":\"").append(this.urlId);
+        strB.append("\",\"sourceUrl\":\"").append(this.sourceUrl);
+        strB.append("\",\"docUrl\":\"").append(this.docUrl);
+        strB.append("\",\"comment\":\"").append(this.comment).append("\"}");
         
         return strB.toString();
     }
