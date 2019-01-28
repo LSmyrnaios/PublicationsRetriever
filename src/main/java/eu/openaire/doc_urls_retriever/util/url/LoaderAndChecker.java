@@ -120,8 +120,6 @@ public class LoaderAndChecker
 			else
 				isFirstRun = false;
 			
-			boolean goToNextId = false;
-			
 			Set<String> keys = loadedIdUrlPairs.keySet();
 			
 			//logger.debug("CurGroup IDs-size: " + keys.size());	// DEBUG!
@@ -131,6 +129,7 @@ public class LoaderAndChecker
 			for ( String retrievedId : keys )
 			{
 				//logger.debug("ID: " + retrievedId);	// DEBUG!
+				boolean goToNextId = false;
 				
 				String possibleDocUrl = null;
 				String bestNonDocUrl = null;	// Best-case url

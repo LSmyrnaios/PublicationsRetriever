@@ -10,6 +10,8 @@ DocUrl: *the url of the document file.*<br/>
 
 An experimental **M.L.A.(= Machine Learning Algorithm)** was developed to predict the DocUrl of a PubPage, based on previous results.<br/>
 
+This program was designed to be used with distributed execution, thus it was developed as a single-thread program.<br/>
+
 Please note that **DocUrlsRetriever** is currently in **beta**, so you may encounter some issues.<br/>
 Keep in mind that it's best to run the program for a small set of urls (a few hundred maybe) at first, in order to see how it's operating and which parameters work best for you (url-timeouts, domainsBlocking ect.).
 
