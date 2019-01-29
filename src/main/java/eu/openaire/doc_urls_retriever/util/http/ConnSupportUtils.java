@@ -66,17 +66,17 @@ public class ConnSupportUtils
 				// In this case, we want first to try the "Content-Disposition", as it's more trustworthy. If that's not available, use the urlStr as the last resort.
 				if ( conn != null )	// Just to be sure we avoid an NPE.
 					contentDisposition = conn.getHeaderField("Content-Disposition");
-				// else it will be "null".
+				// The "contentDisposition" will be definitely "null", since "mimeType != null" and so, the "contentDisposition" will not have been retrieved.
 				
-				if ( contentDisposition != null )
-					return	contentDisposition.contains("pdf");	// TODO - add more types as needed.
+				if ( (contentDisposition != null) && !contentDisposition.equals("attachment") )
+					return	contentDisposition.contains("pdf");	// TODO - add more types as needed. Check: "http://www.esocialsciences.org/Download/repecDownload.aspx?qs=Uqn/rN48N8UOPcbSXUd2VFI+dpOD3MDPRfIL8B3DH+6L18eo/yEvpYEkgi9upp2t8kGzrjsWQHUl44vSn/l7Uc1SILR5pVtxv8VYECXSc8pKLF6QJn6MioA5dafPj/8GshHBvLyCex2df4aviMvImCZpwMHvKoPiO+4B7yHRb97u1IHg45E+Z6ai0Z/0vacWHoCsNT9O4FNZKMsSzen2Cw=="
 				else
 					return	urlStr.toLowerCase().contains("pdf");
 			}
 			
 			String plainMimeType = mimeType;	// Make sure we don't cause any NPE later on..
 			if ( mimeType.contains("charset") || mimeType.contains("name")
-					|| mimeType.startsWith("(") )	// See: https://www.mamsie.bbk.ac.uk/articles/10.16995/sim.138/galley/134/download/
+					|| mimeType.startsWith("(") )	// See: "https://www.mamsie.bbk.ac.uk/articles/10.16995/sim.138/galley/134/download/" -> "Content-Type: ('application/pdf', none)"
 			{
 				plainMimeType = getPlainMimeType(mimeType);
 				
@@ -91,10 +91,12 @@ public class ConnSupportUtils
 			
 			if ( knownDocTypes.contains(plainMimeType) )
 				return true;
-			else
-			if ( plainMimeType.contains("application/octet-stream") || plainMimeType.contains("application/save")
-					|| plainMimeType.contains("application/force-download") || plainMimeType.contains("unknown") ) {
-				if ( (contentDisposition = conn.getHeaderField("Content-Disposition")) != null )
+			else if ( plainMimeType.contains("application/octet-stream") || plainMimeType.contains("application/x-octet-stream")
+					|| plainMimeType.contains("application/save") || plainMimeType.contains("application/force-download")
+					|| plainMimeType.contains("unknown") )
+			{	// TODO - Optimize the performance for this check, probably use a regex.
+				contentDisposition = conn.getHeaderField("Content-Disposition");
+				if ( (contentDisposition != null) && !contentDisposition.equals("attachment") )
 					return	contentDisposition.contains("pdf");
 				else
 					return	urlStr.toLowerCase().contains("pdf");
@@ -105,9 +107,9 @@ public class ConnSupportUtils
 			// and an example for "unknown" : "http://imagebank.osa.org/getExport.xqy?img=OG0kcC5vZS0yMy0xNy0yMjE0OS1nMDAy&xtype=pdf&article=oe-23-17-22149-g002")
 			// TODO - When we will accept more docTypes, match it also against other docTypes, not just "pdf".
 		}
-		else if ( contentDisposition != null ) {	// If the mimeType was not retrieve, then try the "Content Disposition".
-			// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
-			return	(contentDisposition.contains("attachment") && contentDisposition.contains("pdf"));
+		else if ( (contentDisposition != null) && !contentDisposition.equals("attachment") ) {	// If the mimeType was not retrieved, then try the "Content Disposition".
+				// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
+			return	contentDisposition.contains("pdf");
 		}
 		else {	// This is not expected to be reached. Keep it for method-reusability.
 			logger.warn("No mimeType, nor Content-Disposition, were able to be retrieved for url: " + urlStr);
