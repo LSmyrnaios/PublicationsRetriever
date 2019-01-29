@@ -276,16 +276,14 @@ public class HttpConnUtils
 			logger.debug("Url: \"" + resourceURL + "\" failed to respond on time!");
 			if ( conn != null )
 				conn.disconnect();
-			try { ConnSupportUtils.onTimeoutException(domainStr); }
-			catch (DomainBlockedException dbe) { throw dbe; }
+			ConnSupportUtils.onTimeoutException(domainStr);	// Can throw a "DomainBlockedException", which will be thrown before the "ConnTimeoutException".
 			throw new ConnTimeoutException();
 		} catch (ConnectException ce) {
 			if ( conn != null )
 				conn.disconnect();
 			String eMsg = ce.getMessage();
 			if ( (eMsg != null) && eMsg.toLowerCase().contains("timeout") ) {	// If it's a "connection timeout" type of exception, treat it like it.
-				try { ConnSupportUtils.onTimeoutException(domainStr); }
-				catch (DomainBlockedException dbe) { throw dbe; }
+				ConnSupportUtils.onTimeoutException(domainStr);	// Can throw a "DomainBlockedException", which will be thrown before the "ConnTimeoutException".
 				throw new ConnTimeoutException();
 			}
 			throw new RuntimeException();
