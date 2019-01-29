@@ -317,7 +317,7 @@ public class HttpConnUtils
     
 	
     /**
-     * This method takes an open connection for which there is a need for redirections.
+     * This method takes an open connection for which there is a need for redirections (this need is verified before this method is called).
      * It opens a new connection every time, up to the point we reach a certain number of redirections defined by "maxRedirects".
 	 * @param urlId
 	 * @param sourceUrl
@@ -354,93 +354,90 @@ public class HttpConnUtils
 		}
 		
 		try {
-			while ( true )
-			{
-				if ( responceCode >= 300 && responceCode <= 307 && responceCode != 306 && responceCode != 304 )	// Redirect code.
-				{
-					curRedirectsNum ++;
-					if ( curRedirectsNum > maxRedirects ) {
-						logger.debug("Redirects exceeded their limit (" + maxRedirects + ") for " + urlType + ": \"" + initialUrl + "\"");
-						throw new RuntimeException();
-					}
-					
-					String location = conn.getHeaderField("Location");
-					if ( location == null )
-					{
-						if ( responceCode == 300 ) {	// The "Location"-header MAY be provided, giving the proposed link by the server.
-							// Go and parse the page and select one of the links to redirect to. Assign it to the "location".
-							if ( (location = ConnSupportUtils.getInternalLinkFromHTTP300Page(conn)) == null ) {
-								logger.warn("No \"link\" was retrieved from the HTTP-300-page: \"" + conn.getURL().toString() + "\".");
-								throw new RuntimeException();
-							}
-						}
-						else {	// It's unacceptable for codes > 300 to not provide the "location" field.
-							logger.warn("No \"Location\" field was found in the HTTP Header of \"" + conn.getURL().toString() + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
-							throw new RuntimeException();
-						}
-					}
-					
-					String lowerCaseLocation = location.toLowerCase();
-					if ( calledForPageUrl ) {
-						if ( UrlTypeChecker.shouldNotAcceptPageUrl(location, lowerCaseLocation) ) {
-							logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
-							throw new RuntimeException();
-						}
-					}
-					else if ( UrlTypeChecker.shouldNotAcceptInternalLink(location, lowerCaseLocation) ) {	// Else we are redirecting an internalPageLink.
-						logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
-						throw new RuntimeException();
-					} else if ( lowerCaseLocation.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
-						ConnSupportUtils.blockSharedSiteSessionDomain(initialUrl, domainStr);
-						throw new DomainBlockedException();
-					}
-					
-					String targetUrl = ConnSupportUtils.getFullyFormedUrl(null, location, conn.getURL());
-					if ( targetUrl == null )
-						throw new RuntimeException();
-					
-					// FOR DEBUG -> Check to see what's happening with the redirect urls (location field types, as well as potential error redirects).
-					// Some domains use only the target-ending-path in their location field, while others use full target url.
-					//if ( conn.getURL().toString().contains("<urlType>") ) {	// Debug a certain domain.
-						/*logger.debug("\n");
-						logger.debug("Redirect(s) num: " + curRedirectsNum);
-						logger.debug("Redirect code: " + conn.getResponseCode());
-						logger.debug("Base: " + conn.getURL());
-						logger.debug("Location: " + location);
-						logger.debug("Target: " + targetUrl + "\n");*/
-					//}
-					
-					if ( UrlUtils.docUrlsWithKeys.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
-						logger.info("re-crossed docUrl found: <" + targetUrl + ">");
-						if ( FileUtils.shouldDownloadDocFiles )
-							UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(targetUrl), domainStr);
-						else
-							UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, "", domainStr);
-						throw new AlreadyFoundDocUrlException();
-					}
-					/*else if ( calledForPageUrl && targetUrl.contains("elsevier.com") ) {	// Avoid pageUrls redirecting to "elsevier.com" (mostly "doi.org"-urls).
-						logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + targetUrl + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
-						throw new RuntimeException();
-					}*/
-					
-					if ( !targetUrl.contains(HttpConnUtils.lastConnectedHost) )    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
-						if ( (domainStr = UrlUtils.getDomainStr(targetUrl)) == null )
-							throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
-					
-					conn.disconnect();
-					conn = HttpConnUtils.openHttpConnection(targetUrl, domainStr, calledForPageUrl, calledForPossibleDocUrl);
-					
-					responceCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
-					
-					if ( (responceCode >= 200) && (responceCode <= 299) ) {
-						//ConnSupportUtils.printFinalRedirectDataForWantedUrlType(initialUrl, conn.getURL().toString(), null, curRedirectsNum);	// DEBUG!
-						return conn;	// It's an "HTTP SUCCESS", return immediately.
-					}
-				} else {
-					ConnSupportUtils.onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
-					throw new RuntimeException();	// This is not thrown if a "DomainBlockedException" was thrown first.
+			do {	// We assume we already have an HTTP-3XX response code.
+				curRedirectsNum ++;
+				if ( curRedirectsNum > maxRedirects ) {
+					logger.debug("Redirects exceeded their limit (" + maxRedirects + ") for " + urlType + ": \"" + initialUrl + "\"");
+					throw new RuntimeException();
 				}
-			}//while-loop.
+				
+				String location = conn.getHeaderField("Location");
+				if ( location == null )
+				{
+					if ( responceCode == 300 ) {	// The "Location"-header MAY be provided, giving the proposed link by the server.
+						// Go and parse the page and select one of the links to redirect to. Assign it to the "location".
+						if ( (location = ConnSupportUtils.getInternalLinkFromHTTP300Page(conn)) == null ) {
+							logger.warn("No \"link\" was retrieved from the HTTP-300-page: \"" + conn.getURL().toString() + "\".");
+							throw new RuntimeException();
+						}
+					}
+					else {	// It's unacceptable for codes > 300 to not provide the "location" field.
+						logger.warn("No \"Location\" field was found in the HTTP Header of \"" + conn.getURL().toString() + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
+						throw new RuntimeException();
+					}
+				}
+				
+				String lowerCaseLocation = location.toLowerCase();
+				if ( calledForPageUrl ) {
+					if ( UrlTypeChecker.shouldNotAcceptPageUrl(location, lowerCaseLocation) ) {
+						logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
+						throw new RuntimeException();
+					}
+				}
+				else if ( UrlTypeChecker.shouldNotAcceptInternalLink(location, lowerCaseLocation) ) {	// Else we are redirecting an internalPageLink.
+					logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
+					throw new RuntimeException();
+				} else if ( lowerCaseLocation.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
+					ConnSupportUtils.blockSharedSiteSessionDomain(initialUrl, domainStr);
+					throw new DomainBlockedException();
+				}
+				
+				String targetUrl = ConnSupportUtils.getFullyFormedUrl(null, location, conn.getURL());
+				if ( targetUrl == null )
+					throw new RuntimeException();
+				
+				// FOR DEBUG -> Check to see what's happening with the redirect urls (location field types, as well as potential error redirects).
+				// Some domains use only the target-ending-path in their location field, while others use full target url.
+				//if ( conn.getURL().toString().contains("<urlType>") ) {	// Debug a certain domain.
+					/*logger.debug("\n");
+					logger.debug("Redirect(s) num: " + curRedirectsNum);
+					logger.debug("Redirect code: " + conn.getResponseCode());
+					logger.debug("Base: " + conn.getURL());
+					logger.debug("Location: " + location);
+					logger.debug("Target: " + targetUrl + "\n");*/
+				//}
+				
+				if ( UrlUtils.docUrlsWithKeys.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
+					logger.info("re-crossed docUrl found: <" + targetUrl + ">");
+					if ( FileUtils.shouldDownloadDocFiles )
+						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(targetUrl), domainStr);
+					else
+						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, "", domainStr);
+					throw new AlreadyFoundDocUrlException();
+				}
+				/*else if ( calledForPageUrl && targetUrl.contains("elsevier.com") ) {	// Avoid pageUrls redirecting to "elsevier.com" (mostly "doi.org"-urls).
+					logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + targetUrl + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
+					throw new RuntimeException();
+				}*/
+				
+				if ( !targetUrl.contains(HttpConnUtils.lastConnectedHost) )    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
+					if ( (domainStr = UrlUtils.getDomainStr(targetUrl)) == null )
+						throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
+				
+				conn.disconnect();
+				conn = HttpConnUtils.openHttpConnection(targetUrl, domainStr, calledForPageUrl, calledForPossibleDocUrl);
+				
+				responceCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
+				
+				if ( (responceCode >= 200) && (responceCode <= 299) ) {
+					//ConnSupportUtils.printFinalRedirectDataForWantedUrlType(initialUrl, conn.getURL().toString(), null, curRedirectsNum);	// DEBUG!
+					return conn;	// It's an "HTTP SUCCESS", return immediately.
+				}
+			} while ( (responceCode >= 300) && (responceCode <= 399) );
+			
+			// It should have returned if there was an HTTP 2XX code. Now we have to handle the error-code.
+			ConnSupportUtils.onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
+			throw new RuntimeException();	// This is not thrown if a "DomainBlockedException" was thrown first.
 			
 		} catch (AlreadyFoundDocUrlException | RuntimeException | ConnTimeoutException | DomainBlockedException | DomainWithUnsupportedHEADmethodException e) {	// We already logged the right messages.
 			conn.disconnect();
