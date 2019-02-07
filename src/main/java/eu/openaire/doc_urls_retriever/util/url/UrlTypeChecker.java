@@ -188,20 +188,17 @@ public class UrlTypeChecker
 	
 	
 	/**
-	 * This method matches the given pageUrl against general regexes.
+	 * This method matches the given pageUrl against general regex-es.
 	 * It returns "true" if the givenUrl should not be accepted, otherwise, it returns "false".
 	 * @param pageUrl
-	 * @param lowerCasePageUrl
+	 * @param lowerCaseUrl
 	 * @return true / false
 	 */
-	public static boolean shouldNotAcceptPageUrl(String pageUrl, String lowerCasePageUrl)
+	public static boolean shouldNotAcceptPageUrl(String pageUrl, String lowerCaseUrl)
 	{
-		String lowerCaseUrl = null;
-		
-		if ( lowerCasePageUrl == null )
+		if ( lowerCaseUrl == null )
 			lowerCaseUrl = pageUrl.toLowerCase();
-		else
-			lowerCaseUrl = lowerCasePageUrl;	// We might have already done the transformation in the calling method.
+		// If it's not "null", it means we have already done the transformation in the calling method.
 		
 		return	PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() || SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
 				|| URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() || PAGE_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches()
@@ -211,21 +208,18 @@ public class UrlTypeChecker
 	
 	public static boolean shouldNotAcceptInternalLink(String linkStr, String lowerCaseLink)
 	{
-		String lowerCaseUrl = null;
-		
 		if ( lowerCaseLink == null )
-			lowerCaseUrl = linkStr.toLowerCase();
-		else
-			lowerCaseUrl = lowerCaseLink;
+			lowerCaseLink = linkStr.toLowerCase();
+		// If it's not "null", it means we have already done the transformation in the calling method.
 		
-		return	URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() || INTERNAL_LINKS_KEYWORDS_FILTER.matcher(lowerCaseUrl).matches()
-				|| SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() || PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
-				|| INTERNAL_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches() || INTERNAL_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseUrl).matches()
-				|| PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches()
-				|| CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseUrl).matches();	// TODO - To be removed when these docExtensions get supported.
+		return	URL_DIRECTORY_FILTER.matcher(lowerCaseLink).matches() || INTERNAL_LINKS_KEYWORDS_FILTER.matcher(lowerCaseLink).matches()
+				|| SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLink).matches() || PLAIN_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
+				|| INTERNAL_LINKS_FILE_EXTENSION_FILTER.matcher(lowerCaseLink).matches() || INTERNAL_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseLink).matches()
+				|| PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseLink).matches()
+				|| CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseLink).matches();	// TODO - To be removed when these docExtensions get supported.
 		
 		// The following checks are obsolete here, as we already use it inside "visit()" method. Still keep it here, as it makes our intentions clearer.
-		// !lowerCaseUrl.contains(referringPageDomain)	// Don't check this link if it belongs in a different domain than the referringPage's one.
+		// !lowerCaseLink.contains(referringPageDomain)	// Don't check this link if it belongs in a different domain than the referringPage's one.
 	}
 	
 }

@@ -450,11 +450,11 @@ public class ConnSupportUtils
 			
 			if ( URLTypeUrl != null )
 				base = URLTypeUrl;
-			else
-				new URL(pageUrl);
+			else if ( pageUrl != null )
+				base = new URL(pageUrl);
+			// Else -> there will be an exception in the next command..
 			
-			URL target = new URL(base, currentLink);
-			return target.toString();
+			return	new URL(base, currentLink).toString();	// Return the TargetUrl.
 			
 		} catch (Exception e) {
 			logger.error("Error when producing fully-formedUrl for: " + currentLink);
