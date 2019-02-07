@@ -227,7 +227,7 @@ public class LoaderAndChecker
 			return null;
 		}
 		
-		if ( ConnSupportUtils.checkIfPathIs403BlackListed(retrievedUrl, currentUrlDomain) ) {
+		if ( ConnSupportUtils.checkIfPathIs403BlackListed(retrievedUrl, currentUrlDomain) ) {	// The path-extraction is independent of the jsessionid-removal, so this gets executed before.
 			logger.debug("Preventing reaching 403ErrorCode with url: \"" + retrievedUrl + "\"!");
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' as it had a blackListed urlPath.", null);
 			return null;

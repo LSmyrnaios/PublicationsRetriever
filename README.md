@@ -36,9 +36,9 @@ To run the application you should navigate to the ***target*** directory, which 
 ``java -jar doc_urls_retriever-0.3-SNAPSHOT.jar arg1:'-downloadDocFiles' arg2:'-firstDocFileNum' arg3:'NUM' arg4:'-docFilesStorage' arg5:'storageDir'``
 
 **Arguments explanation:**<br/>
-- **-downloadDocFiles** will tell the program to download the DocFiles. The absence of this argument will cause the program to NOT download the docFiles, but just to find the DocUrls instead.
+- **-downloadDocFiles** will tell the program to download the DocFiles. The absence of this argument will cause the program to NOT download the docFiles, but just to find the DocUrls instead. Either way, the DocUrls will be written to the JsonOutputFile.
 - **-firstDocFileNum** and **NUM** will tell the program to use numbers as DocFileNames and the first DocFile will have the given number "*NUM*". The absence of this argument-group will cause the program to use the original-docFileNames.
-- **-docFilesStorage** and **storageDir** will tell the program to use the custom DocFilesStorageDir: *storageDir*. The absence of this argument will cause the program to use a pre-defined storageDir which is: "*./docFiles*".
+- **-docFilesStorage** and **storageDir** will tell the program to use the given DocFiles-*storageDir*. The absence of this argument will cause the program to use a pre-defined storageDir which is: "*./docFiles*".
 
 Examples
 --------

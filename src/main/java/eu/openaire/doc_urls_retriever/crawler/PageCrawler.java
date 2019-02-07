@@ -88,7 +88,7 @@ public class PageCrawler
 		if ( (currentPageLinks = retrieveInternalLinks(urlId, sourceUrl, pageUrl, currentPageDomain, pageHtml, pageContentType)) == null )
 			return;	// The necessary logging is handled inside.
 		
-		HashSet<String> remainingLinks = new HashSet<>();
+		HashSet<String> remainingLinks = new HashSet<>(currentPageLinks.size());	// Initialize with the total num of links (less will actually get stored there, but their num is unknown).
 		String urlToCheck = null;
 		String lowerCaseLink = null;
 		
@@ -259,7 +259,7 @@ public class PageCrawler
 			return null;
 		}
 		
-		//if ( pageUrl.contains(<keyWord> | <url>) )	// In case we want to print only on specific-pageTypes.
+		//if ( pageUrl.contains(<keyWord> | <url>) )	// In case we want to print internal-links only for specific-pageTypes.
 			//printInternalLinksForDebugging(currentPageLinks);
 		
 		return currentPageLinks;
