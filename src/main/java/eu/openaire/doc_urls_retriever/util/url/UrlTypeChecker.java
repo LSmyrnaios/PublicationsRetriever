@@ -75,80 +75,111 @@ public class UrlTypeChecker
 	 */
 	public static boolean matchesUnwantedUrlType(String urlId, String retrievedUrl, String lowerCaseUrl)
 	{
+		String loggingMessage = null;
+		
 		if ( lowerCaseUrl.contains("frontiersin.org") || lowerCaseUrl.contains("tandfonline.com") ) {	// Avoid JavaScript-powered domains, other than the "sciencedirect.com", which is counted separately.
 			javascriptPageUrls++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to a JavaScript-using domain, other than.", null);
+			loggingMessage = "Discarded after matching to a JavaScript-using domain, other than the \"sciencedirect.com\".";
+			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("www.elsevier.com") || lowerCaseUrl.contains("journals.elsevier.com") ) {	// The plain "www.elsevier.com" and the "journals.elsevier.com" don't give docUrls.
 			// The "linkinghub.elsevier.com" is redirecting to "sciencedirect.com".
 			// Note that we still accept the "elsevier.es" pageUrls, which give docUrls.
 			elsevierUnwantedUrls ++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to the unwanted 'elsevier.com' domain.", null);
+			loggingMessage = "Discarded after matching to the unwanted 'elsevier.com' domain.";
+			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("europepmc.org") || lowerCaseUrl.contains("ncbi.nlm.nih.gov") ) {	// Avoid known-crawler-sensitive domains.
 			crawlerSensitiveDomains ++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to a crawler-sensitive domain.", null);
+			loggingMessage = "Discarded after matching to a crawler-sensitive domain.";
+			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("doaj.org/toc/") ) {	// Avoid resultPages.
 			doajResultPageUrls ++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to the Results-directory: 'doaj.org/toc/'.", null);
+			loggingMessage = "Discarded after matching to the Results-directory: 'doaj.org/toc/'.";
+			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("dlib.org") || lowerCaseUrl.contains("saberes.fcecon.unr.edu.ar") ) {    // Avoid HTML docUrls.
 			pagesWithHtmlDocUrls++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to an HTML-docUrls site.", null);
+			loggingMessage = "Discarded after matching to an HTML-docUrls site.";
+			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("rivisteweb.it") || lowerCaseUrl.contains("wur.nl") || lowerCaseUrl.contains("remeri.org.mx")
 				|| lowerCaseUrl.contains("cam.ac.uk") || lowerCaseUrl.contains("scindeks.ceon.rs") || lowerCaseUrl.contains("egms.de") ) {	// Avoid pages known to not provide docUrls (just metadata).
-			pagesNotProvidingDocUrls ++;												// Keep "remeri" subDomain of "org.mx", as the TLD is having a lot of different sites.
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to the non docUrls-providing site 'rivisteweb.it'.", null);
+			pagesNotProvidingDocUrls ++;	// Keep "remeri" subDomain of "org.mx", as the TLD is having a lot of different sites.
+			loggingMessage = "Discarded after matching to the non docUrls-providing site 'rivisteweb.it'.";
+			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("bibliotecadigital.uel.br") || lowerCaseUrl.contains("cepr.org") ) {	// Avoid domains requiring login to access docUrls.
 			pagesRequireLoginToAccessDocFiles++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to a domain which needs login to access docFiles.", null);
+			loggingMessage = "Discarded after matching to a domain which needs login to access docFiles.";
+			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("/view/") || lowerCaseUrl.contains("scielosp.org") || lowerCaseUrl.contains("dk.um.si") || lowerCaseUrl.contains("apospublications.com")
-				|| lowerCaseUrl.contains("jorr.org") || lowerCaseUrl.contains("redalyc.org") ) {	// Avoid crawling pages with larger depth (internalPagesToDocUrls or Previews of docUrls).
+				|| lowerCaseUrl.contains("jorr.org") || lowerCaseUrl.contains("redalyc.org") || lowerCaseUrl.contains("rwth-aachen.de") ) {	// Avoid crawling pages having their DocUrls in larger depth (internalPagesToDocUrls or PreviousOfDocUrls).
 			pagesWithLargerCrawlingDepth ++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to an increasedCrawlingDepth-site.", null);
+			loggingMessage = "Discarded after matching to a site having its DocUrls in larger depth.";
+			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
 		}
-		else if ( lowerCaseUrl.contains("doi.org/https://doi.org/") && lowerCaseUrl.contains("pangaea.") ) {	// PANGAEA. urls with problematic form and non docUrl internal links.
+		else if ( lowerCaseUrl.contains("doi.org/https://doi.org/") && lowerCaseUrl.contains("pangaea.") ) {	// PANGAEA. urls with problematic form and non docUrl internal links (yes WITH the "DOT").
 			pangaeaUrls ++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to 'PANGAEA.' urls with invalid form and non-docUrls in their internal links.", null);
+			loggingMessage = "Discarded after matching to 'PANGAEA.' urls with invalid form and non-docUrls in their internal links.";
+			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
 		}
 		else if ( lowerCaseUrl.contains("200.17.137.108") ) {	// Known domains with connectivity problems.
 			LoaderAndChecker.connProblematicUrls ++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to known urls with connectivity problems.", null);
+			loggingMessage = "Discarded after matching to known urls with connectivity problems.";
+			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
 		}
 		/*else if ( lowerCaseUrl.contains("handle.net") || lowerCaseUrl.contains("doors.doshisha.ac.jp") || lowerCaseUrl.contains("opac-ir.lib.osaka-kyoiku.ac.jp") ) {	// Slow urls (taking more than 3secs to connect).
 			longToRespondUrls ++;
-			UrlUtils.logTriple(urlId, retrievedUrl,"unreachable", "Discarded after matching to domain, known to take long to respond.", null);
+			loggingMessage = "Discarded after matching to domain, known to take long to respond.";
+			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
+			UrlUtils.logTriple(urlId, retrievedUrl,"unreachable", loggingMessage, null);
 			return true;
 		}*/
 		else if ( lowerCaseUrl.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
 			ConnSupportUtils.blockSharedSiteSessionDomain(retrievedUrl, null);
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "It was discarded after participating in a 'sharedSiteSession-redirectionPack'.", null);
+			LoaderAndChecker.connProblematicUrls ++;
+			loggingMessage = "It was discarded after participating in a 'sharedSiteSession-redirectionPack'.";
+			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
 		}
 		/*else if ( UrlUtils.SCIENCEDIRECT_DOMAINS.matcher(lowerCaseUrl).matches()
 				|| DOI_ORG_J_FILTER.matcher(lowerCaseUrl).matches() || UrlUtils.DOI_ORG_PARENTHESIS_FILTER.matcher(lowerCaseUrl).matches()
 				|| DOI_ORG_JTO_FILTER.matcher(lowerCaseUrl).matches() ) {
 			sciencedirectUrls ++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to 'sciencedirect.com'-family urls.", null);
+			loggingMessage = "Discarded after matching to 'sciencedirect.com'-family urls.";
+			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
 		}*/
 		else if ( shouldNotAcceptPageUrl(retrievedUrl, lowerCaseUrl) ) {
 			urlsWithUnwantedForm ++;
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded after matching to unwantedType-regex-rules.", null);
+			loggingMessage = "Discarded after matching to unwantedType-regex-rules.";
+			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
 		}
 		else
