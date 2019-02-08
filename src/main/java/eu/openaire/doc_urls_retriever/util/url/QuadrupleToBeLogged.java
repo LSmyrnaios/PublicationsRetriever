@@ -13,9 +13,10 @@ public class QuadrupleToBeLogged
     private String sourceUrl;
     private String docUrl;
     private String comment;   // This will be an emptyString, unless there is an error causing the docUrl to be unreachable.
-    
-    
-    public QuadrupleToBeLogged(String urlId, String sourceUrl, String docUrl, String comment)
+	
+	private static final StringBuilder strB = new StringBuilder(550);
+	
+	public QuadrupleToBeLogged(String urlId, String sourceUrl, String docUrl, String comment)
     {
         if ( urlId == null )
             urlId = "unretrievable";
@@ -57,14 +58,16 @@ public class QuadrupleToBeLogged
      */
     public String toJsonString()
     {
-        StringBuilder strB = new StringBuilder(500);
-        
         strB.append("{\"id\":\"").append(this.urlId);
         strB.append("\",\"sourceUrl\":\"").append(this.sourceUrl);
         strB.append("\",\"docUrl\":\"").append(this.docUrl);
         strB.append("\",\"comment\":\"").append(this.comment).append("\"}");
         
-        return strB.toString();
+        String jsonString = strB.toString();
+        
+        strB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating.
+        
+        return jsonString;
     }
     
 }

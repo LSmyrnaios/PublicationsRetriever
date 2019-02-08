@@ -26,7 +26,7 @@ public class MachineLearning
 	
 	public static final boolean useMLA = false;	// Should we try the experimental-M.L.A.? This is intended to be like a "global switch", to use or not to use the MLA,  throughout the program's execution.
 	
-	private static StringBuilder strB = new StringBuilder(200);
+	private static final StringBuilder strB = new StringBuilder(200);
 	
 	private static int latestMLADocUrlsFound = 0;
 	private static float leastSuccessPercentageForMLA = 60;	// The percentage which we want, in order to continue running the MLA.

@@ -29,7 +29,7 @@ public class ConnSupportUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(ConnSupportUtils.class);
 	
-	private static StringBuilder strB = new StringBuilder(30000);	// We give an initial size to optimize performance.
+	private static final StringBuilder strB = new StringBuilder(30000);	// We give an initial size to optimize performance.
 	
 	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("(?:\\((?:\\')?)?([\\w]+\\/[\\w\\+\\-\\.]+).*");
 	

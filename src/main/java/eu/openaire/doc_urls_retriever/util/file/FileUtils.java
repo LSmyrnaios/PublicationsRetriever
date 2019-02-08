@@ -35,7 +35,7 @@ public class FileUtils
 	
 	public static int jsonGroupSize = 300;
 	
-	private static StringBuilder strB = new StringBuilder(jsonGroupSize * 500);  // 500: the usual-maximum-expected-length for an <id-sourceUrl-docUrl-comment> quadruple.
+	private static final StringBuilder strB = new StringBuilder(jsonGroupSize * 500);  // 500: the usual-maximum-expected-length for an <id-sourceUrl-docUrl-comment> quadruple.
 	
 	private static int fileIndex = 0;	// Index in the input file
 	public static final boolean skipFirstRow = false;	// Use this to skip the HeaderLine in a csv-kindOf-File.
@@ -50,7 +50,7 @@ public class FileUtils
 	
 	public static boolean shouldDownloadDocFiles = true;
 	public static final boolean shouldDeleteOlderDocFiles = false;	// Should we delete any older stored docFiles? This is useful for testing.
-	public static boolean shouldUseOriginalDocFileNames = false;
+	public static boolean shouldUseOriginalDocFileNames = false;	// Use number-fileNames by default.
 	public static final boolean shouldLogFullPathName = true;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
 	public static int numOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremential system.
 	public static String storeDocFilesDir = System.getProperty("user.dir") + File.separator + "docFiles";

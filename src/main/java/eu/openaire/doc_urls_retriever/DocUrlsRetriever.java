@@ -93,7 +93,7 @@ public class DocUrlsRetriever
 					FileUtils.storeDocFilesDir = mainArgs[i];
 					DocUrlsRetriever.docFilesStorageGivenByUser = true;
 					break;
-				default:	// log & ignore arg
+				default:	// log & ignore the argument
 					String errMessage = "Argument: \"" + mainArgs[i] + "\" was not expected!";
 					System.err.println(errMessage);
 					logger.error(errMessage);
