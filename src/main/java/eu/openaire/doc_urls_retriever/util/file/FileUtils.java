@@ -39,7 +39,7 @@ public class FileUtils
 	
 	private static int fileIndex = 0;	// Index in the input file
 	public static final boolean skipFirstRow = false;	// Use this to skip the HeaderLine in a csv-kindOf-File.
-	private static String endOfLine = "\n";
+	private static final String endOfLine = System.lineSeparator();
 	public static int unretrievableInputLines = 0;	// For better statistics in the end.
     public static int unretrievableUrlsOnly = 0;
     public static int maxStoringWaitingTime = 45000;	// 45sec
