@@ -184,17 +184,15 @@ public class ConnSupportUtils
 					logger.warn("DocUrl: \"" + docUrl + "\" had a non-acceptable contentSize: " + contentSize + ". The maxAllowed one is: " + HttpConnUtils.maxAllowedContentSize);
 					throw new DocFileNotRetrievedException();
 				}
-			} catch (RuntimeException re) {
-				logger.warn("No \"Content-Length\" was retrieved from docUrl: \"" + conn.getURL().toString() + "\"! We will store the docFile anyway..");
-			} catch (DocFileNotRetrievedException dfnre) {
-				throw dfnre;
+			} catch (NumberFormatException nfe) {
+				logger.warn("No \"Content-Length\" was retrieved from docUrl: \"" + conn.getURL().toString() + "\"! We will store the docFile anyway..");	// No action is needed.
 			}
 			
 			// Write the downloaded bytes to the docFile and return the docFileName.
 			return FileUtils.storeDocFile(conn.getInputStream(), docUrl, conn.getHeaderField("Content-Disposition"));
 			
-		} catch (DocFileNotRetrievedException dfnre ) {
-			throw dfnre;
+		} catch (DocFileNotRetrievedException dfnre ) {	// Catch it here, otherwise it will be caught as a general exception.
+			throw dfnre;	// Avoid creating a new "DocFileNotRetrievedException" if it's already created. By doing this we have a better stack-trace if we decide to log it in the caller-method.
 		} catch (Exception e) {
 			logger.warn("", e);
 			throw new DocFileNotRetrievedException();
@@ -423,16 +421,11 @@ public class ConnSupportUtils
 	 * This method returns the ContentSize of the content of an HttpURLConnection.
 	 * @param conn
 	 * @return contentSize
-	 * @throws RuntimeException
+	 * @throws NumberFormatException
 	 */
-	public static int getContentSize(HttpURLConnection conn) throws RuntimeException
+	public static int getContentSize(HttpURLConnection conn) throws NumberFormatException
 	{
-		try {
-			return Integer.parseInt(conn.getHeaderField("Content-Length"));
-		} catch (NumberFormatException nfe) {
-			//logger.warn("", nfe);
-			throw new RuntimeException();
-		}
+		return Integer.parseInt(conn.getHeaderField("Content-Length"));
 	}
 	
 	
