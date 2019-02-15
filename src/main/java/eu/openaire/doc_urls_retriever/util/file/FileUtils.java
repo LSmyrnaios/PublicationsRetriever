@@ -33,7 +33,7 @@ public class FileUtils
 	private static Scanner inputScanner;
 	private static PrintStream printStream;
 	
-	public static int jsonGroupSize = 300;
+	public static final int jsonGroupSize = 300;
 	
 	private static final StringBuilder strB = new StringBuilder(jsonGroupSize * 500);  // 500: the usual-maximum-expected-length for an <id-sourceUrl-docUrl-comment> quadruple.
 	
@@ -42,7 +42,7 @@ public class FileUtils
 	private static final String endOfLine = System.lineSeparator();
 	public static int unretrievableInputLines = 0;	// For better statistics in the end.
     public static int unretrievableUrlsOnly = 0;
-    public static int maxStoringWaitingTime = 45000;	// 45sec
+    public static final int maxStoringWaitingTime = 45000;	// 45sec
 	
 	public static final List<QuadrupleToBeLogged> quadrupleToBeLoggedList = new ArrayList<>(jsonGroupSize);
 	
@@ -111,7 +111,7 @@ public class FileUtils
 
 	/**
 	 * This method parses a Json file and extracts the urls, along with the IDs.
-	 * @return Collection<String>
+	 * @return HashMultimap<String, String>
 	 */
 	public static HashMultimap<String, String> getNextIdUrlPairGroupFromJson()
 	{
@@ -120,7 +120,7 @@ public class FileUtils
 		
 		int curBeginning = FileUtils.fileIndex;
 		
-		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + jsonGroupSize)) )// While (!EOF) iterate through lines.
+		while ( inputScanner.hasNextLine() && (FileUtils.fileIndex < (curBeginning + jsonGroupSize)) )// While (!EOF) iterate through lines.
 		{
 			//logger.debug("fileIndex: " + FileUtils.fileIndex);	// DEBUG!
 			

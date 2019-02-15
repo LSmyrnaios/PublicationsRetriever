@@ -48,7 +48,7 @@ public class LoaderAndChecker
 			throw new RuntimeException(e);
 		}
 		finally {
-			// Write any remaining urls from memory to disk.
+			// Write any remaining quadruples from memory to disk (we normally write every "FileUtils.jasonGroupSize" quadruples, so a few last quadruples might have not be written yet).
 			if ( !FileUtils.quadrupleToBeLoggedList.isEmpty() ) {
 				logger.debug("Writing last quadruples to disk.");
 				FileUtils.writeToFile();

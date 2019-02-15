@@ -67,7 +67,7 @@ public class DocUrlsRetriever
 		boolean downloadDocFiles = false;
 		boolean firstNumGiven = false;
 		
-		for ( short i=0; i < mainArgs.length; i++ )
+		for ( short i = 0; i < mainArgs.length; i++ )
 		{
 			switch ( mainArgs[i] )
 			{
@@ -77,9 +77,9 @@ public class DocUrlsRetriever
 					break;
 				case "-firstDocFileNum":
 					try {
-						i ++;
+						i ++;	// Go get the following first-Number-argument.
 						DocUrlsRetriever.initialNumOfDocFile = Integer.parseInt(mainArgs[i]);
-						FileUtils.numOfDocFile = DocUrlsRetriever.initialNumOfDocFile;
+						FileUtils.numOfDocFile = DocUrlsRetriever.initialNumOfDocFile;	// We don't assign it directly, since we use both in statistics.
 						firstNumGiven = true;
 						break;
 					} catch (NumberFormatException nfe) {
@@ -127,7 +127,12 @@ public class DocUrlsRetriever
 			}
 		}
 		
-		logger.info("Total num of urls checked from the input was: " + inputCheckedUrlNum);
+		if ( LoaderAndChecker.useIdUrlPairs && (inputCheckedUrlNum < FileUtils.getCurrentlyLoadedUrls()) )
+			logger.info("Total num of urls checked from the input was: " + inputCheckedUrlNum
+					+ ". The rest (" + (FileUtils.getCurrentlyLoadedUrls() - inputCheckedUrlNum) + ") were belonging to duplicate IDs.");
+		else
+			logger.info("Total num of urls checked from the input was: " + inputCheckedUrlNum);
+		
 		logger.info("Total docUrls found: " + UrlUtils.sumOfDocUrlsFound + ". That's about: " + UrlUtils.sumOfDocUrlsFound * (float)100 / inputCheckedUrlNum + "%");
 		if ( FileUtils.shouldDownloadDocFiles ) {
 			int numOfStoredDocFiles = 0;
