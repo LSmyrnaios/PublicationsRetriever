@@ -1,4 +1,4 @@
-DocUrlsRetriever
+DocUrlsRetriever    [![Build Status](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever.svg?branch=master)](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever)
 ================
 A Java-program which finds the Document Urls from the given Publication-Web-Pages and downloads the docFiles.<br/>
 It is being developed for the European organisation: [OpenAIRE](https://www.openaire.eu/).<br/>
