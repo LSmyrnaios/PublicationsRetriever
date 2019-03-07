@@ -38,9 +38,10 @@ public class LinkExtraction {
 	
 	
 	@BeforeAll
-	static void setExampleUrl() {
-		exampleUrl = "http://epress.lib.uts.edu.au/journals/index.php/mcs/article/view/5655";
-	}
+	//static void setExampleUrl() {exampleUrl = "http://epress.lib.uts.edu.au/journals/index.php/mcs/article/view/5655";}
+	//static void setExampleUrl() {exampleUrl = "https://halshs.archives-ouvertes.fr/halshs-01698574";}
+	//static void setExampleUrl() {exampleUrl = "https://doors.doshisha.ac.jp/duar/repository/ir/127/?lang=0";}
+	static void setExampleUrl() {exampleUrl = "https://www.sciencedirect.com/science/article/pii/S0042682297988747?via%3Dihub";}
 	
 	
 	//@Disabled
@@ -92,7 +93,7 @@ public class LinkExtraction {
 		try {
 			ArrayList<String> links = new ArrayList<>(PageCrawler.extractInternalLinksFromHtml(exampleHtml));
 			
-			logger.info("The list of all the internalLinks is:");
+			logger.info("The list of all the internalLinks of \"" + exampleUrl + "\" is:");
 			for ( String link: links )
 				logger.info(link);
 			
@@ -111,7 +112,7 @@ public class LinkExtraction {
 			
 			ArrayList<String> links = new ArrayList<>(PageCrawler.extractInternalLinksFromHtml(getHtmlString(conn)));
 			
-			logger.info("The list of all the internalLinks is:");
+			logger.info("The list of all the internalLinks of \"" + exampleUrl + "\" is:");
 			for ( String link: links )
 				logger.info(link);
 			

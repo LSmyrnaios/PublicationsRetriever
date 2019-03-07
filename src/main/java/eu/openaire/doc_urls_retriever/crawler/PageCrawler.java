@@ -281,7 +281,7 @@ public class PageCrawler
 					&& !internalLink.startsWith("#")
 					&& !internalLink.startsWith("mailto:") && !internalLink.startsWith("tel:") && !internalLink.startsWith("{openurl}") )
 			{
-				//logger.debug("InternalLink: " + internalLink);
+				//logger.debug("Filtered InternalLink: " + internalLink);
 				String lowerCaseLink = internalLink.toLowerCase();
 				if ( lowerCaseLink.startsWith("javascript:") ) {
 					String pdfLink = null;
@@ -290,7 +290,7 @@ public class PageCrawler
 						pdfLink = pdfLinkMatcher.group(1);
 						throw new JavaScriptDocLinkFoundException(pdfLink);    // If it's 'null', we treat it when handling this exception.
 					}
-					else	// It's a javaScriptLink which we don't treat.
+					else	// It's a javaScript link or element which we don't treat.
 						continue;
 				}
 				urls.add(internalLink);
