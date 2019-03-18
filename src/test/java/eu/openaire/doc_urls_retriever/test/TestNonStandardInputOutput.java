@@ -22,8 +22,10 @@ public class TestNonStandardInputOutput  {
 	
 	private static final Logger logger = LoggerFactory.getLogger(TestNonStandardInputOutput.class);
 	
-	private static File inputFile = new File(System.getProperty("user.dir") + File.separator + "testing" + File.separator + "sampleCleanUrls3000.json");
-	private static File outputFile = new File(System.getProperty("user.dir") + File.separator + "testing" + File.separator + "testOutputFile.json");
+	private static String testingDirectory = System.getProperty("user.dir") + File.separator + "testing" + File.separator + "idUrlPairs" + File.separator;
+	
+	private static File inputFile = new File(testingDirectory + "sampleCleanUrls3000.json");
+	private static File outputFile = new File(testingDirectory + "testOutputFile.json");
 	
 	
 	@Disabled	// as we want to run it only on demand, since it's a huge test. Same for the following tests of this class.
