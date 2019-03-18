@@ -24,7 +24,7 @@ Then enter this command in the terminal:<br/>
 To run the application you should navigate to the ***target*** directory, which will be created by *MAVEN* and run the executable ***JAR*** file, while choosing the appropriate run-command.<br/> 
 
 **Run with standard input/output:**<br/>
-``java -jar doc_urls_retriever-0.3-SNAPSHOT.jar arg1:'-downloadDocFiles' arg2:'-firstDocFileNum' arg3:'NUM' arg4:'-docFilesStorage' arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``<br/>
+``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg1:'-downloadDocFiles' arg2:'-firstDocFileNum' arg3:'NUM' arg4:'-docFilesStorage' arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``<br/>
 
 **Run tests with custom input/output:**<br/>
 - Inside ***pom.xml***, change the **mainClass** of **maven-shade-plugin** from "**DocUrlsRetriever**" to "**TestNonStandardInputOutput**".
@@ -33,7 +33,7 @@ To run the application you should navigate to the ***target*** directory, which 
 - If you want to see the logging-messages in the *Console*, open the ***resources/logback.xml*** and change the ***appender-ref***, from ***File*** to ***Console***.<br/>
 - Run ``mvn install`` to create the new ***JAR*** file.<br/>
 - Execute the program with the following command:<br/>
-``java -jar doc_urls_retriever-0.3-SNAPSHOT.jar arg1:'-downloadDocFiles' arg2:'-firstDocFileNum' arg3:'NUM' arg4:'-docFilesStorage' arg5:'storageDir'``
+``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg1:'-downloadDocFiles' arg2:'-firstDocFileNum' arg3:'NUM' arg4:'-docFilesStorage' arg5:'storageDir'``
 
 **Arguments explanation:**<br/>
 - **-downloadDocFiles** will tell the program to download the DocFiles. The absence of this argument will cause the program to NOT download the docFiles, but just to find the DocUrls instead. Either way, the DocUrls will be written to the JsonOutputFile.
@@ -43,7 +43,7 @@ To run the application you should navigate to the ***target*** directory, which 
 Examples
 --------
 - You can check the functionality of **DocUrlsRetriever** by running this example:
-``java -jar doc_urls_retriever-0.3-SNAPSHOT.jar -downloadDocFiles -firstDocFileNum 1 -docFilesStorage ../example/sample_output/DocFiles < ../example/sample_input/sample_input.json > ../example/sample_output/sample_output.json``
+``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar -downloadDocFiles -firstDocFileNum 1 -docFilesStorage ../example/sample_output/DocFiles < ../example/sample_input/sample_input.json > ../example/sample_output/sample_output.json``
 This command will run the program with "**../example/sample_input/sample_input.json**" as input and "**../example/sample_output/sample_output.json**" as the output.</br>
 The arguments used are:
     - **-downloadDocFiles** which will tell the program to download the DocFiles.
