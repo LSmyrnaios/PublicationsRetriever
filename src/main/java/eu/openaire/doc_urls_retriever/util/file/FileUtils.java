@@ -376,7 +376,7 @@ public class FileUtils
 	
 	
 	/**
-	 * This method parses a testFile with one-url-per-line and extracts the urls.
+	 * This method parses a testFile with one-url-per-line and extracts the urls (e.g. ".txt", ".csv", ".tsv").
 	 * @return Collection<String>
 	 */
 	public static Collection<String> getNextUrlGroupTest()
@@ -389,11 +389,11 @@ public class FileUtils
 		//logger.debug("Retrieving the next group of " + jsonGroupSize + " elements from the inputFile.");
 		int curBeginning = FileUtils.fileIndex;
 		
-		while ( (inputScanner.hasNextLine()) && (FileUtils.fileIndex < (curBeginning + jsonGroupSize)) )
+		while ( inputScanner.hasNextLine() && (FileUtils.fileIndex < (curBeginning + jsonGroupSize)) )
 		{// While (!EOF) iterate through lines.
 			
 			// Take each line, remove potential double quotes.
-			String retrievedLineStr = StringUtils.replace(inputScanner.nextLine(), "\"", "");
+			String retrievedLineStr = inputScanner.nextLine();
 			
 			FileUtils.fileIndex ++;
 			
@@ -404,6 +404,8 @@ public class FileUtils
 				FileUtils.unretrievableInputLines ++;
 				continue;
 			}
+			
+			retrievedLineStr = StringUtils.replace(retrievedLineStr, "\"", "");
 			
 			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
 			
