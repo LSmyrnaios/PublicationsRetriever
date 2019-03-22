@@ -38,7 +38,7 @@ public class FileUtils
 	private static final StringBuilder strB = new StringBuilder(jsonGroupSize * 500);  // 500: the usual-maximum-expected-length for an <id-sourceUrl-docUrl-comment> quadruple.
 	
 	private static int fileIndex = 0;	// Index in the input file
-	public static final boolean skipFirstRow = false;	// Use this to skip the HeaderLine in a csv-kindOf-File.
+	public static boolean skipFirstRow = false;	// Use this to skip the HeaderLine in a csv-kindOf-File.
 	private static final String endOfLine = System.lineSeparator();
 	public static int unretrievableInputLines = 0;	// For better statistics in the end.
     public static int unretrievableUrlsOnly = 0;

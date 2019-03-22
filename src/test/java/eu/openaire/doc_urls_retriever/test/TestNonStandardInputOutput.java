@@ -3,6 +3,7 @@ package eu.openaire.doc_urls_retriever.test;
 import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -23,9 +24,21 @@ public class TestNonStandardInputOutput  {
 	private static final Logger logger = LoggerFactory.getLogger(TestNonStandardInputOutput.class);
 	
 	private static String testingDirectory = System.getProperty("user.dir") + File.separator + "testing" + File.separator + "idUrlPairs" + File.separator;
+	private static String testInputFile = "sampleCleanUrls3000.json";
 	
-	private static File inputFile = new File(testingDirectory + "sampleCleanUrls3000.json");
+	/*public static String testingDirectory = System.getProperty("user.dir") + File.separator + "testing" + File.separator + "justUrls" + File.separator;
+	private static String testInputFile = "testValidDocPagesList1000.csv";*/
+	
+	private static File inputFile = new File(testingDirectory + testInputFile);
 	private static File outputFile = new File(testingDirectory + "testOutputFile.json");
+	
+	
+	@BeforeAll
+	private static void setTypeOfInputData()
+	{
+		LoaderAndChecker.useIdUrlPairs = true;
+		FileUtils.skipFirstRow = false;
+	}
 	
 	
 	@Disabled	// as we want to run it only on demand, since it's a huge test. Same for the following tests of this class.
@@ -75,6 +88,7 @@ public class TestNonStandardInputOutput  {
 		DocUrlsRetriever.parseArgs(args);
 		
 		// Use testing input/output files.
+		setTypeOfInputData();
 		try {
 			new FileUtils(new FileInputStream(inputFile), new FileOutputStream(outputFile));
 		} catch (FileNotFoundException e) {
