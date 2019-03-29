@@ -23,11 +23,9 @@ public class TestNonStandardInputOutput  {
 	
 	private static final Logger logger = LoggerFactory.getLogger(TestNonStandardInputOutput.class);
 	
-	private static String testingDirectory = System.getProperty("user.dir") + File.separator + "testing" + File.separator + "idUrlPairs" + File.separator;
+	private static String testingSubDir = "idUrlPairs";	// "idUrlPairs" or "justUrls".
+	private static String testingDirectory = System.getProperty("user.dir") + File.separator + "testing" + File.separator + testingSubDir + File.separator;
 	private static String testInputFile = "sampleCleanUrls3000.json";
-	
-	/*public static String testingDirectory = System.getProperty("user.dir") + File.separator + "testing" + File.separator + "justUrls" + File.separator;
-	private static String testInputFile = "testValidDocPagesList1000.csv";*/
 	
 	private static File inputFile = new File(testingDirectory + testInputFile);
 	private static File outputFile = new File(testingDirectory + "testOutputFile.json");
@@ -36,7 +34,7 @@ public class TestNonStandardInputOutput  {
 	@BeforeAll
 	private static void setTypeOfInputData()
 	{
-		LoaderAndChecker.useIdUrlPairs = true;
+		LoaderAndChecker.useIdUrlPairs = testingSubDir.equals("idUrlPairs");
 		FileUtils.skipFirstRow = false;
 	}
 	
