@@ -46,7 +46,7 @@ public class HandleScienceDirect
 		} catch (FailedToProcessScienceDirectException sdhe) {
 			logger.warn("Problem when handling \"sciencedirect.com\" urls.");
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, when a 'sciencedirect.com'-url was not able to be handled correctly.", null);
-			return true;	// All that could be done for this ScienceDirectFamilyUrl, was done, signal that it was handled.
+			return true;	// All that could be done for this ScienceDirectFamilyUrl, was done, signal that it was handled and proceed to the next pageUrl.
 		}
 		return false;
 	}
@@ -71,16 +71,14 @@ public class HandleScienceDirect
 			// Handle "linkinghub.elsevier.com" urls which contain javaScriptRedirect..
 			if ( isLinkinghubElsevier ) {
 				//UrlUtils.elsevierLinks ++;
-				if ( (pageUrl = silentRedirectElsevierToScienseRedirect(pageUrl)) != null )
+				if ( (pageUrl = silentRedirectElsevierToScienseRedirect(pageUrl)) != null ) {
+					// The already open connection for "linkinghub.elsevier.com" get closed by "connectAndCheckMimeType()" when the "visit()" returns (after "handleScienceDirectFamilyUrls()" returns).
+					logger.debug("Produced ScienceDirect-url: " + pageUrl);
 					conn = HttpConnUtils.handleConnection(urlId, sourceUrl, pageUrl, pageUrl, pageDomain, true, false);
-				else
+				} else
 					throw new FailedToProcessScienceDirectException();
 			}
-			
 			// We now have the "sciencedirect.com" url (either from the beginning or after "silent-redirect").
-			
-			if ( isLinkinghubElsevier )	// Otherwise it's the same as the "visited"-one.
-				logger.debug("Produced ScienceDirect-url: " + pageUrl);
 			
 			String html = ConnSupportUtils.getHtmlString(conn);
 			Matcher metaDocUrlMatcher = PageCrawler.META_DOC_URL.matcher(html);
@@ -91,7 +89,7 @@ public class HandleScienceDirect
 					logger.error("Could not retrieve the metaDocUrl from a \"sciencedirect.com\" url!");
 					throw new FailedToProcessScienceDirectException();
 				}
-				//logger.debug("MetaDocUrl: " + metaDocUrl);    // DEBUG!
+				//logger.debug("MetaDocUrl: " + metaDocUrl);	// DEBUG!
 				
 				// Get the new html after connecting to the "metaDocUrl".
 				// We don't disconnect the previous one, since they both are in the same domain (see JavaDocs).
@@ -109,7 +107,7 @@ public class HandleScienceDirect
 						logger.error("Could not retrieve the finalDocUrl from a \"sciencedirect.com\" url!");
 						throw new FailedToProcessScienceDirectException();
 					}
-					//logger.debug("FinalDocUrl: " + finalDocUrl);    // DEBUG!
+					//logger.debug("FinalDocUrl: " + finalDocUrl);	// DEBUG!
 					
 					// Check and/or download the docUrl. These urls are one-time-links, meaning that after a while they will just redirect to their pageUrl.
 					if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, finalDocUrl, pageDomain, false, true) ) {	// We log the docUrl inside this method.
@@ -122,8 +120,8 @@ public class HandleScienceDirect
 					throw new FailedToProcessScienceDirectException();
 				}
 			} else {
-				logger.warn("The metaDocLink could not be found!");	// It's possible if the document only available after paying (https://www.sciencedirect.com/science/article/pii/S1094202598900527)
-				//logger.debug("HTML-code:\n" + html);    // DEBUG!
+				logger.warn("The metaDocLink could not be found!");	// It's possible if the document only available after paying or if the crawler gets blocked for heavy traffic.
+				//logger.debug("HTML-code:\n" + html);	// DEBUG!
 				throw new FailedToProcessScienceDirectException();
 			}
 		} catch (FailedToProcessScienceDirectException fthsde) {
