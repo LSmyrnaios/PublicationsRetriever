@@ -141,7 +141,6 @@ public class HttpConnUtils
 			if ( conn != null )
 				conn.disconnect();
 		}
-		
 		return false;
 	}
 	

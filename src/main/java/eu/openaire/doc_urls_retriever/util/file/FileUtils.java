@@ -135,7 +135,7 @@ public class FileUtils
 				continue;
 			}
 			
-			inputIdUrlPair =  jsonDecoder(retrievedLineStr);// Decode the jsonLine and take the two attributes.
+			inputIdUrlPair = jsonDecoder(retrievedLineStr);// Decode the jsonLine and take the two attributes.
 			if ( inputIdUrlPair == null ) {
 				logger.warn("A problematic inputLine found: \"" + retrievedLineStr + "\"");
 				FileUtils.unretrievableInputLines ++;
@@ -192,14 +192,13 @@ public class FileUtils
 	{
 		for ( QuadrupleToBeLogged quadruple : FileUtils.quadrupleToBeLoggedList)
 		{
-			strB.append(quadruple.toJsonString());
-			strB.append(endOfLine);
+			strB.append(quadruple.toJsonString()).append(endOfLine);
 		}
 		
 		printStream.print(strB.toString());
 		printStream.flush();
 		
-		FileUtils.quadrupleToBeLoggedList.clear();	// Clear to keep in memory only <jsonGroupSize> values at a time.
+		FileUtils.quadrupleToBeLoggedList.clear();	// Clear the list to put the new <jsonGroupSize> values. The backing array used by List is not de-allocated. Only the String references contained get GCed.
 		strB.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
 		
 		logger.debug("Finished writing to the outputFile " + jsonGroupSize + " quadruples.");

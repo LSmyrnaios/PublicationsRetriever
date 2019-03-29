@@ -17,7 +17,7 @@ public class UrlTypeChecker
 	private static final Logger logger = LoggerFactory.getLogger(UrlTypeChecker.class);
 	
 	public static final Pattern URL_DIRECTORY_FILTER =
-			Pattern.compile(".*\\/(?:profile|login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|post\\/|send\\/|shop\\/|watch|import|bookmark|announcement|rss|feed|about|faq|wiki|news|events|cart|support|sitemap|htmlmap|license|disclaimer|polic(?:y|ies)|privacy|terms|help|law"
+			Pattern.compile(".*\\/(?:profile|login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|post\\/|send\\/|shop\\/|view\\/|watch|import|bookmark|announcement|rss|feed|about|faq|wiki|news|events|cart|support|sitemap|htmlmap|license|disclaimer|polic(?:y|ies)|privacy|terms|help|law"
 					+ "|(?:my|your)?account|user|fund|aut(?:h)?or|editor|citation|review|external|statistics|application|permission|ethic|conta(?:c)?t|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|people|(?:the)?press"
 					+ "|error|(?:mis|ab)use|gateway|sorryserver|cookieabsent|notfound|404\\.(?:\\w)?htm).*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
