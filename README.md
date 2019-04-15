@@ -1,4 +1,4 @@
-#DocUrlsRetriever    [![Build Status](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever.svg?branch=master)](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever)
+# DocUrlsRetriever    [![Build Status](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever.svg?branch=master)](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever)
 
 A Java-program which finds the Document Urls from the given Publication-Web-Pages and downloads the docFiles.<br/>
 It is being developed for the European organization: [OpenAIRE](https://www.openaire.eu/).<br/>
@@ -25,7 +25,7 @@ An experimental **M.L.A.(= Machine Learning Algorithm)** was developed to predic
     and pushes this software to a better future.<br/>
 <br/>
 
-##Install & Run (using MAVEN)
+## Install & Run (using MAVEN)
 To install the application, navigate to the directory of the project, where the ***pom.xml*** is located.<br/>
 Then enter this command in the terminal:<br/>
 ``mvn install``<br/>
@@ -57,7 +57,7 @@ arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``<br/>
 - **-docFilesStorage** and **storageDir** will tell the program to use the given DocFiles-*storageDir*.
     The absence of this argument will cause the program to use a pre-defined storageDir which is: "*./docFiles*".
 
-##Examples
+## Examples
 - You can check the functionality of **DocUrlsRetriever** by running this example:
 ``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar -downloadDocFiles -firstDocFileNum 1 -docFilesStorage ../example/sample_output/DocFiles
     < ../example/sample_input/sample_input.json > ../example/sample_output/sample_output.json``
@@ -69,7 +69,7 @@ The arguments used are:
     - **-docFilesStorage ../example/sample_output/DocFiles** which will tell the program to use the custom
         DocFilesStorageDir: "*../example/sample_output/DocFiles*".
 
-##Customizations
+## Customizations
 - You can set **File-related** customizations in ***FileUtils.java***.
 - You can set **Connection-related** customizations in ***HttpConnUtils.java*** and ***ConnSupportUtils.java***.
 - You can test the experimental-**MachineLearning-algorithm** by enabling it (through **useMLA**-variable) from ***MachineLearning.java***.
