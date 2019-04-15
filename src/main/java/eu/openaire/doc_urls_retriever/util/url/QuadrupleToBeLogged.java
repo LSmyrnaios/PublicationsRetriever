@@ -58,15 +58,18 @@ public class QuadrupleToBeLogged
      */
     public String toJsonString()
     {
-        strB.append("{\"id\":\"").append(this.urlId);
-        strB.append("\",\"sourceUrl\":\"").append(this.sourceUrl);
-        strB.append("\",\"docUrl\":\"").append(this.docUrl);
-        strB.append("\",\"comment\":\"").append(this.comment).append("\"}");
-        
+    	if ( LoaderAndChecker.useIdUrlPairs ) {
+			strB.append("{\"id\":\"").append(this.urlId);
+			strB.append("\",\"sourceUrl\":\"").append(this.sourceUrl);
+		}
+    	else {	//When there are no IDs in the input file and there's no point in writing that they are "unretrieved" in the outputFile.
+			strB.append("{\"sourceUrl\":\"").append(this.sourceUrl);
+		}
+		strB.append("\",\"docUrl\":\"").append(this.docUrl);
+		strB.append("\",\"comment\":\"").append(this.comment).append("\"}");
+		
         String jsonString = strB.toString();
-        
         strB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating.
-        
         return jsonString;
     }
     

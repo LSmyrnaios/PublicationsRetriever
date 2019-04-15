@@ -25,7 +25,7 @@ public class TestNonStandardInputOutput  {
 	
 	private static String testingSubDir = "idUrlPairs";	// "idUrlPairs" or "justUrls".
 	private static String testingDirectory = System.getProperty("user.dir") + File.separator + "testing" + File.separator + testingSubDir + File.separator;
-	private static String testInputFile = "sampleCleanUrls3000.json";
+	private static String testInputFile = "sampleCleanUrls3000.json";	// "sampleCleanUrls3000.json", "testRandomNewList100.csv"
 	
 	private static File inputFile = new File(testingDirectory + testInputFile);
 	private static File outputFile = new File(testingDirectory + "testOutputFile.json");
