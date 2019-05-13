@@ -57,17 +57,24 @@ arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``<br/>
 - **-docFilesStorage** and **storageDir** will tell the program to use the given DocFiles-*storageDir*.
     The absence of this argument will cause the program to use a pre-defined storageDir which is: "*./docFiles*".
 
-## Examples
-- You can check the functionality of **DocUrlsRetriever** by running this example:
-``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar -downloadDocFiles -firstDocFileNum 1 -docFilesStorage ../example/sample_output/DocFiles
-    < ../example/sample_input/sample_input.json > ../example/sample_output/sample_output.json``
+## Example
+You can check the functionality of **DocUrlsRetriever** by running an example.<br/>
+Type **`./runExample.sh`** in the terminal and hit `ENTER`.<br/>
+This script will run the following commands:<br/>
+- `mvn clean install`: Do a clean install.
+- `rm -rf example/sample_output/*`: Remove any previous example-results.
+- `cd target &&`<br/>
+    `java -jar doc_urls_retriever-0.4-SNAPSHOT.jar -downloadDocFiles -firstDocFileNum 1 -docFilesStorage ../example/sample_output/DocFiles`<br/>
+    `< ../example/sample_input/sample_input.json > ../example/sample_output/sample_output.json`
+<br/>
 This command will run the program with "**../example/sample_input/sample_input.json**" as input
-and "**../example/sample_output/sample_output.json**" as the output.</br>
+and "**../example/sample_output/sample_output.json**" as the output.<br/>
 The arguments used are:
     - **-downloadDocFiles** which will tell the program to download the DocFiles.
     - **-firstDocFileNum 1** which will tell the program to use numbers as DocFileNames and the first DocFile will have the number <*1*>.
     - **-docFilesStorage ../example/sample_output/DocFiles** which will tell the program to use the custom
         DocFilesStorageDir: "*../example/sample_output/DocFiles*".
+<br/>
 
 ## Customizations
 - You can set **File-related** customizations in ***FileUtils.java***.
