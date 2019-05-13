@@ -42,7 +42,7 @@ public class FileUtils
 	private static final String endOfLine = System.lineSeparator();
 	public static int unretrievableInputLines = 0;	// For better statistics in the end.
     public static int unretrievableUrlsOnly = 0;
-    public static final int maxStoringWaitingTime = 45000;	// 45sec
+    public static final int maxStoringWaitingTime = 45000;	// 45sec (some files can take several minutes or even half an hour)
 	
 	public static final List<QuadrupleToBeLogged> quadrupleToBeLoggedList = new ArrayList<>(jsonGroupSize);
 	
