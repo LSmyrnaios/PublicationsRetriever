@@ -80,13 +80,14 @@ public class HttpConnUtils
 			if ( mimeType == null ) {
 				contentDisposition = conn.getHeaderField("Content-Disposition");
 				if ( contentDisposition == null ) {
-					logger.warn("No ContentType nor ContentDisposition, were able to be retrieved from url: " + conn.getURL().toString());
+					String warnMsg = "No ContentType nor ContentDisposition, were able to be retrieved from url: " + conn.getURL().toString();
 					if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsReturnedNoType, domainStr, HttpConnUtils.timesToReturnNoTypeBeforeBlocked) ) {
+						logger.warn(warnMsg);
 						logger.warn("Domain: " + domainStr + " was blocked after returning no Type-info more than " + HttpConnUtils.timesToReturnNoTypeBeforeBlocked + " times.");
 						throw new DomainBlockedException();
 					}
 					else
-						throw new RuntimeException();	// We can't retrieve any clue. This is not desired.
+						throw new RuntimeException(warnMsg);	// We can't retrieve any clue. This is not desired.
 				}
 			}
 			
@@ -128,8 +129,15 @@ public class HttpConnUtils
 		} catch (AlreadyFoundDocUrlException afdue) {	// An already-found docUrl was discovered during redirections.
 			return true;	// It's already logged for the outputFile.
 		} catch (RuntimeException re) {
-			if ( calledForPageUrl )	// Log this error only for docPages, not internalLinks.
-				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
+			if ( calledForPageUrl ) {	// Log this error only for docPages, not internalLinks.
+				String exMsg = re.getMessage();
+				if (exMsg != null) {
+					StackTraceElement firstLineOfStackTrace = re.getStackTrace()[0];
+					logger.warn("[" + firstLineOfStackTrace.getFileName() + "->" + firstLineOfStackTrace.getMethodName() + "(@" + firstLineOfStackTrace.getLineNumber() + ")] - " + exMsg);
+				}
+				else
+					logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
+			}
 			throw re;
 		} catch (DomainBlockedException | DomainWithUnsupportedHEADmethodException | ConnTimeoutException e) {
 			throw e;
@@ -185,20 +193,16 @@ public class HttpConnUtils
 		int responceCode = 0;
 		
 		try {
-			if ( blacklistedDomains.contains(domainStr) ) {
-		    	logger.debug("Preventing connecting to blacklistedHost: \"" + domainStr + "\"!");
-		    	throw new RuntimeException();
-			}
+			if ( blacklistedDomains.contains(domainStr) )
+		    	throw new RuntimeException("Preventing connecting to blacklistedHost: \"" + domainStr + "\"!");
 			
 			// Check whether we don't accept "GET" method for uncategorizedInternalLinks and if this url is such a case.
 			if ( shouldNOTacceptGETmethodForUncategorizedInternalLinks
 				&& !calledForPossibleDocUrl && domainsWithUnsupportedHeadMethod.contains(domainStr) )
 				throw new DomainWithUnsupportedHEADmethodException();
 			
-			if ( ConnSupportUtils.checkIfPathIs403BlackListed(resourceURL, domainStr) ) {
-				logger.debug("Preventing reaching 403ErrorCode with url: \"" + resourceURL + "\"!");
-				throw new RuntimeException();
-			}
+			if ( ConnSupportUtils.checkIfPathIs403BlackListed(resourceURL, domainStr) )
+				throw new RuntimeException("Preventing reaching 403ErrorCode with url: \"" + resourceURL + "\"!");
 			
 			url = new URL(resourceURL);
 			
@@ -224,10 +228,8 @@ public class HttpConnUtils
 			conn.connect();	// Else, first connect and if there is no error, log this domain as the last one.
 			lastConnectedHost = domainStr;
 			
-			if ( (responceCode = conn.getResponseCode()) == -1 ) {
-				logger.warn("Invalid HTTP response for \"" + resourceURL + "\"");
-				throw new RuntimeException();
-			}
+			if ( (responceCode = conn.getResponseCode()) == -1 )
+				throw new RuntimeException("Invalid HTTP response for \"" + resourceURL + "\"");
 			
 			if ( (responceCode == 405 || responceCode == 501) && conn.getRequestMethod().equals("HEAD") )	// If this SERVER doesn't support "HEAD" method or doesn't allow us to use it..
 			{
@@ -254,10 +256,8 @@ public class HttpConnUtils
 				conn.connect();
 				//logger.debug("ResponceCode for \"" + resourceURL + "\", after setting conn-method to: \"" + conn.getRequestMethod() + "\" is: " + conn.getResponseCode());
 				
-				if ( conn.getResponseCode() == -1 ) {	// Make sure we throw a RunEx on invalidHTTP.
-					logger.warn("Invalid HTTP response for \"" + resourceURL + "\"");
-					throw new RuntimeException();
-				}
+				if ( conn.getResponseCode() == -1 )	// Make sure we throw a RunEx on invalidHTTP.
+					throw new RuntimeException("Invalid HTTP response for \"" + resourceURL + "\"");
 			}
 		} catch (RuntimeException re) {	// The cause it's already logged.
 			if ( conn != null )
@@ -285,7 +285,7 @@ public class HttpConnUtils
 				ConnSupportUtils.onTimeoutException(domainStr);	// Can throw a "DomainBlockedException", which will be thrown before the "ConnTimeoutException".
 				throw new ConnTimeoutException();
 			}
-			throw new RuntimeException();
+			throw new RuntimeException(eMsg);
 		} catch (SSLException ssle) {
 			logger.warn("No Secure connection was able to be negotiated with the domain: \"" + domainStr + "\".", ssle.getMessage());
 			if ( conn != null )
@@ -296,12 +296,14 @@ public class HttpConnUtils
 			domainsBlockedDueToSSLException ++;
 			throw new DomainBlockedException();
 		} catch (SocketException se) {
-			String seMsg = se.getMessage();
-			if ( seMsg != null )
-				logger.warn("\"" + se.getMessage() + "\". This SocketException was recieved after trying to connect with the domain: \"" + domainStr + "\"");
 			if ( conn != null )
 				conn.disconnect();
-			throw new RuntimeException();
+			
+			String errorMsg = se.getMessage();
+			if ( errorMsg != null )
+				errorMsg = "\"" + errorMsg + "\". This SocketException was recieved after trying to connect with the domain: \"" + domainStr + "\"";
+			
+			throw new RuntimeException(errorMsg);
 			//blacklistedDomains.add(domainStr);
 			//throw new DomainBlockedException();
     	} catch (Exception e) {
@@ -355,38 +357,26 @@ public class HttpConnUtils
 		try {
 			do {	// We assume we already have an HTTP-3XX response code.
 				curRedirectsNum ++;
-				if ( curRedirectsNum > maxRedirects ) {
-					logger.debug("Redirects exceeded their limit (" + maxRedirects + ") for " + urlType + ": \"" + initialUrl + "\"");
-					throw new RuntimeException();
-				}
+				if ( curRedirectsNum > maxRedirects )
+					throw new RuntimeException("Redirects exceeded their limit (" + maxRedirects + ") for " + urlType + ": \"" + initialUrl + "\"");
 				
 				String location = conn.getHeaderField("Location");
 				if ( location == null )
 				{
 					if ( responceCode == 300 ) {	// The "Location"-header MAY be provided, giving the proposed link by the server.
 						// Go and parse the page and select one of the links to redirect to. Assign it to the "location".
-						if ( (location = ConnSupportUtils.getInternalLinkFromHTTP300Page(conn)) == null ) {
-							logger.warn("No \"link\" was retrieved from the HTTP-300-page: \"" + conn.getURL().toString() + "\".");
-							throw new RuntimeException();
-						}
+						if ( (location = ConnSupportUtils.getInternalLinkFromHTTP300Page(conn)) == null )
+							throw new RuntimeException("No \"link\" was retrieved from the HTTP-300-page: \"" + conn.getURL().toString() + "\".");
 					}
-					else {	// It's unacceptable for codes > 300 to not provide the "location" field.
-						logger.warn("No \"Location\" field was found in the HTTP Header of \"" + conn.getURL().toString() + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
-						throw new RuntimeException();
-					}
+					else	// It's unacceptable for codes > 300 to not provide the "location" field.
+						throw new RuntimeException("No \"Location\" field was found in the HTTP Header of \"" + conn.getURL().toString() + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 				}
 				
 				String lowerCaseLocation = location.toLowerCase();
-				if ( calledForPageUrl ) {
-					if ( UrlTypeChecker.shouldNotAcceptPageUrl(location, lowerCaseLocation) ) {
-						logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
-						throw new RuntimeException();
-					}
-				}
-				else if ( UrlTypeChecker.shouldNotAcceptInternalLink(location, lowerCaseLocation) ) {	// Else we are redirecting an internalPageLink.
-					logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
-					throw new RuntimeException();
-				} else if ( lowerCaseLocation.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
+				if ( (calledForPageUrl && UrlTypeChecker.shouldNotAcceptPageUrl(location, lowerCaseLocation))	// Redirecting a pageUrl.
+						|| (!calledForPageUrl && UrlTypeChecker.shouldNotAcceptInternalLink(location, lowerCaseLocation)) )	// Redirecting an internalPageLink.
+					throw new RuntimeException("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
+				else if ( lowerCaseLocation.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
 					ConnSupportUtils.blockSharedSiteSessionDomain(initialUrl, domainStr);
 					throw new DomainBlockedException();
 				}
