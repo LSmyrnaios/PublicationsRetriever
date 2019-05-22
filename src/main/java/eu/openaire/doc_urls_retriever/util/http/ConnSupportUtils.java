@@ -230,10 +230,10 @@ public class ConnSupportUtils
 	 */
 	public static void onErrorStatusCode(String urlStr, String domainStr, int errorStatusCode) throws DomainBlockedException
 	{
-		if ( (errorStatusCode == 500) && domainStr.contains("handle.net") ) {    // Don't take the 500 of "handle.net", into consideration, it returns many times 500, where it should return 404.. so don't treat it like a 500.
+		/*if ( (errorStatusCode == 500) && domainStr.contains("handle.net") ) {    // Don't take the 500 of "handle.net", into consideration, it returns many times 500, where it should return 404.. so treat it like a 404.
 			//logger.warn("\"handle.com\" returned 500 where it should return 404.. so we will treat it like a 404.");    // See an example: "https://hdl.handle.net/10655/10123".
 			errorStatusCode = 404;	// Set it to 404 to be handled as such, if any rule for 404s is to be added later.
-		}
+		}*/
 		
 		if ( (errorStatusCode >= 400) && (errorStatusCode <= 499) ) {	// Client Error.
 			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Client Error.");
@@ -252,7 +252,7 @@ public class ConnSupportUtils
 				logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Server Error.");
 				if ( domainStr != null )
 					on5XXerrorCode(domainStr);
-			} else {	// Unknown Error (including non-handled: 1XX and the weird one: 999, responceCodes).
+			} else {	// Unknown Error (including non-handled: 1XX and the weird one: 999 (used for example on Twitter), responceCodes).
 				logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved unexpected responceCode: " + errorStatusCode);
 				if ( domainStr != null )
 					HttpConnUtils.blacklistedDomains.add(domainStr);

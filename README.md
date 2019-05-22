@@ -1,7 +1,7 @@
 # DocUrlsRetriever    [![Build Status](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever.svg?branch=master)](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever)
 
 A Java-program which finds the Document Urls from the given Publication-Web-Pages and downloads the docFiles.<br/>
-It is being developed for the European organization: [OpenAIRE](https://www.openaire.eu/).<br/>
+It is being developed for the European organization: [**OpenAIRE**](https://www.openaire.eu/).<br/>
 
 The **DocUrlsRetriever** takes as input the PubPages with their IDs -in JSON format- and gives an output -also in JSON format,
 which contains the IDs, their PubPages with their DocUrls and a comment, which is either empty,
@@ -21,7 +21,7 @@ An experimental **M.L.A.(= Machine Learning Algorithm)** was developed to predic
     in order to see how it's operating and which parameters work best for you (url-timeouts, domainsBlocking ect.).
 - Please note that **DocUrlsRetriever** is currently in **beta**, so you may encounter some issues.
     If so, please send an email or open a Github-Issue.<br/>
-- I would be happy to merge any pull requests which is aligned with the [OpenAIRE](https://www.openaire.eu/) needs
+- I would be happy to merge any pull request which is aligned with the [**OpenAIRE**](https://www.openaire.eu/) needs
     and pushes this software to a better future.<br/>
 <br/>
 
@@ -56,6 +56,7 @@ arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``<br/>
     The absence of this argument-group will cause the program to use the original-docFileNames.
 - **-docFilesStorage** and **storageDir** will tell the program to use the given DocFiles-*storageDir*.
     The absence of this argument will cause the program to use a pre-defined storageDir which is: "*./docFiles*".
+<br/>
 
 ## Example
 You can check the functionality of **DocUrlsRetriever** by running an example.<br/>
