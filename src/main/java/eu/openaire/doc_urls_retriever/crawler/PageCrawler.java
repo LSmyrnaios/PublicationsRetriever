@@ -47,7 +47,7 @@ public class PageCrawler
 	public static final int timesToGiveNoDocUrlsBeforeBlocked = 10;
 	
 	
-	public static void visit(String urlId, String sourceUrl, String pageUrl, HttpURLConnection conn)
+	public static void visit(String urlId, String sourceUrl, String pageUrl, String pageContentType, HttpURLConnection conn)
 	{
 		logger.debug("Visiting pageUrl: \"" + pageUrl + "\".");
 		
@@ -61,7 +61,6 @@ public class PageCrawler
 		if ( HandleScienceDirect.checkIfAndHandleScienceDirect(urlId, sourceUrl, pageUrl, currentPageDomain, conn) )
 			return;	// We always return, if we have a kindOf-scienceDirect-url. The sourceUrl is already logged inside the called method.
 		
-		String pageContentType = conn.getContentType();
 		String pageHtml = null;
 		try {	// Get the pageHtml to parse the page.
 			pageHtml = ConnSupportUtils.getHtmlString(conn);
@@ -221,15 +220,17 @@ public class PageCrawler
 				}
 				else {	// Connect to it directly.
 					//logger.debug("MetaDocUrl: " + metaDocUrl);	// DEBUG!
-					if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, currentPageDomain, false, true) )	// We log the docUrl inside this method.
+					if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, currentPageDomain, false, true) ) {    // On success, we log the docUrl inside this method.
+						logger.warn("The retrieved metaDocUrl <" + metaDocUrl + "> was not a docUrl (unexpected)!");
 						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved metaDocUrl was not a docUrl.", null);
+					}
 					return true; 	// It should be the docUrl and it was handled.. so we don't continue checking the internalLink even if this wasn't a docUrl.
 				}
 			}
 			else
-				return false;	// It was not handled.
+				return false;	// It was not found and so it was not handled.
 		} catch (Exception e) {	// After connecting to the metaDocUrl.
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag url.", null);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag-url.", null);
 			return true;	// It was found and handled. Even if an exception was thrown, we don't want to check any other internalLinks in that page.
 		}
 	}

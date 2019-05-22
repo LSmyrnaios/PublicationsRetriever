@@ -66,7 +66,8 @@ public class UrlChecker {
 		//urlList.add("https://wwwfr.uni.lu/content/download/35522/427398/file/2011-05%20-%20Demographic%20trends%20and%20international%20capital%20flows%20in%20an%20integrated%20world.pdf");
 		//urlList.add("http://www.grid.uns.ac.rs/jged/download.php?fid=108");
 		//urlList.add("https://wwwfr.uni.lu/content/download/35522/427398/file/2011-05%20-%20Demographic%20trends%20and%20international%20capital%20flows%20in%20an%20integrated%20world.pdf");
-		urlList.add("https://www.scribd.com/document/397997565/Document-2-Kdashnk");
+		//urlList.add("https://www.scribd.com/document/397997565/Document-2-Kdashnk");
+		urlList.add("https://stella.repo.nii.ac.jp/?action=pages_view_main&active_action=repository_view_main_item_detail&item_id=103&item_no=1&page_id=13&block_id=21");
 		
 		logger.info("Urls to check:");
 		for ( String url: urlList )
