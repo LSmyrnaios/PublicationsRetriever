@@ -275,7 +275,7 @@ public class HttpConnUtils
 			logger.debug("Url: \"" + resourceURL + "\" failed to respond on time!");
 			if ( conn != null )
 				conn.disconnect();
-			ConnSupportUtils.onTimeoutException(domainStr);	// Can throw a "DomainBlockedException", which will be thrown before the "ConnTimeoutException".
+			ConnSupportUtils.onTimeoutException(domainStr);	// May throw a "DomainBlockedException", which will be thrown before the "ConnTimeoutException".
 			throw new ConnTimeoutException();
 		} catch (ConnectException ce) {
 			if ( conn != null )

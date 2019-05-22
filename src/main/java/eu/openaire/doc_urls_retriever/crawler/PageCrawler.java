@@ -98,15 +98,8 @@ public class PageCrawler
 			// Produce fully functional internal links, NOT internal paths or non-canonicalized.
 			if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl, StandardCharsets.UTF_8)) == null ) {
 				logger.warn("Could not cannonicalize internal url: " + currentLink);
-				UrlUtils.duplicateUrls.add(currentLink);
 				continue;
 			}
-			
-            if ( !urlToCheck.contains(currentPageDomain) )	// Make sure we avoid connecting to different domains.
-				continue;
-			
-            if ( UrlUtils.duplicateUrls.contains(urlToCheck) )
-				continue;
 			
             if ( UrlUtils.docUrlsWithKeys.containsKey(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
 				logger.info("re-crossed docUrl found: <" + urlToCheck + ">");
@@ -120,6 +113,11 @@ public class PageCrawler
             lowerCaseLink = urlToCheck.toLowerCase();
             if ( LoaderAndChecker.DOC_URL_FILTER.matcher(lowerCaseLink).matches() )
 			{
+				// Some docUrls may be in different domain, so after filtering the urls based on the possible type.. then we can allow to check for links in different domains.
+				
+				if ( UrlUtils.duplicateUrls.contains(urlToCheck) )
+					continue;
+				
 				if ( UrlTypeChecker.shouldNotAcceptInternalLink(urlToCheck, lowerCaseLink) ) {    // Avoid false-positives, such as images (a common one: ".../pdf.png").
 					UrlUtils.duplicateUrls.add(urlToCheck);
 					continue;	// Disclaimer: This way we might lose some docUrls like this: "http://repositorio.ipen.br:8080/xmlui/themes/Mirage/images/Portaria-387.pdf".
@@ -129,7 +127,7 @@ public class PageCrawler
 				try {
 					if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, urlToCheck, currentPageDomain, false, true) )	// We log the docUrl inside this method.
 						return;
-					else {
+					else {	// It's not a DocUrl.
 						UrlUtils.duplicateUrls.add(urlToCheck);
 						continue;
 					}
@@ -157,6 +155,13 @@ public class PageCrawler
 		
 		for ( String currentLink : remainingLinks )	// Here we don't re-check already-checked links, as this is a new list.
 		{
+			// Make sure we avoid connecting to different domains to save time. We allow to check different domains only after matching to possible-urls in the previous fast-loop.
+			if ( !currentLink.contains(currentPageDomain) )
+				continue;
+			
+			if ( UrlUtils.duplicateUrls.contains(currentLink) )
+				continue;
+			
 			// We re-check here, as, in the fast-loop not all of the links are checked against this.
 			if ( UrlTypeChecker.shouldNotAcceptInternalLink(currentLink, null) ) {	// If this link matches certain blackListed criteria, move on..
 				//logger.debug("Avoided link: " + currentLink );
