@@ -12,8 +12,6 @@ PubPage: *the web page with the publication's information.*<br/>
 DocUrl: *the url of the fulltext-document-file.*<br/>
 
 If there are no IDs in the input, the user can specify -in ***LoaderAndChecker.java***- that wishes to process a data-set with no IDs.<br/>
-
-An experimental **M.L.A.(= Machine Learning Algorithm)** was developed to predict the DocUrl of a PubPage, based on previous results.<br/>
 <br/>
 **Disclaimers**:
 - This program was designed to be used with distributed execution, thus it was developed as a single-thread program.<br/>
@@ -79,4 +77,3 @@ This script will run the following commands:<br/>
 ## Customizations
 - You can set **File-related** customizations in ***FileUtils.java***.
 - You can set **Connection-related** customizations in ***HttpConnUtils.java*** and ***ConnSupportUtils.java***.
-- You can test the experimental-**MachineLearning-algorithm** by enabling it (through **useMLA**-variable) from ***MachineLearning.java***.
