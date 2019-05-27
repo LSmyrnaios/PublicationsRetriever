@@ -136,14 +136,14 @@ public class HttpConnUtils
 					logger.warn("[" + firstLineOfStackTrace.getFileName() + "->" + firstLineOfStackTrace.getMethodName() + "(@" + firstLineOfStackTrace.getLineNumber() + ")] - " + exMsg);
 				}
 				else
-					logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
+					logger.warn("Could not handle connection for \"" + resourceURL + "\"!");
 			}
 			throw re;
 		} catch (DomainBlockedException | DomainWithUnsupportedHEADmethodException | ConnTimeoutException e) {
 			throw e;
 		} catch (Exception e) {
 			if ( calledForPageUrl )	// Log this error only for docPages.
-				logger.warn("Could not handle connection for \"" + resourceURL + "\". MimeType not retrieved!");
+				logger.warn("Could not handle connection for \"" + resourceURL + "\"!");
 			throw new RuntimeException();
 		} finally {
 			if ( conn != null )

@@ -67,6 +67,7 @@ public class HandleScienceDirect
 	public static void handleScienceDirectFamilyUrls(String urlId, String sourceUrl, String pageUrl, String pageDomain, HttpURLConnection conn, boolean isLinkinghubElsevier)
 																						throws FailedToProcessScienceDirectException
 	{
+		String currentConnectedUrl = null;	// Used for error-logging-message on connection-error, as there might be multiple urls here to connect with.
 		try {
 			// Handle "linkinghub.elsevier.com" urls which contain javaScriptRedirect..
 			if ( isLinkinghubElsevier ) {
@@ -74,6 +75,7 @@ public class HandleScienceDirect
 				if ( (pageUrl = silentRedirectElsevierToScienseRedirect(pageUrl)) != null ) {
 					// The already open connection for "linkinghub.elsevier.com" get closed by "connectAndCheckMimeType()" when the "visit()" returns (after "handleScienceDirectFamilyUrls()" returns).
 					logger.debug("Produced ScienceDirect-url: " + pageUrl);
+					currentConnectedUrl = pageUrl;
 					conn = HttpConnUtils.handleConnection(urlId, sourceUrl, pageUrl, pageUrl, pageDomain, true, false);
 				} else
 					throw new FailedToProcessScienceDirectException();
@@ -93,6 +95,7 @@ public class HandleScienceDirect
 				
 				// Get the new html after connecting to the "metaDocUrl".
 				// We don't disconnect the previous one, since they both are in the same domain (see JavaDocs).
+				currentConnectedUrl = metaDocUrl;
 				conn = HttpConnUtils.handleConnection(urlId, sourceUrl, pageUrl, metaDocUrl, pageDomain, true, false);
 				
 				//logger.debug("Url after connecting: " + conn.getURL().toString());
@@ -110,6 +113,7 @@ public class HandleScienceDirect
 					//logger.debug("FinalDocUrl: " + finalDocUrl);	// DEBUG!
 					
 					// Check and/or download the docUrl. These urls are one-time-links, meaning that after a while they will just redirect to their pageUrl.
+					currentConnectedUrl = finalDocUrl;
 					if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, finalDocUrl, pageDomain, false, true) ) {	// We log the docUrl inside this method.
 						logger.warn("LookedUp finalDocUrl: \"" + finalDocUrl + "\" was not an actual docUrl!");
 						throw new FailedToProcessScienceDirectException();
@@ -127,6 +131,15 @@ public class HandleScienceDirect
 		} catch (FailedToProcessScienceDirectException fthsde) {
 			logger.error("" + fthsde);
 			throw fthsde;
+		} catch (RuntimeException re) {
+			String exMsg = re.getMessage();
+			if (exMsg != null) {
+				StackTraceElement firstLineOfStackTrace = re.getStackTrace()[0];
+				logger.warn("[" + firstLineOfStackTrace.getFileName() + "->" + firstLineOfStackTrace.getMethodName() + "(@" + firstLineOfStackTrace.getLineNumber() + ")] - " + exMsg);
+			}
+			else
+				logger.warn("Could not handle connection for \"" + currentConnectedUrl + "\"!");
+			throw new FailedToProcessScienceDirectException();
 		} catch (Exception e) {
 			logger.error("" + e);
 			throw new FailedToProcessScienceDirectException();
