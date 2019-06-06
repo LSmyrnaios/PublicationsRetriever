@@ -22,7 +22,7 @@ public class UrlUtils
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
     public static final Pattern JSESSIONID_FILTER = Pattern.compile("(.+:\\/\\/.+)(?:\\;(?:JSESSIONID|jsessionid)=.+)(\\?.+)");
-
+	
 	public static int sumOfDocUrlsFound = 0;	// Change it back to simple int if finally in singleThread mode
 	
 	public static final HashSet<String> duplicateUrls = new HashSet<String>();
@@ -79,16 +79,13 @@ public class UrlUtils
 	 */
 	public static String getDomainStr(String urlStr)
 	{
-		String domainStr = null;
-		Matcher matcher = null;
-		
-		try {
-			matcher = URL_TRIPLE.matcher(urlStr);
-		} catch (NullPointerException npe) {	// There should never be an NPE...
-			logger.debug("NPE was thrown after calling \"Matcher\" in \"getDomainStr()\" with \"null\" value!");
+		if ( urlStr == null ) {	// Avoid NPE in "Matcher"
+			logger.error("The received \"urlStr\" was null in \"getDomainStr()\"!");
 			return null;
 		}
 		
+		String domainStr = null;
+		Matcher matcher = URL_TRIPLE.matcher(urlStr);
 		if ( matcher.matches() ) {
 			try {
 				domainStr = matcher.group(2);	// Group <2> is the DOMAIN.
@@ -113,16 +110,13 @@ public class UrlUtils
 	 */
 	public static String getPathStr(String urlStr)
 	{
-		String pathStr = null;
-		Matcher matcher = null;
-		
-		try {
-			matcher = URL_TRIPLE.matcher(urlStr);
-		} catch (NullPointerException npe) {	// There should never be an NPE...
-			logger.debug("NPE was thrown after calling \"Matcher\" in \"getPathStr()\" with \"null\" value!");
+		if ( urlStr == null ) {	// Avoid NPE in "Matcher"
+			logger.error("The received \"urlStr\" was null in \"getPathStr()\"!");
 			return null;
 		}
 		
+		String pathStr = null;
+		Matcher matcher = URL_TRIPLE.matcher(urlStr);
 		if ( matcher.matches() ) {
 			try {
 				pathStr = matcher.group(1);	// Group <1> is the PATH.
@@ -147,16 +141,13 @@ public class UrlUtils
 	 */
 	public static String getDocIdStr(String urlStr)
 	{
-		String docIdStr = null;
-		Matcher matcher = null;
-		
-		try {
-			matcher = URL_TRIPLE.matcher(urlStr);
-		} catch (NullPointerException npe) {	// There should never be an NPE...
-			logger.debug("NPE was thrown after calling \"Matcher\" in \"getDocIdStr\" with \"null\" value!");
+		if ( urlStr == null ) {	// Avoid NPE in "Matcher"
+			logger.error("The received \"urlStr\" was null in \"getDocIdStr()\"!");
 			return null;
 		}
 		
+		String docIdStr = null;
+		Matcher matcher = URL_TRIPLE.matcher(urlStr);
 		if ( matcher.matches() ) {
 			try {
 				docIdStr = matcher.group(3);	// Group <3> is the docId.
@@ -183,6 +174,11 @@ public class UrlUtils
 	 */
 	public static String removeJsessionid(String urlStr)
 	{
+		if ( urlStr == null ) {	// Avoid NPE in "Matcher"
+			logger.error("The received \"urlStr\" was null in \"removeJsessionid()\"!");
+			return null;
+		}
+		
 		String finalUrl = urlStr;
 		
 		String preJsessionidStr = null;

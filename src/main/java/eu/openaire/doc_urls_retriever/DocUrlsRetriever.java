@@ -42,7 +42,7 @@ public class DocUrlsRetriever
 			String errorMessage = "There was a serious error! Output data is affected! Exiting..";
 			System.err.println(errorMessage);
 			logger.error(errorMessage);
-			System.exit(-5);
+			System.exit(-4);
 		}
 		
 		Instant finishTime = Instant.now();
@@ -61,7 +61,7 @@ public class DocUrlsRetriever
 			logger.error(errMessage);
 			System.err.println(errMessage
 					+ "\nUsage: java -jar doc_urls_retriever-<VERSION>.jar -downloadDocFiles(OPTIONAL) -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' < 'input' > 'output'");
-			System.exit(-7);
+			System.exit(-1);
 		}
 		
 		boolean downloadDocFiles = false;
@@ -86,7 +86,7 @@ public class DocUrlsRetriever
 						String errorMessage = "Argument \"-firstDocFileNum\" must be followed by an integer value! Given one was: \"" + mainArgs[i] + "\"";
 						System.err.println(errorMessage);
 						logger.error(errorMessage);
-						System.exit(-3);
+						System.exit(-2);
 					}
 				case "-docFilesStorage":
 					i ++;
@@ -123,7 +123,7 @@ public class DocUrlsRetriever
 				String errorMessage = "\"FileUtils.getCurrentlyLoadedUrls()\" is unexpectedly reporting that no urls were retrieved from input file! Output data may be affected! Exiting..";
 				System.err.println(errorMessage);
 				logger.error(errorMessage);
-				System.exit(-6);
+				System.exit(-5);
 			}
 		}
 		

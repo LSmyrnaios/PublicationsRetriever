@@ -77,20 +77,26 @@ public class FileUtils
 			}
 			
 			// If the directory doesn't exist, try to (re)create it.
-			if ( !dir.exists() ) {
-				if ( !dir.mkdir() ) {   // Create the directory.
-					String errorMessage;
-					if ( DocUrlsRetriever.docFilesStorageGivenByUser )
-						errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
-								+ "\nPlease give a valid Directory-path.";
-					else	// User leaves the storageDir to be the default one.
-						errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
-							+ "\nThe docFiles will NOT be stored, but the docUrls will be retrieved and kept in the outputFile."
-							+ "\nIf this is not desired, please terminate the program and re-define the \"storeDocFilesDir\"!";
-					System.err.println(errorMessage);
-					logger.error(errorMessage);
-					System.exit(-8);
+			try {
+				if ( !dir.exists() ) {
+					if ( !dir.mkdir() ) {   // Create the directory.
+						String errorMessage;
+						if ( DocUrlsRetriever.docFilesStorageGivenByUser )
+							errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
+									+ "\nPlease give a valid Directory-path.";
+						else	// User leaves the storageDir to be the default one.
+							errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
+									+ "\nThe docFiles will NOT be stored, but the docUrls will be retrieved and kept in the outputFile."
+									+ "\nIf this is not desired, please terminate the program and re-define the \"storeDocFilesDir\"!";
+						System.err.println(errorMessage);
+						logger.error(errorMessage);
+						System.exit(-3);
+					}
 				}
+			} catch (SecurityException se) {
+				logger.error(se.getMessage(), se);
+				FileUtils.shouldDownloadDocFiles = false;	// Continue without downloading the docFiles, just create the jsonOutput.
+				return;
 			}
 		}
 	}
@@ -222,7 +228,12 @@ public class FileUtils
 			else
 				docFile = new File(storeDocFilesDir + File.separator + (numOfDocFile++) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
 			
-			outStream = new FileOutputStream(docFile);
+			try {
+				outStream = new FileOutputStream(docFile);
+			} catch (FileNotFoundException fnfe) {
+				logger.warn("", fnfe);
+				throw new DocFileNotRetrievedException();
+			}
 			
 			int bytesRead = -1;
 			byte[] buffer = new byte[3145728];	// 3Mb (average docFiles-size)
