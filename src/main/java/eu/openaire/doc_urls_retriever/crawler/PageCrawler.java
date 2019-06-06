@@ -218,8 +218,11 @@ public class PageCrawler
 		try {
 			Matcher metaDocUrlMatcher = META_DOC_URL.matcher(pageHtml);
 			if ( metaDocUrlMatcher.find() ) {
-				String metaDocUrl = metaDocUrlMatcher.group(1);
-				if ( metaDocUrl.isEmpty() ) {
+				String metaDocUrl = null;
+				try {
+					metaDocUrl = metaDocUrlMatcher.group(1);
+				} catch (Exception e) { logger.error("", e); }
+				if ( (metaDocUrl == null) || metaDocUrl.isEmpty() ) {
 					logger.error("Could not retrieve the metaDocUrl, continue by crawling the pageUrl.");
 					return false;	// It was not handled.
 				}
@@ -293,7 +296,9 @@ public class PageCrawler
 					String pdfLink = null;
 					Matcher pdfLinkMatcher = JAVASCRIPT_DOC_LINK.matcher(lowerCaseLink);
 					if ( pdfLinkMatcher.matches() ) {
-						pdfLink = pdfLinkMatcher.group(1);
+						try {
+							pdfLink = pdfLinkMatcher.group(1);
+						} catch (Exception e) { logger.error("", e); }
 						throw new JavaScriptDocLinkFoundException(pdfLink);    // If it's 'null', we treat it when handling this exception.
 					}
 					else	// It's a javaScript link or element which we don't treat.

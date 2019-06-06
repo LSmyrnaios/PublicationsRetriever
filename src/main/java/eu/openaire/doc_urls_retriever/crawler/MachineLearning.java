@@ -171,7 +171,9 @@ public class MachineLearning
 			return false;
 		}
 		
-		pagePath = urlMatcher.group(1);	// Group <1> is the PATH.
+		try {
+			pagePath = urlMatcher.group(1);	// Group <1> is the PATH.
+		} catch (Exception e) { logger.error("", e); }
 		if ( (pagePath == null) || pagePath.isEmpty() ) {
 			logger.warn("Unexpected null or empty value returned by \"urlMatcher.group(1)\"");
 			return false;
@@ -190,7 +192,10 @@ public class MachineLearning
 			else if ( pathsSize > 3 )    // It's not worth risking connecting with more than 3 "predictedDocUrl"s, for which their success is non-granted.
 				return false;    // The difference here is that we avoid making the connections but we leave the data as it is.. this way we allow whole domains to be blocked based on docPaths' size.
 			
-			String docIdStr = urlMatcher.group(3);	// Group <3> is the ID.
+			String docIdStr = null;
+			try {
+				docIdStr= urlMatcher.group(3);	// Group <3> is the ID.
+			} catch (Exception e) { logger.error("", e); }
 			if ( (docIdStr == null) || docIdStr.isEmpty() ) {
 				logger.warn("Unexpected null or empty value returned by \"urlMatcher.group(3)\" for url: \"" + pageUrl + "\".");
 				return false;

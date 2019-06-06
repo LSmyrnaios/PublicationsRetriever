@@ -14,7 +14,7 @@ DocUrl: *the url of the fulltext-document-file.*<br/>
 If there are no IDs in the input, the user can specify -in ***LoaderAndChecker.java***- that wishes to process a data-set with no IDs.<br/>
 <br/>
 **Disclaimers**:
-- This program was designed to be used with distributed execution, thus it was developed as a single-thread program.<br/>
+- This program was designed to be used with distributed execution, thus it was developed as a single-thread program. (You may give a different starting-number for the docFiles in each instance.)<br/>
 - Keep in mind that it's best to run the program for a small set of urls (a few hundred maybe) at first,
     in order to see how it's operating and which parameters work best for you (url-timeouts, domainsBlocking ect.).
 - Please note that **DocUrlsRetriever** is currently in **beta**, so you may encounter some issues.

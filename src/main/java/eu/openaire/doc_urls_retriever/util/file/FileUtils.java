@@ -249,8 +249,8 @@ public class FileUtils
 			
 		} catch (DocFileNotRetrievedException dfnre) {
 			throw dfnre;
-		} catch (Exception ioe) {
-			logger.warn("", ioe);
+		} catch (Exception e) {
+			logger.warn("", e);
 			throw new DocFileNotRetrievedException();
 		} finally {
 			try {
@@ -277,11 +277,12 @@ public class FileUtils
 		if ( contentDisposition != null ) {	// Extract docFileName from contentDisposition.
 			Matcher fileNameMatcher = FILENAME_FROM_CONTENT_DISPOSITION_FILTER.matcher(contentDisposition);
 			if ( fileNameMatcher.matches() ) {
-				docFileName = fileNameMatcher.group(1);	// Group<1> is the fileName.
-				if ( docFileName == null || docFileName.isEmpty() )
+				try {
+					docFileName = fileNameMatcher.group(1);	// Group<1> is the fileName.
+				} catch (Exception e) { logger.error("", e); }
+				if ( (docFileName == null) || docFileName.isEmpty() )
 					docFileName = null;	// Ensure null-value for future checks.
-			}
-			else
+			} else
 				logger.warn("Unmatched Content-Disposition:  " + contentDisposition);
 		}
 		
@@ -343,7 +344,7 @@ public class FileUtils
 					String newDocFileName = preExtensionFileName + "(" + curDuplicateNum + ")" + dotFileExtension;
 					saveDocFileFullPath = storeDocFilesDir + File.separator + newDocFileName;
 					File renamedDocFile = new File(saveDocFileFullPath);
-					if ( docFile.renameTo(renamedDocFile) )	// Renaming was succesfull, store the "curDuplicateNum" for this base-"docFileName".
+					if ( docFile.renameTo(renamedDocFile) )	// If renaming was succesfull, store the "curDuplicateNum" for this base-"docFileName".
 						numbersOfDuplicateDocFileNames.put(docFileName, curDuplicateNum);
 					else {
 						logger.error("Renaming operation of \"" + docFileName + "\" to \"" + newDocFileName + "\" has failed!");
@@ -357,8 +358,8 @@ public class FileUtils
 			
 		} catch (DocFileNotRetrievedException dfnre) {
 			throw dfnre;
-		} catch (Exception ioe) {
-			logger.warn("", ioe);
+		} catch (Exception e) {	// Mostly I/O and Security Exceptions.
+			logger.warn("", e);
 			throw new DocFileNotRetrievedException();
 		}
 	}

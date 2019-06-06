@@ -90,13 +90,15 @@ public class UrlUtils
 		}
 		
 		if ( matcher.matches() ) {
-			domainStr = matcher.group(2);	// Group <2> is the DOMAIN.
+			try {
+				domainStr = matcher.group(2);	// Group <2> is the DOMAIN.
+			} catch (Exception e) { logger.error("", e); }
 			if ( (domainStr == null) || domainStr.isEmpty() ) {
-				logger.warn("Unexpected null or empty value returned by \"matcher.group(2)\" for url: \"" + urlStr + "\".");
+				logger.warn("No domain was extracted from url: \"" + urlStr + "\".");
 				return null;
 			}
 		} else {
-			logger.warn("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
+			logger.error("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
 			return null;
 		}
 		
@@ -122,13 +124,15 @@ public class UrlUtils
 		}
 		
 		if ( matcher.matches() ) {
-			pathStr = matcher.group(1);	// Group <1> is the PATH.
+			try {
+				pathStr = matcher.group(1);	// Group <1> is the PATH.
+			} catch (Exception e) { logger.error("", e); }
 			if ( (pathStr == null) || pathStr.isEmpty() ) {
-				logger.warn("Unexpected null or empty value returned by \"matcher.group(1)\" for url: \"" + urlStr + "\".");
+				logger.warn("No pathStr was extracted from url: \"" + urlStr + "\".");
 				return null;
 			}
 		} else {
-			logger.warn("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
+			logger.error("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
 			return null;
 		}
 		
@@ -154,14 +158,16 @@ public class UrlUtils
 		}
 		
 		if ( matcher.matches() ) {
-			docIdStr = matcher.group(3);	// Group <3> is the docId.
+			try {
+				docIdStr = matcher.group(3);	// Group <3> is the docId.
+			} catch (Exception e) { logger.error("", e); }
 			if ( (docIdStr == null) || docIdStr.isEmpty() ) {
-				logger.warn("Unexpected null or empty value returned by \"matcher.group(3)\" for url: \"" + urlStr + "\".");
+				logger.warn("No docID was extracted from url: \"" + urlStr + "\".");
 				return null;
 			}
 		}
 		else {
-			logger.warn("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
+			logger.error("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
 			return null;
 		}
 		
@@ -185,14 +191,18 @@ public class UrlUtils
 		Matcher jsessionidMatcher = JSESSIONID_FILTER.matcher(urlStr);
 		if ( jsessionidMatcher.matches() )
 		{
-			preJsessionidStr = jsessionidMatcher.group(1);	// Take only the 1st part of the urlStr, without the jsessionid.
+			try {
+				preJsessionidStr = jsessionidMatcher.group(1);	// Take only the 1st part of the urlStr, without the jsessionid.
+			} catch (Exception e) { logger.error("", e); }
 		    if ( (preJsessionidStr == null) || preJsessionidStr.isEmpty() ) {
 		    	logger.warn("Unexpected null or empty value returned by \"jsessionidMatcher.group(1)\" for url: \"" + urlStr + "\"");
 		    	return finalUrl;
 		    }
 		    finalUrl = preJsessionidStr;
 		    
-		    afterJsessionidStr = jsessionidMatcher.group(2);
+		    try {
+		    	afterJsessionidStr = jsessionidMatcher.group(2);
+			} catch (Exception e) { logger.error("", e); }
 			if ( (afterJsessionidStr == null) || afterJsessionidStr.isEmpty() )
 				return finalUrl;
 			else

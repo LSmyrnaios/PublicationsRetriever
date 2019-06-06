@@ -248,7 +248,7 @@ public class LoaderAndChecker
 			return null;
 		}
 		
-		// Handle the weird-case of: "ir.lib.u-ryukyu.ac.jp"
+		// Handle the weird case of: "ir.lib.u-ryukyu.ac.jp"
 		// See: http://ir.lib.u-ryukyu.ac.jp/handle/123456789/8743
 		// Note that this is NOT the case for all of the urls containing "/handle/123456789/".. but just for this domain.
 		if ( retrievedUrl.contains("ir.lib.u-ryukyu.ac.jp") && retrievedUrl.contains("/handle/123456789/") ) {

@@ -126,19 +126,18 @@ public class ConnSupportUtils
 	 */
 	public static String getPlainMimeType(String mimeType)
 	{
-		String plainMimeType = null;
-		Matcher mimeMatcher = null;
-		
-		try {
-			mimeMatcher = MIME_TYPE_FILTER.matcher(mimeType);
-		} catch (NullPointerException npe) {	// There should never be an NPE...
-			logger.debug("NPE was thrown after calling \"Matcher\" in \"getPlainMimeType()\" with \"null\" value!");
+		if ( mimeType == null ) {	// Null-check to avoid NPE in "matcher()".
+			logger.warn("A null mimeType was given to \"getPlainMimeType()\".");
 			return null;
 		}
 		
+		String plainMimeType = null;
+		Matcher mimeMatcher = MIME_TYPE_FILTER.matcher(mimeType);
 		if ( mimeMatcher.matches() ) {
-			plainMimeType = mimeMatcher.group(1);
-			if ( plainMimeType == null || plainMimeType.isEmpty() ) {
+			try {
+				plainMimeType = mimeMatcher.group(1);
+			} catch (Exception e) { logger.error("", e); }
+			if ( (plainMimeType == null) || plainMimeType.isEmpty() ) {
 				logger.warn("Unexpected null or empty value returned by \"mimeMatcher.group(1)\" for mimeType: \"" + mimeType + "\".");
 				return null;
 			}

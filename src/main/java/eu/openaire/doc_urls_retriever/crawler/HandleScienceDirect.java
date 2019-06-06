@@ -86,8 +86,11 @@ public class HandleScienceDirect
 			Matcher metaDocUrlMatcher = PageCrawler.META_DOC_URL.matcher(html);
 			if ( metaDocUrlMatcher.find() )
 			{
-				String metaDocUrl = metaDocUrlMatcher.group(1);
-				if ( metaDocUrl.isEmpty() ) {
+				String metaDocUrl = null;
+				try {
+					metaDocUrl = metaDocUrlMatcher.group(1);
+				} catch (Exception e) { logger.error("", e); }
+				if ( (metaDocUrl == null) || metaDocUrl.isEmpty() ) {
 					logger.error("Could not retrieve the metaDocUrl from a \"sciencedirect.com\" url!");
 					throw new FailedToProcessScienceDirectException();
 				}
@@ -105,8 +108,13 @@ public class HandleScienceDirect
 				Matcher finalDocUrlMatcher = SCIENCEDIRECT_FINAL_DOC_URL.matcher(html);
 				if ( finalDocUrlMatcher.find() )
 				{
-					String finalDocUrl = finalDocUrlMatcher.group(1);
-					if ( finalDocUrl.isEmpty() ) {
+					String finalDocUrl = null;
+					try {
+						finalDocUrl = finalDocUrlMatcher.group(1);
+					} catch (Exception e) {
+						logger.error("", e);
+					}
+					if ( (finalDocUrl == null) || finalDocUrl.isEmpty() ) {
 						logger.error("Could not retrieve the finalDocUrl from a \"sciencedirect.com\" url!");
 						throw new FailedToProcessScienceDirectException();
 					}
@@ -165,8 +173,10 @@ public class HandleScienceDirect
 		String idStr = null;
 		Matcher matcher = UrlUtils.URL_TRIPLE.matcher(linkinghubElsevierUrl);
 		if ( matcher.matches() ) {
-			idStr = matcher.group(3);
-			if ( idStr == null || idStr.isEmpty() ) {
+			try {
+				idStr = matcher.group(3);
+			} catch (Exception e) { logger.error("", e); }
+			if ( (idStr == null) || idStr.isEmpty() ) {
 				logger.warn("Unexpected id-missing case for: " + linkinghubElsevierUrl);
 				return null;
 			}
