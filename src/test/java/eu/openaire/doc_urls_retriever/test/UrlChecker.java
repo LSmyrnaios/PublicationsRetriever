@@ -1,30 +1,35 @@
 package eu.openaire.doc_urls_retriever.test;
 
+import com.google.common.collect.HashMultimap;
 import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
-//import eu.openaire.doc_urls_retriever.util.file.FileUtils;
+import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Set;
+
+import static eu.openaire.doc_urls_retriever.test.TestNonStandardInputOutput.setInputOutput;
+import static eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker.isFinishedLoading;
 
 
 /**
- * This class contains unit-testing for urls-connectivity.
+ * This class contains unit-testing for urls.
  * @author Lampros A. Smyrnaios
  */
 public class UrlChecker {
 	
 	private static final Logger logger = LoggerFactory.getLogger(UrlChecker.class);
 	
-	@Test
-	public void runIndividualTests()
+	//@Test
+	public void checkUrlConnectivity()
 	{
 		//FileUtils.shouldDownloadDocFiles = false;	// Default is: "true".
+		FileUtils.shouldUseOriginalDocFileNames = true;
 		
 		// Here test individual urls.
 		
@@ -68,7 +73,13 @@ public class UrlChecker {
 		//urlList.add("https://wwwfr.uni.lu/content/download/35522/427398/file/2011-05%20-%20Demographic%20trends%20and%20international%20capital%20flows%20in%20an%20integrated%20world.pdf");
 		//urlList.add("https://www.scribd.com/document/397997565/Document-2-Kdashnk");
 		//urlList.add("https://stella.repo.nii.ac.jp/?action=pages_view_main&active_action=repository_view_main_item_detail&item_id=103&item_no=1&page_id=13&block_id=21");
-		urlList.add("https://hal.archives-ouvertes.fr/hal-00328350");
+		//urlList.add("https://hal.archives-ouvertes.fr/hal-00328350");
+		//urlList.add("https://www.clim-past-discuss.net/8/3043/2012/cpd-8-3043-2012.html");
+		//urlList.add("http://www.nature.com/cdd/journal/v22/n3/pdf/cdd2014169a.pdf");
+		//urlList.add("https://www.ssoar.info/ssoar/handle/document/20820");
+		//urlList.add("https://upcommons.upc.edu/bitstream/handle/2117/11500/FascinatE-D1.1.1-Requirements.pdf?sequence=1&isAllowed=y");
+		//urlList.add("https://gala.gre.ac.uk/id/eprint/11492/1/11492_Digges_Marketing%20of%20banana%20%28working%20paper%29%201994.pdf");
+		urlList.add("https://zenodo.org/record/1157336");
 		
 		logger.info("Urls to check:");
 		for ( String url: urlList )
@@ -99,4 +110,64 @@ public class UrlChecker {
 		DocUrlsRetriever.calculateAndPrintElapsedTime(start, finish);
 	}
 	
+	
+	@Test
+	public void checkUrlRegex()
+	{
+		logger.info("Going to test url-triple-regex on multiple urls..");
+		
+		// List contains urls for REGEX-check
+		ArrayList<String> urlList = new ArrayList<>();
+		
+		urlList.add("https://upcommons.upc.edu/bitstream/handle/2117/11500/FascinatE-D1.1.1-Requirements.pdf?sequence=1&isAllowed=y");
+		urlList.add("https://upcommons.upc.edu/bitstream/handle/2117/11500/?sequence=1&isAllowed=y");
+		urlList.add("https://upcommons.upc.edu/bitstream/handle/2117/11500/FascinatE-D1.1.1-Requirements.pdf");
+		
+		// Add more urls to test.
+		
+		for ( String url : urlList )
+		{
+			validateRegexOnUrl(url);
+		}
+		
+		// Check the urls provided in the input-file.
+		setInputOutput();
+		
+		// Start loading and checking urls.
+		HashMultimap<String, String> loadedIdUrlPairs;
+		boolean isFirstRun = true;
+		while ( true )
+		{
+			loadedIdUrlPairs = FileUtils.getNextIdUrlPairGroupFromJson(); // Take urls from jsonFile.
+			
+			if ( isFinishedLoading(loadedIdUrlPairs.isEmpty(), isFirstRun) )    // Throws RuntimeException which is automatically passed on.
+				break;
+			else
+				isFirstRun = false;
+			
+			Set<String> keys = loadedIdUrlPairs.keySet();
+			
+			for ( String retrievedId : keys )
+				for ( String retrievedUrl : loadedIdUrlPairs.get(retrievedId) )
+					validateRegexOnUrl(retrievedUrl);
+		}// End-while
+	}
+	
+	
+	private static void validateRegexOnUrl(String url)
+	{
+		logger.info("Checking \"URL_TRIPLE_REGEX\" on url: \"" + url + "\".");
+		
+		String urlPart = null;
+		if ( (urlPart = UrlUtils.getDomainStr(url)) != null )
+			logger.info("\t\tDomain: \"" + urlPart + "\"");
+		
+		urlPart = null;
+		if ( (urlPart = UrlUtils.getPathStr(url)) != null )
+			logger.info("\t\tPath: \"" + urlPart + "\"");
+		
+		urlPart = null;
+		if ( (urlPart = UrlUtils.getDocIdStr(url)) != null )
+			logger.info("\t\tDocID: \"" + urlPart + "\"");
+	}
 }
