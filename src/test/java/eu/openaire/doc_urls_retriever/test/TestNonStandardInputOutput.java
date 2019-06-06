@@ -86,6 +86,30 @@ public class TestNonStandardInputOutput  {
 		DocUrlsRetriever.parseArgs(args);
 		
 		// Use testing input/output files.
+		setInputOutput();
+		
+		Instant startTime = Instant.now();
+		
+		try {
+			new LoaderAndChecker();
+		} catch (RuntimeException e) {  // In case there was no input, a RuntimeException will be thrown, after logging the cause.
+			String errorMessage = "There was a serious error! Output data is affected! Exiting..";
+			System.err.println(errorMessage);
+			logger.error(errorMessage);
+			System.exit(-7);
+		}
+		
+		Instant finishTime = Instant.now();
+		
+		DocUrlsRetriever.showStatistics(startTime, finishTime);
+		
+		// Close the open streams (imported and exported content).
+		FileUtils.closeStreams();
+	}
+	
+	
+	public static void setInputOutput()
+	{
 		setTypeOfInputData();
 		try {
 			new FileUtils(new FileInputStream(inputFile), new FileOutputStream(outputFile));
@@ -99,25 +123,12 @@ public class TestNonStandardInputOutput  {
 			System.err.println(errorMessage);
 			logger.error(errorMessage, npe);
 			System.exit(-5);
-		}
-		
-		Instant startTime = Instant.now();
-		
-		try {
-			new LoaderAndChecker();
-		} catch (RuntimeException e) {  // In case there was no input, a RuntimeException will be thrown, after logging the cause.
-			String errorMessage = "There was a serious error! Output data is affected! Exiting..";
+		} catch (Exception e) {
+			String errorMessage = "Something went totally wrong!";
 			System.err.println(errorMessage);
-			logger.error(errorMessage);
+			logger.error(errorMessage, e);
 			System.exit(-6);
 		}
-		
-		Instant finishTime = Instant.now();
-		
-		DocUrlsRetriever.showStatistics(startTime, finishTime);
-		
-		// Close the open streams (imported and exported content).
-		FileUtils.closeStreams();
 	}
 	
 }
