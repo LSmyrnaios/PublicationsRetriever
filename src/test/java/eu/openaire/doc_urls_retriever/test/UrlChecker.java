@@ -119,9 +119,21 @@ public class UrlChecker {
 		// List contains urls for REGEX-check
 		ArrayList<String> urlList = new ArrayList<>();
 		
+		urlList.add("http://example.com/path/to/page?name=ferret&color=purple");
 		urlList.add("https://upcommons.upc.edu/bitstream/handle/2117/11500/FascinatE-D1.1.1-Requirements.pdf?sequence=1&isAllowed=y");
 		urlList.add("https://upcommons.upc.edu/bitstream/handle/2117/11500/?sequence=1&isAllowed=y");
 		urlList.add("https://upcommons.upc.edu/bitstream/handle/2117/11500/FascinatE-D1.1.1-Requirements.pdf");
+		urlList.add("http://ena.lp.edu.ua:8080/bitstream/ntb/12073/1/17_КОНЦЕПТУАЛЬНІ ЗАСАДИ ФОРМУВАННЯ ДИСТАНЦІЙНОГО.pdf");
+		urlList.add("https://hal.archives-ouvertes.fr/hal-01558509/file/locomotion_B&B.pdf");
+		urlList.add("https://zenodo.org/record/1157336/files/Impact of Biofield Energy Treated (The Trivedi Effect®) Herbomineral Formulation on the Immune Biomarkers and Blood Related Parameters of Female Sprague Dawley Rats.pdf");
+		urlList.add("http://dspace.ou.nl/bitstream/1820/9091/1/Methodological triangulation of the students' use of recorded lectures.pdf");
+		urlList.add("http://orca.cf.ac.uk/29804/1/BourneTrust&FinancialElites Ful.pdf");
+		urlList.add("https://repository.nwu.ac.za/bitstream/handle/10394/5642/Y&T_2006(SE)_Mthembu.pdf?sequence=1&isAllowed=y");
+		urlList.add("http://eprints.nottingham.ac.uk/1718/1/Murphy_&_Whitty,_The_Question_of_Evil_(2006)_FLS.pdf");
+		urlList.add("http://paduaresearch.cab.unipd.it/5619/1/BEGHETTO_A_-_L'attività_di_revisione_legale_del_bilancio_d'esercizio.pdf");
+		urlList.add("http://paduaresearch.cab.unipd.it/5619/1/BEGHETTO_A_-_L'attivit%C3%A0_di_revisione_legale_del_bilancio_d'esercizio.pdf");
+		urlList.add("https://signon.utwente.nl:443/oam/server/obrareq.cgi?encquery%3DNag5hroDAYcZB73s6qFabcJrCLu93LkC%2B%2BehD6VzQDBXjyBeFwtDMuD1y8RrSDHeJy5fC5%2Fy2bJ06QJBGd1f0YAph8D4YcL49l8SbwEcjfrA7TYcvee8aiQakGx1o5pLUN4KrQC%2F3OBf5PrdrMwJb98CJjMkSBGdSMteofa1JVOMTxSQUwTdObMY04eHA51ReEiT3v3fpOlg6%2BcJgtdHSCEhYL2yCt2rgkgPSVoJ%2BqZvFzc6o3FhSmCeXtFiO1FpG5%2BzFSP5JEHVFUerdnw1GpLOtGOT6PpbDf9Fd%2BnAT6Q%3D%20agentid%3DRevProxyWebgate%20ver%3D1%20crmethod%3D2&ECID-Context=1.005YfySQ6km8LunDsnZBCX0002cY00001F%3BkXjE");
+		
 		
 		// Add more urls to test.
 		
@@ -156,7 +168,7 @@ public class UrlChecker {
 	
 	private static void validateRegexOnUrl(String url)
 	{
-		logger.info("Checking \"URL_TRIPLE_REGEX\" on url: \"" + url + "\".");
+		logger.info("Checking \"URL_TRIPLE\"-REGEX on url: \"" + url + "\".");
 		
 		String urlPart = null;
 		if ( (urlPart = UrlUtils.getDomainStr(url)) != null )
