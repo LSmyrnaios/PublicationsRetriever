@@ -26,14 +26,14 @@ If there are no IDs in the input, the user can specify -in ***LoaderAndChecker.j
 ## Install & Run (using MAVEN)
 To install the application, navigate to the directory of the project, where the ***pom.xml*** is located.<br/>
 Then enter this command in the terminal:<br/>
-``mvn install``<br/>
+**``mvn install``**<br/>
 
 To run the application you should navigate to the ***target*** directory, which will be created by *MAVEN* and run the executable ***JAR*** file,
 while choosing the appropriate run-command.<br/> 
 
 **Run with standard input/output:**<br/>
-``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg1:'-downloadDocFiles' arg2:'-firstDocFileNum' arg3:'NUM' arg4:'-docFilesStorage'
-arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``<br/>
+**``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg1:'-downloadDocFiles' arg2:'-firstDocFileNum' arg3:'NUM' arg4:'-docFilesStorage'
+arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br/>
 
 **Run tests with custom input/output:**<br/>
 - Inside ***pom.xml***, change the **mainClass** of **maven-shade-plugin** from "**DocUrlsRetriever**" to "**TestNonStandardInputOutput**".
@@ -44,7 +44,7 @@ arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``<br/>
     and change the ***appender-ref***, from ***File*** to ***Console***.<br/>
 - Run ``mvn install`` to create the new ***JAR*** file.<br/>
 - Execute the program with the following command:<br/>
-``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg1:'-downloadDocFiles' arg2:'-firstDocFileNum' arg3:'NUM' arg4:'-docFilesStorage' arg5:'storageDir'``
+**``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg1:'-downloadDocFiles' arg2:'-firstDocFileNum' arg3:'NUM' arg4:'-docFilesStorage' arg5:'storageDir'``**
 
 **Arguments explanation:**<br/>
 - **-downloadDocFiles** will tell the program to download the DocFiles.
@@ -60,11 +60,11 @@ arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``<br/>
 You can check the functionality of **DocUrlsRetriever** by running an example.<br/>
 Type **`./runExample.sh`** in the terminal and hit `ENTER`.<br/>
 This script will run the following commands:<br/>
-- `mvn clean install`: Do a clean install.
-- `rm -rf example/sample_output/*`: Remove any previous example-results.
-- ``cd target &&
+- **`mvn clean install`**: Does a clean install.
+- **`rm -rf example/sample_output/*`**: Removes any previous example-results.
+- **``cd target &&
     java -jar doc_urls_retriever-0.4-SNAPSHOT.jar -downloadDocFiles -firstDocFileNum 1 -docFilesStorage ../example/sample_output/DocFiles
-    < ../example/sample_input/sample_input.json > ../example/sample_output/sample_output.json``<br/>
+    < ../example/sample_input/sample_input.json > ../example/sample_output/sample_output.json``**<br/>
     This command will run the program with "**../example/sample_input/sample_input.json**" as input
     and "**../example/sample_output/sample_output.json**" as the output.<br/>
     The arguments used are:

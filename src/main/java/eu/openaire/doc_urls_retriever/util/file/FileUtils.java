@@ -326,8 +326,14 @@ public class FileUtils
 				// Use the subString as last resort, although not reliable! (subString after the last "." will not work if the fileName doesn't include an extension).
 		}*/
 		
-		if ( hasUnretrievableDocName )
-			docFileName = "unretrievableDocName(" + (++unretrievableDocNamesNum) + ")" + dotFileExtension;
+		if ( hasUnretrievableDocName ) {
+			if ( unretrievableDocNamesNum == 0 )
+				docFileName = "unretrievableDocName" + dotFileExtension;
+			else
+				docFileName = "unretrievableDocName(" + unretrievableDocNamesNum + ")" + dotFileExtension;
+			
+			unretrievableDocNamesNum ++;
+		}
 		
 		//logger.debug("docFileName: " + docFileName);
 		
@@ -343,7 +349,7 @@ public class FileUtils
 				boolean isDuplicate = false;
 				int curDuplicateNum = 1;
 				
-				if ( numbersOfDuplicateDocFileNames.containsKey(docFileName) ) {	// First check -in O(1)- if it's an already-known duplicate.
+				if ( numbersOfDuplicateDocFileNames.containsKey(docFileName) ) {	// First check -in O(1)- if it's an already-known duplicate. (also helps to avoid getting "null" in "numbersOfDuplicateDocFileNames.get()")
 					curDuplicateNum += numbersOfDuplicateDocFileNames.get(docFileName);
 					isDuplicate = true;
 				} else if ( docFile.exists() )	// If it's not an already-known duplicate (this is the first duplicate-case for this file), go check if it exists in the fileSystem.
