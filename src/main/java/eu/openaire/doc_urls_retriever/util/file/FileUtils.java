@@ -55,7 +55,7 @@ public class FileUtils
 	public static int numOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremential system.
 	public static String storeDocFilesDir = System.getProperty("user.dir") + File.separator + "docFiles";
 	public static int unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
-	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*(?:filename=(?:\\\")?)([\\w\\-\\.\\,\\%\\_\\(\\)\\~\\:]+)[\\\"\\;]*.*");
+	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*(?:filename(?:\\*)?=(?:.*(?:\\\"|\\'))?)([^\\\"^\\;]+)[\\\"\\;]*.*");
 	
 	
 	public FileUtils(InputStream input, OutputStream output)
@@ -294,7 +294,7 @@ public class FileUtils
 				if ( (docFileName == null) || docFileName.isEmpty() )
 					docFileName = null;	// Ensure null-value for future checks.
 			} else
-				logger.warn("Unmatched Content-Disposition:  " + contentDisposition);
+				logger.warn("Unmatched file-content-Disposition: " + contentDisposition);
 		}
 		
 		// If we couldn't get the fileName from the "Content-Disposition", try getting it from the url.
