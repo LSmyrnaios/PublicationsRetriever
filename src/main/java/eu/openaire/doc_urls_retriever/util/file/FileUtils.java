@@ -1,7 +1,6 @@
 package eu.openaire.doc_urls_retriever.util.file;
 
 import java.io.*;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -57,6 +56,7 @@ public class FileUtils
 	public static int unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
 	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*(?:filename(?:\\*)?=(?:.*(?:\\\"|\\'))?)([^\\\"^\\;]+)[\\\"\\;]*.*");
 	
+	public static final int MAX_FILENAME_LENGTH = 250;	// TODO - Find a way to get the current-system's MAX-value.
 	
 	public FileUtils(InputStream input, OutputStream output)
 	{
@@ -284,6 +284,17 @@ public class FileUtils
 	{
 		String docFileName = null;
 		boolean hasUnretrievableDocName = false;
+		String dirPath = storeDocFilesDir + File.separator;
+		
+		String dotFileExtension /*= "";
+		if ( shouldAcceptOnlyPDFs )
+			dotFileExtension*/ = ".pdf";
+		/*else {	// TODO - Later we might accept more fileTypes.
+			if ( contentType != null )
+				// Use the Content-Type to determine the extension. A multi-mapping between mimeTypes and fileExtensions is needed.
+			else
+				// Use the last subString of the url-string as last resort, although not reliable! (subString after the last "." will not work if the docFileName-url-part doesn't include is not an extension but part of the original name or a "random"-string).
+		}*/
 		
 		if ( contentDisposition != null ) {	// Extract docFileName from contentDisposition.
 			Matcher fileNameMatcher = FILENAME_FROM_CONTENT_DISPOSITION_FILTER.matcher(contentDisposition);
@@ -297,34 +308,26 @@ public class FileUtils
 				logger.warn("Unmatched file-content-Disposition: " + contentDisposition);
 		}
 		
+		//docFileName = null;	// Just to test the docFileNames retrieved from the DocId-part of the docUrls.
+		
 		// If we couldn't get the fileName from the "Content-Disposition", try getting it from the url.
-		if ( docFileName == null ) {
-			// Try to get the fileName from URL-Class-path, since the "UrlUtils.getDocIdStr()" -which is now used as last resort- may not give a valid docFileName.
-			try {
-				URL url = new URL(docUrl);
-				docFileName = new File(url.getPath()).getName();
-				if ( docFileName.isEmpty() )
-					hasUnretrievableDocName = true;
-			} catch (Exception e) {
-				logger.warn("Could not parse the docUrl: \"" + docUrl + "\"", e);
+		if ( docFileName == null )
+			docFileName = UrlUtils.getDocIdStr(docUrl);	// Extract the docID as the fileName from docUrl.
+		
+		if ( (docFileName != null) && !docFileName.isEmpty() ) {
+			// Check if the FileName is too long and we are going to get an error at file-creation.
+			if ( !docFileName.endsWith(dotFileExtension) )
+				docFileName += dotFileExtension;
+			
+			String fullDocName = dirPath + docFileName;
+			int docFullNameLength = fullDocName.length();
+			if ( docFullNameLength > MAX_FILENAME_LENGTH ) {
+				logger.warn("Too long docFullName found (" + docFullNameLength + " chars), it would cause file-creation to fail, so we mark the file-name as \"unretrievable\".\nThe long docName is: \"" + fullDocName + "\".");
 				hasUnretrievableDocName = true;
 			}
-			
-			if ( hasUnretrievableDocName ) {	// If we still haven't retrieved the fileName..
-				docFileName = UrlUtils.getDocIdStr(docUrl);	// Extract the docID as the fileName from docUrl.
-				hasUnretrievableDocName = (docFileName == null);
-			}
-		}
+		} else
+			hasUnretrievableDocName = true;
 		
-		String dotFileExtension /*= "";
-		if ( shouldAcceptOnlyPDFs )
-			dotFileExtension*/ = ".pdf";
-		/*else {	// TODO - Later we might accept also other fileTypes.
-			if ( contentType != null )
-				// Use the Content-Type to determine the extension. A multi-mapping between mimeTypes and fileExtensions is needed.
-			else
-				// Use the subString as last resort, although not reliable! (subString after the last "." will not work if the fileName doesn't include an extension).
-		}*/
 		
 		if ( hasUnretrievableDocName ) {
 			if ( unretrievableDocNamesNum == 0 )
@@ -338,10 +341,7 @@ public class FileUtils
 		//logger.debug("docFileName: " + docFileName);
 		
 		try {
-			if ( !hasUnretrievableDocName && !docFileName.contains(dotFileExtension) )	// If there is no extension, add ".pdf" in the end. TODO - Later it can be extension-dependent.
-				docFileName += dotFileExtension;
-			
-			String saveDocFileFullPath = storeDocFilesDir + File.separator + docFileName;
+			String saveDocFileFullPath = dirPath + docFileName;
 			File docFile = new File(saveDocFileFullPath);
 			
 			if ( !hasUnretrievableDocName ) {	// If we retrieved the fileName, go check if it's a duplicate.

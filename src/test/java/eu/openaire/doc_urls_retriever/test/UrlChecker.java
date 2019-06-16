@@ -25,7 +25,7 @@ public class UrlChecker {
 	
 	private static final Logger logger = LoggerFactory.getLogger(UrlChecker.class);
 	
-	//@Test
+	@Test
 	public void checkUrlConnectivity()
 	{
 		//FileUtils.shouldDownloadDocFiles = false;	// Default is: "true".
@@ -79,7 +79,9 @@ public class UrlChecker {
 		//urlList.add("https://www.ssoar.info/ssoar/handle/document/20820");
 		//urlList.add("https://upcommons.upc.edu/bitstream/handle/2117/11500/FascinatE-D1.1.1-Requirements.pdf?sequence=1&isAllowed=y");
 		//urlList.add("https://gala.gre.ac.uk/id/eprint/11492/1/11492_Digges_Marketing%20of%20banana%20%28working%20paper%29%201994.pdf");
-		urlList.add("https://zenodo.org/record/1157336");
+		//urlList.add("https://zenodo.org/record/1157336");
+		urlList.add("https://zenodo.org/record/1157336/files/Impact%20of%20Biofield%20Energy%20Treated%20%28The%20Trivedi%20Effect%C2%AE%29%20Herbomineral%20Formulation%20on%20the%20Immune%20Biomarkers%20and%20Blood%20Related%20Parameters%20of%20Female%20Sprague%20Dawley%20Rats.pdf");
+		urlList.add("http://amcor.asahikawa-med.ac.jp/modules/xoonips/download.php?file_id=3140");
 		
 		logger.info("Urls to check:");
 		for ( String url: urlList )
@@ -111,7 +113,7 @@ public class UrlChecker {
 	}
 	
 	
-	@Test
+	//@Test
 	public void checkUrlRegex()
 	{
 		logger.info("Going to test url-triple-regex on multiple urls..");
