@@ -18,18 +18,19 @@ public class SignalUtils {
 	{
 		Signal.handle(new Signal("INT"), sig -> {
 			
-			// First write whatever remaining quadruple exist in memory.
+			// Print the related interrupted-state-message.
+			String stopMessage = "The normal program execution was interrupted by a \"SIGINT\"-signal!";
+			logger.warn(stopMessage);
+			System.err.println(stopMessage);
+			
+			// Write whatever remaining quadruples exist in memory.
 			if ( !FileUtils.quadrupleToBeLoggedList.isEmpty() ) {
-				logger.debug("Writing last quadruples to disk.");
+				logger.debug("Writing the remaining quadruples to the outputFile.");
 				FileUtils.writeToFile();
 			}
 			
-			// Close the stream.
+			// Close the streams.
 			FileUtils.closeStreams();
-			String stopMessage = "Program execution stopped because of a \"SIGINT\"-signal!";
-			logger.warn(stopMessage);
-			System.err.println(stopMessage);
-			System.err.flush();
 			
 			// If the program managed to set the "startTime" before the signal was recieved, then show the execution time.
 			if ( DocUrlsRetriever.startTime != null )
