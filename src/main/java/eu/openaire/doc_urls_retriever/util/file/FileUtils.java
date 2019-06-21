@@ -68,7 +68,7 @@ public class FileUtils
 			if ( shouldDeleteOlderDocFiles ) {
 				logger.debug("Deleting old docFiles..");
 				try {
-					deleteDirectory(dir);	// apache.commons.io.FileUtils
+					deleteDirectory(dir);	// org.apache.commons.io.FileUtils
 				} catch (IOException ioe) {
 					logger.error(ioe.getMessage(), ioe);
 					FileUtils.shouldDownloadDocFiles = false;	// Continue without downloading the docFiles, just create the jsonOutput.
@@ -90,6 +90,7 @@ public class FileUtils
 									+ "\nIf this is not desired, please terminate the program and re-define the \"storeDocFilesDir\"!";
 						System.err.println(errorMessage);
 						logger.error(errorMessage);
+						FileUtils.closeStreams();
 						System.exit(-3);
 					}
 				}
@@ -204,10 +205,11 @@ public class FileUtils
 		printStream.print(strB.toString());
 		printStream.flush();
 		
-		FileUtils.quadrupleToBeLoggedList.clear();	// Clear the list to put the new <jsonGroupSize> values. The backing array used by List is not de-allocated. Only the String references contained get GCed.
 		strB.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
 		
-		logger.debug("Finished writing to the outputFile " + jsonGroupSize + " quadruples.");
+		logger.debug("Finished writing " + FileUtils.quadrupleToBeLoggedList.size() + " quadruples to the outputFile.");
+		
+		FileUtils.quadrupleToBeLoggedList.clear();	// Clear the list to put the new <jsonGroupSize> values. The backing array used by List is not de-allocated. Only the String-references contained get GC-ed.
 	}
 	
 	

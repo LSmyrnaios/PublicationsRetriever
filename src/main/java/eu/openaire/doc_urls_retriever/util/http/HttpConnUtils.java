@@ -134,8 +134,7 @@ public class HttpConnUtils
 				if (exMsg != null) {
 					StackTraceElement firstLineOfStackTrace = re.getStackTrace()[0];
 					logger.warn("[" + firstLineOfStackTrace.getFileName() + "->" + firstLineOfStackTrace.getMethodName() + "(@" + firstLineOfStackTrace.getLineNumber() + ")] - " + exMsg);
-				}
-				else
+				} else
 					logger.warn("Could not handle connection for \"" + resourceURL + "\"!");
 			}
 			throw re;

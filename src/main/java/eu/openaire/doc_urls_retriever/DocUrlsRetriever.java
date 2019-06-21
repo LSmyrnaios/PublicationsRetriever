@@ -42,6 +42,7 @@ public class DocUrlsRetriever
 			String errorMessage = "There was a serious error! Output data is affected! Exiting..";
 			System.err.println(errorMessage);
 			logger.error(errorMessage);
+			FileUtils.closeStreams();
 			System.exit(-4);
 		}
 		
@@ -123,6 +124,7 @@ public class DocUrlsRetriever
 				String errorMessage = "\"FileUtils.getCurrentlyLoadedUrls()\" is unexpectedly reporting that no urls were retrieved from input file! Output data may be affected! Exiting..";
 				System.err.println(errorMessage);
 				logger.error(errorMessage);
+				FileUtils.closeStreams();
 				System.exit(-5);
 			}
 		}

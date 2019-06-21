@@ -96,6 +96,7 @@ public class TestNonStandardInputOutput  {
 			String errorMessage = "There was a serious error! Output data is affected! Exiting..";
 			System.err.println(errorMessage);
 			logger.error(errorMessage);
+			FileUtils.closeStreams();
 			System.exit(-7);
 		}
 		
@@ -117,16 +118,19 @@ public class TestNonStandardInputOutput  {
 			String errorMessage = "InputFile not found!";
 			System.err.println(errorMessage);
 			logger.error(errorMessage, e);
+			FileUtils.closeStreams();
 			System.exit(-4);
 		} catch (NullPointerException npe) {
 			String errorMessage = "No input and/or output file(s) w(as/ere) given!";
 			System.err.println(errorMessage);
 			logger.error(errorMessage, npe);
+			FileUtils.closeStreams();
 			System.exit(-5);
 		} catch (Exception e) {
 			String errorMessage = "Something went totally wrong!";
 			System.err.println(errorMessage);
 			logger.error(errorMessage, e);
+			FileUtils.closeStreams();
 			System.exit(-6);
 		}
 	}
