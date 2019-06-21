@@ -2,6 +2,7 @@ package eu.openaire.doc_urls_retriever;
 
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
+import eu.openaire.doc_urls_retriever.util.signal.SignalUtils;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
@@ -26,16 +27,22 @@ public class DocUrlsRetriever
 	
 	public static boolean docFilesStorageGivenByUser = false;
 	
+	public static Instant startTime = null;
+	
 	
     public static void main( String[] args )
     {
+		SignalUtils.setSignalHandlers();
+	
+		startTime = Instant.now();
+	
+		logger.info("Starting DocUrlsRetriever..");
+    	
 		parseArgs(args);
 		
 		// Use standard input/output.
 		new FileUtils(System.in, System.out);
-	
-		Instant startTime = Instant.now();
-	
+		
 		try {
 			new LoaderAndChecker();
 		} catch (RuntimeException e) {  // In case there was no input, a RuntimeException will be thrown, after logging the cause.
@@ -46,9 +53,7 @@ public class DocUrlsRetriever
 			System.exit(-4);
 		}
 		
-		Instant finishTime = Instant.now();
-		
-		showStatistics(startTime, finishTime);
+		showStatistics(startTime, Instant.now());
 		
 		// Close the open streams (imported and exported content).
 		FileUtils.closeStreams();

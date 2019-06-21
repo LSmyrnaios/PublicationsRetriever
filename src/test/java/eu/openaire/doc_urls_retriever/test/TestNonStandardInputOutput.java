@@ -1,6 +1,7 @@
 package eu.openaire.doc_urls_retriever.test;
 
 import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
+import eu.openaire.doc_urls_retriever.util.signal.SignalUtils;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -83,12 +85,16 @@ public class TestNonStandardInputOutput  {
 	
 	public static void main( String[] args )
 	{
+		SignalUtils.setSignalHandlers();
+		
+		DocUrlsRetriever.startTime = Instant.now();
+		
+		logger.info("Starting DocUrlsRetriever..");
+		
 		DocUrlsRetriever.parseArgs(args);
 		
 		// Use testing input/output files.
 		setInputOutput();
-		
-		Instant startTime = Instant.now();
 		
 		try {
 			new LoaderAndChecker();
@@ -100,9 +106,7 @@ public class TestNonStandardInputOutput  {
 			System.exit(-7);
 		}
 		
-		Instant finishTime = Instant.now();
-		
-		DocUrlsRetriever.showStatistics(startTime, finishTime);
+		DocUrlsRetriever.showStatistics(DocUrlsRetriever.startTime, Instant.now());
 		
 		// Close the open streams (imported and exported content).
 		FileUtils.closeStreams();

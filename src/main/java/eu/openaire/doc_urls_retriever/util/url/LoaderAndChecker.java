@@ -35,8 +35,6 @@ public class LoaderAndChecker
 	
 	public LoaderAndChecker() throws RuntimeException
 	{
-		logger.info("Starting DocUrlsRetriever..");
-		
 		try {
 			if ( useIdUrlPairs )
 				loadAndCheckIdUrlPairs();
