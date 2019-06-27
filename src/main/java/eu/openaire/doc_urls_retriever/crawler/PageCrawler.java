@@ -229,7 +229,7 @@ public class PageCrawler
 				else {	// Connect to it directly.
 					//logger.debug("MetaDocUrl: " + metaDocUrl);	// DEBUG!
 					if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, currentPageDomain, false, true) ) {    // On success, we log the docUrl inside this method.
-						logger.warn("The retrieved metaDocUrl <" + metaDocUrl + "> was not a docUrl (unexpected)!");
+						logger.warn("The retrieved metaDocUrl was not a docUrl (unexpected): " + metaDocUrl);
 						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved metaDocUrl was not a docUrl.", null);
 					}
 					return true; 	// It should be the docUrl and it was handled.. so we don't continue checking the internalLink even if this wasn't a docUrl.

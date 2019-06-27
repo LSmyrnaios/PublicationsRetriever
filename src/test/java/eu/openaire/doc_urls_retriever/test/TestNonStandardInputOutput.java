@@ -89,9 +89,9 @@ public class TestNonStandardInputOutput  {
 		
 		DocUrlsRetriever.startTime = Instant.now();
 		
-		logger.info("Starting DocUrlsRetriever..");
-		
 		DocUrlsRetriever.parseArgs(args);
+		
+		logger.info("Starting DocUrlsRetriever..");
 		
 		// Use testing input/output files.
 		setInputOutput();

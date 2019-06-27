@@ -33,13 +33,13 @@ public class DocUrlsRetriever
     public static void main( String[] args )
     {
 		SignalUtils.setSignalHandlers();
-	
+		
 		startTime = Instant.now();
+		
+		parseArgs(args);
 	
 		logger.info("Starting DocUrlsRetriever..");
-    	
-		parseArgs(args);
-		
+	
 		// Use standard input/output.
 		new FileUtils(System.in, System.out);
 		
