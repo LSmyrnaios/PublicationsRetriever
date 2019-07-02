@@ -61,7 +61,7 @@ public class UrlTypeChecker
 	public static int pagesWithHtmlDocUrls = 0;
 	public static int pagesRequireLoginToAccessDocFiles = 0;
 	public static int pagesWithLargerCrawlingDepth = 0;	// Pages with their docUrl behind an internal "view" page.
-	public static int longToRespondUrls = 0;	// Urls belonging to domains which take too long to respon
+	public static int longToRespondUrls = 0;	// Urls belonging to domains which take too long to respond.
 	public static int urlsWithUnwantedForm = 0;	// (plain domains, unwanted page-extensions ect.)
 	public static int pangaeaUrls = 0;	// These urls are in false form by default, but even if they weren't or we transform them, PANGAEA. only gives datasets, not fulltext.
 	public static int pagesNotProvidingDocUrls = 0;

@@ -3,6 +3,7 @@ package eu.openaire.doc_urls_retriever.util.http;
 import eu.openaire.doc_urls_retriever.exceptions.*;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
+import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
@@ -130,19 +131,23 @@ public class HttpConnUtils
 			return true;	// It's already logged for the outputFile.
 		} catch (RuntimeException re) {
 			if ( calledForPageUrl ) {	// Log this error only for docPages, not internalLinks.
-				String exMsg = re.getMessage();
-				if (exMsg != null) {
-					StackTraceElement firstLineOfStackTrace = re.getStackTrace()[0];
-					logger.warn("[" + firstLineOfStackTrace.getFileName() + "->" + firstLineOfStackTrace.getMethodName() + "(@" + firstLineOfStackTrace.getLineNumber() + ")] - " + exMsg);
-				} else
-					logger.warn("Could not handle connection for \"" + resourceURL + "\"!");
+				LoaderAndChecker.connProblematicUrls ++;
+				ConnSupportUtils.printEmbeddedExceptionMessage(re, resourceURL);
 			}
 			throw re;
-		} catch (DomainBlockedException | DomainWithUnsupportedHEADmethodException | ConnTimeoutException e) {
+		} catch (ConnTimeoutException cte) {
+			if ( calledForPageUrl )
+				UrlTypeChecker.longToRespondUrls ++;
+			throw cte;
+		} catch (DomainBlockedException | DomainWithUnsupportedHEADmethodException e) {
+			if ( calledForPageUrl )
+				LoaderAndChecker.connProblematicUrls ++;
 			throw e;
 		} catch (Exception e) {
-			if ( calledForPageUrl )	// Log this error only for docPages.
+			if ( calledForPageUrl ) {	// Log this error only for docPages.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\"!");
+				LoaderAndChecker.connProblematicUrls ++;
+			}
 			throw new RuntimeException();
 		} finally {
 			if ( conn != null )
@@ -214,8 +219,7 @@ public class HttpConnUtils
 				conn.setRequestMethod("GET");	// Go directly with "GET".
 				conn.setConnectTimeout(maxConnGETWaitingTime);
 				conn.setReadTimeout(maxConnGETWaitingTime);
-			}
-			else {
+			} else {
 				conn.setRequestMethod("HEAD");	// Else, try "HEAD" (it may be either a domain that supports "HEAD", or a new domain, for which we have no info yet).
 				conn.setConnectTimeout(maxConnHEADWaitingTime);
 				conn.setReadTimeout(maxConnHEADWaitingTime);
@@ -384,16 +388,7 @@ public class HttpConnUtils
 				if ( targetUrl == null )
 					throw new RuntimeException();
 				
-				// FOR DEBUG -> Check to see what's happening with the redirect urls (location field types, as well as potential error redirects).
-				// Some domains use only the target-ending-path in their location field, while others use full target url.
-				//if ( conn.getURL().toString().contains("<urlType>") ) {	// Debug a certain domain.
-					/*logger.debug("\n");
-					logger.debug("Redirect(s) num: " + curRedirectsNum);
-					logger.debug("Redirect code: " + conn.getResponseCode());
-					logger.debug("Base: " + conn.getURL());
-					logger.debug("Location: " + location);
-					logger.debug("Target: " + targetUrl + "\n");*/
-				//}
+				//ConnSupportUtils.printRedirectDebugInfo(conn, location, targetUrl, curRedirectsNum);	// throws IOException
 				
 				if ( UrlUtils.docUrlsWithKeys.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
 					logger.info("re-crossed docUrl found: <" + targetUrl + ">");

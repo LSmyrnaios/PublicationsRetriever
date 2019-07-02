@@ -47,13 +47,13 @@ public class UrlUtils
 		
         if ( !finalDocUrl.equals("unreachable") && !finalDocUrl.equals("duplicate") )	// If we have reached a docUrl..
         {
-            // Remove "jsessionid" for urls for "cleaner" output.
+			sumOfDocUrlsFound ++;
+			
+			// Remove "jsessionid" from urls for "cleaner" output.
 			String lowerCaseUrl = finalDocUrl.toLowerCase();
             if ( lowerCaseUrl.contains("jsessionid") )
                 finalDocUrl = UrlUtils.removeJsessionid(DocUrl);
-			
-			sumOfDocUrlsFound ++;
-			
+            
             // Gather data for the MLA, if we decide to have it enabled.
             if ( MachineLearning.useMLA )
 				MachineLearning.gatherMLData(domain, pageUrl, finalDocUrl);

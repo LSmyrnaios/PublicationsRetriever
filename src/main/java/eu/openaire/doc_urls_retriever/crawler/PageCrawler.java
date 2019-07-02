@@ -288,7 +288,8 @@ public class PageCrawler
 			if ( !internalLink.isEmpty()
 					&& !internalLink.equals("\\/")
 					&& !internalLink.startsWith("#")
-					&& !internalLink.startsWith("mailto:") && !internalLink.startsWith("tel:") && !internalLink.startsWith("{openurl}") )
+					&& !internalLink.startsWith("mailto:") && !internalLink.startsWith("tel:") && !internalLink.startsWith("fax:")
+					&& !internalLink.startsWith("file:") && !internalLink.startsWith("{openurl}") )
 			{
 				//logger.debug("Filtered InternalLink: " + internalLink);
 				String lowerCaseLink = internalLink.toLowerCase();

@@ -140,13 +140,7 @@ public class HandleScienceDirect
 			logger.error("" + fthsde);
 			throw fthsde;
 		} catch (RuntimeException re) {
-			String exMsg = re.getMessage();
-			if (exMsg != null) {
-				StackTraceElement firstLineOfStackTrace = re.getStackTrace()[0];
-				logger.warn("[" + firstLineOfStackTrace.getFileName() + "->" + firstLineOfStackTrace.getMethodName() + "(@" + firstLineOfStackTrace.getLineNumber() + ")] - " + exMsg);
-			}
-			else
-				logger.warn("Could not handle connection for \"" + currentConnectedUrl + "\"!");
+			ConnSupportUtils.printEmbeddedExceptionMessage(re, currentConnectedUrl);
 			throw new FailedToProcessScienceDirectException();
 		} catch (Exception e) {
 			logger.error("" + e);

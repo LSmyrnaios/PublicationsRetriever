@@ -52,7 +52,8 @@ public class FileUtils
 	public static boolean shouldUseOriginalDocFileNames = false;	// Use number-fileNames by default.
 	public static final boolean shouldLogFullPathName = true;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
 	public static int numOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremential system.
-	public static String storeDocFilesDir = System.getProperty("user.dir") + File.separator + "docFiles";
+	public static final String workingDir = System.getProperty("user.dir") + File.separator;
+	public static String storeDocFilesDir = workingDir + "docFiles" + File.separator;
 	public static int unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
 	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*(?:filename(?:\\*)?=(?:.*(?:\\\"|\\'))?)([^\\\"^\\;]+)[\\\"\\;]*.*");
 	
@@ -228,7 +229,7 @@ public class FileUtils
 			if ( FileUtils.shouldUseOriginalDocFileNames)
 				docFile = getDocFileWithOriginalFileName(docUrl, contentDisposition);
 			else
-				docFile = new File(storeDocFilesDir + File.separator + (numOfDocFile++) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
+				docFile = new File(storeDocFilesDir + (numOfDocFile++) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
 			
 			try {
 				outStream = new FileOutputStream(docFile);
@@ -286,7 +287,6 @@ public class FileUtils
 	{
 		String docFileName = null;
 		boolean hasUnretrievableDocName = false;
-		String dirPath = storeDocFilesDir + File.separator;
 		
 		String dotFileExtension /*= "";
 		if ( shouldAcceptOnlyPDFs )
@@ -321,7 +321,7 @@ public class FileUtils
 			if ( !docFileName.endsWith(dotFileExtension) )
 				docFileName += dotFileExtension;
 			
-			String fullDocName = dirPath + docFileName;
+			String fullDocName = storeDocFilesDir + docFileName;
 			int docFullNameLength = fullDocName.length();
 			if ( docFullNameLength > MAX_FILENAME_LENGTH ) {
 				logger.warn("Too long docFullName found (" + docFullNameLength + " chars), it would cause file-creation to fail, so we mark the file-name as \"unretrievable\".\nThe long docName is: \"" + fullDocName + "\".");
@@ -343,7 +343,7 @@ public class FileUtils
 		//logger.debug("docFileName: " + docFileName);
 		
 		try {
-			String saveDocFileFullPath = dirPath + docFileName;
+			String saveDocFileFullPath = storeDocFilesDir + docFileName;
 			File docFile = new File(saveDocFileFullPath);
 			
 			if ( !hasUnretrievableDocName ) {	// If we retrieved the fileName, go check if it's a duplicate.

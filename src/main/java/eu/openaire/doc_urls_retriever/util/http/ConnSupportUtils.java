@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -276,7 +277,7 @@ public class ConnSupportUtils
 		if ( pathStr == null )
 			return;
 		
-		if ( countAndBlockPathAfterTimes(domainsMultimapWithPaths403BlackListed, timesPathsReturned403, pathStr, domainStr, timesPathToHave403errorCodeBeforeBlocked ) )
+		if ( countAndBlockPathAfterTimes(domainsMultimapWithPaths403BlackListed, timesPathsReturned403, pathStr, domainStr, timesPathToHave403errorCodeBeforeBlocked) )
 		{
 			logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code.");
 			
@@ -315,7 +316,7 @@ public class ConnSupportUtils
 	 */
 	public static boolean checkIfPathIs403BlackListed(String urlStr, String domainStr)
 	{
-		if ( domainsMultimapWithPaths403BlackListed.containsKey(domainStr) )	// If this domain has returned 403 before, check if we have the same path.
+		if ( domainsMultimapWithPaths403BlackListed.containsKey(domainStr) )	// If this domain has returned 403 before, then go and check if the current path is blacklisted.
 		{
 			String pathStr = UrlUtils.getPathStr(urlStr);
 			if ( pathStr == null )	// If there is a problem retrieving this athStr, return false;
@@ -362,8 +363,7 @@ public class ConnSupportUtils
 			blackList.add(domainStr);    // Block this domain.
 			domainsWithTimes.remove(domainStr);	// Remove counting-data.
 			return true;	// This domain was blocked.
-		}
-		else
+		} else
 			return false;	// It wasn't blocked.
 	}
 	
@@ -454,6 +454,32 @@ public class ConnSupportUtils
 		}
 	}
 	
+	
+	public static void printEmbeddedExceptionMessage(RuntimeException re, String resourceURL)
+	{
+		String exMsg = re.getMessage();
+		if (exMsg != null) {
+			StackTraceElement firstLineOfStackTrace = re.getStackTrace()[0];
+			logger.warn("[" + firstLineOfStackTrace.getFileName() + "->" + firstLineOfStackTrace.getMethodName() + "(@" + firstLineOfStackTrace.getLineNumber() + ")] - " + exMsg);
+		} else
+			logger.warn("Could not handle connection for \"" + resourceURL + "\"!");
+	}
+	
+	
+	public static void printRedirectDebugInfo(HttpURLConnection conn, String location, String targetUrl, int curRedirectsNum) throws IOException
+	{
+		// FOR DEBUG -> Check to see what's happening with the redirect urls (location field types, as well as potential error redirects).
+		// Some domains use only the target-ending-path in their location field, while others use full target url.
+		
+		if ( conn.getURL().toString().contains("doi.org") ) {	// Debug a certain domain or url-path.
+			logger.debug("\n");
+			logger.debug("Redirect(s) num: " + curRedirectsNum);
+			logger.debug("Redirect code: " + conn.getResponseCode());
+			logger.debug("Base: " + conn.getURL());
+			logger.debug("Location: " + location);
+			logger.debug("Target: " + targetUrl + "\n");
+		}
+	}
 	
 	/**
 	 * This method print redirectStatistics if the initial url matched to the given wantedUrlType.

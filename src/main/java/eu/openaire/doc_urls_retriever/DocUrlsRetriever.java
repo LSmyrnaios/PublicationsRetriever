@@ -140,7 +140,7 @@ public class DocUrlsRetriever
 		else
 			logger.info("Total num of urls checked from the input was: " + inputCheckedUrlNum);
 		
-		logger.info("Total docUrls found: " + UrlUtils.sumOfDocUrlsFound + ". That's about: " + UrlUtils.sumOfDocUrlsFound * (float)100 / inputCheckedUrlNum + "%");
+		logger.info("Total docUrls found: " + UrlUtils.sumOfDocUrlsFound + ". That's about: " + UrlUtils.sumOfDocUrlsFound * (float)100 / inputCheckedUrlNum + "% from the total numOfUrls checked. The rest were problematic or unhandleable url-cases.");
 		if ( FileUtils.shouldDownloadDocFiles ) {
 			int numOfStoredDocFiles = 0;
 			if ( FileUtils.shouldUseOriginalDocFileNames )
