@@ -9,7 +9,9 @@ import java.util.regex.Pattern;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimaps;
 import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
+import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
+import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.url.QuadrupleToBeLogged;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.json.JSONException;
@@ -18,6 +20,8 @@ import org.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.LoggerContext;
 
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 
@@ -29,8 +33,10 @@ public class FileUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(FileUtils.class);
 	
-	private static Scanner inputScanner;
-	private static PrintStream printStream;
+	private static Scanner inputScanner = null;
+	private static PrintStream printStream = null;
+	
+	public static long numOfLines;
 	
 	public static final int jsonGroupSize = 300;
 	
@@ -59,9 +65,21 @@ public class FileUtils
 	
 	public static final int MAX_FILENAME_LENGTH = 250;	// TODO - Find a way to get the current-system's MAX-value.
 	
+	public static String fullInputFilePath = null;	// Used when the MLA is enabled and we want to count the number of line in the inputFile.
+	
+	
 	public FileUtils(InputStream input, OutputStream output)
 	{
 		FileUtils.inputScanner = new Scanner(input);
+		
+		if ( MachineLearning.useMLA ) {	// In case we are using the MLA, go get the numOfLines to be used.
+			numOfLines = getInputNumOfLines();
+			if ( numOfLines == -1 )
+				logger.error("There was an error when retrieving the \"numOfLines\", the MLA will continue to work anyway.");
+			else
+				logger.debug("Num of lines in the inputFile: " + numOfLines);
+		}
+		
 		FileUtils.printStream = new PrintStream(output);
 		
 		if ( shouldDownloadDocFiles ) {
@@ -91,16 +109,68 @@ public class FileUtils
 									+ "\nIf this is not desired, please terminate the program and re-define the \"storeDocFilesDir\"!";
 						System.err.println(errorMessage);
 						logger.error(errorMessage);
-						FileUtils.closeStreams();
+						FileUtils.closeIO();
 						System.exit(-3);
 					}
 				}
 			} catch (SecurityException se) {
 				logger.error(se.getMessage(), se);
-				FileUtils.shouldDownloadDocFiles = false;	// Continue without downloading the docFiles, just create the jsonOutput.
-				return;
+				logger.warn("There was an error creating the docFiles-storageDir! Continuing without downloading the docFiles, just create the jsonOutput with the docUrls.");
+				FileUtils.shouldDownloadDocFiles = false;
 			}
 		}
+	}
+	
+	
+	public static long getInputNumOfLines()
+	{
+		long lineCount = 0;
+		
+		// Create a new file to write the input-data.
+		// Since the input-stream is not reusable.. we cant count the line AND use the data..
+		// (the data will be consumed and the program will exit with error since no data will be read from the inputFile).
+		String baseFileName = workingDir + "inputFile";
+		String extension;
+		if ( LoaderAndChecker.useIdUrlPairs )
+			extension = ".json";
+		else
+			extension = ".csv";	// This is just a guess, it may be a ".tsv" as well or sth else. There is no way to know what type of file was assigned in the "System.in".
+		
+		// Make sure we create a new distinct file which will not replace any other existing file. Tis new file will get deleted in the end.
+		int fileNum = 1;
+		fullInputFilePath = baseFileName + extension;
+		File file = new File(fullInputFilePath);
+		while ( file.exists() ) {
+			fullInputFilePath = baseFileName + (fileNum++) + extension;
+			file = new File(fullInputFilePath);
+		}
+		
+		try {
+			printStream = new PrintStream(new FileOutputStream(file));
+			
+			while ( inputScanner.hasNextLine() ) {
+				printStream.print(inputScanner.nextLine());
+				printStream.print(endOfLine);
+				lineCount ++;
+			}
+			
+			printStream.flush();
+			printStream.close();
+			
+			inputScanner.close();
+			
+			// Assign the new input-file from which the data will be read.
+			inputScanner = new Scanner(new FileInputStream(fullInputFilePath));
+		} catch (Exception e) {
+			logger.error("", e);
+			FileUtils.closeIO();
+			System.exit(-10);
+		}
+		
+		if ( FileUtils.skipFirstRow && (lineCount != 0) )
+			return (lineCount -1);
+		else
+			return lineCount;
 	}
 	
 	
@@ -385,12 +455,35 @@ public class FileUtils
 	
 	
 	/**
-	 * Closes open Streams.
+	 * Closes open Streams and deletes the temporary-inputFile which is used when the MLA is enabled.
 	 */
-	public static void closeStreams()
+	public static void closeIO()
 	{
-        inputScanner.close();
-		printStream.close();
+		if ( inputScanner != null )
+        	inputScanner.close();
+		
+		if ( printStream != null ) {
+			printStream.flush();
+			printStream.close();
+		}
+		
+		if ( fullInputFilePath != null ) {
+			try {
+				org.apache.commons.io.FileUtils.forceDelete(new File(fullInputFilePath));
+			} catch (Exception e) {
+				logger.error("", e);
+				closeLogger();
+				System.exit(-11);
+			}
+		}
+		closeLogger();
+	}
+	
+	
+	private static void closeLogger()
+	{
+		LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+		loggerContext.stop();
 	}
 	
 	

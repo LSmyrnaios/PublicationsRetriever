@@ -29,8 +29,7 @@ public class SignalUtils {
 				FileUtils.writeToFile();
 			}
 			
-			// Close the streams.
-			FileUtils.closeStreams();
+			FileUtils.closeIO();
 			
 			// If the program managed to set the "startTime" before the signal was recieved, then show the execution time.
 			if ( DocUrlsRetriever.startTime != null )

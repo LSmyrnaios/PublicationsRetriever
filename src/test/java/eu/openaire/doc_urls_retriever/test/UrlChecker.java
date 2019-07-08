@@ -1,6 +1,7 @@
 package eu.openaire.doc_urls_retriever.test;
 
 import com.google.common.collect.HashMultimap;
+//import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
@@ -9,6 +10,8 @@ import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+//import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Set;
@@ -28,8 +31,8 @@ public class UrlChecker {
 	@Test
 	public void checkUrlConnectivity()
 	{
-		//FileUtils.shouldDownloadDocFiles = false;	// Default is: "true".
-		FileUtils.shouldUseOriginalDocFileNames = true;
+		FileUtils.shouldDownloadDocFiles = false;	// Default is: "true".
+		//FileUtils.shouldUseOriginalDocFileNames = true;	// Default is: "false".
 		
 		// Here test individual urls.
 		
@@ -80,8 +83,13 @@ public class UrlChecker {
 		//urlList.add("https://upcommons.upc.edu/bitstream/handle/2117/11500/FascinatE-D1.1.1-Requirements.pdf?sequence=1&isAllowed=y");
 		//urlList.add("https://gala.gre.ac.uk/id/eprint/11492/1/11492_Digges_Marketing%20of%20banana%20%28working%20paper%29%201994.pdf");
 		//urlList.add("https://zenodo.org/record/1157336");
-		urlList.add("https://zenodo.org/record/1157336/files/Impact%20of%20Biofield%20Energy%20Treated%20%28The%20Trivedi%20Effect%C2%AE%29%20Herbomineral%20Formulation%20on%20the%20Immune%20Biomarkers%20and%20Blood%20Related%20Parameters%20of%20Female%20Sprague%20Dawley%20Rats.pdf");
-		urlList.add("http://amcor.asahikawa-med.ac.jp/modules/xoonips/download.php?file_id=3140");
+		//urlList.add("https://zenodo.org/record/1157336/files/Impact%20of%20Biofield%20Energy%20Treated%20%28The%20Trivedi%20Effect%C2%AE%29%20Herbomineral%20Formulation%20on%20the%20Immune%20Biomarkers%20and%20Blood%20Related%20Parameters%20of%20Female%20Sprague%20Dawley%20Rats.pdf");
+		//urlList.add("http://amcor.asahikawa-med.ac.jp/modules/xoonips/download.php?file_id=3140");
+		//urlList.add("https://orbit.dtu.dk/en/publications/id(994b4e70-ab61-4965-b60c-3a412c5e4031).html");
+		//urlList.add("http://eprints.gla.ac.uk/4107/1/pubmedredirect.html");
+		//urlList.add("http://dx.doi.org/10.1002/(SICI)1098-2353(2000)13:2<94::AID-CA4>3.0.CO;2-O");
+		urlList.add("https://www.jstor.org/fcgi-bin/jstor/listjournal.fcg/08939454");
+		
 		
 		logger.info("Urls to check:");
 		for ( String url: urlList )
@@ -91,7 +99,7 @@ public class UrlChecker {
 		
 		for ( String url : urlList )
 		{
-			String urlToCheck = url;
+			String urlToCheck = url;	// Use an extra String or it cannot be printed in the error-logging-message as it will be null.
 			/*if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(url, null, StandardCharsets.UTF_8)) == null ) {
 				logger.warn("Could not cannonicalize url: " + url);
 				return;

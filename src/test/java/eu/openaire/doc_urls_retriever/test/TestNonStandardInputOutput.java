@@ -1,6 +1,7 @@
 package eu.openaire.doc_urls_retriever.test;
 
 import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
+import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
 import eu.openaire.doc_urls_retriever.util.signal.SignalUtils;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
@@ -96,20 +97,23 @@ public class TestNonStandardInputOutput  {
 		// Use testing input/output files.
 		setInputOutput();
 		
+		if ( MachineLearning.useMLA )
+			new MachineLearning();
+		
 		try {
 			new LoaderAndChecker();
 		} catch (RuntimeException e) {  // In case there was no input, a RuntimeException will be thrown, after logging the cause.
 			String errorMessage = "There was a serious error! Output data is affected! Exiting..";
 			System.err.println(errorMessage);
 			logger.error(errorMessage);
-			FileUtils.closeStreams();
+			FileUtils.closeIO();
 			System.exit(-7);
 		}
 		
 		DocUrlsRetriever.showStatistics(DocUrlsRetriever.startTime, Instant.now());
 		
 		// Close the open streams (imported and exported content).
-		FileUtils.closeStreams();
+		FileUtils.closeIO();
 	}
 	
 	
@@ -122,19 +126,19 @@ public class TestNonStandardInputOutput  {
 			String errorMessage = "InputFile not found!";
 			System.err.println(errorMessage);
 			logger.error(errorMessage, e);
-			FileUtils.closeStreams();
+			FileUtils.closeIO();
 			System.exit(-4);
 		} catch (NullPointerException npe) {
 			String errorMessage = "No input and/or output file(s) w(as/ere) given!";
 			System.err.println(errorMessage);
 			logger.error(errorMessage, npe);
-			FileUtils.closeStreams();
+			FileUtils.closeIO();
 			System.exit(-5);
 		} catch (Exception e) {
 			String errorMessage = "Something went totally wrong!";
 			System.err.println(errorMessage);
 			logger.error(errorMessage, e);
-			FileUtils.closeStreams();
+			FileUtils.closeIO();
 			System.exit(-6);
 		}
 	}
