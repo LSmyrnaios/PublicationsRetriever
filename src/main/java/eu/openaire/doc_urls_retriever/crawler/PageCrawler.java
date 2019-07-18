@@ -36,7 +36,7 @@ public class PageCrawler
 	// Sciencedirect regexes. Use "find()" with those (they work best).
 	public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta[\\s]*name=\"(?:citation_pdf_url|eprints.document_url)\"[\\s]*content=\")([http][\\w\\/\\.\\,\\-\\_\\%\\&\\;\\:\\~\\?\\=]+)(?:\"[\\s]*/>)");
 
-	public static final Pattern JAVASCRIPT_DOC_LINK = Pattern.compile("(?:javascript\\:pdflink.*\\')(http.+)(?:\\'\\,.*)");
+	public static final Pattern JAVASCRIPT_DOC_LINK = Pattern.compile("(?:javascript\\:pdflink.*\\')(http.+)(?:\\'\\,.*)", Pattern.CASE_INSENSITIVE);
 	
 	public static int totalPagesReachedCrawling = 0;	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their internalLinks checked.
 	
@@ -292,10 +292,9 @@ public class PageCrawler
 					&& !internalLink.startsWith("file:") && !internalLink.startsWith("{openurl}") )
 			{
 				//logger.debug("Filtered InternalLink: " + internalLink);
-				String lowerCaseLink = internalLink.toLowerCase();
-				if ( lowerCaseLink.startsWith("javascript:") ) {
+				if ( internalLink.toLowerCase().startsWith("javascript:") ) {
 					String pdfLink = null;
-					Matcher pdfLinkMatcher = JAVASCRIPT_DOC_LINK.matcher(lowerCaseLink);
+					Matcher pdfLinkMatcher = JAVASCRIPT_DOC_LINK.matcher(internalLink);	// Send the non-lower-case version as we need the inside url untached, in order to open a valid connection.
 					if ( pdfLinkMatcher.matches() ) {
 						try {
 							pdfLink = pdfLinkMatcher.group(1);

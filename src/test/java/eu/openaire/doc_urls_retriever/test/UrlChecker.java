@@ -88,8 +88,8 @@ public class UrlChecker {
 		//urlList.add("https://orbit.dtu.dk/en/publications/id(994b4e70-ab61-4965-b60c-3a412c5e4031).html");
 		//urlList.add("http://eprints.gla.ac.uk/4107/1/pubmedredirect.html");
 		//urlList.add("http://dx.doi.org/10.1002/(SICI)1098-2353(2000)13:2<94::AID-CA4>3.0.CO;2-O");
-		urlList.add("https://www.jstor.org/fcgi-bin/jstor/listjournal.fcg/08939454");
-		
+		//urlList.add("https://www.jstor.org/fcgi-bin/jstor/listjournal.fcg/08939454");
+		urlList.add("http://www.lib.kobe-u.ac.jp/infolib/meta_pub/G0000003kernel_DS200004");
 		
 		logger.info("Urls to check:");
 		for ( String url: urlList )
