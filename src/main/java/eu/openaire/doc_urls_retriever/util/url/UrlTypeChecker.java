@@ -19,7 +19,7 @@ public class UrlTypeChecker
 	private static final String htExtentions = "(?:[\\w])?ht(?:[\\w]{1,2})?";
 	
 	public static final Pattern URL_DIRECTORY_FILTER =
-			Pattern.compile(".*\\/(?:profile|login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|search|post\\/|send\\/|shop\\/|view\\/|watch|browse|import|bookmark|announcement|rss|feed|about|faq|wiki|news|events|cart|support|sitemap|htmlmap|documentation|license|disclaimer|polic(?:y|ies)|privacy|terms|help|law"
+			Pattern.compile(".*\\/(?:profile|login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|search(?!.+(file|pdf))|post\\/|send\\/|shop\\/|view\\/|watch|browse|import|bookmark|announcement|rss|feed|about|faq|wiki|news|events|cart|support|sitemap|htmlmap|documentation|license|disclaimer|polic(?:y|ies)|privacy|terms|help|law"
 					+ "|(?:my|your)?account|user|fund|aut(?:h)?or|editor|citation|review|external|statistics|application|permission|ethic|conta(?:c)?t|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|product|people|(?:the)?press"
 					+ "|error|(?:mis|ab)use|gateway|sorryserver|cookieabsent|notfound|404\\." + htExtentions + ").*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
@@ -82,7 +82,7 @@ public class UrlTypeChecker
 		// Avoid JavaScript-powered domains, other than the "sciencedirect.com", which is handled separately.
 		if ( lowerCaseUrl.contains("frontiersin.org") || lowerCaseUrl.contains("tandfonline.com")
 				|| lowerCaseUrl.contains("documentation.ird.fr")
-				|| lowerCaseUrl.contains("persee.fr") )	// We could "guess" the pdf-link on "persee.fr", but there's also a captcha requirement.
+				|| lowerCaseUrl.contains("persee.fr") )	// We could "guess" the pdf-link on "persee.fr", but there's also a captcha requirement for the connection to happen (in order to check if we have actually found a docUrl) which cannot be dealt programmatically.
 		{
 			javascriptPageUrls++;
 			loggingMessage = "Discarded after matching to a JavaScript-using domain, other than the \"sciencedirect.com\".";
