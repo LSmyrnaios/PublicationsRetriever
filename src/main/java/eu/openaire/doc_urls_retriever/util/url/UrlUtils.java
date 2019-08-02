@@ -18,10 +18,10 @@ public class UrlUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(UrlUtils.class);
 	
-	public static final Pattern URL_TRIPLE = Pattern.compile("(.+:\\/\\/(?:www(?:(?:\\w+)?\\.)?)?([\\w\\.\\-]+)(?:[\\:\\d]+)?(?:.*\\/)?)(?:([^\\/^\\;^\\?]*)(?:(?:\\;|\\?)[^\\/^\\=]+(?:\\=.*)?)?)?");
+	public static final Pattern URL_TRIPLE = Pattern.compile("(.+://(?:www(?:(?:\\w+)?\\.)?)?([\\w.\\-]+)(?:[:\\d]+)?(?:.*/)?)(?:([^/^;^?]*)(?:(?:;|\\?)[^/^=]+(?:=.*)?)?)?");
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	
-    public static final Pattern JSESSIONID_FILTER = Pattern.compile("(.+:\\/\\/.+)(?:\\;(?:JSESSIONID|jsessionid)=.+)(\\?.+)");
+    public static final Pattern JSESSIONID_FILTER = Pattern.compile("(.+://.+)(?:;(?:JSESSIONID|jsessionid)=.+)(\\?.+)");
 	
 	public static int sumOfDocUrlsFound = 0;	// Change it back to simple int if finally in singleThread mode
 	

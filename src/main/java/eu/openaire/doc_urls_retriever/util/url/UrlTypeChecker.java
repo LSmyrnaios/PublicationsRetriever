@@ -19,14 +19,14 @@ public class UrlTypeChecker
 	private static final String htExtentions = "(?:[\\w])?ht(?:[\\w]{1,2})?";
 	
 	public static final Pattern URL_DIRECTORY_FILTER =
-			Pattern.compile(".*\\/(?:profile|login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|search(?!.+(file|pdf))|post\\/|send\\/|shop\\/|view\\/|watch|browse|import|bookmark|announcement|rss|feed|about|faq|wiki|news|events|cart|support|sitemap|htmlmap|documentation|license|disclaimer|polic(?:y|ies)|privacy|terms|help|law"
-					+ "|(?:my|your)?account|user|fund|aut(?:h)?or|editor|citation|review|external|statistics|application|permission|ethic|conta(?:c)?t|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|product|people|(?:the)?press"
+			Pattern.compile(".*/(?:profile|(?:ldap-)?login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|search(?!.+(?:file|pdf))|(?:post|send|shop|view)/|watch|browse|import|bookmark|announcement|rss|feed|about|faq|wiki|news|events|cart|support|feedback|sitemap|htmlmap|documentation|help|contact|license|disclaimer|copyright|polic(?:y|ies)|privacy|terms|law"
+					+ "|(?:my|your)?account|user|fund|aut(?:h)?or|editor|citation|review|external|statistics|application|selfarchive|permission|ethic|conta(?:c)?t|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|product|people|(?:the)?press"
 					+ "|error|(?:mis|ab)use|gateway|sorryserver|cookieabsent|notfound|404\\." + htExtentions + ").*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
 	
 	public static final Pattern CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER = Pattern.compile(".+\\.(?:doc|docx|ppt|pptx)(?:\\?.+)?$");	// Doc-extensions which are currently unsupported.
 	
-	public static final Pattern PAGE_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|xml|rdf|bib|nt|refer|enw|ris|n3|csv|tsv|mso|dtl|svg|asc|txt|c|cc|cxx|cpp|java|py|xls(?:[\\w])?)(?:\\?.+)?$");
+	public static final Pattern PAGE_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:ico|css|js(?:\\?y)?|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov|pt|xml|rdf|bib|nt|refer|enw|ris|n3|csv|tsv|mso|dtl|svg|asc|txt|c|cc|cxx|cpp|java|py|xls(?:[\\w])?)(?:\\?.+)?$");
 	
 	public static final Pattern INTERNAL_LINKS_KEYWORDS_FILTER = Pattern.compile(".*(?:doi.org|mailto:|\\?l(?:a)?n(?:g)?=|isallowed=n|site=|linkout|login|LinkListener).*");	// Plain key-words inside internalLinks-String. We avoid "doi.org" in internal links, as, after many redirects, they will reach the same pageUrl.
 	// The diff with the "login" being here, in compare with being in "URL_DIRECTORY_FILTER"-regex, is that it can be found in a random place inside a url.. not just as a directory..
@@ -39,17 +39,17 @@ public class UrlTypeChecker
 	
 	public static final Pattern INTERNAL_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+format=(?:xml|" + htExtentions + ").*");	// This exists as a url-parameter.
 	
-	public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile(".+:\\/\\/.*(?:google|goo.gl|gstatic|facebook|twitter|youtube|linkedin|wordpress|s.w.org|ebay|bing|amazon\\.|wikipedia|myspace|yahoo|mail|pinterest|reddit|blog|tumblr"
+	public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile(".+://.*(?:google|goo.gl|gstatic|facebook|twitter|youtube|linkedin|wordpress|s.w.org|ebay|bing|amazon\\.|wikipedia|myspace|yahoo|mail|pinterest|reddit|blog|tumblr"
 			+ "|evernote|skype|microsoft|adobe|buffer|digg|stumbleupon|addthis|delicious|dailymotion|gostats|blogger|copyright|friendfeed|newsvine|telegram|getpocket"
-			+ "|flipboard|instapaper|line.me|vk|ok.rudouban|baidu|qzone|xing|renren|weibo|doubleclick|github).*\\/.*");
+			+ "|flipboard|instapaper|line.me|vk|ok.rudouban|baidu|qzone|xing|renren|weibo|doubleclick|github).*/.*");
 	
-	public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile(".+:\\/\\/[\\w.:-]+(?:\\/)?$");	// Exclude plain domains' urls.
+	public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile(".+://[\\w.:-]+(?:/)?$");	// Exclude plain domains' urls.
 	
 	/*
-	public static final Pattern SCIENCEDIRECT_DOMAINS = Pattern.compile(".+:\\/\\/.*(?:sciencedirect|linkinghub.elsevier)(?:.com\\/.+)");
-	public static final Pattern DOI_ORG_J_FILTER = Pattern.compile(".+[doi.org]\\/[\\d]{2}\\.[\\d]{4}\\/[j]\\..+");	// doi.org urls which has this form and redirect to "sciencedirect.com".
-	public static final Pattern DOI_ORG_PARENTHESIS_FILTER = Pattern.compile(".+[doi.org]\\/[\\d]{2}\\.[\\d]{4}\\/[\\w]*[\\d]{4}\\-[\\d]{3}(?:[\\d]|[\\w])[\\(][\\d]{2}[\\)][\\d]{5}\\-(?:[\\d]|[\\w])");	// Same reason as above.
-	public static final Pattern DOI_ORG_JTO_FILTER = Pattern.compile(".+[doi.org]\\/[\\d]{2}\\.[\\d]{4}\\/.*[jto]\\..+");	// doi.org urls which has this form and redirect to "sciencedirect.com".
+	public static final Pattern SCIENCEDIRECT_DOMAINS = Pattern.compile(".+://.*(?:sciencedirect|linkinghub.elsevier)(?:.com/.+)");
+	public static final Pattern DOI_ORG_J_FILTER = Pattern.compile(".+[doi.org]/[\\d]{2}\\.[\\d]{4}/[j]\\..+");	// doi.org urls which has this form and redirect to "sciencedirect.com".
+	public static final Pattern DOI_ORG_PARENTHESIS_FILTER = Pattern.compile(".+[doi.org]/[\\d]{2}\\.[\\d]{4}/[\\w]*[\\d]{4}\\-[\\d]{3}(?:[\\d]|[\\w])[\\(][\\d]{2}[\\)][\\d]{5}\\-(?:[\\d]|[\\w])");	// Same reason as above.
+	public static final Pattern DOI_ORG_JTO_FILTER = Pattern.compile(".+[doi.org]/[\\d]{2}\\.[\\d]{4}/.*[jto]\\..+");	// doi.org urls which has this form and redirect to "sciencedirect.com".
 	*/
 	
 	// Counters for certain unwanted domains. We show statistics in the end.

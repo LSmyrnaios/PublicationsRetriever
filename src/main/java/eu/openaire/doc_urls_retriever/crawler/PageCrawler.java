@@ -34,9 +34,9 @@ public class PageCrawler
 	private static final Logger logger = LoggerFactory.getLogger(PageCrawler.class);
 	
 	// Sciencedirect regexes. Use "find()" with those (they work best).
-	public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta[\\s]*name=\"(?:citation_pdf_url|eprints.document_url)\"[\\s]*content=\")([http][\\w\\/\\.\\,\\-\\_\\%\\&\\;\\:\\~\\?\\=]+)(?:\"[\\s]*/>)");
-
-	public static final Pattern JAVASCRIPT_DOC_LINK = Pattern.compile("(?:javascript\\:pdflink.*\\')(http.+)(?:\\'\\,.*)", Pattern.CASE_INSENSITIVE);
+	public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta[\\s]*name=\"(?:citation_pdf_url|eprints.document_url)\"[\\s]*content=\")([http][\\w/.,\\-_%&;:~()\\[\\]?=]+)(?:\"[\\s]*/>)");
+	
+	public static final Pattern JAVASCRIPT_DOC_LINK = Pattern.compile("(?:javascript:pdflink.*')(http.+)(?:',.*)", Pattern.CASE_INSENSITIVE);
 	
 	public static int totalPagesReachedCrawling = 0;	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their internalLinks checked.
 	
