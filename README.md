@@ -35,7 +35,7 @@ while choosing the appropriate run-command.<br/>
 **``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg1:'-downloadDocFiles' arg2:'-firstDocFileNum' arg3:'NUM' arg4:'-docFilesStorage'
 arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br/>
 
-**Run tests with custom input/output:**<br/>
+**Run tests with custom input/output:**
 - Inside ***pom.xml***, change the **mainClass** of **maven-shade-plugin** from "**DocUrlsRetriever**" to "**TestNonStandardInputOutput**".
 - Inside ***src/test/.../TestNonStandardInputOutput.java***, give the wanted testInput and testOutput files.<br/>
 - If you want to provide a .tsv or a .csv file with a title in its column,
@@ -46,7 +46,7 @@ arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br/>
 - Execute the program with the following command:<br/>
 **``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg1:'-downloadDocFiles' arg2:'-firstDocFileNum' arg3:'NUM' arg4:'-docFilesStorage' arg5:'storageDir'``**
 
-**Arguments explanation:**<br/>
+**Arguments explanation:**
 - **-downloadDocFiles** will tell the program to download the DocFiles.
     The absence of this argument will cause the program to NOT download the docFiles, but just to find the DocUrls instead.
     Either way, the DocUrls will be written to the JsonOutputFile.
@@ -59,7 +59,7 @@ arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br/>
 ## Example
 You can check the functionality of **DocUrlsRetriever** by running an example.<br/>
 Type **`./runExample.sh`** in the terminal and hit `ENTER`.<br/>
-This script will run the following commands:<br/>
+This script will run the following commands:
 - **`mvn clean install`**: Does a clean install.
 - **`rm -rf example/sample_output/*`**: Removes any previous example-results.
 - **``cd target &&
@@ -68,9 +68,9 @@ This script will run the following commands:<br/>
     This command will run the program with "**../example/sample_input/sample_input.json**" as input
     and "**../example/sample_output/sample_output.json**" as the output.<br/>
     The arguments used are:
-        - **-downloadDocFiles** which will tell the program to download the DocFiles.
-        - **-firstDocFileNum 1** which will tell the program to use numbers as DocFileNames and the first DocFile will have the number <*1*>.
-        - **-docFilesStorage ../example/sample_output/DocFiles** which will tell the program to use the custom
+    - **-downloadDocFiles** which will tell the program to download the DocFiles.
+    - **-firstDocFileNum 1** which will tell the program to use numbers as DocFileNames and the first DocFile will have the number <*1*>.
+    - **-docFilesStorage ../example/sample_output/DocFiles** which will tell the program to use the custom
             DocFilesStorageDir: "*../example/sample_output/DocFiles*".
 <br/>
 
