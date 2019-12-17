@@ -19,7 +19,7 @@ import java.util.regex.Matcher;
 /**
  * This class aims to provide a Machine Learning Algorithm (M.L.A.) with methods to gather important data, use tha data to predict a result and control the execution of the algorithm.
  * Disclaimer: This is still in experimental stage. Many domains are not supported.
- * @author Lampros A. Smyrnaios
+ * @author Lampros Smyrnaios
  */
 public class MachineLearning
 {

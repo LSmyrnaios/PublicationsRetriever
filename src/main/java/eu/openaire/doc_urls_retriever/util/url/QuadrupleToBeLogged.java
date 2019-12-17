@@ -5,7 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 
 /**
  * This class is responsible to store the quadruple <urlId, sourceUrl, docUrl, errorCause> for it to be written in the outputFile.
- * @author Lampros A. Smyrnaios
+ * @author Lampros Smyrnaios
  */
 public class QuadrupleToBeLogged
 {

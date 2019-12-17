@@ -9,6 +9,9 @@ import sun.misc.Signal;
 import java.time.Instant;
 
 
+/**
+ * @author Lampros Smyrnaios
+ */
 public class SignalUtils {
 	
 	private static final Logger logger = LoggerFactory.getLogger(SignalUtils.class);

@@ -13,10 +13,9 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 
-
 /**
  * This class contains the "loadAndCheck" code for the URLs.
- * @author Lampros A. Smyrnaios
+ * @author Lampros Smyrnaios
  */
 public class LoaderAndChecker
 {
@@ -40,7 +39,6 @@ public class LoaderAndChecker
 				loadAndCheckIdUrlPairs();
 			else
 				loadAndCheckUrls();
-			
 		} catch (Exception e) {
 			logger.error("", e);
 			throw new RuntimeException(e);

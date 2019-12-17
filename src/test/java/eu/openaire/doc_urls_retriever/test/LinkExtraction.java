@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * This class contains unit-testing for internalLinks-extraction.
- * @author Lampros A. Smyrnaios
+ * @author Lampros Smyrnaios
  */
 public class LinkExtraction {
 	

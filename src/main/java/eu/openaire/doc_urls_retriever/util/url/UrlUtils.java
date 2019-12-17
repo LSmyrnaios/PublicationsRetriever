@@ -1,18 +1,18 @@
 package eu.openaire.doc_urls_retriever.util.url;
 
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
-
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 
 /**
- * @author Lampros A. Smyrnaios
+ * @author Lampros Smyrnaios
  */
 public class UrlUtils
 {

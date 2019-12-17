@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * @author Lampros A. Smyrnaios
+ * @author Lampros Smyrnaios
  */
 public class PageCrawler
 {
@@ -286,23 +286,25 @@ public class PageCrawler
 		for ( Element el : linksOnPage ) {
 			String internalLink = el.attr("href");
 			if ( !internalLink.isEmpty()
-					&& !internalLink.equals("\\/")
-					&& !internalLink.startsWith("#")
+					&& !internalLink.equals("/")
 					&& !internalLink.startsWith("mailto:") && !internalLink.startsWith("tel:") && !internalLink.startsWith("fax:")
-					&& !internalLink.startsWith("file:") && !internalLink.startsWith("{openurl}") )
+					&& !internalLink.startsWith("file:") && !internalLink.startsWith("{openurl}")
+					&& !internalLink.contains("#") )	// Avoid anchors.
 			{
 				//logger.debug("Filtered InternalLink: " + internalLink);
 				if ( internalLink.toLowerCase().startsWith("javascript:") ) {
 					String pdfLink = null;
-					Matcher pdfLinkMatcher = JAVASCRIPT_DOC_LINK.matcher(internalLink);	// Send the non-lower-case version as we need the inside url untached, in order to open a valid connection.
+					Matcher pdfLinkMatcher = JAVASCRIPT_DOC_LINK.matcher(internalLink);	// Send the non-lower-case version as we need the inside url untouched, in order to open a valid connection.
 					if ( pdfLinkMatcher.matches() ) {
 						try {
 							pdfLink = pdfLinkMatcher.group(1);
 						} catch (Exception e) { logger.error("", e); }
 						throw new JavaScriptDocLinkFoundException(pdfLink);    // If it's 'null', we treat it when handling this exception.
 					}
-					else	// It's a javaScript link or element which we don't treat.
+					else {    // It's a javaScript link or element which we don't treat.
+						//logger.debug("This javaScript element was not handled: " + internalLink);	// Enable only if needed for specific debugging.
 						continue;
+					}
 				}
 				urls.add(internalLink);
 			}

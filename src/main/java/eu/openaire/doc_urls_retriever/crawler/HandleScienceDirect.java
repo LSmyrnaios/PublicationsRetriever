@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 
 
 /**
- * @author Lampros A. Smyrnaios
+ * @author Lampros Smyrnaios
  */
 public class HandleScienceDirect
 {
@@ -74,7 +74,7 @@ public class HandleScienceDirect
 				//UrlUtils.elsevierLinks ++;
 				if ( (pageUrl = silentRedirectElsevierToScienseRedirect(pageUrl)) != null ) {
 					// The already open connection for "linkinghub.elsevier.com" get closed by "connectAndCheckMimeType()" when the "visit()" returns (after "handleScienceDirectFamilyUrls()" returns).
-					logger.debug("Produced ScienceDirect-url: " + pageUrl);
+					//logger.debug("Produced ScienceDirect-url: " + pageUrl);	// DEBUG!
 					currentConnectedUrl = pageUrl;
 					conn = HttpConnUtils.handleConnection(urlId, sourceUrl, pageUrl, pageUrl, pageDomain, true, false);
 				} else

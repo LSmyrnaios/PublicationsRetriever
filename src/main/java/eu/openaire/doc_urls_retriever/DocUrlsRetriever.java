@@ -18,7 +18,7 @@ import java.time.Instant;
  * This class contains the entry-point of this program, the "main()" method.
  * The "main()" method calls other methods to set the input/output streams and retrieve the docUrls for each docPage in the inputFile.
  * In the end, the outputFile consists of docPages along with their docUrls.
- * @author Lampros A. Smyrnaios
+ * @author Lampros Smyrnaios
  */
 public class DocUrlsRetriever
 {

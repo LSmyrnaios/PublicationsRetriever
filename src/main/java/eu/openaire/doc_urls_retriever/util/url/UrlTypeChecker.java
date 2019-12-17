@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 
 /**
  * This class contains methods which inspect the urls -based on REGEXES and specific strings- and decide whether they are wanted or not.
- * @author Lampros A. Smyrnaios
+ * @author Lampros Smyrnaios
  */
 public class UrlTypeChecker
 {
@@ -172,7 +172,7 @@ public class UrlTypeChecker
 			longToRespondUrls ++;
 			loggingMessage = "Discarded after matching to domain, known to take long to respond.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logTriple(urlId, retrievedUrl,"unreachable", loggingMessage, null);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
 		}*/
 		// Avoid urls which contain either "getSharedSiteSession" or "consumeSharedSiteSession" as these cause an infinite loop.

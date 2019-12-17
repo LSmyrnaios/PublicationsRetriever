@@ -1,11 +1,6 @@
 package eu.openaire.doc_urls_retriever.util.file;
 
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import ch.qos.logback.classic.LoggerContext;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimaps;
 import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
@@ -14,20 +9,23 @@ import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.url.QuadrupleToBeLogged;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.qos.logback.classic.LoggerContext;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 
 
 /**
- * @author Lampros A. Smyrnaios
+ * @author Lampros Smyrnaios
  */
 public class FileUtils
 {
@@ -517,7 +515,7 @@ public class FileUtils
 				continue;
 			}
 			
-			retrievedLineStr = StringUtils.replace(retrievedLineStr, "\"", "");
+			retrievedLineStr = StringUtils.remove(retrievedLineStr, "\"");
 			
 			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
 			

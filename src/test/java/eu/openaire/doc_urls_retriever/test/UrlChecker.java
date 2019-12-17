@@ -22,7 +22,7 @@ import static eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker.isFinishe
 
 /**
  * This class contains unit-testing for urls.
- * @author Lampros A. Smyrnaios
+ * @author Lampros Smyrnaios
  */
 public class UrlChecker {
 	

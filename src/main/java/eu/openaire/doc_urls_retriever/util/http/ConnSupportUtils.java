@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 
 
 /**
- * @author Lampros A. Smyrnaios
+ * @author Lampros Smyrnaios
  */
 public class ConnSupportUtils
 {
@@ -82,7 +82,7 @@ public class ConnSupportUtils
 				plainMimeType = getPlainMimeType(mimeType);
 				
 				if ( plainMimeType == null ) {    // If there was any error removing the charset, still try to save any docMimeType (currently pdf-only).
-					logger.warn("Url with problematic mimeType was: " + urlStr);
+					logger.warn("Url with problematic mimeType (" + mimeType + ") was: " + urlStr);
 					return	urlStr.toLowerCase().contains("pdf");
 				}
 			}

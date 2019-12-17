@@ -17,7 +17,7 @@ import java.util.HashSet;
 
 
 /**
- * @author Lampros A. Smyrnaios
+ * @author Lampros Smyrnaios
  */
 public class HttpConnUtils
 {
@@ -88,7 +88,7 @@ public class HttpConnUtils
 						throw new DomainBlockedException();
 					}
 					else
-						throw new RuntimeException(warnMsg);	// We can't retrieve any clue. This is not desired.
+						throw new RuntimeException(warnMsg);	// We can't retrieve any clue. This is not desired. The "warnMsg" will be printed by the caller method.
 				}
 			}
 			

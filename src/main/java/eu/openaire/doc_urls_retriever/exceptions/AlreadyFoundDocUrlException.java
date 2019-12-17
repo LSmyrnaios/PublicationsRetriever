@@ -6,7 +6,7 @@ package eu.openaire.doc_urls_retriever.exceptions;
  * This exception is thrown when there an already-found DocUrl is seen.
  * Normally this case can by handled without an exception,
  * but in the case which the docUrl is discovered during redirection-packs, we need a fast way out.
- * @author Lampros A. Smyrnaios
+ * @author Lampros Smyrnaios
  */
 public class AlreadyFoundDocUrlException extends Exception
 {
