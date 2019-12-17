@@ -4,15 +4,32 @@ A Java-program which finds the Document Urls from the given Publication-Web-Page
 It is being developed for the European organization: [**OpenAIRE**](https://www.openaire.eu/).<br/>
 
 The **DocUrlsRetriever** takes as input the PubPages with their IDs -in JSON format- and gives an output -also in JSON format,
-which contains the IDs, their PubPages with their DocUrls and a comment, which is either empty,
-or it contains the DocFileName or the DocFilePath (if we have set to download-&-store the DocFiles), otherwise,
-if there was any error which prevented the discovery of the DocUrl, it contains the ErrorCause (in that case, the DocUrl is set to "unreachable").<br/>
+which contains the IDs, their PubPages with their DocUrls and a comment.<br/>
+The "comment" can have the following values:
+- an empty string, if the docUrl is retrieved and the user specified that the docFiles will not be downloaded
+- the DocFileFullPath, if we have set to download-&-store the DocFiles
+- the ErrorCause, if there was any error which prevented the discovery of the DocUrl (in that case, the DocUrl is set to "unreachable")
+<br/>
 
 PubPage: *the web page with the publication's information.*<br/> 
 DocUrl: *the url of the fulltext-document-file.*<br/>
+DocFileFullPath: *the full-storage-path of the fulltext-document-file.*<br/>
 
-If there are no IDs in the input, the user can specify -in ***LoaderAndChecker.java***- that wishes to process a data-set with no IDs.<br/>
+Sample JSON-input:
+```
+{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","url":"https://zenodo.org/record/884160"}
+```
+Sample JSON-output (with downloading of the DocFile):
+```
+{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","sourceUrl":"https://zenodo.org/record/884160","docUrl":"https://zenodo.org/record/884160/files/Data_for_Policy_2017_paper_55.pdf","comment":"/home/lampros/DocUrlsRetriever/target/../example/sample_output/DocFiles/1.pdf"}
+```
 <br/>
+
+In case no IDs are available to be used in the input, the user should provide a ".csv"/".tsv" file containing just urls (one url per line)
+and specify that wishes to process a data-set with no IDs, by changing the "**LoaderAndChecker.useIdUrlPairs**"-variable to "*false*".
+<br/>
+<br/>
+
 **Disclaimers**:
 - This program was designed to be used with distributed execution, thus it was developed as a single-thread program. (You may give a different starting-number for the docFiles in each instance.)<br/>
 - Keep in mind that it's best to run the program for a small set of urls (a few hundred maybe) at first,
@@ -39,7 +56,7 @@ arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br/>
 - Inside ***pom.xml***, change the **mainClass** of **maven-shade-plugin** from "**DocUrlsRetriever**" to "**TestNonStandardInputOutput**".
 - Inside ***src/test/.../TestNonStandardInputOutput.java***, give the wanted testInput and testOutput files.<br/>
 - If you want to provide a .tsv or a .csv file with a title in its column,
-    you can specify it in the **FileUtils.skipFirstRow**-variable inside **FileUtils.java**, in order to be ignored.
+    you can specify it in the **FileUtils.skipFirstRow**-variable inside **FileUtils.java**, in order for the first-row (headers) to be ignored.
 - If you want to see the logging-messages in the *Console*, open the ***resources/logback.xml***
     and change the ***appender-ref***, from ***File*** to ***Console***.<br/>
 - Run ``mvn install`` to create the new ***JAR*** file.<br/>
@@ -59,7 +76,8 @@ arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br/>
 ## Example
 You can check the functionality of **DocUrlsRetriever** by running an example.<br/>
 Type **`./runExample.sh`** in the terminal and hit `ENTER`.<br/>
-This script will run the following commands:
+Then you can see the results in the ***example/sample_output*** directory.<br/>
+The above script will run the following commands:
 - **`mvn clean install`**: Does a clean install.
 - **`rm -rf example/sample_output/*`**: Removes any previous example-results.
 - **``cd target &&
