@@ -222,7 +222,7 @@ public class PageCrawler
 				try {
 					metaDocUrl = metaDocUrlMatcher.group(1);
 				} catch (Exception e) { logger.error("", e); }
-				if ( (metaDocUrl == null) || metaDocUrl.isEmpty() ) {
+				if ( metaDocUrl == null ) {
 					logger.error("Could not retrieve the metaDocUrl, continue by crawling the pageUrl.");
 					return false;	// It was not handled.
 				}
@@ -250,7 +250,7 @@ public class PageCrawler
 		try {
 			currentPageLinks = extractInternalLinksFromHtml(pageHtml);
 		} catch (JavaScriptDocLinkFoundException jsdlfe) {
-			handleJavaScriptDocLink(urlId, sourceUrl, pageUrl, currentPageDomain, pageContentType, jsdlfe);
+			handleJavaScriptDocLink(urlId, sourceUrl, pageUrl, currentPageDomain, pageContentType, jsdlfe);	// url-logging is handled inside.
 			return null;	// This JavaScriptDocLink is the only docLink we will ever gonna get from this page. The sourceUrl is logged inside the called method.
 		} catch (Exception e) {
 			logger.debug("Could not retrieve the internalLinks for pageUrl: " + pageUrl);
@@ -277,7 +277,7 @@ public class PageCrawler
 	
 	public static HashSet<String> extractInternalLinksFromHtml(String pageHtml) throws JavaScriptDocLinkFoundException
 	{
-		HashSet<String> urls = new HashSet<>();
+		HashSet<String> urls = new HashSet<>();	// It will surely not be null.
 		
 		// Get the internalLinks using "Jsoup".
 		Document document = Jsoup.parse(pageHtml);

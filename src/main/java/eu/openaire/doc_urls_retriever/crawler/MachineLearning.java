@@ -260,7 +260,7 @@ public class MachineLearning
 			return false;
 		}
 		else if ( UrlTypeChecker.PLAIN_PAGE_EXTENSION_FILTER.matcher(docIdStr.toLowerCase()).matches() )
-		{	// The docID of this pageUrl contains a page-extension, which we don't want in the docUrl. Thus, we remove the extension from the end.
+		{	// The docID of this pageUrl contains a page-extension (not a document-one), which we don't want in the docUrl. Thus, we remove the extension from the end.
 			docIdStr = docIdStr.replaceAll("(\\.[^.]+)$", "");
 		}
 		

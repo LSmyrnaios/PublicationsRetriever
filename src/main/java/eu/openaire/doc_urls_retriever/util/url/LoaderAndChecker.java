@@ -117,16 +117,11 @@ public class LoaderAndChecker
 				isFirstRun = false;
 			
 			Set<String> keys = loadedIdUrlPairs.keySet();
-			
-			//logger.debug("CurGroup IDs-size: " + keys.size());	// DEBUG!
-			
 			numOfIDs += keys.size();
 			
 			for ( String retrievedId : keys )
 			{
-				//logger.debug("ID: " + retrievedId);	// DEBUG!
 				boolean goToNextId = false;
-				
 				String possibleDocUrl = null;
 				String bestNonDocUrl = null;	// Best-case url
 				String nonDoiUrl = null;	// Url which is not a best case, but it's not a slow-doi url either.
@@ -232,7 +227,7 @@ public class LoaderAndChecker
 		if ( UrlTypeChecker.matchesUnwantedUrlType(urlId, retrievedUrl, lowerCaseUrl) )
 			return null;	// The url-logging is happening inside this method (per urlType).
 		
-		// Remove "jsessionid" for urls. Most of them, if not all, will already be expired.
+		// Remove "jsessionid" for urls. Most of them, if not all, will already be expired. If an error occurs, the jsessionid will remain in the url.
 		if ( lowerCaseUrl.contains("jsessionid") )
 			retrievedUrl = UrlUtils.removeJsessionid(retrievedUrl);
 		

@@ -18,8 +18,9 @@ public class UrlUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(UrlUtils.class);
 	
-	public static final Pattern URL_TRIPLE = Pattern.compile("(.+://(?:www(?:(?:\\w+)?\\.)?)?([\\w.\\-]+)(?:[:\\d]+)?(?:.*/)?)(?:([^/^;^?]*)(?:(?:;|\\?)[^/^=]+(?:=.*)?)?)?");
+	public static final Pattern URL_TRIPLE = Pattern.compile("(.+://(?:ww(?:w|\\d)(?:(?:\\w+)?\\.)?)?([\\w.\\-]+)(?:[:\\d]+)?(?:.*/)?)(?:([^/^;^?]*)(?:(?:;|\\?)[^/^=]+(?:=.*)?)?)?");
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
+	// TODO - Add explanation also for the uncaptured groups for better maintenance. For example the "ww(?:w|\d)" can capture "www", "ww2", "ww3" ect.
 	
     public static final Pattern JSESSIONID_FILTER = Pattern.compile("(.+://.+)(?:;(?:JSESSIONID|jsessionid)=.+)(\\?.+)");
 	
@@ -44,27 +45,28 @@ public class UrlUtils
     public static void logQuadruple(String urlId, String sourceUrl, String pageUrl, String DocUrl, String comment, String domain)
     {
         String finalDocUrl = DocUrl;
-		
-        if ( !finalDocUrl.equals("unreachable") && !finalDocUrl.equals("duplicate") )	// If we have reached a docUrl..
+
+        if ( !finalDocUrl.equals("duplicate") )
         {
-			sumOfDocUrlsFound ++;
-			
-			// Remove "jsessionid" from urls for "cleaner" output.
-			String lowerCaseUrl = finalDocUrl.toLowerCase();
-            if ( lowerCaseUrl.contains("jsessionid") )
-                finalDocUrl = UrlUtils.removeJsessionid(DocUrl);
-            
-            // Gather data for the MLA, if we decide to have it enabled.
-            if ( MachineLearning.useMLA )
-				MachineLearning.gatherMLData(domain, pageUrl, finalDocUrl);
-			
-            if ( !comment.contains(UrlUtils.alreadyDownloadedByIDMessage) )	// Add this id, only if this is a first-crossed docUrl.
-				docUrlsWithKeys.put(finalDocUrl, urlId);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
-        }
-        else if ( !finalDocUrl.equals("duplicate") )	{// Else if this url is not a docUrl and has not been processed before..
-            duplicateUrls.add(sourceUrl);	 // Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future..
-        }	// We don't add docUrls here, as we want them to be separate for checking purposes.
-		
+			if ( !finalDocUrl.equals("unreachable") ) {
+				sumOfDocUrlsFound ++;
+
+				// Remove "jsessionid" from urls for "cleaner" output.
+				String lowerCaseUrl = finalDocUrl.toLowerCase();
+				if ( lowerCaseUrl.contains("jsessionid") )
+					finalDocUrl = UrlUtils.removeJsessionid(DocUrl);
+
+				// Gather data for the MLA, if we decide to have it enabled.
+				if ( MachineLearning.useMLA )
+					MachineLearning.gatherMLData(domain, pageUrl, finalDocUrl);
+
+				if ( !comment.contains(UrlUtils.alreadyDownloadedByIDMessage) )	// Add this id, only if this is a first-crossed docUrl.
+					docUrlsWithKeys.put(finalDocUrl, urlId);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
+			}
+			else	// Else if this url is not a docUrl and has not been processed before..
+				duplicateUrls.add(sourceUrl);	// Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future. We don't add docUrls here, as we want them to be separate for checking purposes.
+		}
+
 		FileUtils.quadrupleToBeLoggedList.add(new QuadrupleToBeLogged(urlId, sourceUrl, finalDocUrl, comment));	// Log it to be written later in the outputFile.
 		
         if ( FileUtils.quadrupleToBeLoggedList.size() == FileUtils.jsonGroupSize )	// Write to file every time we have a group of <jsonGroupSize> quadruples.
