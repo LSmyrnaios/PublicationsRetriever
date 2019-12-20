@@ -27,8 +27,8 @@ public class TestNonStandardInputOutput  {
 	private static final Logger logger = LoggerFactory.getLogger(TestNonStandardInputOutput.class);
 	
 	private static String testingSubDir = "idUrlPairs";	// "idUrlPairs" or "justUrls".
-	private static String testingDirectory = System.getProperty("user.dir") + File.separator + "testing" + File.separator + testingSubDir + File.separator;
-	private static String testInputFile = "sampleCleanUrls3000.json";	// "sampleCleanUrls3000.json", "testRandomNewList100.csv"
+	private static String testingDirectory = System.getProperty("user.dir") + File.separator + "testData" + File.separator + testingSubDir + File.separator;
+	private static String testInputFile = "testNewOrderedList5000.json";	// "sampleCleanUrls3000.json", "testNewOrderedList5000.json", "testRandomNewList100.csv"
 	
 	private static File inputFile = new File(testingDirectory + testInputFile);
 	private static File outputFile = new File(testingDirectory + "testOutputFile.json");
