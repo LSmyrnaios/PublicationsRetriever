@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -128,14 +129,20 @@ public class LoaderAndChecker
 				String neutralUrl = null;	// Just a neutral url.
 				String urlToCheck = null;
 				
-				for ( String retrievedUrl : loadedIdUrlPairs.get(retrievedId) )
+				Set<String> retrievedUrlsOfCurrentId = loadedIdUrlPairs.get(retrievedId);
+				boolean isSingleIdUrlPair = (retrievedUrlsOfCurrentId.size() == 1);
+				HashSet<String> loggedUrlsOfCurrentId = new HashSet<>();	// New for every ID.
+				
+				for ( String retrievedUrl : retrievedUrlsOfCurrentId )
 				{
-					//logger.debug("     URL: " + retrievedUrl);	// DEBUG!
-					
 					String lowerCaseUrl = retrievedUrl.toLowerCase();    // Only for string checking purposes, not supposed to reach any connection.
-					
-					if ( (retrievedUrl = handleUrlChecks(retrievedId, retrievedUrl, lowerCaseUrl)) == null )
+
+					String checkedUrl = retrievedUrl;
+					if ( (retrievedUrl = handleUrlChecks(retrievedId, retrievedUrl, lowerCaseUrl)) == null ) {
+						if ( !isSingleIdUrlPair )
+							loggedUrlsOfCurrentId.add(checkedUrl);
 						continue;
+					}	// The "retrievedUrl" might have changed (inside "handleUrlChecks()").
 					
 					if ( UrlUtils.docUrlsWithKeys.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
 						logger.info("re-crossed docUrl found: <" + retrievedUrl + ">");
@@ -143,7 +150,11 @@ public class LoaderAndChecker
 							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(retrievedUrl), null);
 						else
 							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, "", null);
-						goToNextId = true;
+
+						if ( !isSingleIdUrlPair )
+							loggedUrlsOfCurrentId.add(retrievedUrl);
+
+						goToNextId = true;    // Skip the best-url evaluation & connection after this loop.
 						break;
 					}
 					
@@ -164,9 +175,12 @@ public class LoaderAndChecker
 					neutralUrl = retrievedUrl;	// If no special-goodCase-url is found, this one will be used. Note that this will be null if no acceptable-url was found.
 				}// end-url-for-loop
 				
-				if ( goToNextId )	// If we found an already-retrieved docUrl.
+				if ( goToNextId ) {	// If we found an already-retrieved docUrl.
+					if ( !isSingleIdUrlPair )	// Don't forget to write the valid but not-to-be-connected urls to the outputFile.
+						handleLogOfRemainingUrls(urlToCheck, retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId);
 					continue;
-				
+				}
+
 				boolean isPossibleDocUrl = false;	// Used for specific connection settings.
 				// Decide with which url from this id-group we should connect to.
 				if ( possibleDocUrl != null ) {
@@ -183,7 +197,10 @@ public class LoaderAndChecker
 					logger.debug("No acceptable sourceUrl was found for ID: \"" + retrievedId + "\".");
 					continue;
 				}
-				
+
+				if ( !isSingleIdUrlPair )	// Don't forget to write the valid but not-to-be-connected urls to the outputFile.
+					handleLogOfRemainingUrls(urlToCheck, retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId);
+
 				try {	// Check if it's a docUrl, if not, it gets crawled.
 					HttpConnUtils.connectAndCheckMimeType(retrievedId, urlToCheck, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);
 				} catch (Exception e) {
@@ -274,6 +291,29 @@ public class LoaderAndChecker
 			}
 		} else
 			return false;
+	}
+	
+	
+	/**
+	 * This method logs the remaining retrievedUrls which were not checked & connected.
+	 * The idea is that a url of the id might have been labeled as "bestNonDocUrl" but it may not reach the connection-point as another one might get labeled as "possibleDocUrl".. and so on.
+	 * @param urlToCheck
+	 * @param retrievedId
+	 * @param retrievedUrlsOfThisId
+	 * @param loggedUrlsOfThisId
+	 */
+	private static void handleLogOfRemainingUrls(String urlToCheck, String retrievedId, Set<String> retrievedUrlsOfThisId, HashSet<String> loggedUrlsOfThisId)
+	{
+		// Check if any of the "remaining-urls" is duplicate. In such case, normally only ONE occurrence of this url would be logged.
+
+		// Now the "retrievedUrlsOfThisId" doesn't have any duplicates, thanks to the iterator.remove().
+		for ( String retrievedUrl : retrievedUrlsOfThisId )
+		{
+			if ( !retrievedUrl.equals(urlToCheck) && !loggedUrlsOfThisId.contains(retrievedUrl) ) {
+				UrlUtils.logQuadruple(retrievedId, retrievedUrl, null, "unreachable",
+						"Skipped in LoaderAndChecker, as a better url was selected for id: " + retrievedId, null);
+			}
+		}
 	}
 	
 }

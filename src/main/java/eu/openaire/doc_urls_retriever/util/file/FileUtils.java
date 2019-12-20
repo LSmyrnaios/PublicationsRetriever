@@ -2,7 +2,6 @@ package eu.openaire.doc_urls_retriever.util.file;
 
 import ch.qos.logback.classic.LoggerContext;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimaps;
 import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
 import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
@@ -191,7 +190,7 @@ public class FileUtils
 	 */
 	public static HashMultimap<String, String> getNextIdUrlPairGroupFromJson()
 	{
-		HashMap<String, String> inputIdUrlPair;
+		IdUrlTuple inputIdUrlTuple;
 		HashMultimap<String, String> idAndUrlMappedInput = HashMultimap.create();
 		
 		int curBeginning = FileUtils.fileIndex;
@@ -199,28 +198,28 @@ public class FileUtils
 		while ( inputScanner.hasNextLine() && (FileUtils.fileIndex < (curBeginning + jsonGroupSize)) )// While (!EOF) iterate through lines.
 		{
 			//logger.debug("fileIndex: " + FileUtils.fileIndex);	// DEBUG!
-			
+
 			// Take each line, remove potential double quotes.
 			String retrievedLineStr = inputScanner.nextLine();
 			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
-			
+
 			FileUtils.fileIndex ++;
-			
+
 			if ( retrievedLineStr.isEmpty() ) {
 				FileUtils.unretrievableInputLines ++;
 				continue;
 			}
-			
-			inputIdUrlPair = jsonDecoder(retrievedLineStr);// Decode the jsonLine and take the two attributes.
-			if ( inputIdUrlPair == null ) {
+
+			if ( (inputIdUrlTuple = jsonDecoder(retrievedLineStr)) == null ) {	// Decode the jsonLine and take the two attributes.
 				logger.warn("A problematic inputLine found: \"" + retrievedLineStr + "\"");
-				FileUtils.unretrievableInputLines ++;
+				FileUtils.unretrievableInputLines++;
 				continue;
 			}
-			
-			idAndUrlMappedInput.putAll(Multimaps.forMap(inputIdUrlPair));    // Keep mapping to be put in the outputFile later.
+
+			if ( !idAndUrlMappedInput.put(inputIdUrlTuple.id, inputIdUrlTuple.url) )    // We have a duplicate in the input.. log it here as we cannot pass it through the HashMultimap. It's possible that this as well as the original might be/give a docUrl.
+				UrlUtils.logQuadruple(inputIdUrlTuple.id, inputIdUrlTuple.url, null, "duplicate", "Discarded in FileUtils.getNextIdUrlPairGroupFromJson(), as it is a duplicate.", null);
 		}
-		
+
 		return idAndUrlMappedInput;
 	}
 	
@@ -230,10 +229,8 @@ public class FileUtils
 	 * @param jsonLine String
 	 * @return HashMap<String,String>
 	 */
-	public static HashMap<String, String> jsonDecoder(String jsonLine)
+	public static IdUrlTuple jsonDecoder(String jsonLine)
 	{
-		HashMap<String, String> returnIdUrlMap = new HashMap<String, String>();
-		
 		JSONObject jObj = new JSONObject(jsonLine); // Construct a JSONObject from the retrieved jsonLine.
 		
 		// Get ID and url and put them in the HashMap
@@ -253,10 +250,8 @@ public class FileUtils
 			else	// If url is empty but not the id, then we will still see the ID in the output and possible find its missing URL later.
 				FileUtils.unretrievableUrlsOnly ++;    // Keep track of lines with an id, but, with no url.
 		}
-        
-		returnIdUrlMap.put(idStr, urlStr);
-		
-		return returnIdUrlMap;
+
+		return new IdUrlTuple(idStr, urlStr);
 	}
 	
 	
@@ -520,6 +515,9 @@ public class FileUtils
 			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
 			
 			urlGroup.add(retrievedLineStr);
+
+			if ( !urlGroup.add(retrievedLineStr) )    // We have a duplicate in the input.. log it here as we cannot pass it through the HashSet. It's possible that this as well as the original might be/give a docUrl.
+				UrlUtils.logQuadruple(null, retrievedLineStr, null, "duplicate", "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null);
 		}
 		//logger.debug("FileUtils.fileIndex's value after taking urls after " + FileUtils.fileIndex / jsonGroupSize + " time(s), from input file: " + FileUtils.fileIndex);	// DEBUG!
 		
