@@ -1,13 +1,13 @@
 # DocUrlsRetriever    [![Build Status](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever.svg?branch=master)](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever)
 
-A Java-program which finds the Document Urls from the given Publication-Web-Pages and downloads the docFiles.<br/>
+A Java-program which finds the Document Urls from the given Publication-Web-Pages and if wanted, it can also download the docFiles.<br/>
 It is being developed for the European organization: [**OpenAIRE**](https://www.openaire.eu/).<br/>
 
 The **DocUrlsRetriever** takes as input the PubPages with their IDs -in JSON format- and gives an output -also in JSON format,
 which contains the IDs, their PubPages with their DocUrls and a comment.<br/>
 The "comment" can have the following values:
 - an empty string, if the docUrl is retrieved and the user specified that the docFiles will not be downloaded
-- the DocFileFullPath, if we have set to download-&-store the DocFiles
+- the DocFileFullPath, if we have chosen to download the DocFiles
 - the ErrorCause, if there was any error which prevented the discovery of the DocUrl (in that case, the DocUrl is set to "unreachable")
 <br/>
 
@@ -25,7 +25,7 @@ Sample JSON-output (with downloading of the DocFile):
 ```
 <br/>
 
-In case no IDs are available to be used in the input, the user should provide a ".csv"/".tsv" file containing just urls (one url per line)
+In case no IDs are available to be used in the input, the user should provide a "*.csv*"/"*.tsv*" file containing just urls (one url per line)
 and specify that wishes to process a data-set with no IDs, by changing the "**LoaderAndChecker.useIdUrlPairs**"-variable to "*false*".
 <br/>
 <br/>
@@ -34,10 +34,7 @@ and specify that wishes to process a data-set with no IDs, by changing the "**Lo
 - This program was designed to be used with distributed execution, thus it was developed as a single-thread program. (You may give a different starting-number for the docFiles in each instance.)<br/>
 - Keep in mind that it's best to run the program for a small set of urls (a few hundred maybe) at first,
     in order to see how it's operating and which parameters work best for you (url-timeouts, domainsBlocking ect.).
-- Please note that **DocUrlsRetriever** is currently in **beta**, so you may encounter some issues.
-    If so, please send an email or open a Github-Issue.<br/>
-- I would be happy to merge any pull request which is aligned with the [**OpenAIRE**](https://www.openaire.eu/) needs
-    and pushes this software to a better future.<br/>
+- Please note that **DocUrlsRetriever** is currently in **beta**, so you may encounter some issues.<br/>
 <br/>
 
 ## Install & Run (using MAVEN)

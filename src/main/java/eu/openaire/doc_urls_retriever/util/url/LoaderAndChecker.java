@@ -296,7 +296,8 @@ public class LoaderAndChecker
 	
 	/**
 	 * This method logs the remaining retrievedUrls which were not checked & connected.
-	 * The idea is that a url of the id might have been labeled as "bestNonDocUrl" but it may not reach the connection-point as another one might get labeled as "possibleDocUrl".. and so on.
+	 * The method loadAndCheckIdUrlPairs() pics just one -the best- url from a group of urls belonging to a specific ID.
+	 * The rest urls will either get rejected as problematic -and so get logged- or get skipped and be left non-logged.
 	 * @param urlToCheck
 	 * @param retrievedId
 	 * @param retrievedUrlsOfThisId

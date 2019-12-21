@@ -69,7 +69,7 @@ public class QuadrupleToBeLogged
 		strB.append("\",\"comment\":\"").append(this.comment).append("\"}");
 		
         String jsonString = strB.toString();
-        strB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating.
+        strB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating, thus allocation happens only once for the whole execution.
         return jsonString;
     }
     
