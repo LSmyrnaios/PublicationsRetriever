@@ -77,13 +77,11 @@ public class LoaderAndChecker
 			
 			for ( String retrievedUrl : loadedUrlGroup )
 			{
-				String lowerCaseUrl = retrievedUrl.toLowerCase();	// Only for string checking purposes, not supposed to reach any connection.
-				
-				if ( (retrievedUrl = handleUrlChecks(null, retrievedUrl, lowerCaseUrl)) == null )
+				if ( (retrievedUrl = handleUrlChecks(null, retrievedUrl)) == null )
 					continue;
 				
 				boolean isPossibleDocUrl = false;
-				if ( DOC_URL_FILTER.matcher(lowerCaseUrl).matches() )
+				if ( DOC_URL_FILTER.matcher(retrievedUrl.toLowerCase()).matches() )
 					isPossibleDocUrl = true;
 				
 				try {
@@ -135,10 +133,8 @@ public class LoaderAndChecker
 				
 				for ( String retrievedUrl : retrievedUrlsOfCurrentId )
 				{
-					String lowerCaseUrl = retrievedUrl.toLowerCase();    // Only for string checking purposes, not supposed to reach any connection.
-
 					String checkedUrl = retrievedUrl;
-					if ( (retrievedUrl = handleUrlChecks(retrievedId, retrievedUrl, lowerCaseUrl)) == null ) {
+					if ( (retrievedUrl = handleUrlChecks(retrievedId, retrievedUrl)) == null ) {
 						if ( !isSingleIdUrlPair )
 							loggedUrlsOfCurrentId.add(checkedUrl);
 						continue;
@@ -159,7 +155,7 @@ public class LoaderAndChecker
 					}
 					
 					// Check if it's a possible-DocUrl, if so, this is the only url which will be checked from this group, unless there's a canonicalization problem.
-					if ( DOC_URL_FILTER.matcher(lowerCaseUrl).matches() ) {
+					if ( DOC_URL_FILTER.matcher(retrievedUrl.toLowerCase()).matches() ) {
 						//logger.debug("Possible docUrl: " + retrievedUrl);
 						possibleDocUrl = retrievedUrl;
 						break;	// This is the absolute-best-case, we go and connect directly.
@@ -168,11 +164,10 @@ public class LoaderAndChecker
 					// Use this rule, if we accept the slow "hdl.handle.net"
 					if ( retrievedUrl.contains("/handle/") )	// If this url contains "/handle/" we know that it's a bestCaseUrl among urls from the domain "handle.net", which after redirects reaches the bestCaseUrl (containing "/handle/").
 						bestNonDocUrl = retrievedUrl;	// We can't just connect here, as the next url might be a possibleDocUrl.
-					
-					if ( (bestNonDocUrl == null) && !retrievedUrl.contains("doi.org") )	// If no other preferable url is found, we should prefer the nonDOI-one, if present, as the DOI-urls have lots of redirections.
+					else if ( (bestNonDocUrl == null) && !retrievedUrl.contains("doi.org") )	// If no other preferable url is found, we should prefer the nonDOI-one, if present, as the DOI-urls have lots of redirections.
 						nonDoiUrl = retrievedUrl;
-					
-					neutralUrl = retrievedUrl;	// If no special-goodCase-url is found, this one will be used. Note that this will be null if no acceptable-url was found.
+					else
+						neutralUrl = retrievedUrl;	// If no special-goodCase-url is found, this one will be used. Note that this will be null if no acceptable-url was found.
 				}// end-url-for-loop
 				
 				if ( goToNextId ) {	// If we found an already-retrieved docUrl.
@@ -217,10 +212,9 @@ public class LoaderAndChecker
 	 * It returns the givenUrl without the jsessionidPart if this url is accepted for connection/crawling, otherwise, it returns "null".
 	 * @param urlId
 	 * @param retrievedUrl
-	 * @param lowerCaseUrl
 	 * @return the non-jsessionid-url-string / null for unwanted-duplicate-url
 	 */
-	public static String handleUrlChecks(String urlId, String retrievedUrl, String lowerCaseUrl)
+	public static String handleUrlChecks(String urlId, String retrievedUrl)
 	{
 		String currentUrlDomain = UrlUtils.getDomainStr(retrievedUrl);
 		if ( currentUrlDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
@@ -240,6 +234,8 @@ public class LoaderAndChecker
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' as it had a blackListed urlPath.", null);
 			return null;
 		}
+		
+		String lowerCaseUrl = retrievedUrl.toLowerCase();
 		
 		if ( UrlTypeChecker.matchesUnwantedUrlType(urlId, retrievedUrl, lowerCaseUrl) )
 			return null;	// The url-logging is happening inside this method (per urlType).
@@ -305,9 +301,6 @@ public class LoaderAndChecker
 	 */
 	private static void handleLogOfRemainingUrls(String urlToCheck, String retrievedId, Set<String> retrievedUrlsOfThisId, HashSet<String> loggedUrlsOfThisId)
 	{
-		// Check if any of the "remaining-urls" is duplicate. In such case, normally only ONE occurrence of this url would be logged.
-
-		// Now the "retrievedUrlsOfThisId" doesn't have any duplicates, thanks to the iterator.remove().
 		for ( String retrievedUrl : retrievedUrlsOfThisId )
 		{
 			if ( !retrievedUrl.equals(urlToCheck) && !loggedUrlsOfThisId.contains(retrievedUrl) ) {
