@@ -92,10 +92,10 @@ public class UrlTypeChecker
 		}
 		// Avoid plain "www.elsevier.com" and the "journals.elsevier.com" don't give docUrls.
 		else if ( lowerCaseUrl.contains("www.elsevier.com") || lowerCaseUrl.contains("journals.elsevier.com") ) {
-			// The "linkinghub.elsevier.com" is redirecting to "sciencedirect.com".
+			// The "linkinghub.elsevier.com" is redirecting to "sciencedirect.com", so it's acceptable and not included here.
 			// Note that we still accept the "elsevier.es" pageUrls, which give docUrls.
 			elsevierUnwantedUrls ++;
-			loggingMessage = "Discarded after matching to the unwanted 'elsevier.com' domain.";
+			loggingMessage = "Discarded after matching to the unwanted '(www|journals).elsevier.com' domain.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
@@ -119,16 +119,16 @@ public class UrlTypeChecker
 		// Avoid HTML docUrls. These are shown simply inside the html-text of the page. No binary to download.
 		else if ( lowerCaseUrl.contains("dlib.org") || lowerCaseUrl.contains("saberes.fcecon.unr.edu.ar") ) {
 			pagesWithHtmlDocUrls++;
-			loggingMessage = "Discarded after matching to an HTML-docUrls site.";
+			loggingMessage = "Discarded after matching to a site containing the full-text as plain-text inside its HTML.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
 		}
 		// Avoid pages known to not provide docUrls (just metadata).
-		else if ( lowerCaseUrl.contains("rivisteweb.it") || lowerCaseUrl.contains("wur.nl") || lowerCaseUrl.contains("remeri.org.mx")
+		else if ( lowerCaseUrl.contains("rivisteweb.it") || lowerCaseUrl.contains("wur.nl") || lowerCaseUrl.contains("remeri.org.mx")	// Keep only "remeri" subDomain of "org.mx", as the TLD is having a lot of different sites.
 				|| lowerCaseUrl.contains("cam.ac.uk") || lowerCaseUrl.contains("scindeks.ceon.rs") || lowerCaseUrl.contains("egms.de") ) {
-			pagesNotProvidingDocUrls ++;	// Keep "remeri" subDomain of "org.mx", as the TLD is having a lot of different sites.
-			loggingMessage = "Discarded after matching to the non docUrls-providing site 'rivisteweb.it'.";
+			pagesNotProvidingDocUrls ++;
+			loggingMessage = "Discarded after matching to a domain which doesn't provide docUrls.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
@@ -143,7 +143,7 @@ public class UrlTypeChecker
 		}
 		// Avoid crawling pages having their DocUrls in larger depth (internalPagesToDocUrls or PreviousOfDocUrls).
 		else if ( lowerCaseUrl.contains("/view/") || lowerCaseUrl.contains("scielosp.org") || lowerCaseUrl.contains("dk.um.si") || lowerCaseUrl.contains("apospublications.com")
-				|| lowerCaseUrl.contains("jorr.org") || lowerCaseUrl.contains("redalyc.org") || lowerCaseUrl.contains("rwth-aachen.de") ) {
+				|| lowerCaseUrl.contains("jorr.org") || lowerCaseUrl.contains("redalyc.org") /* TODO - remove this when I figure out the content-type issue*/ || lowerCaseUrl.contains("rwth-aachen.de") ) {
 			pagesWithLargerCrawlingDepth ++;
 			loggingMessage = "Discarded after matching to a site having its DocUrls in larger depth.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
@@ -179,7 +179,7 @@ public class UrlTypeChecker
 		else if ( lowerCaseUrl.contains("sharedsitesession") ) {
 			ConnSupportUtils.blockSharedSiteSessionDomain(retrievedUrl, null);
 			LoaderAndChecker.connProblematicUrls ++;
-			loggingMessage = "It was discarded after participating in a 'sharedSiteSession-redirectionPack'.";
+			loggingMessage = "It was discarded after participating in a 'sharedSiteSession-endlessRedirectionPack'.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
 			return true;
