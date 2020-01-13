@@ -22,8 +22,8 @@ public class UrlUtils
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	// TODO - Add explanation also for the uncaptured groups for better maintenance. For example the "ww(?:w|\d)" can capture "www", "ww2", "ww3" ect.
 	
-    public static final Pattern JSESSIONID_FILTER = Pattern.compile("(.+://.+)(?:;(?:JSESSIONID|jsessionid)=.+)(\\?.+)");
-	
+    public static final Pattern JSESSIONID_FILTER = Pattern.compile("(.+://.+)(?:;(?:JSESSIONID|jsessionid)=[^?]+)(\\?.+)?");	// Remove the jsessionid but keep the url-params in the end.
+
 	public static int sumOfDocUrlsFound = 0;	// Change it back to simple int if finally in singleThread mode
 	
 	public static final HashSet<String> duplicateUrls = new HashSet<String>();
