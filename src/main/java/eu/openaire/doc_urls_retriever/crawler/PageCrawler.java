@@ -29,10 +29,13 @@ import java.util.regex.Pattern;
 public class PageCrawler
 {
 	private static final Logger logger = LoggerFactory.getLogger(PageCrawler.class);
-	
-	// Sciencedirect regexes. Use "find()" with those (they work best).
-	public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta[\\s]*name=\"(?:citation_pdf_url|eprints.document_url)\"[\\s]*content=\")([http][\\w/.,\\-_%&;:~()\\[\\]?=]+)(?:\"[\\s]*/>)");
-	
+
+	// Order-independent META_DOC_URL-regex.
+	// (?:<meta(?:[\\s]*name=\"(?:citation_pdf_url|eprints.document_url)\"[\\s]*content=\"([http][\\w/.,\\-_%&;:~()\\[\\]?=]+)(?:\"))|(?:[\\s]*content=\"([http][\\w/.,\\-_%&;:~()\\[\\]?=]+)(?:\")[\\s]*name=\"(?:citation_pdf_url|eprints.document_url)\"))(?:[\\s]*(?:/)?>)
+	private static String metaName = "name=\"(?:citation_pdf_url|eprints.document_url)\"";
+	private static String metaContent = "content=\"([http][\\w/.,\\-_%&;:~()\\[\\]?=]+)\"";
+	public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta(?:[\\s]*" + metaName + "[\\s]*" + metaContent + ")|(?:[\\s]*" + metaContent + "[\\s]*" + metaName + ")(?:[\\s]*(?:/)?>))");
+
 	public static final Pattern JAVASCRIPT_DOC_LINK = Pattern.compile("(?:javascript:pdflink.*')(http.+)(?:',.*)", Pattern.CASE_INSENSITIVE);
 	
 	public static int totalPagesReachedCrawling = 0;	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their internalLinks checked.
@@ -214,42 +217,45 @@ public class PageCrawler
 		// Check if the docLink is provided in a metaTag and connect to it directly.
 		try {
 			Matcher metaDocUrlMatcher = META_DOC_URL.matcher(pageHtml);
-			if ( metaDocUrlMatcher.find() ) {
-				String metaDocUrl = null;
-				try {
-					metaDocUrl = metaDocUrlMatcher.group(1);
-				} catch (Exception e) { logger.error("", e); }
+			if ( !metaDocUrlMatcher.find() )
+				return false;    // It was not found and so it was not handled.
+
+			//logger.debug("Matched meta-doc-url-line: " + metaDocUrlMatcher.group(0));	// DEBUG!!
+
+			String metaDocUrl = null;
+			try {
+				metaDocUrl = metaDocUrlMatcher.group(1);
+			} catch (Exception e) { logger.error("", e); }
+			if ( metaDocUrl == null ) {
+				metaDocUrl = metaDocUrlMatcher.group(2);	// Try the other group.
 				if ( metaDocUrl == null ) {
 					logger.error("Could not retrieve the metaDocUrl, continue by crawling the pageUrl.");
 					return false;	// It was not handled.
 				}
-				else {
-					if ( metaDocUrl.contains("{{") )	// Dynamic link! The only way to handle it is by blocking the "currentPageUrlDomain".
-					{
-						logger.debug("The metaDocUrl is a dynamic-link. Abort the process nd block the domain of the pageUrl.");
-						// Block the domain and return "true" to indicate handled-state.
-						HttpConnUtils.blacklistedDomains.add(currentPageDomain);
-						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in \"checkIfAndHandleMetaDocUrl()\", as it belongs to a domain with dynamic-links.", null);
-						return true;
-					}
-
-					if ( (metaDocUrl = URLCanonicalizer.getCanonicalURL(metaDocUrl, null, StandardCharsets.UTF_8)) == null ) {
-						logger.warn("Could not cannonicalize metaDocUrl: " + metaDocUrl);
-						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in \"checkIfAndHandleMetaDocUrl()\", due to cannibalization's problems.", null);
-						return true;
-					}
-
-					// Connect to it directly.
-					//logger.debug("MetaDocUrl: " + metaDocUrl);	// DEBUG!
-					if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, currentPageDomain, false, true) ) {    // On success, we log the docUrl inside this method.
-						logger.warn("The retrieved metaDocUrl was not a docUrl (unexpected): " + metaDocUrl);
-						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved metaDocUrl was not a docUrl.", null);
-					}
-					return true; 	// It should be the docUrl and it was handled.. so we don't continue checking the internalLink even if this wasn't a docUrl.
-				}
 			}
-			else
-				return false;	// It was not found and so it was not handled.
+
+			if ( metaDocUrl.contains("{{") )	// Dynamic link! The only way to handle it is by blocking the "currentPageUrlDomain".
+			{
+				logger.debug("The metaDocUrl is a dynamic-link. Abort the process nd block the domain of the pageUrl.");
+				// Block the domain and return "true" to indicate handled-state.
+				HttpConnUtils.blacklistedDomains.add(currentPageDomain);
+				return true;
+			}
+
+			if ( (metaDocUrl = URLCanonicalizer.getCanonicalURL(metaDocUrl, null, StandardCharsets.UTF_8)) == null ) {
+				logger.warn("Could not cannonicalize metaDocUrl: " + metaDocUrl);
+				UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in \"checkIfAndHandleMetaDocUrl()\", due to cannibalization's problems.", null);
+				return true;
+			}
+
+			// Connect to it directly.
+			//logger.debug("MetaDocUrl: " + metaDocUrl);	// DEBUG!
+			if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, currentPageDomain, false, true) ) {    // On success, we log the docUrl inside this method.
+				logger.warn("The retrieved metaDocUrl was not a docUrl (unexpected): " + metaDocUrl);
+				UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved metaDocUrl was not a docUrl.", null);
+			}
+			return true; 	// It should be the docUrl and it was handled.. so we don't continue checking the internalLink even if this wasn't a docUrl.
+
 		} catch (Exception e) {	// After connecting to the metaDocUrl.
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag-url.", null);
 			return true;	// It was found and handled. Even if an exception was thrown, we don't want to check any other internalLinks in that page.
