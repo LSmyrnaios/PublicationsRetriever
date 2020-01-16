@@ -22,7 +22,7 @@ public class UrlUtils
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	// TODO - Add explanation also for the uncaptured groups for better maintenance. For example the "ww(?:w|\d)" can capture "www", "ww2", "ww3" ect.
 	
-    public static final Pattern JSESSIONID_FILTER = Pattern.compile("(.+://.+)(?:;(?:JSESSIONID|jsessionid)=[^?]+)(\\?.+)?");	// Remove the jsessionid but keep the url-params in the end.
+	public static final Pattern JSESSIONID_FILTER = Pattern.compile("(.+://.+)(?:;(?:JSESSIONID|jsessionid)=[^?]+)(\\?.+)?");	// Remove the jsessionid but keep the url-params in the end.
 
 	public static final Pattern ANCHOR_FILTER = Pattern.compile("(.+)(#.+)");	// Remove the anchor at the end of the url to avoid duplicate versions. (anchors might exist even in docUrls themselves)
 
@@ -40,27 +40,27 @@ public class UrlUtils
 	 * @param urlId (it may be null if no id was provided in the input)
 	 * @param sourceUrl
 	 * @param pageUrl
-	 * @param DocUrl
+	 * @param docUrl
 	 * @param comment
-	 * @param domain (it may be null)
+	 * @param pageDomain (it may be null)
 	 */
-    public static void logQuadruple(String urlId, String sourceUrl, String pageUrl, String DocUrl, String comment, String domain)
+    public static void logQuadruple(String urlId, String sourceUrl, String pageUrl, String docUrl, String comment, String pageDomain)
     {
-        String finalDocUrl = DocUrl;
+        String finalDocUrl = docUrl;
 
         if ( !finalDocUrl.equals("duplicate") )
         {
 			if ( !finalDocUrl.equals("unreachable") ) {
 				sumOfDocUrlsFound ++;
 
-				// Remove "jsessionid" from urls for "cleaner" output.
+				// Remove "jsessionid" from urls for "cleaner" output and "already found docUrl"-matching.
 				String lowerCaseUrl = finalDocUrl.toLowerCase();
 				if ( lowerCaseUrl.contains("jsessionid") )
-					finalDocUrl = UrlUtils.removeJsessionid(DocUrl);
+					finalDocUrl = UrlUtils.removeJsessionid(docUrl);
 
 				// Gather data for the MLA, if we decide to have it enabled.
 				if ( MachineLearning.useMLA )
-					MachineLearning.gatherMLData(domain, pageUrl, finalDocUrl);
+					MachineLearning.gatherMLData(pageDomain, pageUrl, finalDocUrl);
 
 				if ( !comment.contains(UrlUtils.alreadyDownloadedByIDMessage) )	// Add this id, only if this is a first-crossed docUrl.
 					docUrlsWithKeys.put(finalDocUrl, urlId);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.

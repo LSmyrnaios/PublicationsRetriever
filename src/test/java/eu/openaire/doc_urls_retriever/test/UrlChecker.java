@@ -174,9 +174,7 @@ public class UrlChecker {
 		// Add more urls to test.
 		
 		for ( String url : urlList )
-		{
 			validateRegexOnUrl(url);
-		}
 		
 		// Check the urls provided in the input-file.
 		setInputOutput();
