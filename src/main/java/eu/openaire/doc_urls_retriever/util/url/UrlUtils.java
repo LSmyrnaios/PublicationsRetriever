@@ -24,6 +24,8 @@ public class UrlUtils
 	
     public static final Pattern JSESSIONID_FILTER = Pattern.compile("(.+://.+)(?:;(?:JSESSIONID|jsessionid)=[^?]+)(\\?.+)?");	// Remove the jsessionid but keep the url-params in the end.
 
+	public static final Pattern ANCHOR_FILTER = Pattern.compile("(.+)(#.+)");	// Remove the anchor at the end of the url to avoid duplicate versions. (anchors might exist even in docUrls themselves)
+
 	public static int sumOfDocUrlsFound = 0;	// Change it back to simple int if finally in singleThread mode
 	
 	public static final HashSet<String> duplicateUrls = new HashSet<String>();
@@ -208,6 +210,39 @@ public class UrlUtils
 		}
 		else
 			return finalUrl;
+	}
+
+
+	/**
+	 * This method removes the anchor part in the end of the URL.
+	 * Unlike the jsessionid-case, the anchor consists from everything is from "#" to the right of the url-string till the end of it. No "valueable part" exist after the anchor.
+	 * @param urlStr
+	 * @return
+	 */
+	public static String removeAnchor(String urlStr)
+	{
+		if ( urlStr == null ) {	// Avoid NPE in "Matcher"
+			logger.error("The received \"urlStr\" was null in \"removeAnchor()\"!");
+			return null;
+		}
+
+		String noAnchorUrl = null;
+
+		Matcher anchorMatcher = ANCHOR_FILTER.matcher(urlStr);
+		if ( anchorMatcher.matches() )
+		{
+			try {
+				noAnchorUrl = anchorMatcher.group(1);	// Take only the 1st part of the urlStr, without the jsessionid.
+			} catch (Exception e) { logger.error("", e); }
+			if ( (noAnchorUrl == null) || noAnchorUrl.isEmpty() ) {
+				logger.warn("Unexpected null or empty value returned by \"anchorMatcher.group(1)\" for url: \"" + urlStr + "\"");
+				return urlStr;
+			}
+			else
+				return noAnchorUrl;
+		}
+		else
+			return urlStr;
 	}
 	
 }

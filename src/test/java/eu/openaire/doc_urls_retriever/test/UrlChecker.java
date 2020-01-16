@@ -89,8 +89,34 @@ public class UrlChecker {
 		//urlList.add("http://eprints.gla.ac.uk/4107/1/pubmedredirect.html");
 		//urlList.add("http://dx.doi.org/10.1002/(SICI)1098-2353(2000)13:2<94::AID-CA4>3.0.CO;2-O");
 		//urlList.add("https://www.jstor.org/fcgi-bin/jstor/listjournal.fcg/08939454");
-		urlList.add("http://www.lib.kobe-u.ac.jp/infolib/meta_pub/G0000003kernel_DS200004");
+		//urlList.add("http://www.lib.kobe-u.ac.jp/infolib/meta_pub/G0000003kernel_DS200004");
+		//urlList.add("https://teapot.lib.ocha.ac.jp/?action=pages_view_main&active_action=repository_view_main_item_detail&item_id=29988&item_no=1&page_id=64&block_id=115");	// Problematic meta-url, no special care needed.
+		//urlList.add("https://repository.tku.ac.jp/dspace/handle/11150/1477");	// Djvu file.
+		//urlList.add("https://upcommons.upc.edu/handle/2117/15648");
+		//urlList.add("https://kanagawa-u.repo.nii.ac.jp/?action=repository_action_common_download&item_id=1079&item_no=1&attribute_id=18&file_no=1");
 		
+		//urlList.add("http://www.redalyc.org/articulo.oa?id=11182603");	// I had it in "larger-depth"-pages so I was blocking it.. but now they have added a link right away..
+				// The only problem now is that I cannot retrieve the content-type/disposition.. of that page.. so..?
+		
+		//urlList.add("https://edoc.rki.de/handle/176904/5542");	// It contains a docUrl.. BUT.. "No links were able to be retrieved. Its contentType is: text/html;charset=utf-8"
+
+		//urlList.add("http://dro.dur.ac.uk/1832/");	// Taking 15 seconds not giving any docUrl because it doesn't have any..! TODO - Maybe  set a time limit for every pageUrl?
+
+		//urlList.add("http://edepot.wur.nl/22358");
+
+		//urlList.add("https://www.redalyc.org/articulo.oa?id=10401515");
+
+		//urlList.add("https://www.redalyc.org/pdf/104/10401515.pdf#page=1&zoom=auto,-13,792");
+
+		//urlList.add("https://www.theseus.fi/handle/10024/19064");	// TODO - Take a look at that.
+
+		//urlList.add("http://repository.usu.ac.id/handle/123456789/6401");
+		//urlList.add("http://repository.usu.ac.id/bitstream/handle/123456789/6401/paru-siti noorcahyati.pdf;jsessionid=D2DC32D6655B264360633DA08B04387B?sequence=1");
+		//urlList.add("http://repository.usu.ac.id/bitstream/handle/123456789/6401/paru-siti noorcahyati.pdf?sequence=1");
+		//urlList.add("http://repository.usu.ac.id/bitstream/handle/123456789/6401/paru-siti%20noorcahyati.pdf");
+
+		urlList.add("http://www.eumed.net/cursecon/ecolat/mx/mebb-banca.htm");
+
 		logger.info("Urls to check:");
 		for ( String url: urlList )
 			logger.info(url);

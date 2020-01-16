@@ -1,17 +1,7 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
-import java.net.HttpURLConnection;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
-import eu.openaire.doc_urls_retriever.exceptions.ConnTimeoutException;
-import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
-import eu.openaire.doc_urls_retriever.exceptions.DomainWithUnsupportedHEADmethodException;
-import eu.openaire.doc_urls_retriever.exceptions.JavaScriptDocLinkFoundException;
+import eu.openaire.doc_urls_retriever.exceptions.*;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
@@ -24,6 +14,13 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -226,7 +223,23 @@ public class PageCrawler
 					logger.error("Could not retrieve the metaDocUrl, continue by crawling the pageUrl.");
 					return false;	// It was not handled.
 				}
-				else {	// Connect to it directly.
+				else {
+					if ( metaDocUrl.contains("{{") )	// Dynamic link! The only way to handle it is by blocking the "currentPageUrlDomain".
+					{
+						logger.debug("The metaDocUrl is a dynamic-link. Abort the process nd block the domain of the pageUrl.");
+						// Block the domain and return "true" to indicate handled-state.
+						HttpConnUtils.blacklistedDomains.add(currentPageDomain);
+						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in \"checkIfAndHandleMetaDocUrl()\", as it belongs to a domain with dynamic-links.", null);
+						return true;
+					}
+
+					if ( (metaDocUrl = URLCanonicalizer.getCanonicalURL(metaDocUrl, null, StandardCharsets.UTF_8)) == null ) {
+						logger.warn("Could not cannonicalize metaDocUrl: " + metaDocUrl);
+						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in \"checkIfAndHandleMetaDocUrl()\", due to cannibalization's problems.", null);
+						return true;
+					}
+
+					// Connect to it directly.
 					//logger.debug("MetaDocUrl: " + metaDocUrl);	// DEBUG!
 					if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, currentPageDomain, false, true) ) {    // On success, we log the docUrl inside this method.
 						logger.warn("The retrieved metaDocUrl was not a docUrl (unexpected): " + metaDocUrl);
@@ -249,6 +262,12 @@ public class PageCrawler
 		HashSet<String> currentPageLinks = null;
 		try {
 			currentPageLinks = extractInternalLinksFromHtml(pageHtml);
+		} catch ( DynamicInternalLinksFoundException dilfe) {
+				logger.debug("Domain \"" + currentPageDomain + "\" was found to have dynamic links, so it will be blocked.");
+				HttpConnUtils.blacklistedDomains.add(currentPageDomain);
+				logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");	// Refer "PageCrawler.visit()" here for consistency with other similar messages.
+				UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.retrieveInternalLinks()', as it belongs to a domain with dynamic-links.", null);
+			return null;
 		} catch (JavaScriptDocLinkFoundException jsdlfe) {
 			handleJavaScriptDocLink(urlId, sourceUrl, pageUrl, currentPageDomain, pageContentType, jsdlfe);	// url-logging is handled inside.
 			return null;	// This JavaScriptDocLink is the only docLink we will ever gonna get from this page. The sourceUrl is logged inside the called method.
@@ -273,9 +292,9 @@ public class PageCrawler
 		
 		return currentPageLinks;
 	}
-	
-	
-	public static HashSet<String> extractInternalLinksFromHtml(String pageHtml) throws JavaScriptDocLinkFoundException
+
+
+	public static HashSet<String> extractInternalLinksFromHtml(String pageHtml) throws JavaScriptDocLinkFoundException, DynamicInternalLinksFoundException
 	{
 		HashSet<String> urls = new HashSet<>();	// It will surely not be null.
 		
@@ -283,31 +302,50 @@ public class PageCrawler
 		Document document = Jsoup.parse(pageHtml);
 		Elements linksOnPage = document.select("a[href]");
 		
-		for ( Element el : linksOnPage ) {
+		for ( Element el : linksOnPage )
+		{
 			String internalLink = el.attr("href");
-			if ( !internalLink.isEmpty()
-					&& !internalLink.equals("/")
-					&& !internalLink.startsWith("mailto:") && !internalLink.startsWith("tel:") && !internalLink.startsWith("fax:")
-					&& !internalLink.startsWith("file:") && !internalLink.startsWith("{openurl}")
-					&& !internalLink.contains("#") )	// Avoid anchors.
+
+			if ( internalLink.isEmpty() )
+				continue;
+
+			if ( internalLink.contains("{{") )	// If "{{" is found inside any link, then all the links of this domain are dynamic, so throw an exception for the calling method to catch and log the pageUrl and return immediately.
+				throw new DynamicInternalLinksFoundException();
+
+			if ( internalLink.equals("/")
+					|| internalLink.startsWith("mailto:") || internalLink.startsWith("tel:") || internalLink.startsWith("fax:")
+					|| internalLink.startsWith("file:") || internalLink.startsWith("{openurl}") )
+				continue;
+
+			// Remove anchors from possible docUrls and add the remaining part to the list. Non-possibleDocUrls having anchors are rejected.
+			if ( internalLink.contains("#") )
 			{
-				//logger.debug("Filtered InternalLink: " + internalLink);
-				if ( internalLink.toLowerCase().startsWith("javascript:") ) {
-					String pdfLink = null;
-					Matcher pdfLinkMatcher = JAVASCRIPT_DOC_LINK.matcher(internalLink);	// Send the non-lower-case version as we need the inside url untouched, in order to open a valid connection.
-					if ( pdfLinkMatcher.matches() ) {
-						try {
-							pdfLink = pdfLinkMatcher.group(1);
-						} catch (Exception e) { logger.error("", e); }
-						throw new JavaScriptDocLinkFoundException(pdfLink);    // If it's 'null', we treat it when handling this exception.
-					}
-					else {    // It's a javaScript link or element which we don't treat.
-						//logger.debug("This javaScript element was not handled: " + internalLink);	// Enable only if needed for specific debugging.
-						continue;
-					}
+				if ( LoaderAndChecker.DOC_URL_FILTER.matcher(internalLink.toLowerCase()).matches() ) {
+					// There are some docURLs with anchors!! Like this: https://www.redalyc.org/pdf/104/10401515.pdf#page=1&zoom=auto,-13,792
+					internalLink = UrlUtils.removeAnchor(internalLink);
+					//logger.debug("Filtered InternalLink: " + internalLink);	// DEBUG!
+					urls.add(internalLink);
 				}
-				urls.add(internalLink);
+				// Else we reject it (don't add it in the hashSet)..
+				continue;
 			}
+
+			//logger.debug("Filtered InternalLink: " + internalLink);	// DEBUG!
+
+			if ( internalLink.toLowerCase().startsWith("javascript:") ) {
+				String pdfLink = null;
+				Matcher pdfLinkMatcher = JAVASCRIPT_DOC_LINK.matcher(internalLink);	// Send the non-lower-case version as we need the inside url untouched, in order to open a valid connection.
+				if ( pdfLinkMatcher.matches() ) {
+					try {
+						pdfLink = pdfLinkMatcher.group(1);
+					} catch (Exception e) { logger.error("", e); }
+					throw new JavaScriptDocLinkFoundException(pdfLink);    // If it's 'null', we treat it when handling this exception.
+				} else {    // It's a javaScript link or element which we don't treat.
+					//logger.debug("This javaScript element was not handled: " + internalLink);	// Enable only if needed for specific debugging.
+					continue;
+				}
+			}
+			urls.add(internalLink);
 		}
 		return urls;
 	}

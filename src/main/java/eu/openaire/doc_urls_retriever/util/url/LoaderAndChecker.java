@@ -1,6 +1,7 @@
 package eu.openaire.doc_urls_retriever.util.url;
 
 import com.google.common.collect.HashMultimap;
+import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
@@ -8,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -83,7 +85,13 @@ public class LoaderAndChecker
 				boolean isPossibleDocUrl = false;
 				if ( DOC_URL_FILTER.matcher(retrievedUrl.toLowerCase()).matches() )
 					isPossibleDocUrl = true;
-				
+
+				if ( (retrievedUrl = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null ) {
+					logger.warn("Could not cannonicalize url: " + retrievedUrl);
+					UrlUtils.logQuadruple(null, retrievedUrl, null, "unreachable", "Discarded at loading time, due to cannibalization's problems.", null);
+					continue;
+				}
+
 				try {
 					HttpConnUtils.connectAndCheckMimeType(null, retrievedUrl, retrievedUrl, retrievedUrl, null, true, isPossibleDocUrl);
 				} catch (Exception e) {
@@ -195,6 +203,12 @@ public class LoaderAndChecker
 
 				if ( !isSingleIdUrlPair )	// Don't forget to write the valid but not-to-be-connected urls to the outputFile.
 					handleLogOfRemainingUrls(urlToCheck, retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId);
+
+				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(urlToCheck, null, StandardCharsets.UTF_8)) == null ) {
+					logger.warn("Could not cannonicalize url: " + urlToCheck);
+					UrlUtils.logQuadruple(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, due to cannibalization's problems.", null);
+					continue;
+				}
 
 				try {	// Check if it's a docUrl, if not, it gets crawled.
 					HttpConnUtils.connectAndCheckMimeType(retrievedId, urlToCheck, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);

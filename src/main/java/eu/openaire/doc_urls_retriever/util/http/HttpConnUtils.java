@@ -1,7 +1,8 @@
 package eu.openaire.doc_urls_retriever.util.http;
 
-import eu.openaire.doc_urls_retriever.exceptions.*;
+import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
+import eu.openaire.doc_urls_retriever.exceptions.*;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -406,7 +408,12 @@ public class HttpConnUtils
 				if ( !targetUrl.contains(HttpConnUtils.lastConnectedHost) )    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
 					if ( (domainStr = UrlUtils.getDomainStr(targetUrl)) == null )
 						throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
-				
+
+				if ( (targetUrl = URLCanonicalizer.getCanonicalURL(targetUrl, null, StandardCharsets.UTF_8)) == null ) {
+					logger.warn("Could not cannonicalize url: " + targetUrl);
+					throw new RuntimeException();	// Don't let it continue.
+				}
+
 				conn.disconnect();
 				conn = HttpConnUtils.openHttpConnection(targetUrl, domainStr, calledForPageUrl, calledForPossibleDocUrl);
 				

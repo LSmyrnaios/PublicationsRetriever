@@ -56,6 +56,7 @@ public class HandleScienceDirect
 	 * This method handles the JavaScriptSites of "sciencedirect.com"-family. It retrieves the docLinks hiding inside.
 	 * It returns true if the docUrl was found, otherwise, it returns false.
 	 * Note that these docUrl d not last long, since they are produced based on timestamp and jsessionid. After a while they just redirect to the pageUrl.
+	 * ScienceDirect and linkinghub urls have no cannonicalisation problems.
 	 * @param urlId
 	 * @param sourceUrl
 	 * @param pageUrl
