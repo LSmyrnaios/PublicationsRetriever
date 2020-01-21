@@ -85,55 +85,51 @@ public class HandleScienceDirect
 			
 			String html = ConnSupportUtils.getHtmlString(conn);
 			Matcher metaDocUrlMatcher = PageCrawler.META_DOC_URL.matcher(html);
-			if ( metaDocUrlMatcher.find() )
+			if ( !metaDocUrlMatcher.find() )
 			{
-				String metaDocUrl = null;
+				logger.warn("The metaDocLink could not be found!");	// It's possible if the document only available after paying or if the crawler gets blocked for heavy traffic.
+				//logger.debug("HTML-code:\n" + html);	// DEBUG!
+				throw new FailedToProcessScienceDirectException();
+			}
+
+			String metaDocUrl = PageCrawler.getMetaDocUrlFromMatcher(metaDocUrlMatcher);
+			if ( metaDocUrl == null ) {
+				logger.error("Could not retrieve the metaDocUrl from a \"sciencedirect.com\" url!");
+				throw new FailedToProcessScienceDirectException();
+			}
+
+			// Get the new html after connecting to the "metaDocUrl".
+			// We don't disconnect the previous one, since they both are in the same domain (see JavaDocs).
+			currentConnectedUrl = metaDocUrl;
+			conn = HttpConnUtils.handleConnection(urlId, sourceUrl, pageUrl, metaDocUrl, pageDomain, true, false);
+
+			//logger.debug("Url after connecting: " + conn.getURL().toString());
+			//logger.debug("MimeType: " + conn.getContentType());
+
+			html = ConnSupportUtils.getHtmlString(conn);	// Take the new html.
+			Matcher finalDocUrlMatcher = SCIENCEDIRECT_FINAL_DOC_URL.matcher(html);
+			if ( finalDocUrlMatcher.find() )
+			{
+				String finalDocUrl = null;
 				try {
-					metaDocUrl = metaDocUrlMatcher.group(1);
-				} catch (Exception e) { logger.error("", e); }
-				if ( (metaDocUrl == null) || metaDocUrl.isEmpty() ) {
-					logger.error("Could not retrieve the metaDocUrl from a \"sciencedirect.com\" url!");
+					finalDocUrl = finalDocUrlMatcher.group(1);
+				} catch (Exception e) {
+					logger.error("", e);
+				}
+				if ( (finalDocUrl == null) || finalDocUrl.isEmpty() ) {
+					logger.error("Could not retrieve the finalDocUrl from a \"sciencedirect.com\" url!");
 					throw new FailedToProcessScienceDirectException();
 				}
-				//logger.debug("MetaDocUrl: " + metaDocUrl);	// DEBUG!
-				
-				// Get the new html after connecting to the "metaDocUrl".
-				// We don't disconnect the previous one, since they both are in the same domain (see JavaDocs).
-				currentConnectedUrl = metaDocUrl;
-				conn = HttpConnUtils.handleConnection(urlId, sourceUrl, pageUrl, metaDocUrl, pageDomain, true, false);
-				
-				//logger.debug("Url after connecting: " + conn.getURL().toString());
-				//logger.debug("MimeType: " + conn.getContentType());
-				
-				html = ConnSupportUtils.getHtmlString(conn);	// Take the new html.
-				Matcher finalDocUrlMatcher = SCIENCEDIRECT_FINAL_DOC_URL.matcher(html);
-				if ( finalDocUrlMatcher.find() )
-				{
-					String finalDocUrl = null;
-					try {
-						finalDocUrl = finalDocUrlMatcher.group(1);
-					} catch (Exception e) {
-						logger.error("", e);
-					}
-					if ( (finalDocUrl == null) || finalDocUrl.isEmpty() ) {
-						logger.error("Could not retrieve the finalDocUrl from a \"sciencedirect.com\" url!");
-						throw new FailedToProcessScienceDirectException();
-					}
-					//logger.debug("FinalDocUrl: " + finalDocUrl);	// DEBUG!
-					
-					// Check and/or download the docUrl. These urls are one-time-links, meaning that after a while they will just redirect to their pageUrl.
-					currentConnectedUrl = finalDocUrl;
-					if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, finalDocUrl, pageDomain, false, true) ) {	// We log the docUrl inside this method.
-						logger.warn("LookedUp finalDocUrl: \"" + finalDocUrl + "\" was not an actual docUrl!");
-						throw new FailedToProcessScienceDirectException();
-					}
-				} else {
-					logger.warn("The finalDocLink could not be found!");
-					//logger.debug("HTML-code:\n" + html);	// DEBUG!
+				//logger.debug("FinalDocUrl: " + finalDocUrl);	// DEBUG!
+
+				// Check and/or download the docUrl. These urls are one-time-links, meaning that after a while they will just redirect to their pageUrl.
+				currentConnectedUrl = finalDocUrl;
+				if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, finalDocUrl, pageDomain, false, true) ) {	// We log the docUrl inside this method.
+					logger.warn("LookedUp finalDocUrl: \"" + finalDocUrl + "\" was not an actual docUrl!");
 					throw new FailedToProcessScienceDirectException();
 				}
 			} else {
-				logger.warn("The metaDocLink could not be found!");	// It's possible if the document only available after paying or if the crawler gets blocked for heavy traffic.
+				logger.warn("The finalDocLink could not be found!");
 				//logger.debug("HTML-code:\n" + html);	// DEBUG!
 				throw new FailedToProcessScienceDirectException();
 			}

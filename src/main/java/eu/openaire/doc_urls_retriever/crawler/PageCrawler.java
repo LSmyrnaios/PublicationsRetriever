@@ -198,8 +198,8 @@ public class PageCrawler
 		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingDocUrls, currentPageDomain, PageCrawler.timesToGiveNoDocUrlsBeforeBlocked) )
 			logger.debug("Domain: " + currentPageDomain + " was blocked after giving no docUrls more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
 	}
-	
-	
+
+
 	/**
 	 * This method takes in the "pageHtml" of an already-connected url and checks if there is a metaDocUrl inside.
 	 * If such url exist, then it connects to it and checks if it's really a docUrl and it may also download the full-text-document, if wanted.
@@ -220,18 +220,10 @@ public class PageCrawler
 			if ( !metaDocUrlMatcher.find() )
 				return false;    // It was not found and so it was not handled.
 
-			//logger.debug("Matched meta-doc-url-line: " + metaDocUrlMatcher.group(0));	// DEBUG!!
-
-			String metaDocUrl = null;
-			try {
-				metaDocUrl = metaDocUrlMatcher.group(1);
-			} catch (Exception e) { logger.error("", e); }
+			String metaDocUrl = getMetaDocUrlFromMatcher(metaDocUrlMatcher);
 			if ( metaDocUrl == null ) {
-				metaDocUrl = metaDocUrlMatcher.group(2);	// Try the other group.
-				if ( metaDocUrl == null ) {
-					logger.error("Could not retrieve the metaDocUrl, continue by crawling the pageUrl.");
-					return false;	// It was not handled.
-				}
+				logger.error("Could not retrieve the metaDocUrl, continue by crawling the pageUrl.");
+				return false;
 			}
 
 			if ( metaDocUrl.contains("{{") )	// Dynamic link! The only way to handle it is by blocking the "currentPageUrlDomain".
@@ -261,7 +253,29 @@ public class PageCrawler
 			return true;	// It was found and handled. Even if an exception was thrown, we don't want to check any other internalLinks in that page.
 		}
 	}
-	
+
+
+	public static String getMetaDocUrlFromMatcher(Matcher metaDocUrlMatcher)
+	{
+		if ( metaDocUrlMatcher == null ) {
+			logger.error("\"PageCrawler.getMetaDocUrlMatcher()\" received a \"null\" matcher!");
+			return null;
+		}
+
+		//logger.debug("Matched meta-doc-url-line: " + metaDocUrlMatcher.group(0));	// DEBUG!!
+
+		String metaDocUrl = null;
+		try {
+			metaDocUrl = metaDocUrlMatcher.group(1);
+		} catch (Exception e) { logger.error("", e); }
+		if ( metaDocUrl == null )
+			metaDocUrl = metaDocUrlMatcher.group(2);	// Try the other group.
+
+		//logger.debug("MetaDocUrl: " + metaDocUrl);	// DEBUG!
+
+		return metaDocUrl;	// IT MAY BE NULL.. Handling happens in the caller method.
+	}
+
 	
 	public static HashSet<String> retrieveInternalLinks(String urlId, String sourceUrl, String pageUrl, String currentPageDomain, String pageHtml, String pageContentType)
 	{
