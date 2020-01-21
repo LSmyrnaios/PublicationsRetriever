@@ -52,7 +52,7 @@ public class PageCrawler
 			return;
 		}
 		
-		if ( HandleScienceDirect.checkIfAndHandleScienceDirect(urlId, sourceUrl, pageUrl, currentPageDomain, conn) )
+		if ( ScienceDirectUrlsHandler.checkIfAndHandleScienceDirect(urlId, sourceUrl, pageUrl, currentPageDomain, conn) )
 			return;	// We always return, if we have a kindOf-scienceDirect-url. The sourceUrl is already logged inside the called method.
 		
 		String pageHtml = null;

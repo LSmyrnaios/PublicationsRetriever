@@ -16,9 +16,9 @@ import java.util.regex.Pattern;
 /**
  * @author Lampros Smyrnaios
  */
-public class HandleScienceDirect
+public class ScienceDirectUrlsHandler
 {
-	private static final Logger logger = LoggerFactory.getLogger(HandleScienceDirect.class);
+	private static final Logger logger = LoggerFactory.getLogger(ScienceDirectUrlsHandler.class);
 	
 	public static final Pattern SCIENCEDIRECT_FINAL_DOC_URL = Pattern.compile("(?:window.location[\\s]+\\=[\\s]+\\')(.*)(?:\\'\\;)");
 	
@@ -37,10 +37,10 @@ public class HandleScienceDirect
 	{
 		try {
 			if ( pageDomain.equals("linkinghub.elsevier.com") ) {
-				HandleScienceDirect.handleScienceDirectFamilyUrls(urlId, sourceUrl, pageUrl, pageDomain, conn, true);
+				ScienceDirectUrlsHandler.handleScienceDirectFamilyUrls(urlId, sourceUrl, pageUrl, pageDomain, conn, true);
 				return true;
 			} else if ( pageDomain.equals("sciencedirect.com") ) {	// Be-careful if we move-on changing the retrieving of the domain of a url.
-				HandleScienceDirect.handleScienceDirectFamilyUrls(urlId, sourceUrl, pageUrl, pageDomain, conn, false);
+				ScienceDirectUrlsHandler.handleScienceDirectFamilyUrls(urlId, sourceUrl, pageUrl, pageDomain, conn, false);
 				return true;
 			}
 		} catch (FailedToProcessScienceDirectException sdhe) {
@@ -108,29 +108,28 @@ public class HandleScienceDirect
 
 			html = ConnSupportUtils.getHtmlString(conn);	// Take the new html.
 			Matcher finalDocUrlMatcher = SCIENCEDIRECT_FINAL_DOC_URL.matcher(html);
-			if ( finalDocUrlMatcher.find() )
+			if ( !finalDocUrlMatcher.find() )
 			{
-				String finalDocUrl = null;
-				try {
-					finalDocUrl = finalDocUrlMatcher.group(1);
-				} catch (Exception e) {
-					logger.error("", e);
-				}
-				if ( (finalDocUrl == null) || finalDocUrl.isEmpty() ) {
-					logger.error("Could not retrieve the finalDocUrl from a \"sciencedirect.com\" url!");
-					throw new FailedToProcessScienceDirectException();
-				}
-				//logger.debug("FinalDocUrl: " + finalDocUrl);	// DEBUG!
-
-				// Check and/or download the docUrl. These urls are one-time-links, meaning that after a while they will just redirect to their pageUrl.
-				currentConnectedUrl = finalDocUrl;
-				if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, finalDocUrl, pageDomain, false, true) ) {	// We log the docUrl inside this method.
-					logger.warn("LookedUp finalDocUrl: \"" + finalDocUrl + "\" was not an actual docUrl!");
-					throw new FailedToProcessScienceDirectException();
-				}
-			} else {
 				logger.warn("The finalDocLink could not be found!");
 				//logger.debug("HTML-code:\n" + html);	// DEBUG!
+				throw new FailedToProcessScienceDirectException();
+			}
+			String finalDocUrl = null;
+			try {
+				finalDocUrl = finalDocUrlMatcher.group(1);
+			} catch (Exception e) {
+				logger.error("", e);
+			}
+			if ( (finalDocUrl == null) || finalDocUrl.isEmpty() ) {
+				logger.error("Could not retrieve the finalDocUrl from a \"sciencedirect.com\" url!");
+				throw new FailedToProcessScienceDirectException();
+			}
+			//logger.debug("FinalDocUrl: " + finalDocUrl);	// DEBUG!
+
+			// Check and/or download the docUrl. These urls are one-time-links, meaning that after a while they will just redirect to their pageUrl.
+			currentConnectedUrl = finalDocUrl;
+			if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, finalDocUrl, pageDomain, false, true) ) {	// We log the docUrl inside this method.
+				logger.warn("LookedUp finalDocUrl: \"" + finalDocUrl + "\" was not an actual docUrl!");
 				throw new FailedToProcessScienceDirectException();
 			}
 		} catch (FailedToProcessScienceDirectException fthsde) {
