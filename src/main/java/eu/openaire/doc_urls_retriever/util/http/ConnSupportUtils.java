@@ -92,7 +92,7 @@ public class ConnSupportUtils
 			
 			if ( knownDocTypes.contains(plainMimeType) )
 				return true;
-			else if ( plainMimeType.contains("application/octet-stream") || plainMimeType.contains("application/x-octet-stream")
+			else if ( plainMimeType.contains("application/octet-stream")  || plainMimeType.contains("binary/octet-stream") || plainMimeType.contains("application/x-octet-stream")
 					|| plainMimeType.contains("application/save") || plainMimeType.contains("application/force-download")
 					|| plainMimeType.contains("unknown") )
 			{	// TODO - Optimize the performance for this check, probably use a regex.
