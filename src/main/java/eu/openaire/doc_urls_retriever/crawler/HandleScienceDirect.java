@@ -84,7 +84,7 @@ public class HandleScienceDirect
 			// We now have the "sciencedirect.com" url (either from the beginning or after "silent-redirect").
 			
 			String html = ConnSupportUtils.getHtmlString(conn);
-			Matcher metaDocUrlMatcher = PageCrawler.META_DOC_URL.matcher(html);
+			Matcher metaDocUrlMatcher = MetaDocUrlsHandler.META_DOC_URL.matcher(html);
 			if ( !metaDocUrlMatcher.find() )
 			{
 				logger.warn("The metaDocLink could not be found!");	// It's possible if the document only available after paying or if the crawler gets blocked for heavy traffic.
@@ -92,7 +92,7 @@ public class HandleScienceDirect
 				throw new FailedToProcessScienceDirectException();
 			}
 
-			String metaDocUrl = PageCrawler.getMetaDocUrlFromMatcher(metaDocUrlMatcher);
+			String metaDocUrl = MetaDocUrlsHandler.getMetaDocUrlFromMatcher(metaDocUrlMatcher);
 			if ( metaDocUrl == null ) {
 				logger.error("Could not retrieve the metaDocUrl from a \"sciencedirect.com\" url!");
 				throw new FailedToProcessScienceDirectException();
