@@ -47,7 +47,7 @@ public class MetaDocUrlsHandler {
                 return false;
             }
 
-            if ( metaDocUrl.contains("{{") )	// Dynamic link! The only way to handle it is by blocking the "currentPageUrlDomain".
+            if ( metaDocUrl.contains("{{") || metaDocUrl.contains("<?") )	// Dynamic link! The only way to handle it is by blocking the "currentPageUrlDomain".
             {
                 logger.debug("The metaDocUrl is a dynamic-link. Abort the process nd block the domain of the pageUrl.");
                 // Block the domain and return "true" to indicate handled-state.

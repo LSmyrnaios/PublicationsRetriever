@@ -169,8 +169,8 @@ public class HttpConnUtils
 			conn = handleRedirects(urlId, sourceUrl, pageUrl, resourceURL, conn, responceCode, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // Take care of redirects.
 		}
 		else if ( (responceCode < 200) || (responceCode >= 400) ) {	// If we have error codes.
-			ConnSupportUtils.onErrorStatusCode(resourceURL, domainStr, responceCode);
-			throw new RuntimeException();	// This is only thrown if a "DomainBlockedException" is caught.
+			String errorLogMessage = ConnSupportUtils.onErrorStatusCode(resourceURL, domainStr, responceCode);
+			throw new RuntimeException(errorLogMessage);	// This is only thrown if a "DomainBlockedException" is caught.
 		}
 		// Else it's an HTTP 2XX SUCCESS CODE.
 		

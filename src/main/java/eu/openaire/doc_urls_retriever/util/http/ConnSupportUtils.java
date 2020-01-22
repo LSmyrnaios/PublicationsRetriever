@@ -225,15 +225,18 @@ public class ConnSupportUtils
 	 * @throws DomainBlockedException
 	 * @return
 	 */
-	public static void onErrorStatusCode(String urlStr, String domainStr, int errorStatusCode) throws DomainBlockedException
+	public static String onErrorStatusCode(String urlStr, String domainStr, int errorStatusCode) throws DomainBlockedException
 	{
 		if ( (errorStatusCode == 500) && domainStr.contains("handle.net") ) {    // Don't take the 500 of "handle.net", into consideration, it returns many times 500, where it should return 404.. so treat it like a 404.
 			//logger.warn("\"handle.com\" returned 500 where it should return 404.. so we will treat it like a 404.");    // See an example: "https://hdl.handle.net/10655/10123".
 			errorStatusCode = 404;	// Set it to 404 to be handled as such, if any rule for 404s is to be added later.
 		}
-		
+
+		String errorLogMessage;
+
 		if ( (errorStatusCode >= 400) && (errorStatusCode <= 499) ) {	// Client Error.
-			logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Client Error.");
+
+			errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Client Error.";
 			if ( errorStatusCode == 403 ) {
 				if ( domainStr == null ) {
 					if ( (domainStr = UrlUtils.getDomainStr(urlStr)) != null )
@@ -246,7 +249,7 @@ public class ConnSupportUtils
 			domainStr = UrlUtils.getDomainStr(urlStr);
 			
 			if ( (errorStatusCode >= 500) && (errorStatusCode <= 599) ) {	// Server Error.
-				logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Server Error.");
+				errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Server Error.";
 				if ( domainStr != null )
 					on5XXerrorCode(domainStr);
 			} else {	// Unknown Error (including non-handled: 1XX and the weird one: 999 (used for example on Twitter), responceCodes).
@@ -257,6 +260,8 @@ public class ConnSupportUtils
 				throw new DomainBlockedException();	// Throw this even if there was an error preventing the domain from getting blocked.
 			}
 		}
+
+		return errorLogMessage;
 	}
 	
 	

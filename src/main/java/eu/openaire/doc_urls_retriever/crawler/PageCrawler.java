@@ -246,7 +246,7 @@ public class PageCrawler
 			if ( internalLink.isEmpty() )
 				continue;
 
-			if ( internalLink.contains("{{") )	// If "{{" is found inside any link, then all the links of this domain are dynamic, so throw an exception for the calling method to catch and log the pageUrl and return immediately.
+			if ( internalLink.contains("{{") || internalLink.contains("<?") )	// If "{{" or "<?" is found inside any link, then all the links of this domain are dynamic, so throw an exception for the calling method to catch and log the pageUrl and return immediately.
 				throw new DynamicInternalLinksFoundException();
 
 			if ( internalLink.equals("/")
