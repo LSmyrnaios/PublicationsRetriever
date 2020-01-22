@@ -33,7 +33,9 @@ public class ConnSupportUtils
 	private static final StringBuilder strB = new StringBuilder(30000);	// We give an initial size to optimize performance.
 	
 	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("(?:\\((?:')?)?([\\w]+/[\\w+\\-.]+).*");
-	
+
+	public static final Pattern POSSIBLE_DOC_MIME_TYPE = Pattern.compile("(?:(?:application|binary)/(?:(?:x-)?octet-stream|save|force-download))|unknown");	// We don't take it for granted.. if a match is found, then we check for the "pdf" keyword in the url.
+
 	public static final HashMap<String, Integer> timesDomainsReturned5XX = new HashMap<String, Integer>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
 	public static final HashMap<String, Integer> timesDomainsHadTimeoutEx = new HashMap<String, Integer>();
 	public static final HashMap<String, Integer> timesPathsReturned403 = new HashMap<String, Integer>();
@@ -45,10 +47,10 @@ public class ConnSupportUtils
 	private static final int timesToHaveTimeoutExBeforeBlocked = 25;
 	private static final int numberOf403BlockedPathsBeforeBlocked = 5;
 	
-	public static final HashSet<String> knownDocTypes = new HashSet<String>();
+	public static final HashSet<String> knownDocMimeTypes = new HashSet<String>();
 	static {
-		logger.debug("Setting knownDocTypes. Currently supporting only the \".pdf\" type.");
-		knownDocTypes.add("application/pdf");	// For the moment we support only the pdf docType.
+		logger.debug("Setting up the official document mime types. Currently there is support only for pdf documents.");
+		knownDocMimeTypes.add("application/pdf");	// For the moment we support only the pdf docType.
 	}
 	
 	
@@ -80,22 +82,16 @@ public class ConnSupportUtils
 					|| mimeType.startsWith("(") )	// See: "https://www.mamsie.bbk.ac.uk/articles/10.16995/sim.138/galley/134/download/" -> "Content-Type: ('application/pdf', none)"
 			{
 				plainMimeType = getPlainMimeType(mimeType);
-				
 				if ( plainMimeType == null ) {    // If there was any error removing the charset, still try to save any docMimeType (currently pdf-only).
 					logger.warn("Url with problematic mimeType (" + mimeType + ") was: " + urlStr);
 					return	urlStr.toLowerCase().contains("pdf");
 				}
 			}
 			
-			//logger.debug("Url: " + urlStr);	// DEBUG!
-			//logger.debug("PlainMimeType: " + plainMimeType);	// DEBUG!
-			
-			if ( knownDocTypes.contains(plainMimeType) )
+			if ( knownDocMimeTypes.contains(plainMimeType) )
 				return true;
-			else if ( plainMimeType.contains("application/octet-stream")  || plainMimeType.contains("binary/octet-stream") || plainMimeType.contains("application/x-octet-stream")
-					|| plainMimeType.contains("application/save") || plainMimeType.contains("application/force-download")
-					|| plainMimeType.contains("unknown") )
-			{	// TODO - Optimize the performance for this check, probably use a regex.
+			else if ( POSSIBLE_DOC_MIME_TYPE.matcher(plainMimeType).matches() )
+			{
 				contentDisposition = conn.getHeaderField("Content-Disposition");
 				if ( (contentDisposition != null) && !contentDisposition.equals("attachment") )
 					return	contentDisposition.contains("pdf");
@@ -227,6 +223,7 @@ public class ConnSupportUtils
 	 * @param domainStr
 	 * @param errorStatusCode
 	 * @throws DomainBlockedException
+	 * @return
 	 */
 	public static void onErrorStatusCode(String urlStr, String domainStr, int errorStatusCode) throws DomainBlockedException
 	{
