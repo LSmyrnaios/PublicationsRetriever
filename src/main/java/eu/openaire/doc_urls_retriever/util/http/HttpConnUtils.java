@@ -100,7 +100,7 @@ public class HttpConnUtils
 			//logger.debug("MimeType: " + mimeType);	// DEBUG!
 			
 			if ( ConnSupportUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition, conn) ) {
-				logger.info("docUrl found: <" + finalUrlStr + ">");
+				logger.info("docUrl found: < " + finalUrlStr + " >");
 				String fullPathFileName = "";
 				if ( FileUtils.shouldDownloadDocFiles ) {
 					try {
@@ -393,7 +393,7 @@ public class HttpConnUtils
 				//ConnSupportUtils.printRedirectDebugInfo(conn, location, targetUrl, curRedirectsNum);	// throws IOException
 				
 				if ( UrlUtils.docUrlsWithKeys.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
-					logger.info("re-crossed docUrl found: <" + targetUrl + ">");
+					logger.info("re-crossed docUrl found: < " + targetUrl + " >");
 					if ( FileUtils.shouldDownloadDocFiles )
 						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(targetUrl), domainStr);
 					else

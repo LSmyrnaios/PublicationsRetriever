@@ -96,7 +96,7 @@ public class PageCrawler
 			}
 			
             if ( UrlUtils.docUrlsWithKeys.containsKey(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
-				logger.info("re-crossed docUrl found: <" + urlToCheck + ">");
+				logger.info("re-crossed docUrl found: < " + urlToCheck + " >");
 				if ( FileUtils.shouldDownloadDocFiles )
 					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(urlToCheck), currentPageDomain);
 				else

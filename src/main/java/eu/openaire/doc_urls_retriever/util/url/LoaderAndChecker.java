@@ -149,7 +149,7 @@ public class LoaderAndChecker
 					}	// The "retrievedUrl" might have changed (inside "handleUrlChecks()").
 					
 					if ( UrlUtils.docUrlsWithKeys.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
-						logger.info("re-crossed docUrl found: <" + retrievedUrl + ">");
+						logger.info("re-crossed docUrl found: < " + retrievedUrl + " >");
 						if ( FileUtils.shouldDownloadDocFiles )
 							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(retrievedUrl), null);
 						else
@@ -317,10 +317,9 @@ public class LoaderAndChecker
 	{
 		for ( String retrievedUrl : retrievedUrlsOfThisId )
 		{
-			if ( !retrievedUrl.equals(urlToCheck) && !loggedUrlsOfThisId.contains(retrievedUrl) ) {
+			if ( !retrievedUrl.equals(urlToCheck) && !loggedUrlsOfThisId.contains(retrievedUrl) )
 				UrlUtils.logQuadruple(retrievedId, retrievedUrl, null, "unreachable",
 						"Skipped in LoaderAndChecker, as a better url was selected for id: " + retrievedId, null);
-			}
 		}
 	}
 	

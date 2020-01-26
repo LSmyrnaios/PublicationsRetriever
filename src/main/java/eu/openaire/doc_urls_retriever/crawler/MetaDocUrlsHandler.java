@@ -39,12 +39,12 @@ public class MetaDocUrlsHandler {
         try {
             Matcher metaDocUrlMatcher = META_DOC_URL.matcher(pageHtml);
             if ( !metaDocUrlMatcher.find() )
-                return false;    // It was not found and so it was not handled.
+                return false;    // It was not found and so it was not handled. We don't log the sourceUrl, since it will be handled later.
 
             String metaDocUrl = getMetaDocUrlFromMatcher(metaDocUrlMatcher);
             if ( metaDocUrl == null ) {
                 logger.error("Could not retrieve the metaDocUrl, continue by crawling the pageUrl.");
-                return false;
+                return false;   // We don't log the sourceUrl, since it will be handled later.
             }
 
             if ( metaDocUrl.contains("{{") || metaDocUrl.contains("<?") )	// Dynamic link! The only way to handle it is by blocking the "currentPageUrlDomain".
@@ -52,6 +52,7 @@ public class MetaDocUrlsHandler {
                 logger.debug("The metaDocUrl is a dynamic-link. Abort the process nd block the domain of the pageUrl.");
                 // Block the domain and return "true" to indicate handled-state.
                 HttpConnUtils.blacklistedDomains.add(currentPageDomain);
+                UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was a dynamic-link.", null);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
                 return true;
             }
 
