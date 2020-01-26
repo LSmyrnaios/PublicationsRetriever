@@ -2,6 +2,7 @@ package eu.openaire.doc_urls_retriever.crawler;
 
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
+import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ public class MetaDocUrlsHandler {
     private static String metaContent = "content=\"([http][\\w/.,\\-_%&;:~()\\[\\]?=]+)\"";
     public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta(?:[\\s]*" + metaName + "[\\s]*" + metaContent + ")|(?:[\\s]*" + metaContent + "[\\s]*" + metaName + ")(?:[\\s]*(?:/)?>))");
 
+    public static final Pattern COMMON_UNSUPPORTED_META_DOC_URL_EXTENSIONS = Pattern.compile("\".+\\.(?:zip|rar|apk|jpg)(?:\\?.+)?$");
 
     /**
      * This method takes in the "pageHtml" of an already-connected url and checks if there is a metaDocUrl inside.
@@ -54,6 +56,16 @@ public class MetaDocUrlsHandler {
                 HttpConnUtils.blacklistedDomains.add(currentPageDomain);
                 UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was a dynamic-link.", null);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
                 return true;
+            }
+
+            String lowerCaseMetaDocUrl = metaDocUrl.toLowerCase();
+
+            if ( UrlTypeChecker.CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseMetaDocUrl).matches()
+                || UrlTypeChecker.PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseMetaDocUrl).matches()
+                || COMMON_UNSUPPORTED_META_DOC_URL_EXTENSIONS.matcher(lowerCaseMetaDocUrl).matches() ) {
+                logger.debug("The retrieved metaDocUrl ( " + metaDocUrl + " ) is pointing to an unsupported file.");
+                UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was unsupported.", null);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
+                return true;    // It was found and handled.
             }
 
             if ( (metaDocUrl = URLCanonicalizer.getCanonicalURL(metaDocUrl, null, StandardCharsets.UTF_8)) == null ) {
