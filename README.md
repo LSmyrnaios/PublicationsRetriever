@@ -1,10 +1,10 @@
 # DocUrlsRetriever    [![Build Status](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever.svg?branch=master)](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever)
 
-A Java-program which finds the Document Urls from the given Publication-Web-Pages and if wanted, it can also download the docFiles.<br/>
+A Java-program which retrieves the Document Urls from the given Publication-Web-Pages and if wanted, it can also download the full-texts.<br/>
 It is being developed for the European organization: [**OpenAIRE**](https://www.openaire.eu/).<br/>
 
 The **DocUrlsRetriever** takes as input the PubPages with their IDs -in JSON format- and gives an output -also in JSON format,
-which contains the IDs, their PubPages with their DocUrls and a comment.<br/>
+which contains the IDs, the PubPages, the DocUrls and a comment.<br/>
 The "comment" can have the following values:
 - an empty string, if the docUrl is retrieved and the user specified that the docFiles will not be downloaded
 - the DocFileFullPath, if we have chosen to download the DocFiles
@@ -13,7 +13,9 @@ The "comment" can have the following values:
 
 PubPage: *the web page with the publication's information.*<br/> 
 DocUrl: *the url of the fulltext-document-file.*<br/>
+Full-text: *the document containing all the text of a publication..*<br/>
 DocFileFullPath: *the full-storage-path of the fulltext-document-file.*<br/>
+ErrorCause: *the cause of the failure of retrieving the docUrl or the docFile.*<br/>
 
 Sample JSON-input:
 ```
@@ -25,15 +27,15 @@ Sample JSON-output (with downloading of the DocFile):
 ```
 <br/>
 
-In case no IDs are available to be used in the input, the user should provide a "*.csv*"/"*.tsv*" file containing just urls (one url per line)
-and specify that wishes to process a data-set with no IDs, by changing the "**LoaderAndChecker.useIdUrlPairs**"-variable to "*false*".
+In case no IDs are available to be used in the input, the user should provide a file containing just urls (one url per line)
+and specify that wishes to process a data-set with no IDs, by changing the "**util.url.LoaderAndChecker.useIdUrlPairs**"-variable to "*false*".
 <br/>
 <br/>
 
 **Disclaimers**:
-- This program was designed to be used with distributed execution, thus it was developed as a single-thread program. (You may give a different starting-number for the docFiles in each instance.)<br/>
+- This program was designed to be used with distributed execution on multiple single-core Virtual Machines, thus it was developed as a single-thread program. If you also want to run it with distribution, you may give a different starting-number for the docFiles in each instance (see the run-instructions below).<br/>
 - Keep in mind that it's best to run the program for a small set of urls (a few hundred maybe) at first,
-    in order to see how it's operating and which parameters work best for you (url-timeouts, domainsBlocking ect.).
+    in order to see which parameters work best for you (url-timeouts, domainsBlocking ect.).
 - Please note that **DocUrlsRetriever** is currently in **beta**, so you may encounter some issues.<br/>
 <br/>
 
@@ -90,5 +92,5 @@ The above script will run the following commands:
 <br/>
 
 ## Customizations
-- You can set **File-related** customizations in ***FileUtils.java***.
-- You can set **Connection-related** customizations in ***HttpConnUtils.java*** and ***ConnSupportUtils.java***.
+- You can set **File-related** customizations in ***util.file.FileUtils.java***.
+- You can set **Connection-related** customizations in ***util.url.HttpConnUtils.java*** and ***util.url.ConnSupportUtils.java***.
