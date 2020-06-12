@@ -2,6 +2,8 @@
 
 A Java-program which retrieves the Document Urls from the given Publication-Web-Pages and if wanted, it can also download the full-texts.<br/>
 It is being developed for the European organization: [**OpenAIRE**](https://www.openaire.eu/).<br/>
+Afterwards, these full-text documents are mined, in order to enrich a much more complete set of OpenAIRE publications with inference links.<br/>
+
 
 The **DocUrlsRetriever** takes as input the PubPages with their IDs -in JSON format- and gives an output -also in JSON format,
 which contains the IDs, the PubPages, the DocUrls and a comment.<br/>
@@ -55,7 +57,7 @@ arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br/>
 - Inside ***pom.xml***, change the **mainClass** of **maven-shade-plugin** from "**DocUrlsRetriever**" to "**TestNonStandardInputOutput**".
 - Inside ***src/test/.../TestNonStandardInputOutput.java***, give the wanted testInput and testOutput files.<br/>
 - If you want to provide a .tsv or a .csv file with a title in its column,
-    you can specify it in the **FileUtils.skipFirstRow**-variable inside **FileUtils.java**, in order for the first-row (headers) to be ignored.
+    you can specify it in the **util.file.FileUtils.skipFirstRow**-variable, in order for the first-row (headers) to be ignored.
 - If you want to see the logging-messages in the *Console*, open the ***resources/logback.xml***
     and change the ***appender-ref***, from ***File*** to ***Console***.<br/>
 - Run ``mvn install`` to create the new ***JAR*** file.<br/>
