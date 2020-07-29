@@ -176,8 +176,8 @@ public class DocUrlsRetriever
 				+ UrlTypeChecker.pagesWithLargerCrawlingDepth + UrlTypeChecker.pangaeaUrls + UrlTypeChecker.urlsWithUnwantedForm + LoaderAndChecker.connProblematicUrls + UrlTypeChecker.pagesNotProvidingDocUrls + UrlTypeChecker.longToRespondUrls + LoaderAndChecker.inputDuplicatesNum;
 		logger.info("From the " + inputCheckedUrlNum + " urls checked from the input, the " + problematicUrlsNum + " of them (about " + problematicUrlsNum * (float)100 / inputCheckedUrlNum + "%) were problematic (sum of all of the cases that appear in debug-mode).");
 		
-		logger.debug("The number of domains blocked due to an \"SSL Exception\" was: " + HttpConnUtils.domainsBlockedDueToSSLException);
-		
+		logger.debug("The number of domains blocked due to an \"SSL Exception\" was: " + HttpConnUtils.numOfDomainsBlockedDueToSSLException);
+
 		calculateAndPrintElapsedTime(startTime, finishTime);
 	}
 	
