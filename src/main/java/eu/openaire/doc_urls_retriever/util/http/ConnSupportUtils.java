@@ -34,7 +34,7 @@ public class ConnSupportUtils
 	
 	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("(?:\\((?:')?)?([\\w]+/[\\w+\\-.]+).*");
 
-	public static final Pattern POSSIBLE_DOC_MIME_TYPE = Pattern.compile("(?:(?:application|binary)/(?:(?:x-)?octet-stream|save|force-download))|unknown");	// We don't take it for granted.. if a match is found, then we check for the "pdf" keyword in the url.
+	public static final Pattern POSSIBLE_DOC_MIME_TYPE = Pattern.compile("(?:(?:application|binary)/(?:(?:x-)?octet-stream|save|force-download))|unknown");	// We don't take it for granted.. if a match is found, then we check for the "pdf" keyword in the "contentDisposition" (if it exists) or in the url.
 
 	public static final HashMap<String, Integer> timesDomainsReturned5XX = new HashMap<String, Integer>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
 	public static final HashMap<String, Integer> timesDomainsHadTimeoutEx = new HashMap<String, Integer>();
@@ -297,7 +297,7 @@ public class ConnSupportUtils
 	
 	public static boolean countAndBlockPathAfterTimes(SetMultimap<String, String> domainsWithPaths, HashMap<String, Integer> pathsWithTimes, String pathStr, String domainStr, int timesBeforeBlocked)
 	{
-		if ( countAndGetTimes(pathsWithTimes, pathStr) > timesBeforeBlocked ) {
+		if ( countInsertAndGetTimes(pathsWithTimes, pathStr) > timesBeforeBlocked ) {
 			domainsWithPaths.put(domainStr, pathStr);	// Add this path in the list of blocked paths of this domain.
 			pathsWithTimes.remove(pathStr);	// No need to keep the count for a blocked path.
 			return true;
@@ -361,7 +361,7 @@ public class ConnSupportUtils
 	 */
 	public static boolean countAndBlockDomainAfterTimes(HashSet<String> blackList, HashMap<String, Integer> domainsWithTimes, String domainStr, int timesBeforeBlock)
 	{
-		if ( countAndGetTimes(domainsWithTimes, domainStr) > timesBeforeBlock ) {
+		if ( countInsertAndGetTimes(domainsWithTimes, domainStr) > timesBeforeBlock ) {
 			blackList.add(domainStr);    // Block this domain.
 			domainsWithTimes.remove(domainStr);	// Remove counting-data.
 			return true;	// This domain was blocked.
@@ -370,7 +370,7 @@ public class ConnSupportUtils
 	}
 	
 	
-	public static int countAndGetTimes(HashMap<String, Integer> itemWithTimes, String itemToCount)
+	public static int countInsertAndGetTimes(HashMap<String, Integer> itemWithTimes, String itemToCount)
 	{
 		int curTimes = 1;
 		if ( itemWithTimes.containsKey(itemToCount) )
@@ -396,16 +396,13 @@ public class ConnSupportUtils
 	
 	public static String getHtmlString(HttpURLConnection conn) throws Exception
 	{
-		try {
-			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-			
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream())))	// Try-with-resources
+		{
 			String inputLine;
 			while ( (inputLine = br.readLine()) != null ) {
 				//logger.debug(inputLine);	// DEBUG!
 				strB.append(inputLine);
 			}
-			br.close();
-			
 			return strB.toString();
 			
 		} catch (Exception e) {

@@ -31,7 +31,7 @@ public class HttpConnUtils
 	public static final HashMap<String, Integer> timesDomainsHadInputNotBeingDocNorPage = new HashMap<String, Integer>();
 	public static final HashMap<String, Integer> timesDomainsReturnedNoType = new HashMap<String, Integer>();	// Domain which returned no content-type not content disposition in their responce and amount of times they did.
 	
-	public static int domainsBlockedDueToSSLException = 0;
+	public static int numOfDomainsBlockedDueToSSLException = 0;
 	
 	public static String lastConnectedHost = "";
 	public static final int politenessDelay = 0;	// Time to wait before connecting to the same host again.
@@ -298,7 +298,7 @@ public class HttpConnUtils
 			// TODO - For "SSLProtocolException", see more about it's possible handling here: https://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0/14884941#14884941
 			// TODO - Maybe we should make another list where only urls in https, from these domains, would be blocked.
 			blacklistedDomains.add(domainStr);
-			domainsBlockedDueToSSLException ++;
+			numOfDomainsBlockedDueToSSLException++;
 			throw new DomainBlockedException();
 		} catch (SocketException se) {
 			if ( conn != null )

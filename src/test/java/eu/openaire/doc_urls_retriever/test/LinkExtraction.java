@@ -41,8 +41,9 @@ public class LinkExtraction {
 	//static void setExampleUrl() {exampleUrl = "http://epress.lib.uts.edu.au/journals/index.php/mcs/article/view/5655";}
 	//static void setExampleUrl() {exampleUrl = "https://halshs.archives-ouvertes.fr/halshs-01698574";}
 	//static void setExampleUrl() {exampleUrl = "https://doors.doshisha.ac.jp/duar/repository/ir/127/?lang=0";}
-	static void setExampleUrl() {exampleUrl = "https://www.sciencedirect.com/science/article/pii/S0042682297988747?via%3Dihub";}
-	
+	//static void setExampleUrl() {exampleUrl = "https://www.sciencedirect.com/science/article/pii/S0042682297988747?via%3Dihub";}
+	static void setExampleUrl() {exampleUrl = "https://ieeexplore.ieee.org/document/8998177";}
+
 	
 	//@Disabled
 	@Test
@@ -109,8 +110,11 @@ public class LinkExtraction {
 	{
 		try {
 			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl), true, false);
-			
-			ArrayList<String> links = new ArrayList<>(PageCrawler.extractInternalLinksFromHtml(getHtmlString(conn)));
+
+			String html = getHtmlString(conn);
+			//logger.debug("HTML:\n" + html);
+
+			ArrayList<String> links = new ArrayList<>(PageCrawler.extractInternalLinksFromHtml(html));
 			
 			logger.info("The list of all the internalLinks of \"" + exampleUrl + "\" is:");
 			for ( String link: links )

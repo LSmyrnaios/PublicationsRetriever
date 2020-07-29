@@ -20,9 +20,9 @@ public class UrlTypeChecker
 	private static final String mediaExtensionsPattern = "ico|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov";
 
 	public static final Pattern URL_DIRECTORY_FILTER =
-			Pattern.compile(".*/(?:(search|discover|profile|user)(?!.+(?:file|pdf))|(?:ldap-)?login|auth\\.|authentication\\.|ac(?:c)?ess|join|subscr|register|submit|(?:post|send|shop|view)/|watch|browse|import|bookmark|announcement|rss|feed|about|faq|wiki|news|events|cart|support|feedback|sitemap|htmlmap|documentation|help|contact|license|disclaimer|copyright|polic(?:y|ies)|privacy|terms|law"
+			Pattern.compile(".*/(?:(search|discover|profile|user)(?!.+(?:file|pdf))|(?:ldap-)?login|auth\\.|authentication\\.|ac(?:c)?ess(?!\\.)|join|subscr|register|submit|(?:post|send|shop|view)/|watch|browse|import|bookmark|announcement|rss|feed|about|faq|wiki|news|events|cart|support|feedback|(?:site|html)map|documentation|help|contact|license|disclaimer|copyright|polic(?:y|ies)|privacy|terms|law"
 					+ "|(?:my|your)?account|fund|aut(?:h)?or|editor|citation|review|external|facets|statistics|application|selfarchive|permission|ethic|conta(?:c)?t|survey|wallet|contribute|deposit|donate|template|logo|image|photo|advertiser|product|people|(?:the)?press"
-					+ "|error|(?:mis|ab)use|gateway|sorryserver|cookieabsent|notfound|404\\." + htExtensionsPattern + ").*");
+					+ "|error|(?:mis|ab)use|\\?denied|gateway|sorryserver|cookieabsent|notfound|404\\." + htExtensionsPattern + ").*");
 	// We check them as a directory to avoid discarding publications's urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
 	
 	public static final Pattern CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER = Pattern.compile(".+\\.(?:doc|docx|ppt|pptx|ps|odt|djvu|rtf)(?:\\?.+)?$");	// Doc-extensions which are currently unsupported. Some pageUrls give also .zip files, but that's another story.

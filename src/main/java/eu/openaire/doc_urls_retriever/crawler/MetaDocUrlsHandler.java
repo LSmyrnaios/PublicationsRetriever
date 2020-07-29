@@ -18,7 +18,7 @@ public class MetaDocUrlsHandler {
     // Order-independent META_DOC_URL-regex.
     // (?:<meta(?:[\\s]*name=\"(?:citation_pdf_url|eprints.document_url)\"[\\s]*content=\"([http][\\w/.,\\-_%&;:~()\\[\\]?=]+)(?:\"))|(?:[\\s]*content=\"([http][\\w/.,\\-_%&;:~()\\[\\]?=]+)(?:\")[\\s]*name=\"(?:citation_pdf_url|eprints.document_url)\"))(?:[\\s]*(?:/)?>)
     private static String metaName = "name=\"(?:citation_pdf_url|eprints.document_url)\"";
-    private static String metaContent = "content=\"([http][\\w/.,\\-_%&;:~()\\[\\]?=]+)\"";
+    private static String metaContent = "content=\"(http[\\w/.,\\-_%&;:~()\\[\\]?=]+)\"";
     public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta(?:[\\s]*" + metaName + "[\\s]*" + metaContent + ")|(?:[\\s]*" + metaContent + "[\\s]*" + metaName + ")(?:[\\s]*(?:/)?>))");
 
     public static final Pattern COMMON_UNSUPPORTED_META_DOC_URL_EXTENSIONS = Pattern.compile("\".+\\.(?:zip|rar|apk|jpg)(?:\\?.+)?$");
