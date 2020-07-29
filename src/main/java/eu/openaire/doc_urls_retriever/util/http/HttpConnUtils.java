@@ -227,7 +227,7 @@ public class HttpConnUtils
 				conn.setReadTimeout(maxConnHEADWaitingTime);
 			}
 			
-			if ( (politenessDelay > 0) && domainStr.contains(lastConnectedHost) )	// If this is the last-visited domain, sleep a bit before re-connecting to it.
+			if ( (politenessDelay > 0) && resourceURL.contains(lastConnectedHost) )	// If this is the last-visited domain, sleep a bit before re-connecting to it.
 				Thread.sleep(politenessDelay);	// Avoid server-overloading for the same host.
 			
 			conn.connect();	// Else, first connect and if there is no error, log this domain as the last one.
@@ -388,7 +388,7 @@ public class HttpConnUtils
 				
 				String targetUrl = ConnSupportUtils.getFullyFormedUrl(null, location, conn.getURL());
 				if ( targetUrl == null )
-					throw new RuntimeException();
+					throw new RuntimeException("Could not create target url for resourceUrl: " + conn.getURL().toString() + " having location: " + location);
 				
 				//ConnSupportUtils.printRedirectDebugInfo(conn, location, targetUrl, curRedirectsNum);	// throws IOException
 				
@@ -400,25 +400,26 @@ public class HttpConnUtils
 						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, "", domainStr);
 					throw new AlreadyFoundDocUrlException();
 				}
-				/*else if ( calledForPageUrl && targetUrl.contains("elsevier.com") ) {	// Avoid pageUrls redirecting to "elsevier.com" (mostly "doi.org"-urls).
+				/*else if ( calledForPageUrl && (targetUrl.contains("elsevier.com") && !targetUrl.contains("linkinghub")) ) {	// Avoid pageUrls redirecting to "elsevier.com" (mostly "doi.org"-urls).
 					logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + targetUrl + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
 					throw new RuntimeException();
 				}*/
-				
-				if ( !targetUrl.contains(HttpConnUtils.lastConnectedHost) )    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
+
+				if ( !targetUrl.contains(HttpConnUtils.lastConnectedHost) ) {    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
+					conn.disconnect();	// Close the socket with that server.
 					if ( (domainStr = UrlUtils.getDomainStr(targetUrl)) == null )
 						throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
+				}
 
 				if ( (targetUrl = URLCanonicalizer.getCanonicalURL(targetUrl, null, StandardCharsets.UTF_8)) == null ) {
 					logger.warn("Could not cannonicalize url: " + targetUrl);
 					throw new RuntimeException();	// Don't let it continue.
 				}
 
-				conn.disconnect();
 				conn = HttpConnUtils.openHttpConnection(targetUrl, domainStr, calledForPageUrl, calledForPossibleDocUrl);
-				
+
 				responceCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
-				
+
 				if ( (responceCode >= 200) && (responceCode <= 299) ) {
 					//ConnSupportUtils.printFinalRedirectDataForWantedUrlType(initialUrl, conn.getURL().toString(), null, curRedirectsNum);	// DEBUG!
 					return conn;	// It's an "HTTP SUCCESS", return immediately.
