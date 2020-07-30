@@ -26,6 +26,10 @@ public class HttpConnUtils
 	private static final Logger logger = LoggerFactory.getLogger(HttpConnUtils.class);
 	
 	public static final HashSet<String> domainsWithUnsupportedHeadMethod = new HashSet<String>();
+	static {	// Add domains which were manually observed to act strangely and cannot be detected automatically at run-time.
+		domainsWithUnsupportedHeadMethod.add("os.zhdk.cloud.switch.ch");	// This domain returns "HTTP-403-ERROR" when it does not support the "HEAD" method, at least when checking an actual file.
+	}
+
 	public static final HashSet<String> blacklistedDomains = new HashSet<String>();	// Domains with which we don't want to connect again.
 	
 	public static final HashMap<String, Integer> timesDomainsHadInputNotBeingDocNorPage = new HashMap<String, Integer>();
@@ -214,7 +218,7 @@ public class HttpConnUtils
 			
 			conn = (HttpURLConnection) url.openConnection();
 			
-			conn.setInstanceFollowRedirects(false);	// We manage redirects on our own, in order to control redirectsNum, as well as to avoid redirecting to unwantedUrls.
+			conn.setInstanceFollowRedirects(false);	// We manage redirects on our own, in order to control redirectsNum, avoid redirecting to unwantedUrls and handling errors.
 			
 			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// Either for just-webPages or for docUrls, we want to use "GET" in order to download the content.
 				|| (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles)

@@ -112,7 +112,7 @@ public class FileUtils
 				}
 			} catch (SecurityException se) {
 				logger.error(se.getMessage(), se);
-				logger.warn("There was an error creating the docFiles-storageDir! Continuing without downloading the docFiles, just create the jsonOutput with the docUrls.");
+				logger.warn("There was an error creating the docFiles-storageDir! Continuing without downloading the docFiles, while creating the jsonOutput with the docUrls.");
 				FileUtils.shouldDownloadDocFiles = false;
 			}
 		}

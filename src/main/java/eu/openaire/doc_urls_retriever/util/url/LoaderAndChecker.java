@@ -181,7 +181,7 @@ public class LoaderAndChecker
 				
 				if ( goToNextId ) {	// If we found an already-retrieved docUrl.
 					if ( !isSingleIdUrlPair )	// Don't forget to write the valid but not-to-be-connected urls to the outputFile.
-						handleLogOfRemainingUrls(urlToCheck, retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId);
+						handleLogOfRemainingUrls(null, retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId);
 					continue;
 				}
 
@@ -310,7 +310,7 @@ public class LoaderAndChecker
 	 * This method logs the remaining retrievedUrls which were not checked & connected.
 	 * The method loadAndCheckIdUrlPairs() pics just one -the best- url from a group of urls belonging to a specific ID.
 	 * The rest urls will either get rejected as problematic -and so get logged- or get skipped and be left non-logged.
-	 * @param urlToCheck
+	 * @param urlToCheck : It may be null, but that's ok, the "equals()"-comparison will return "false".
 	 * @param retrievedId
 	 * @param retrievedUrlsOfThisId
 	 * @param loggedUrlsOfThisId

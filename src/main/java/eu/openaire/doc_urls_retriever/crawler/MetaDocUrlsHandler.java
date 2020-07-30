@@ -17,9 +17,9 @@ public class MetaDocUrlsHandler {
     private static final Logger logger = LoggerFactory.getLogger(MetaDocUrlsHandler.class);
 
     // Order-independent META_DOC_URL-regex.
-    // (?:<meta(?:[\\s]*name=\"(?:citation_pdf_url|eprints.document_url)\"[\\s]*content=\"([http][\\w/.,\\-_%&;:~()\\[\\]?=]+)(?:\"))|(?:[\\s]*content=\"([http][\\w/.,\\-_%&;:~()\\[\\]?=]+)(?:\")[\\s]*name=\"(?:citation_pdf_url|eprints.document_url)\"))(?:[\\s]*(?:/)?>)
-    private static String metaName = "name=\"(?:citation_pdf_url|eprints.document_url)\"";
-    private static String metaContent = "content=\"(http[\\w/.,\\-_%&;:~()\\[\\]?=]+)\"";
+    // (?:<meta(?:[\\s]*name=\"(?:citation_pdf_url|eprints.document_url)\"[\\s]*content=\"(http[\\w/.,\\-_%&;:~()\\[\\]?=]+)(?:\"))|(?:[\\s]*content=\"(http[\\w/.,\\-_%&;:~()\\[\\]?=]+)(?:\")[\\s]*name=\"(?:citation_pdf_url|eprints.document_url)\"))(?:[\\s]*(?:/)?>)
+    private static final String metaName = "name=\"(?:citation_pdf_url|eprints.document_url)\"";
+    private static final String metaContent = "content=\"(http[\\w/.,\\-_%&;:~()\\[\\]?=]+)\"";
     public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta(?:[\\s]*" + metaName + "[\\s]*" + metaContent + ")|(?:[\\s]*" + metaContent + "[\\s]*" + metaName + ")(?:[\\s]*(?:/)?>))");
 
     public static final Pattern COMMON_UNSUPPORTED_META_DOC_URL_EXTENSIONS = Pattern.compile("\".+\\.(?:zip|rar|apk|jpg)(?:\\?.+)?$");
@@ -51,7 +51,7 @@ public class MetaDocUrlsHandler {
             }
             //logger.debug("MetaDocUrl: " + metaDocUrl);  // DEBUG!
 
-            if ( metaDocUrl.contains("{{") || metaDocUrl.contains("<?") )	// Dynamic link! The only way to handle it is by blocking the "currentPageUrlDomain".
+            if ( metaDocUrl.contains("{{") || metaDocUrl.contains("<?") )   // Dynamic link! The only way to handle it is by blocking the "currentPageUrlDomain".
             {
                 logger.debug("The metaDocUrl is a dynamic-link. Abort the process nd block the domain of the pageUrl.");
                 // Block the domain and return "true" to indicate handled-state.
@@ -64,7 +64,8 @@ public class MetaDocUrlsHandler {
 
             if ( UrlTypeChecker.CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseMetaDocUrl).matches()
                 || UrlTypeChecker.PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseMetaDocUrl).matches()
-                || COMMON_UNSUPPORTED_META_DOC_URL_EXTENSIONS.matcher(lowerCaseMetaDocUrl).matches() ) {
+                || COMMON_UNSUPPORTED_META_DOC_URL_EXTENSIONS.matcher(lowerCaseMetaDocUrl).matches() )
+            {
                 logger.debug("The retrieved metaDocUrl ( " + metaDocUrl + " ) is pointing to an unsupported file.");
                 UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was unsupported.", null);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
                 return true;    // It was found and handled.
@@ -81,7 +82,7 @@ public class MetaDocUrlsHandler {
                 logger.warn("The retrieved metaDocUrl was not a docUrl (unexpected): " + metaDocUrl);
                 UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'MetaDocUrlsHandler.visit()' method, as the retrieved metaDocUrl was not a docUrl.", null);
             }
-            return true; 	// It should be the docUrl and it was handled.. so we don't continue checking the internalLink even if this wasn't a docUrl.
+            return true;    // It should be the docUrl and it was handled.. so we don't continue checking the internalLink even if this wasn't a docUrl.
 
         } catch (RuntimeException re) {
             ConnSupportUtils.printEmbeddedExceptionMessage(re, metaDocUrl);
