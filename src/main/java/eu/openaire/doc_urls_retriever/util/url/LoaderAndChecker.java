@@ -86,14 +86,15 @@ public class LoaderAndChecker
 				if ( DOC_URL_FILTER.matcher(retrievedUrl.toLowerCase()).matches() )
 					isPossibleDocUrl = true;
 
-				if ( (retrievedUrl = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null ) {
+				String urlToCheck;
+				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null ) {
 					logger.warn("Could not cannonicalize url: " + retrievedUrl);
 					UrlUtils.logQuadruple(null, retrievedUrl, null, "unreachable", "Discarded at loading time, due to cannibalization's problems.", null);
 					continue;
 				}
 
 				try {
-					HttpConnUtils.connectAndCheckMimeType(null, retrievedUrl, retrievedUrl, retrievedUrl, null, true, isPossibleDocUrl);
+					HttpConnUtils.connectAndCheckMimeType(null, retrievedUrl, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);
 				} catch (Exception e) {
 					UrlUtils.logQuadruple(null, retrievedUrl, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
 					connProblematicUrls ++;
@@ -204,14 +205,15 @@ public class LoaderAndChecker
 				if ( !isSingleIdUrlPair )	// Don't forget to write the valid but not-to-be-connected urls to the outputFile.
 					handleLogOfRemainingUrls(urlToCheck, retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId);
 
-				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(urlToCheck, null, StandardCharsets.UTF_8)) == null ) {
-					logger.warn("Could not cannonicalize url: " + urlToCheck);
-					UrlUtils.logQuadruple(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, due to cannibalization's problems.", null);
+				String sourceUrl = urlToCheck;	// Hold it here for the logging-messages.
+				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
+					logger.warn("Could not cannonicalize url: " + sourceUrl);
+					UrlUtils.logQuadruple(retrievedId, sourceUrl, null, "unreachable", "Discarded at loading time, due to cannibalization's problems.", null);
 					continue;
 				}
 
 				try {	// Check if it's a docUrl, if not, it gets crawled.
-					HttpConnUtils.connectAndCheckMimeType(retrievedId, urlToCheck, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);
+					HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);
 				} catch (Exception e) {
 					UrlUtils.logQuadruple(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
 					connProblematicUrls ++;

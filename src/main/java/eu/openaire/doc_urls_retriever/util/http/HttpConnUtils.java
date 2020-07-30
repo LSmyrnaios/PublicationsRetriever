@@ -203,8 +203,8 @@ public class HttpConnUtils
 		    	throw new RuntimeException("Preventing connecting to blacklistedHost: \"" + domainStr + "\"!");
 			
 			// Check whether we don't accept "GET" method for uncategorizedInternalLinks and if this url is such a case.
-			if ( shouldNOTacceptGETmethodForUncategorizedInternalLinks
-				&& !calledForPossibleDocUrl && domainsWithUnsupportedHeadMethod.contains(domainStr) )
+			if ( !calledForPageUrl && shouldNOTacceptGETmethodForUncategorizedInternalLinks
+					&& !calledForPossibleDocUrl && domainsWithUnsupportedHeadMethod.contains(domainStr) )	// Exclude the possibleDocUrls and the ones which cannot connect with "HEAD".
 				throw new DomainWithUnsupportedHEADmethodException();
 			
 			if ( ConnSupportUtils.checkIfPathIs403BlackListed(resourceURL, domainStr) )
@@ -217,7 +217,9 @@ public class HttpConnUtils
 			conn.setInstanceFollowRedirects(false);	// We manage redirects on our own, in order to control redirectsNum, as well as to avoid redirecting to unwantedUrls.
 			
 			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// Either for just-webPages or for docUrls, we want to use "GET" in order to download the content.
-					|| (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles) ) {
+				|| (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles)
+				|| domainsWithUnsupportedHeadMethod.contains(domainStr) )
+			{
 				conn.setRequestMethod("GET");	// Go directly with "GET".
 				conn.setConnectTimeout(maxConnGETWaitingTime);
 				conn.setReadTimeout(maxConnGETWaitingTime);
@@ -243,7 +245,7 @@ public class HttpConnUtils
 				// This domain doesn't support "HEAD" method, log it and then check if we can retry with "GET" or not.
 				domainsWithUnsupportedHeadMethod.add(domainStr);
 				
-				if ( shouldNOTacceptGETmethodForUncategorizedInternalLinks && !calledForPossibleDocUrl )	// If we set not to retry with "GET" when we try uncategorizedInternalLinks, throw the related exception and stop the crawling of this page.
+				if ( !calledForPageUrl && shouldNOTacceptGETmethodForUncategorizedInternalLinks && !calledForPossibleDocUrl )	// If we set not to retry with "GET" when we try uncategorizedInternalLinks, throw the related exception and stop the crawling of this page.
 					throw new DomainWithUnsupportedHEADmethodException();
 				
 				// If we accept connection's retrying, using "GET", move on reconnecting.
@@ -389,7 +391,10 @@ public class HttpConnUtils
 				String targetUrl = ConnSupportUtils.getFullyFormedUrl(null, location, conn.getURL());
 				if ( targetUrl == null )
 					throw new RuntimeException("Could not create target url for resourceUrl: " + conn.getURL().toString() + " having location: " + location);
-				
+
+				if ( (targetUrl = URLCanonicalizer.getCanonicalURL(targetUrl, null, StandardCharsets.UTF_8)) == null )
+					throw new RuntimeException("Could not cannonicalize target url: " + targetUrl);	// Don't let it continue.
+
 				//ConnSupportUtils.printRedirectDebugInfo(conn, location, targetUrl, curRedirectsNum);	// throws IOException
 				
 				if ( UrlUtils.docUrlsWithKeys.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
@@ -411,11 +416,6 @@ public class HttpConnUtils
 						throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
 				}
 
-				if ( (targetUrl = URLCanonicalizer.getCanonicalURL(targetUrl, null, StandardCharsets.UTF_8)) == null ) {
-					logger.warn("Could not cannonicalize url: " + targetUrl);
-					throw new RuntimeException();	// Don't let it continue.
-				}
-
 				conn = HttpConnUtils.openHttpConnection(targetUrl, domainStr, calledForPageUrl, calledForPossibleDocUrl);
 
 				responceCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
@@ -427,8 +427,8 @@ public class HttpConnUtils
 			} while ( (responceCode >= 300) && (responceCode <= 399) );
 			
 			// It should have returned if there was an HTTP 2XX code. Now we have to handle the error-code.
-			ConnSupportUtils.onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
-			throw new RuntimeException();	// This is not thrown if a "DomainBlockedException" was thrown first.
+			String errorLogMessage = ConnSupportUtils.onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
+			throw new RuntimeException(errorLogMessage);	// This is not thrown if a "DomainBlockedException" was thrown first.
 			
 		} catch (AlreadyFoundDocUrlException | RuntimeException | ConnTimeoutException | DomainBlockedException | DomainWithUnsupportedHEADmethodException e) {	// We already logged the right messages.
 			conn.disconnect();

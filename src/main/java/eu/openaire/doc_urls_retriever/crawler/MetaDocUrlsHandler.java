@@ -1,6 +1,7 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
+import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
@@ -38,16 +39,17 @@ public class MetaDocUrlsHandler {
     public static boolean checkIfAndHandleMetaDocUrl(String urlId, String sourceUrl, String pageUrl, String currentPageDomain, String pageHtml)
     {
         // Check if the docLink is provided in a metaTag and connect to it directly.
+        String metaDocUrl = null;
         try {
             Matcher metaDocUrlMatcher = META_DOC_URL.matcher(pageHtml);
             if ( !metaDocUrlMatcher.find() )
                 return false;    // It was not found and so it was not handled. We don't log the sourceUrl, since it will be handled later.
 
-            String metaDocUrl = getMetaDocUrlFromMatcher(metaDocUrlMatcher);
-            if ( metaDocUrl == null ) {
+            if ( (metaDocUrl = getMetaDocUrlFromMatcher(metaDocUrlMatcher)) == null ) {
                 logger.error("Could not retrieve the metaDocUrl, continue by crawling the pageUrl.");
                 return false;   // We don't log the sourceUrl, since it will be handled later.
             }
+            //logger.debug("MetaDocUrl: " + metaDocUrl);  // DEBUG!
 
             if ( metaDocUrl.contains("{{") || metaDocUrl.contains("<?") )	// Dynamic link! The only way to handle it is by blocking the "currentPageUrlDomain".
             {
@@ -81,7 +83,12 @@ public class MetaDocUrlsHandler {
             }
             return true; 	// It should be the docUrl and it was handled.. so we don't continue checking the internalLink even if this wasn't a docUrl.
 
+        } catch (RuntimeException re) {
+            ConnSupportUtils.printEmbeddedExceptionMessage(re, metaDocUrl);
+            UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag-url.", null);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
+            return true;
         } catch (Exception e) {	// After connecting to the metaDocUrl.
+            logger.warn("", e);
             UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag-url.", null);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
             return true;	// It was found and handled. Even if an exception was thrown, we don't want to check any other internalLinks in that page.
         }
