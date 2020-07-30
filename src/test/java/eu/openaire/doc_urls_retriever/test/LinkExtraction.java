@@ -1,6 +1,7 @@
 package eu.openaire.doc_urls_retriever.test;
 
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
+import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -38,11 +39,15 @@ public class LinkExtraction {
 	
 	
 	@BeforeAll
-	//static void setExampleUrl() {exampleUrl = "http://epress.lib.uts.edu.au/journals/index.php/mcs/article/view/5655";}
-	//static void setExampleUrl() {exampleUrl = "https://halshs.archives-ouvertes.fr/halshs-01698574";}
-	//static void setExampleUrl() {exampleUrl = "https://doors.doshisha.ac.jp/duar/repository/ir/127/?lang=0";}
-	//static void setExampleUrl() {exampleUrl = "https://www.sciencedirect.com/science/article/pii/S0042682297988747?via%3Dihub";}
-	static void setExampleUrl() {exampleUrl = "https://ieeexplore.ieee.org/document/8998177";}
+	static void setExampleUrl()
+	{
+		//exampleUrl = "http://epress.lib.uts.edu.au/journals/index.php/mcs/article/view/5655";
+		//exampleUrl = "https://halshs.archives-ouvertes.fr/halshs-01698574";
+		//exampleUrl = "https://doors.doshisha.ac.jp/duar/repository/ir/127/?lang=0";
+		//exampleUrl = "https://www.sciencedirect.com/science/article/pii/S0042682297988747?via%3Dihub";
+		//exampleUrl = "https://ieeexplore.ieee.org/document/8998177";
+		exampleUrl = "http://kups.ub.uni-koeln.de/1052/";
+	}
 
 	
 	//@Disabled
@@ -97,6 +102,11 @@ public class LinkExtraction {
 			logger.info("The list of all the internalLinks of \"" + exampleUrl + "\" is:");
 			for ( String link: links )
 				logger.info(link);
+
+			logger.info("\nThe accepted links from the above are:");
+			for ( String link : links )
+				if ( !UrlTypeChecker.shouldNotAcceptInternalLink(link, null) )
+					logger.info(link);
 			
 		} catch (Exception e) {
 			logger.error("", e);
@@ -119,6 +129,11 @@ public class LinkExtraction {
 			logger.info("The list of all the internalLinks of \"" + exampleUrl + "\" is:");
 			for ( String link: links )
 				logger.info(link);
+
+			logger.info("\nThe accepted links from the above are:");
+			for ( String link : links )
+				if ( !UrlTypeChecker.shouldNotAcceptInternalLink(link, null) )
+					logger.info(link);
 			
 		} catch (Exception e) {
 			logger.error("", e);

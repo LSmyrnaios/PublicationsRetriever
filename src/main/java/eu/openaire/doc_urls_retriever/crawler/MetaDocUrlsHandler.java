@@ -1,6 +1,9 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
+import eu.openaire.doc_urls_retriever.exceptions.ConnTimeoutException;
+import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
+import eu.openaire.doc_urls_retriever.exceptions.DomainWithUnsupportedHEADmethodException;
 import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
@@ -88,6 +91,9 @@ public class MetaDocUrlsHandler {
             ConnSupportUtils.printEmbeddedExceptionMessage(re, metaDocUrl);
             UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag-url.", null);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
             return true;
+        } catch ( DomainBlockedException | ConnTimeoutException | DomainWithUnsupportedHEADmethodException ex ) {
+            UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag-url.", null);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
+            return true;	// It was found and handled. Even if an exception was thrown, we don't want to check any other internalLinks in that page.
         } catch (Exception e) {	// After connecting to the metaDocUrl.
             logger.warn("", e);
             UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag-url.", null);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
