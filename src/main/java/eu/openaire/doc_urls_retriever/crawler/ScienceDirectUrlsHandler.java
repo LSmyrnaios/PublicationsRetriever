@@ -73,7 +73,7 @@ public class ScienceDirectUrlsHandler
 			// Handle "linkinghub.elsevier.com" urls which contain javaScriptRedirect..
 			if ( isLinkinghubElsevier ) {
 				//UrlUtils.elsevierLinks ++;
-				if ( (pageUrl = silentRedirectElsevierToScienseRedirect(pageUrl)) != null ) {
+				if ( (pageUrl = silentRedirectElsevierToScienceRedirect(pageUrl)) != null ) {
 					// The already open connection for "linkinghub.elsevier.com" get closed by "connectAndCheckMimeType()" when the "visit()" returns (after "handleScienceDirectFamilyUrls()" returns).
 					//logger.debug("Produced ScienceDirect-url: " + pageUrl);	// DEBUG!
 					currentConnectedUrl = pageUrl;
@@ -152,13 +152,13 @@ public class ScienceDirectUrlsHandler
 	
 	
 	/**
-	 * This method recieves a url from "linkinghub.elsevier.com" and returns it's matched url in "sciencedirect.com".
+	 * This method receives a url from "linkinghub.elsevier.com" and returns it's matched url in "sciencedirect.com".
 	 * We do this because the "linkinghub.elsevier.com" urls have a javaScript redirect inside which we are not able to handle without doing html scraping.
-	 * If there is any error this method returns the URL it first recieved.
+	 * If there is any error this method returns the URL it first received.
 	 * @param linkinghubElsevierUrl
 	 * @return
 	 */
-	public static String silentRedirectElsevierToScienseRedirect(String linkinghubElsevierUrl)
+	public static String silentRedirectElsevierToScienceRedirect(String linkinghubElsevierUrl)
 	{
 		String idStr = null;
 		Matcher matcher = UrlUtils.URL_TRIPLE.matcher(linkinghubElsevierUrl);

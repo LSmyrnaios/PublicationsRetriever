@@ -167,9 +167,9 @@ public class ConnSupportUtils
 				// No call of "conn.disconnect()" here, as we will connect to the same server.
 				conn = HttpConnUtils.openHttpConnection(docUrl, domainStr, false, true);
 				reconnected = true;
-				int responceCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP responce), inside openHttpConnection().
-				if ( (responceCode < 200) || (responceCode >= 400) ) {    // If we have unwanted/error codes.
-					onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
+				int responseCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP response), inside openHttpConnection().
+				if ( (responseCode < 200) || (responseCode >= 400) ) {    // If we have unwanted/error codes.
+					onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode);
 					throw new DocFileNotRetrievedException();
 				}
 			}
@@ -236,7 +236,7 @@ public class ConnSupportUtils
 
 		if ( (errorStatusCode >= 400) && (errorStatusCode <= 499) ) {	// Client Error.
 
-			errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Client Error.";
+			errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received: HTTP " + errorStatusCode + " Client Error.";
 			if ( errorStatusCode == 403 ) {
 				if ( domainStr == null ) {
 					if ( (domainStr = UrlUtils.getDomainStr(urlStr)) != null )
@@ -249,11 +249,11 @@ public class ConnSupportUtils
 			domainStr = UrlUtils.getDomainStr(urlStr);
 			
 			if ( (errorStatusCode >= 500) && (errorStatusCode <= 599) ) {	// Server Error.
-				errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Recieved: HTTP " + errorStatusCode + " Server Error.";
+				errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received: HTTP " + errorStatusCode + " Server Error.";
 				if ( domainStr != null )
 					on5XXerrorCode(domainStr);
-			} else {	// Unknown Error (including non-handled: 1XX and the weird one: 999 (used for example on Twitter), responceCodes).
-				logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Recieved unexpected responceCode: " + errorStatusCode);
+			} else {	// Unknown Error (including non-handled: 1XX and the weird one: 999 (used for example on Twitter), responseCodes).
+				logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Received unexpected responseCode: " + errorStatusCode);
 				if ( domainStr != null )
 					HttpConnUtils.blacklistedDomains.add(domainStr);
 				
@@ -308,7 +308,7 @@ public class ConnSupportUtils
 	
 	
 	/**
-	 * This method check if there was ever a url from the given/current domain, which returned an HTTP 403 Eroor Code.
+	 * This method check if there was ever a url from the given/current domain, which returned an HTTP 403 Error Code.
 	 * If there was, it retrieves the directory path of the given/current url and checks if it caused an 403 Error Code before.
 	 * It returns "true" if the given/current path is already blocked,
 	 * otherwise, if it's not blocked, or if there was a problem retrieving this path from this url, it returns "false".
@@ -351,7 +351,7 @@ public class ConnSupportUtils
 	/**
 	 * This method handles domains which are reaching cases were they can be blocked.
 	 * It calculates the times they did something and if they reached a red line, it adds them in the blackList provided by the caller.
-	 * After adding it in the blackList, it removes its countings to free-up memory.
+	 * After adding it in the blackList, it removes its counters to free-up memory.
 	 * It returns "true", if this domain was blocked, otherwise, "false".
 	 * @param blackList
 	 * @param domainsWithTimes

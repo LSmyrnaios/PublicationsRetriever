@@ -426,7 +426,7 @@ public class FileUtils
 					String newDocFileName = preExtensionFileName + "(" + curDuplicateNum + ")" + dotFileExtension;
 					saveDocFileFullPath = storeDocFilesDir + File.separator + newDocFileName;
 					File renamedDocFile = new File(saveDocFileFullPath);
-					if ( docFile.renameTo(renamedDocFile) )	// If renaming was succesfull, store the "curDuplicateNum" for this base-"docFileName".
+					if ( docFile.renameTo(renamedDocFile) )	// If renaming was successful, store the "curDuplicateNum" for this base-"docFileName".
 						numbersOfDuplicateDocFileNames.put(docFileName, curDuplicateNum);
 					else {
 						logger.error("Renaming operation of \"" + docFileName + "\" to \"" + newDocFileName + "\" has failed!");

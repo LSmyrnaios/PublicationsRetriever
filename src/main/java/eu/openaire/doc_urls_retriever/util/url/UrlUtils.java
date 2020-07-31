@@ -172,7 +172,7 @@ public class UrlUtils
 	
 	/**
 	 * This method is responsible for removing the "jsessionid" part of a url.
-	 * If no jsessionId is found, then it returns the string it recieved.
+	 * If no jsessionId is found, then it returns the string it received.
 	 * @param urlStr
 	 * @return urlWithoutJsessionId
 	 */
@@ -215,7 +215,7 @@ public class UrlUtils
 
 	/**
 	 * This method removes the anchor part in the end of the URL.
-	 * Unlike the jsessionid-case, the anchor consists from everything is from "#" to the right of the url-string till the end of it. No "valueable part" exist after the anchor.
+	 * Unlike the jsessionid-case, the anchor consists from everything is from "#" to the right of the url-string till the end of it. No "valuable part" exist after the anchor.
 	 * @param urlStr
 	 * @return
 	 */

@@ -74,8 +74,9 @@ public class MetaDocUrlsHandler {
                 return true;    // It was found and handled.
             }
 
+            String tempMetaDocUrl = metaDocUrl;
             if ( (metaDocUrl = URLCanonicalizer.getCanonicalURL(metaDocUrl, null, StandardCharsets.UTF_8)) == null ) {
-                logger.warn("Could not cannonicalize metaDocUrl: " + metaDocUrl);
+                logger.warn("Could not cannonicalize metaDocUrl: " + tempMetaDocUrl);
                 UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in \"checkIfAndHandleMetaDocUrl()\", due to cannibalization's problems.", null);
                 return true;
             }

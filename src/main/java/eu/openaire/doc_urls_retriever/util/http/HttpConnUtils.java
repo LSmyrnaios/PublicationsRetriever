@@ -33,7 +33,7 @@ public class HttpConnUtils
 	public static final HashSet<String> blacklistedDomains = new HashSet<String>();	// Domains with which we don't want to connect again.
 	
 	public static final HashMap<String, Integer> timesDomainsHadInputNotBeingDocNorPage = new HashMap<String, Integer>();
-	public static final HashMap<String, Integer> timesDomainsReturnedNoType = new HashMap<String, Integer>();	// Domain which returned no content-type not content disposition in their responce and amount of times they did.
+	public static final HashMap<String, Integer> timesDomainsReturnedNoType = new HashMap<String, Integer>();	// Domain which returned no content-type not content disposition in their response and amount of times they did.
 	
 	public static int numOfDomainsBlockedDueToSSLException = 0;
 	
@@ -168,12 +168,12 @@ public class HttpConnUtils
 	{
 		HttpURLConnection conn = openHttpConnection(resourceURL, domainStr, calledForPageUrl, calledForPossibleDocUrl);
 		
-		int responceCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP responce), inside openHttpConnection().
-		if ( (responceCode >= 300) && (responceCode <= 399) ) {   // If we have redirections..
-			conn = handleRedirects(urlId, sourceUrl, pageUrl, resourceURL, conn, responceCode, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // Take care of redirects.
+		int responseCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP response), inside openHttpConnection().
+		if ( (responseCode >= 300) && (responseCode <= 399) ) {   // If we have redirections..
+			conn = handleRedirects(urlId, sourceUrl, pageUrl, resourceURL, conn, responseCode, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // Take care of redirects.
 		}
-		else if ( (responceCode < 200) || (responceCode >= 400) ) {	// If we have error codes.
-			String errorLogMessage = ConnSupportUtils.onErrorStatusCode(resourceURL, domainStr, responceCode);
+		else if ( (responseCode < 200) || (responseCode >= 400) ) {	// If we have error codes.
+			String errorLogMessage = ConnSupportUtils.onErrorStatusCode(resourceURL, domainStr, responseCode);
 			throw new RuntimeException(errorLogMessage);	// This is only thrown if a "DomainBlockedException" is caught.
 		}
 		// Else it's an HTTP 2XX SUCCESS CODE.
@@ -200,7 +200,7 @@ public class HttpConnUtils
     {
     	URL url = null;
 		HttpURLConnection conn = null;
-		int responceCode = 0;
+		int responseCode = 0;
 		
 		try {
 			if ( blacklistedDomains.contains(domainStr) )
@@ -239,12 +239,12 @@ public class HttpConnUtils
 			conn.connect();	// Else, first connect and if there is no error, log this domain as the last one.
 			lastConnectedHost = domainStr;
 			
-			if ( (responceCode = conn.getResponseCode()) == -1 )
+			if ( (responseCode = conn.getResponseCode()) == -1 )
 				throw new RuntimeException("Invalid HTTP response for \"" + resourceURL + "\"");
 			
-			if ( (responceCode == 405 || responceCode == 501) && conn.getRequestMethod().equals("HEAD") )	// If this SERVER doesn't support "HEAD" method or doesn't allow us to use it..
+			if ( (responseCode == 405 || responseCode == 501) && conn.getRequestMethod().equals("HEAD") )	// If this SERVER doesn't support "HEAD" method or doesn't allow us to use it..
 			{
-				//logger.debug("HTTP \"HEAD\" method is not supported for: \"" + resourceURL +"\". Server's responceCode was: " + responceCode);
+				//logger.debug("HTTP \"HEAD\" method is not supported for: \"" + resourceURL +"\". Server's responseCode was: " + responseCode);
 				
 				// This domain doesn't support "HEAD" method, log it and then check if we can retry with "GET" or not.
 				domainsWithUnsupportedHeadMethod.add(domainStr);
@@ -265,7 +265,7 @@ public class HttpConnUtils
 					Thread.sleep(politenessDelay);	// Avoid server-overloading for the same host.
 				
 				conn.connect();
-				//logger.debug("ResponceCode for \"" + resourceURL + "\", after setting conn-method to: \"" + conn.getRequestMethod() + "\" is: " + conn.getResponseCode());
+				//logger.debug("responseCode for \"" + resourceURL + "\", after setting conn-method to: \"" + conn.getRequestMethod() + "\" is: " + conn.getResponseCode());
 				
 				if ( conn.getResponseCode() == -1 )	// Make sure we throw a RunEx on invalidHTTP.
 					throw new RuntimeException("Invalid HTTP response for \"" + resourceURL + "\"");
@@ -312,7 +312,7 @@ public class HttpConnUtils
 			
 			String errorMsg = se.getMessage();
 			if ( errorMsg != null )
-				errorMsg = "\"" + errorMsg + "\". This SocketException was recieved after trying to connect with the domain: \"" + domainStr + "\"";
+				errorMsg = "\"" + errorMsg + "\". This SocketException was received after trying to connect with the domain: \"" + domainStr + "\"";
 			
 			throw new RuntimeException(errorMsg);
 			//blacklistedDomains.add(domainStr);
@@ -336,7 +336,7 @@ public class HttpConnUtils
 	 * @param pageUrl
 	 * @param internalLink
 	 * @param conn
-	 * @param responceCode
+	 * @param responseCode
 	 * @param domainStr
 	 * @param calledForPageUrl
 	 * @param calledForPossibleDocUrl
@@ -347,7 +347,7 @@ public class HttpConnUtils
 	 * @throws DomainBlockedException
 	 * @throws DomainWithUnsupportedHEADmethodException
 	 */
-	public static HttpURLConnection handleRedirects(String urlId, String sourceUrl, String pageUrl, String internalLink, HttpURLConnection conn, int responceCode, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
+	public static HttpURLConnection handleRedirects(String urlId, String sourceUrl, String pageUrl, String internalLink, HttpURLConnection conn, int responseCode, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
 																			throws AlreadyFoundDocUrlException, RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
 	{
 		int curRedirectsNum = 0;
@@ -374,19 +374,19 @@ public class HttpConnUtils
 				String location = conn.getHeaderField("Location");
 				if ( location == null )
 				{
-					if ( responceCode == 300 ) {	// The "Location"-header MAY be provided, giving the proposed link by the server.
+					if ( responseCode == 300 ) {	// The "Location"-header MAY be provided, giving the proposed link by the server.
 						// Go and parse the page and select one of the links to redirect to. Assign it to the "location".
 						if ( (location = ConnSupportUtils.getInternalLinkFromHTTP300Page(conn)) == null )
 							throw new RuntimeException("No \"link\" was retrieved from the HTTP-300-page: \"" + conn.getURL().toString() + "\".");
 					}
 					else	// It's unacceptable for codes > 300 to not provide the "location" field.
-						throw new RuntimeException("No \"Location\" field was found in the HTTP Header of \"" + conn.getURL().toString() + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
+						throw new RuntimeException("No \"Location\" field was found in the HTTP Header of \"" + conn.getURL().toString() + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code.");
 				}
 				
 				String lowerCaseLocation = location.toLowerCase();
 				if ( (calledForPageUrl && UrlTypeChecker.shouldNotAcceptPageUrl(location, lowerCaseLocation))	// Redirecting a pageUrl.
 						|| (!calledForPageUrl && UrlTypeChecker.shouldNotAcceptInternalLink(location, lowerCaseLocation)) )	// Redirecting an internalPageLink.
-					throw new RuntimeException("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + location + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
+					throw new RuntimeException("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + location + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code.");
 				else if ( lowerCaseLocation.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
 					ConnSupportUtils.blockSharedSiteSessionDomain(initialUrl, domainStr);
 					throw new DomainBlockedException();
@@ -396,8 +396,9 @@ public class HttpConnUtils
 				if ( targetUrl == null )
 					throw new RuntimeException("Could not create target url for resourceUrl: " + conn.getURL().toString() + " having location: " + location);
 
+				String tempTargetUrl = targetUrl;
 				if ( (targetUrl = URLCanonicalizer.getCanonicalURL(targetUrl, null, StandardCharsets.UTF_8)) == null )
-					throw new RuntimeException("Could not cannonicalize target url: " + targetUrl);	// Don't let it continue.
+					throw new RuntimeException("Could not cannonicalize target url: " + tempTargetUrl);	// Don't let it continue.
 
 				//ConnSupportUtils.printRedirectDebugInfo(conn, location, targetUrl, curRedirectsNum);	// throws IOException
 				
@@ -410,7 +411,7 @@ public class HttpConnUtils
 					throw new AlreadyFoundDocUrlException();
 				}
 				/*else if ( calledForPageUrl && (targetUrl.contains("elsevier.com") && !targetUrl.contains("linkinghub")) ) {	// Avoid pageUrls redirecting to "elsevier.com" (mostly "doi.org"-urls).
-					logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + targetUrl + "\", after recieving an \"HTTP " + responceCode + "\" Redirect Code.");
+					logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + targetUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code.");
 					throw new RuntimeException();
 				}*/
 
@@ -422,16 +423,16 @@ public class HttpConnUtils
 
 				conn = HttpConnUtils.openHttpConnection(targetUrl, domainStr, calledForPageUrl, calledForPossibleDocUrl);
 
-				responceCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
+				responseCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
 
-				if ( (responceCode >= 200) && (responceCode <= 299) ) {
+				if ( (responseCode >= 200) && (responseCode <= 299) ) {
 					//ConnSupportUtils.printFinalRedirectDataForWantedUrlType(initialUrl, conn.getURL().toString(), null, curRedirectsNum);	// DEBUG!
 					return conn;	// It's an "HTTP SUCCESS", return immediately.
 				}
-			} while ( (responceCode >= 300) && (responceCode <= 399) );
+			} while ( (responseCode >= 300) && (responseCode <= 399) );
 			
 			// It should have returned if there was an HTTP 2XX code. Now we have to handle the error-code.
-			String errorLogMessage = ConnSupportUtils.onErrorStatusCode(conn.getURL().toString(), domainStr, responceCode);
+			String errorLogMessage = ConnSupportUtils.onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode);
 			throw new RuntimeException(errorLogMessage);	// This is not thrown if a "DomainBlockedException" was thrown first.
 			
 		} catch (AlreadyFoundDocUrlException | RuntimeException | ConnTimeoutException | DomainBlockedException | DomainWithUnsupportedHEADmethodException e) {	// We already logged the right messages.

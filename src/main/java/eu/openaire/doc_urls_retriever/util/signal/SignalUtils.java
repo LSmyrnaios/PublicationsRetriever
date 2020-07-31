@@ -34,7 +34,7 @@ public class SignalUtils {
 			
 			FileUtils.closeIO();
 			
-			// If the program managed to set the "startTime" before the signal was recieved, then show the execution time.
+			// If the program managed to set the "startTime" before the signal was received, then show the execution time.
 			if ( DocUrlsRetriever.startTime != null )
 				DocUrlsRetriever.calculateAndPrintElapsedTime(DocUrlsRetriever.startTime, Instant.now());
 			
