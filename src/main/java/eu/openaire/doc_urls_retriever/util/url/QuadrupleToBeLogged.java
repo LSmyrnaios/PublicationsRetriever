@@ -45,10 +45,10 @@ public class QuadrupleToBeLogged
 		 */
 		
 		// Escape backSlash.
-		sourceUrl = StringUtils.replace(sourceUrl, "\\", "\\\\");	// http://koara.lib.keio.ac.jp/xoonips/modules/xoonips/detail.php?koara_id=pdf\AN00150430-00000039--001
+		sourceUrl = StringUtils.replace(sourceUrl, "\\", "\\\\", -1);	// http://koara.lib.keio.ac.jp/xoonips/modules/xoonips/detail.php?koara_id=pdf\AN00150430-00000039--001
 		
 		// Escape doubleQuotes and return.
-		return StringUtils.replace(sourceUrl, "\"", "\\\"");	// https://jual.nipissingu.ca/wp-content/uploads/sites/25/2016/03/v10202.pdf" rel="
+		return StringUtils.replace(sourceUrl, "\"", "\\\"", -1);	// https://jual.nipissingu.ca/wp-content/uploads/sites/25/2016/03/v10202.pdf" rel="
 	}
     
     

@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -58,6 +59,8 @@ public class MachineLearning
 	private static final int timesToFailBeforeBlockedFromMLA = 10;
 	
 	private static List<Float> successRateList = new ArrayList<>();
+
+	private static final Pattern EXTENSION_PATTERN = Pattern.compile("(\\.[^.]+)$");
 	
 	/**
 	 * Initialize the Machine Learning Algorithm (MLA).
@@ -261,7 +264,7 @@ public class MachineLearning
 		}
 		else if ( UrlTypeChecker.PLAIN_PAGE_EXTENSION_FILTER.matcher(docIdStr.toLowerCase()).matches() )
 		{	// The docID of this pageUrl contains a page-extension (not a document-one), which we don't want in the docUrl. Thus, we remove the extension from the end.
-			docIdStr = docIdStr.replaceAll("(\\.[^.]+)$", "");
+			docIdStr = EXTENSION_PATTERN.matcher(docIdStr).replaceAll("");	// This version of "replaceAll" uses a pre-compiled regex-pattern for better performance.
 		}
 		
 		MachineLearning.urlsCheckedWithMLA ++;

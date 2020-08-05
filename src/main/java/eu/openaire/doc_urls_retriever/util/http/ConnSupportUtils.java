@@ -50,7 +50,8 @@ public class ConnSupportUtils
 	public static final HashSet<String> knownDocMimeTypes = new HashSet<String>();
 	static {
 		logger.debug("Setting up the official document mime types. Currently there is support only for pdf documents.");
-		knownDocMimeTypes.add("application/pdf");	// For the moment we support only the pdf docType.
+		knownDocMimeTypes.add("application/pdf");
+		knownDocMimeTypes.add("image/pdf");
 	}
 	
 	
