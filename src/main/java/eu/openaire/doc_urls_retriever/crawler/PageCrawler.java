@@ -146,8 +146,8 @@ public class PageCrawler
 		}// end for-loop
 		
 		// If we reached here, it means that we couldn't find a docUrl the quick way.. so we have to check some (we exclude lots of them) of the internal links one by one.
-		
-		for ( String currentLink : remainingLinks )	// Here we don't re-check already-checked links, as this is a new list.
+
+		for ( String currentLink : remainingLinks )	// Here we don't re-check already-checked links, as this is a new list. All the links here are full-canonicalized-urls.
 		{
 			// Make sure we avoid connecting to different domains to save time. We allow to check different domains only after matching to possible-urls in the previous fast-loop.
 			if ( !currentLink.contains(currentPageDomain) )
@@ -251,7 +251,7 @@ public class PageCrawler
 
 			if ( internalLink.equals("/")
 					|| internalLink.startsWith("mailto:") || internalLink.startsWith("tel:") || internalLink.startsWith("fax:")
-					|| internalLink.startsWith("file:") || internalLink.startsWith("{openurl}") )
+					|| internalLink.startsWith("file:") || internalLink.startsWith("{openurl}") || internalLink.startsWith("?locale") )
 				continue;
 
 			// Remove anchors from possible docUrls and add the remaining part to the list. Non-possibleDocUrls having anchors are rejected.

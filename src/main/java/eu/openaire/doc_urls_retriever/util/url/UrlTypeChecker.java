@@ -20,7 +20,7 @@ public class UrlTypeChecker
 	private static final String mediaExtensionsPattern = "ico|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov";
 
 	public static final Pattern URL_DIRECTORY_FILTER =
-			Pattern.compile(".*/(?:(search|discover|profile|user)(?!.+(?:file|pdf))|(?:ldap-)?login|auth\\.|authentication\\.|ac(?:c)?ess(?!\\.)|join|subscr|register|submit|(?:post|send|shop|view)/|watch|browse|import|bookmark|announcement|rss|feed|about|faq|wiki|news|events|cart|support|feedback|(?:site|html)map|documentation|help|contact|license|disclaimer|copyright|polic(?:y|ies)|privacy|terms|law"
+			Pattern.compile(".+://.*/(?:(discover|profile|user)(?!.+(?:file|pdf))|(?:ldap-)?login|auth(?:entication)?\\.|ac(?:c)?ess(?!\\.)|join|subscr|register|submit|(?:post|send|shop|view)/|watch|browse|import|bookmark|announcement|rss|feed|about|faq|wiki|news|events|cart|support|feedback|(?:site|html)map|documentation|help|contact|license|disclaimer|copyright|polic(?:y|ies)|privacy|terms|law"
 					+ "|(?:my|your)?account|fund|aut(?:h)?or|editor|citation|review|external|facets|statistics|application|selfarchive|permission|ethic|conta(?:c)?t|survey|wallet|contribute|deposit|donate|template|logo|image|photo|video|media|advertiser|product|people|(?:the)?press"
 					+ "|error|(?:mis|ab)use|\\?denied|gateway|sorryserver|cookieabsent|notfound|404\\." + htExtensionsPattern + ").*");
 	// We check them as a directory to avoid discarding publications' urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.

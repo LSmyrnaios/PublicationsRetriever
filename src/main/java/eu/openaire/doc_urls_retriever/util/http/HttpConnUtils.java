@@ -204,7 +204,7 @@ public class HttpConnUtils
 		
 		try {
 			if ( blacklistedDomains.contains(domainStr) )
-		    	throw new RuntimeException("Preventing connecting to blacklistedHost: \"" + domainStr + "\"!");
+		    	throw new RuntimeException("Avoid connecting to blackListed domain: \"" + domainStr + "\"!");
 			
 			// Check whether we don't accept "GET" method for uncategorizedInternalLinks and if this url is such a case.
 			if ( !calledForPageUrl && shouldNOTacceptGETmethodForUncategorizedInternalLinks
@@ -212,7 +212,7 @@ public class HttpConnUtils
 				throw new DomainWithUnsupportedHEADmethodException();
 			
 			if ( ConnSupportUtils.checkIfPathIs403BlackListed(resourceURL, domainStr) )
-				throw new RuntimeException("Preventing reaching 403ErrorCode with url: \"" + resourceURL + "\"!");
+				throw new RuntimeException("Avoid reaching 403ErrorCode with url: \"" + resourceURL + "\"!");
 			
 			url = new URL(resourceURL);
 			
@@ -298,13 +298,13 @@ public class HttpConnUtils
 			}
 			throw new RuntimeException(eMsg);
 		} catch (SSLException ssle) {
-			logger.warn("No Secure connection was able to be negotiated with the domain: \"" + domainStr + "\".", ssle.getMessage());
 			if ( conn != null )
 				conn.disconnect();
 			// TODO - For "SSLProtocolException", see more about it's possible handling here: https://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0/14884941#14884941
 			// TODO - Maybe we should make another list where only urls in https, from these domains, would be blocked.
 			blacklistedDomains.add(domainStr);
 			numOfDomainsBlockedDueToSSLException++;
+			logger.warn("No Secure connection was able to be negotiated with the domain: \"" + domainStr + "\". The domain was blocked.", ssle.getMessage());
 			throw new DomainBlockedException();
 		} catch (SocketException se) {
 			if ( conn != null )
@@ -382,19 +382,19 @@ public class HttpConnUtils
 					else	// It's unacceptable for codes > 300 to not provide the "location" field.
 						throw new RuntimeException("No \"Location\" field was found in the HTTP Header of \"" + conn.getURL().toString() + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code.");
 				}
-				
-				String lowerCaseLocation = location.toLowerCase();
-				if ( (calledForPageUrl && UrlTypeChecker.shouldNotAcceptPageUrl(location, lowerCaseLocation))	// Redirecting a pageUrl.
-						|| (!calledForPageUrl && UrlTypeChecker.shouldNotAcceptInternalLink(location, lowerCaseLocation)) )	// Redirecting an internalPageLink.
-					throw new RuntimeException("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + location + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code.");
-				else if ( lowerCaseLocation.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
-					ConnSupportUtils.blockSharedSiteSessionDomain(initialUrl, domainStr);
-					throw new DomainBlockedException();
-				}
-				
+
 				String targetUrl = ConnSupportUtils.getFullyFormedUrl(null, location, conn.getURL());
 				if ( targetUrl == null )
 					throw new RuntimeException("Could not create target url for resourceUrl: " + conn.getURL().toString() + " having location: " + location);
+
+				String lowerCaseTargetUrl = targetUrl.toLowerCase();
+				if ( (calledForPageUrl && UrlTypeChecker.shouldNotAcceptPageUrl(targetUrl, lowerCaseTargetUrl))	// Redirecting a pageUrl.
+						|| (!calledForPageUrl && UrlTypeChecker.shouldNotAcceptInternalLink(targetUrl, lowerCaseTargetUrl)) )	// Redirecting an internalPageLink.
+					throw new RuntimeException("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + targetUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code.");
+				else if ( lowerCaseTargetUrl.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
+					ConnSupportUtils.blockSharedSiteSessionDomain(initialUrl, domainStr);
+					throw new DomainBlockedException();
+				}
 
 				String tempTargetUrl = targetUrl;
 				if ( (targetUrl = URLCanonicalizer.getCanonicalURL(targetUrl, null, StandardCharsets.UTF_8)) == null )

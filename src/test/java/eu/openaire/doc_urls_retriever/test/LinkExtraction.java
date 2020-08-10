@@ -1,6 +1,7 @@
 package eu.openaire.doc_urls_retriever.test;
 
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
+import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.junit.jupiter.api.BeforeAll;
@@ -132,8 +133,15 @@ public class LinkExtraction {
 
 			logger.info("\nThe accepted links from the above are:");
 			for ( String link : links )
-				if ( !UrlTypeChecker.shouldNotAcceptInternalLink(link, null) )
-					logger.info(link);
+			{
+				String targetUrl = ConnSupportUtils.getFullyFormedUrl(null, link, conn.getURL());
+				if ( targetUrl == null ) {
+					logger.debug("Could not create target url for resourceUrl: " + conn.getURL().toString() + " having location: " + link);
+					continue;
+				}
+				if ( !UrlTypeChecker.shouldNotAcceptInternalLink(targetUrl, null) )
+					logger.info(targetUrl);
+			}
 			
 		} catch (Exception e) {
 			logger.error("", e);

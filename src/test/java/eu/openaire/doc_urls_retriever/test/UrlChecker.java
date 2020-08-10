@@ -1,7 +1,7 @@
 package eu.openaire.doc_urls_retriever.test;
 
 import com.google.common.collect.HashMultimap;
-//import edu.uci.ics.crawler4j.url.URLCanonicalizer;
+import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-//import java.nio.charset.StandardCharsets;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Set;
@@ -126,10 +126,10 @@ public class UrlChecker {
 		for ( String url : urlList )
 		{
 			String urlToCheck = url;	// Use an extra String or it cannot be printed in the error-logging-message as it will be null.
-			/*if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(url, null, StandardCharsets.UTF_8)) == null ) {
+			if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(url, null, StandardCharsets.UTF_8)) == null ) {
 				logger.warn("Could not cannonicalize url: " + url);
 				return;
-			}*/
+			}
 			
 			if ( UrlTypeChecker.matchesUnwantedUrlType(null, urlToCheck, urlToCheck.toLowerCase()) )
 				continue;
