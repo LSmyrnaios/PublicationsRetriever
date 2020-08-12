@@ -29,8 +29,8 @@ import java.util.regex.Pattern;
 public class ConnSupportUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(ConnSupportUtils.class);
-	
-	private static final StringBuilder strB = new StringBuilder(30000);	// We give an initial size to optimize performance.
+
+	private static final StringBuilder htmlStrB = new StringBuilder(300000);	// We give an initial size (maxExpectedHtmlLength) to optimize performance (avoid re-allocations at run-time).
 	
 	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("(?:\\((?:')?)?([\\w]+/[\\w+\\-.]+).*");
 
@@ -400,17 +400,19 @@ public class ConnSupportUtils
 		{
 			String inputLine;
 			while ( (inputLine = br.readLine()) != null ) {
-				//logger.debug(inputLine);	// DEBUG!
-				strB.append(inputLine);
+				htmlStrB.append(inputLine);
+//				if ( !inputLine.isEmpty() )
+//					logger.debug(inputLine);	// DEBUG!
 			}
-			return strB.toString();
+			//logger.debug("Chars in html: " + String.valueOf(htmlStrB.length()));	// DEBUG!
+			return htmlStrB.toString();
 			
 		} catch (Exception e) {
 			logger.error("", e);
 			throw e;
 		}
 		finally {
-			strB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating.
+			htmlStrB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating.
 		}
 	}
 	
