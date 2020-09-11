@@ -273,7 +273,7 @@ public class LoaderAndChecker
 		// Note that this is NOT the case for all of the urls containing "/handle/123456789/".. but just for this domain.
 		if ( retrievedUrl.contains("ir.lib.u-ryukyu.ac.jp") && retrievedUrl.contains("/handle/123456789/") ) {
 			logger.debug("We will handle the weird case of \"" + retrievedUrl + "\".");
-			return StringUtils.replace(retrievedUrl, "/123456789/", "/20.500.12000/");
+			return StringUtils.replace(retrievedUrl, "/123456789/", "/20.500.12000/", -1);
 		}
 		
 		return retrievedUrl;	// The calling method needs the non-jsessionid-string.

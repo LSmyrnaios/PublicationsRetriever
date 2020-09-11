@@ -140,10 +140,8 @@ public class UrlChecker {
 				UrlUtils.logQuadruple(null, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
 			}
 		}
-		
-		Instant finish = Instant.now();
-		
-		DocUrlsRetriever.calculateAndPrintElapsedTime(start, finish);
+
+		DocUrlsRetriever.calculateAndPrintElapsedTime(start, Instant.now());
 	}
 	
 	

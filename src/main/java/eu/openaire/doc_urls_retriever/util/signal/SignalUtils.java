@@ -6,8 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.misc.Signal;
 
-import java.time.Instant;
-
 
 /**
  * @author Lampros Smyrnaios
@@ -31,13 +29,13 @@ public class SignalUtils {
 				logger.debug("Writing the remaining quadruples to the outputFile.");
 				FileUtils.writeToFile();
 			}
-			
-			FileUtils.closeIO();
-			
-			// If the program managed to set the "startTime" before the signal was received, then show the execution time.
+
+			// If the program managed to set the "startTime" before the signal was received, then show the statistics and the elapsed-time.
 			if ( DocUrlsRetriever.startTime != null )
-				DocUrlsRetriever.calculateAndPrintElapsedTime(DocUrlsRetriever.startTime, Instant.now());
-			
+				DocUrlsRetriever.showStatistics(DocUrlsRetriever.startTime);
+
+			FileUtils.closeIO();
+
 			System.exit(-12);
 		});
 	}

@@ -57,7 +57,7 @@ public class DocUrlsRetriever
 			System.exit(-4);
 		}
 		
-		showStatistics(startTime, Instant.now());
+		showStatistics(startTime);
 		
 		// Close the open streams (imported and exported content).
 		FileUtils.closeIO();
@@ -73,8 +73,7 @@ public class DocUrlsRetriever
 					+ "\nUsage: java -jar doc_urls_retriever-<VERSION>.jar -downloadDocFiles(OPTIONAL) -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' < 'input' > 'output'");
 			System.exit(-1);
 		}
-		
-		boolean downloadDocFiles = false;
+
 		boolean firstNumGiven = false;
 		
 		for ( short i = 0; i < mainArgs.length; i++ )
@@ -82,8 +81,7 @@ public class DocUrlsRetriever
 			switch ( mainArgs[i] )
 			{
 				case "-downloadDocFiles":
-					downloadDocFiles = true;
-					FileUtils.shouldDownloadDocFiles = downloadDocFiles;
+					FileUtils.shouldDownloadDocFiles = true;
 					break;
 				case "-firstDocFileNum":
 					try {
@@ -111,18 +109,16 @@ public class DocUrlsRetriever
 			}
 		}
 		
-		if ( downloadDocFiles ) {
+		if ( FileUtils.shouldDownloadDocFiles ) {
 			if ( !firstNumGiven ) {
 				logger.warn("No \"-firstDocFileNum\" argument was given. The original-docFilesNames will be used.");
 				FileUtils.shouldUseOriginalDocFileNames = true;
 			}
 		}
-		else
-			FileUtils.shouldDownloadDocFiles = false;
 	}
 	
 	
-	public static void showStatistics(Instant startTime, Instant finishTime)
+	public static void showStatistics(Instant startTime)
 	{
 		long inputCheckedUrlNum = 0;
 		if ( LoaderAndChecker.useIdUrlPairs )
@@ -178,7 +174,7 @@ public class DocUrlsRetriever
 		
 		logger.debug("The number of domains blocked due to an \"SSL Exception\" was: " + HttpConnUtils.numOfDomainsBlockedDueToSSLException);
 
-		calculateAndPrintElapsedTime(startTime, finishTime);
+		calculateAndPrintElapsedTime(startTime, Instant.now());
 	}
 	
 	

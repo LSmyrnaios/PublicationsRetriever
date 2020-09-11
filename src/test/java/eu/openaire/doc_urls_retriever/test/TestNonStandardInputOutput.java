@@ -78,7 +78,7 @@ public class TestNonStandardInputOutput  {
 	{
 		String[] args = new String[0];
 		
-		logger.info("Calling main method without any args");
+		logger.info("Calling main method without any args..");
 		
 		main(args);
 	}
@@ -110,7 +110,7 @@ public class TestNonStandardInputOutput  {
 			System.exit(-7);
 		}
 		
-		DocUrlsRetriever.showStatistics(DocUrlsRetriever.startTime, Instant.now());
+		DocUrlsRetriever.showStatistics(DocUrlsRetriever.startTime);
 		
 		// Close the open streams (imported and exported content).
 		FileUtils.closeIO();

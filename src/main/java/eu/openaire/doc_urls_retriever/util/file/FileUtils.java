@@ -50,7 +50,7 @@ public class FileUtils
 	
 	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<String, Integer>();	// Holds docFileNa,es with their duplicatesNum.
 	
-	public static boolean shouldDownloadDocFiles = true;
+	public static boolean shouldDownloadDocFiles = false;
 	public static final boolean shouldDeleteOlderDocFiles = false;	// Should we delete any older stored docFiles? This is useful for testing.
 	public static boolean shouldUseOriginalDocFileNames = false;	// Use number-fileNames by default.
 	public static final boolean shouldLogFullPathName = true;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
