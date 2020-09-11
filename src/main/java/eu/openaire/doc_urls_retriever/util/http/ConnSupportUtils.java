@@ -42,10 +42,11 @@ public class ConnSupportUtils
 	
 	public static final SetMultimap<String, String> domainsMultimapWithPaths403BlackListed = HashMultimap.create();	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
 	
-	private static final int timesPathToHave403errorCodeBeforeBlocked = 3;
-	private static final int timesToHave5XXerrorCodeBeforeBlocked = 10;
-	private static final int timesToHaveTimeoutExBeforeBlocked = 25;
-	private static final int numberOf403BlockedPathsBeforeBlocked = 5;
+	private static final int timesToHave403errorCodeBeforePathBlocked = 5;	// If a path leads to 403 with different urls, more than 5 times, then this path gets blocked.
+	private static final int numberOf403BlockedPathsBeforeDomainBlocked = 5;	// If a domain has more than 5 different 403-blocked paths, then the whole domain gets blocked.
+
+	private static final int timesToHave5XXerrorCodeBeforeDomainBlocked = 10;
+	private static final int timesToHaveTimeoutExBeforeDomainBlocked = 25;
 	
 	public static final HashSet<String> knownDocMimeTypes = new HashSet<String>();
 	static {
@@ -280,15 +281,15 @@ public class ConnSupportUtils
 		if ( pathStr == null )
 			return;
 		
-		if ( countAndBlockPathAfterTimes(domainsMultimapWithPaths403BlackListed, timesPathsReturned403, pathStr, domainStr, timesPathToHave403errorCodeBeforeBlocked) )
+		if ( countAndBlockPathAfterTimes(domainsMultimapWithPaths403BlackListed, timesPathsReturned403, pathStr, domainStr, timesToHave403errorCodeBeforePathBlocked) )
 		{
 			logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code.");
 			
 			// Block the whole domain if it has more than a certain number of blocked paths.
-			if ( domainsMultimapWithPaths403BlackListed.get(domainStr).size() > numberOf403BlockedPathsBeforeBlocked )
+			if ( domainsMultimapWithPaths403BlackListed.get(domainStr).size() > numberOf403BlockedPathsBeforeDomainBlocked )
 			{
 				HttpConnUtils.blacklistedDomains.add(domainStr);	// Block the whole domain itself.
-				logger.debug("Domain: \"" + domainStr + "\" was blocked, after having more than " + numberOf403BlockedPathsBeforeBlocked + " of its paths 403blackListed.");
+				logger.debug("Domain: \"" + domainStr + "\" was blocked, after having more than " + numberOf403BlockedPathsBeforeDomainBlocked + " of its paths 403blackListed.");
 				domainsMultimapWithPaths403BlackListed.removeAll(domainStr);	// No need to keep its paths anymore.
 				throw new DomainBlockedException();
 			}
@@ -333,8 +334,8 @@ public class ConnSupportUtils
 	
 	public static void on5XXerrorCode(String domainStr) throws DomainBlockedException
 	{
-		if ( countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsReturned5XX, domainStr, timesToHave5XXerrorCodeBeforeBlocked) ) {
-			logger.debug("Domain: \"" + domainStr + "\" was blocked after returning 5XX Error Code " + timesToHave5XXerrorCodeBeforeBlocked + " times.");
+		if ( countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsReturned5XX, domainStr, timesToHave5XXerrorCodeBeforeDomainBlocked) ) {
+			logger.debug("Domain: \"" + domainStr + "\" was blocked after returning 5XX Error Code " + timesToHave5XXerrorCodeBeforeDomainBlocked + " times.");
 			throw new DomainBlockedException();
 		}
 	}
@@ -342,8 +343,8 @@ public class ConnSupportUtils
 	
 	public static void onTimeoutException(String domainStr) throws DomainBlockedException
 	{
-		if ( countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsHadTimeoutEx, domainStr, timesToHaveTimeoutExBeforeBlocked) ) {
-			logger.debug("Domain: \"" + domainStr + "\" was blocked after causing TimeoutException " + timesToHaveTimeoutExBeforeBlocked + " times.");
+		if ( countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsHadTimeoutEx, domainStr, timesToHaveTimeoutExBeforeDomainBlocked) ) {
+			logger.debug("Domain: \"" + domainStr + "\" was blocked after causing TimeoutException " + timesToHaveTimeoutExBeforeDomainBlocked + " times.");
 			throw new DomainBlockedException();
 		}
 	}

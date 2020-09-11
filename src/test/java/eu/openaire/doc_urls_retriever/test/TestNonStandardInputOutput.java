@@ -39,6 +39,7 @@ public class TestNonStandardInputOutput  {
 	{
 		LoaderAndChecker.useIdUrlPairs = testingSubDir.equals("idUrlPairs");
 		FileUtils.skipFirstRow = false;
+		logger.info("Using the inputFile: \"" + inputFile.getName() + "\" and the outputFile: \"" + outputFile.getName() + "\".");
 	}
 	
 	
