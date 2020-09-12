@@ -1,8 +1,6 @@
 <configuration debug="false">
 
-    <!-- in the absence of the class attribute, assume
-   ch.qos.logback.core.hook.DefaultShutdownHook -->
-    <shutdownHook/>
+    <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
 
     <appender name="File" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>logs/DocUrlsRetriever.log</file>

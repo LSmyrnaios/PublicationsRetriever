@@ -187,6 +187,7 @@ public class DocUrlsRetriever
 			remaining millis = 506
 			mins = secs / 60 = 2904 / 60 = 48.4 mins = 48mins + (0.4 * 60) secs = 48 mins + 24 secs
 			remaining secs = 24
+		Elapsed time --> "48 minutes, 24 seconds and 506 milliseconds."
 		 */
 		
 		long timeElapsedMillis = Duration.between(startTime, finishTime).toMillis();

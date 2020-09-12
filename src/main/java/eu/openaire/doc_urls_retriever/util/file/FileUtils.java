@@ -71,10 +71,7 @@ public class FileUtils
 		
 		if ( MachineLearning.useMLA ) {	// In case we are using the MLA, go get the numOfLines to be used.
 			numOfLines = getInputNumOfLines();
-			if ( numOfLines == -1 )
-				logger.error("There was an error when retrieving the \"numOfLines\", the MLA will continue to work anyway.");
-			else
-				logger.debug("Num of lines in the inputFile: " + numOfLines);
+			logger.debug("Num of lines in the inputFile: " + numOfLines);
 		}
 		
 		FileUtils.printStream = new PrintStream(output);
@@ -156,12 +153,12 @@ public class FileUtils
 			
 			inputScanner.close();
 			
-			// Assign the new input-file from which the data will be read.
+			// Assign the new input-file from which the data will be read for the rest of the program's execution.
 			inputScanner = new Scanner(new FileInputStream(fullInputFilePath));
 		} catch (Exception e) {
 			logger.error("", e);
 			FileUtils.closeIO();
-			System.exit(-10);
+			System.exit(-10);	// The inputFile (stream) is already partly-consumed, no point to continue.
 		}
 		
 		if ( FileUtils.skipFirstRow && (lineCount != 0) )
