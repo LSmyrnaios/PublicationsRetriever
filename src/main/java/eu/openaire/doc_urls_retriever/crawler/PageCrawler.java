@@ -55,15 +55,13 @@ public class PageCrawler
 		if ( ScienceDirectUrlsHandler.checkIfAndHandleScienceDirect(urlId, sourceUrl, pageUrl, currentPageDomain, conn) )
 			return;	// We always return, if we have a kindOf-scienceDirect-url. The sourceUrl is already logged inside the called method.
 		
-		String pageHtml = null;
-		try {	// Get the pageHtml to parse the page.
-			pageHtml = ConnSupportUtils.getHtmlString(conn);
-			//logger.debug(pageHtml);	// DEBUG!
-		} catch (Exception e) {
-			logger.debug("Could not retrieve the internalLinks for pageUrl: " + pageUrl);
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its internalLinks. Its contentType is: '" + pageContentType + "'", null);
+		String pageHtml = null;	// Get the pageHtml to parse the page.
+		if ( (pageHtml = ConnSupportUtils.getHtmlString(conn)) == null ) {
+			logger.debug("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", null);
 			return;
 		}
+		//logger.debug(pageHtml);	// DEBUG!
 		
 		// Check if the docLink is provided in a metaTag and connect to it directly.
 		if ( MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl(urlId, sourceUrl, pageUrl, currentPageDomain, pageHtml) )

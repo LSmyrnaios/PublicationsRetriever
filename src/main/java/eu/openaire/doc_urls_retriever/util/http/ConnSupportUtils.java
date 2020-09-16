@@ -202,7 +202,7 @@ public class ConnSupportUtils
 	
 	
 	/**
-	 * This method recieves a pageUrl which gave an HTTP-300-code and extracts an internalLink out of the multiple choices provided.
+	 * This method receives a pageUrl which gave an HTTP-300-code and extracts an internalLink out of the multiple choices provided.
 	 * @param conn
 	 * @return
 	 */
@@ -393,9 +393,9 @@ public class ConnSupportUtils
 		HttpConnUtils.blacklistedDomains.add(pageDomain);
 		logger.debug("Domain: \"" + pageDomain + "\" was blocked after trying to cause a \"sharedSiteSession-redirectionPack\"!");
 	}
-	
-	
-	public static String getHtmlString(HttpURLConnection conn) throws Exception
+
+
+	public static String getHtmlString(HttpURLConnection conn)
 	{
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream())))	// Try-with-resources
 		{
@@ -406,11 +406,17 @@ public class ConnSupportUtils
 //					logger.debug(inputLine);	// DEBUG!
 			}
 			//logger.debug("Chars in html: " + String.valueOf(htmlStrB.length()));	// DEBUG!
-			return htmlStrB.toString();
-			
-		} catch (Exception e) {
-			logger.error("", e);
-			throw e;
+
+			String html = htmlStrB.toString();
+			return (html.length() == 0) ? null : html;    // Make sure we return a "null" on empty string, to better handle the case in the caller-function.
+
+		} catch ( IOException ioe ) {
+			String exceptionMessage = ioe.getMessage();
+			if ( exceptionMessage != null )
+				logger.error("IOException: " + ioe.getMessage() + "!");
+			else
+				logger.error("", ioe);
+			return null;
 		}
 		finally {
 			htmlStrB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating.
