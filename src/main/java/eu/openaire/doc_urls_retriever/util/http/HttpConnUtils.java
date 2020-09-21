@@ -260,8 +260,8 @@ public class HttpConnUtils
 				conn.setConnectTimeout(maxConnGETWaitingTime);
 				conn.setReadTimeout(maxConnGETWaitingTime);
 				conn.setInstanceFollowRedirects(false);
-				
-				if ( politenessDelay > 0 )
+
+				if ( politenessDelay > 0 )	// That's the only check here, since we know we will connect to the same host.
 					Thread.sleep(politenessDelay);	// Avoid server-overloading for the same host.
 				
 				conn.connect();
@@ -304,7 +304,7 @@ public class HttpConnUtils
 			// TODO - Maybe we should make another list where only urls in https, from these domains, would be blocked.
 			blacklistedDomains.add(domainStr);
 			numOfDomainsBlockedDueToSSLException++;
-			logger.warn("No Secure connection was able to be negotiated with the domain: \"" + domainStr + "\". The domain was blocked.", ssle.getMessage());
+			logger.warn("No Secure connection was able to be negotiated with the domain: \"" + domainStr + "\", so it was blocked. Exception message: " + ssle.getMessage());
 			throw new DomainBlockedException();
 		} catch (SocketException se) {
 			if ( conn != null )

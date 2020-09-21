@@ -62,7 +62,7 @@ public class FileUtils
 	
 	public static final int MAX_FILENAME_LENGTH = 250;	// TODO - Find a way to get the current-system's MAX-value.
 	
-	public static String fullInputFilePath = null;	// Used when the MLA is enabled and we want to count the number of line in the inputFile.
+	public static String fullInputFilePath = null;	// Used when the MLA is enabled and we want to count the number of lines in the inputFile, in order to optimize the M.L.A.'s execution.
 	
 	
 	public FileUtils(InputStream input, OutputStream output)
@@ -192,8 +192,9 @@ public class FileUtils
 		
 		int curBeginning = FileUtils.fileIndex;
 		
-		while ( inputScanner.hasNextLine() && (FileUtils.fileIndex < (curBeginning + jsonGroupSize)) )// While (!EOF) iterate through lines.
-		{
+		while ( inputScanner.hasNextLine() && (FileUtils.fileIndex < (curBeginning + jsonGroupSize)) )
+		{// While (!EOF) and inside the current url-group, iterate through lines.
+
 			//logger.debug("fileIndex: " + FileUtils.fileIndex);	// DEBUG!
 
 			// Take each line, remove potential double quotes.
@@ -377,15 +378,17 @@ public class FileUtils
 			docFileName = UrlUtils.getDocIdStr(docUrl);	// Extract the docID as the fileName from docUrl.
 		
 		if ( (docFileName != null) && !docFileName.isEmpty() ) {
-			// Check if the FileName is too long and we are going to get an error at file-creation.
+
 			if ( !docFileName.endsWith(dotFileExtension) )
 				docFileName += dotFileExtension;
 			
 			String fullDocName = storeDocFilesDir + docFileName;
+
+			// Check if the FileName is too long and we are going to get an error at file-creation.
 			int docFullNameLength = fullDocName.length();
 			if ( docFullNameLength > MAX_FILENAME_LENGTH ) {
 				logger.warn("Too long docFullName found (" + docFullNameLength + " chars), it would cause file-creation to fail, so we mark the file-name as \"unretrievable\".\nThe long docName is: \"" + fullDocName + "\".");
-				hasUnretrievableDocName = true;
+				hasUnretrievableDocName = true;	// TODO - Maybe I should take the part of the full name that can be accepted instead of marking it unretrievable..
 			}
 		} else
 			hasUnretrievableDocName = true;
@@ -456,7 +459,8 @@ public class FileUtils
 			printStream.flush();
 			printStream.close();
 		}
-		
+
+		// If the MLA was enabled then an extra file was used to store the streamed content and count the number of urls, in order to optimize the M.L.A.'s execution.
 		if ( fullInputFilePath != null ) {
 			try {
 				org.apache.commons.io.FileUtils.forceDelete(new File(fullInputFilePath));
@@ -492,7 +496,7 @@ public class FileUtils
 		int curBeginning = FileUtils.fileIndex;
 		
 		while ( inputScanner.hasNextLine() && (FileUtils.fileIndex < (curBeginning + jsonGroupSize)) )
-		{// While (!EOF) iterate through lines.
+		{// While (!EOF) and inside the current url-group, iterate through lines.
 			
 			// Take each line, remove potential double quotes.
 			String retrievedLineStr = inputScanner.nextLine();

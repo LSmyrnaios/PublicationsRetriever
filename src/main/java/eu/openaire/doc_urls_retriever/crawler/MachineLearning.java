@@ -26,7 +26,7 @@ public class MachineLearning
 {
 	private static final Logger logger = LoggerFactory.getLogger(MachineLearning.class);
 	
-	public static final boolean useMLA = false;	// Should we try the experimental-M.L.A.? This is intended to be like a "global switch", to use or not to use the MLA,  throughout the program's execution.
+	public static final boolean useMLA = false;	// Should we try the experimental-M.L.A.? This is intended to be like a "global switch", to use or not to use the MLA, throughout the program's execution.
 	
 	private static final StringBuilder strB = new StringBuilder(200);
 	
@@ -129,6 +129,7 @@ public class MachineLearning
 		
 		String docUrlPath = UrlUtils.getPathStr(docUrl);
 		if ( (docUrlPath == null) || docUrlPath.equals(docPagePath) )	// Avoid holding unnecessary/unwanted data.
+		//if ( docUrlPath == null ) // TODO - Rethink the difference..
 			return;
 		
 		MachineLearning.successPathsMultiMap.put(docPagePath, docUrlPath);	// Add this pair in "successPathsMultiMap", if the key already exists then it will just add one more value to that key.
@@ -193,8 +194,8 @@ public class MachineLearning
 			return true;
 		}
 		
-		// Else don't run the MLA, but update the variables.
-		logger.debug("MLA's success-rate is lower than the satisfying one (" + leastSuccessPercentageForMLA + "). Entering \"sleepMode\"...");
+		// Else enter "sleep-mode" and update the variables.
+		logger.debug("MLA's success-rate is lower than the satisfying one (" + leastSuccessPercentageForMLA + "). Entering \"sleep-mode\"...");
 		int latestNumOfUrlsBeforePauseMLA = PageCrawler.totalPagesReachedCrawling -1;
 		endOfSleepNumOfUrls = latestNumOfUrlsBeforePauseMLA + urlsToWaitUntilRestartMLA;	// Update num of urls to reach before the "sleep period" ends.
 		latestMLADocUrlsFound = docUrlsFoundByMLA;	// Keep latest num of docUrls found by the MLA, in order to calculate the success rate only for up-to-date data.
@@ -239,10 +240,11 @@ public class MachineLearning
 			return false;
 		}
 		
-		// If this page's path is already logged, go check for previous successful docUrl's paths, if not logged, then return..
+		// If this path cannot be handled by the MLA (no known data in our model), then return.
 		if ( !successPathsMultiMap.containsKey(pagePath) )
 			return false;
-		
+
+		// If the path can be handled, then go check for previous successful docUrls' paths.
 		Collection<String> knownDocUrlPaths = successPathsMultiMap.get(pagePath);	// Get all available docUrlPaths for this docPagePath, to try them along with current ID.
 		int pathsSize = knownDocUrlPaths.size();
 		if ( pathsSize > 5 ) {	// Too many docPaths for this pagePath, means that there's probably only one pagePath we get for this domain (paths are not mapped to domains so we can't actually check).
@@ -270,7 +272,7 @@ public class MachineLearning
 		MachineLearning.urlsCheckedWithMLA ++;
 		
 		String predictedDocUrl = null;
-		String urlEnding = docIdStr + ".pdf";
+		String urlEnding = docIdStr + ".pdf";	// TODO - This might break docUrls.. but its absence might break predicted docUrls too.. maybe keep a list of domains of paths where the extension is used..
 		
 		for ( String knownDocUrlPath : knownDocUrlPaths )
 		{
@@ -292,7 +294,7 @@ public class MachineLearning
 			
 			// Check if it's a truly-alive docUrl.
 			try {
-				logger.debug("Going to check predictedDocUrl: " + predictedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");
+				logger.debug("Going to check predictedDocUrl: \"" + predictedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");
 				
 				if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, predictedDocUrl, null, false, true) ) {
 					logger.info("MachineLearningAlgorithm got a hit for pageUrl: \""+ pageUrl + "\"! Resulted docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!

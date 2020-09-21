@@ -206,6 +206,7 @@ public class PageCrawler
 		} catch (JavaScriptDocLinkFoundException jsdlfe) {
 			handleJavaScriptDocLink(urlId, sourceUrl, pageUrl, currentPageDomain, pageContentType, jsdlfe);	// url-logging is handled inside.
 			return null;	// This JavaScriptDocLink is the only docLink we will ever gonna get from this page. The sourceUrl is logged inside the called method.
+			// If this "JavaScriptDocLink" is a DocUrl, then returning "null" here, will trigger the 'PageCrawler.visit()' method to exit immediately (and normally).
 		} catch (Exception e) {
 			logger.debug("Could not retrieve the internalLinks for pageUrl: " + pageUrl);
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its internalLinks. Its contentType is: '" + pageContentType + "'", null);
@@ -248,8 +249,8 @@ public class PageCrawler
 				throw new DynamicInternalLinksFoundException();
 
 			if ( internalLink.equals("/")
-					|| internalLink.startsWith("mailto:") || internalLink.startsWith("tel:") || internalLink.startsWith("fax:")
-					|| internalLink.startsWith("file:") || internalLink.startsWith("{openurl}") || internalLink.startsWith("?locale") )
+					|| internalLink.startsWith("mailto:", 0) || internalLink.startsWith("tel:", 0) || internalLink.startsWith("fax:", 0)
+					|| internalLink.startsWith("file:", 0) || internalLink.startsWith("{openurl}", 0) || internalLink.startsWith("?locale", 0) )
 				continue;
 
 			// Remove anchors from possible docUrls and add the remaining part to the list. Non-possibleDocUrls having anchors are rejected.
@@ -267,7 +268,7 @@ public class PageCrawler
 
 			//logger.debug("Filtered InternalLink: " + internalLink);	// DEBUG!
 
-			if ( internalLink.toLowerCase().startsWith("javascript:") ) {
+			if ( internalLink.toLowerCase().startsWith("javascript:", 0) ) {
 				String pdfLink = null;
 				Matcher pdfLinkMatcher = JAVASCRIPT_DOC_LINK.matcher(internalLink);	// Send the non-lower-case version as we need the inside url untouched, in order to open a valid connection.
 				if ( pdfLinkMatcher.matches() ) {

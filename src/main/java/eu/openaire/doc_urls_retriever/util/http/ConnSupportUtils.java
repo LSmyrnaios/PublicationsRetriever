@@ -81,7 +81,7 @@ public class ConnSupportUtils
 			
 			String plainMimeType = mimeType;	// Make sure we don't cause any NPE later on..
 			if ( mimeType.contains("charset") || mimeType.contains("name")
-					|| mimeType.startsWith("(") )	// See: "https://www.mamsie.bbk.ac.uk/articles/10.16995/sim.138/galley/134/download/" -> "Content-Type: ('application/pdf', none)"
+					|| mimeType.startsWith("(", 0) )	// See: "https://www.mamsie.bbk.ac.uk/articles/10.16995/sim.138/galley/134/download/" -> "Content-Type: ('application/pdf', none)"
 			{
 				plainMimeType = getPlainMimeType(mimeType);
 				if ( plainMimeType == null ) {    // If there was any error removing the charset, still try to save any docMimeType (currently pdf-only).
@@ -407,13 +407,12 @@ public class ConnSupportUtils
 			}
 			//logger.debug("Chars in html: " + String.valueOf(htmlStrB.length()));	// DEBUG!
 
-			String html = htmlStrB.toString();
-			return (html.length() == 0) ? null : html;    // Make sure we return a "null" on empty string, to better handle the case in the caller-function.
+			return (htmlStrB.length() != 0) ? htmlStrB.toString() : null;	// Make sure we return a "null" on empty string, to better handle the case in the caller-function.
 
 		} catch ( IOException ioe ) {
 			String exceptionMessage = ioe.getMessage();
 			if ( exceptionMessage != null )
-				logger.error("IOException: " + ioe.getMessage() + "!");
+				logger.error("IOException when retrieving the HTML-code: " + ioe.getMessage() + "!");
 			else
 				logger.error("", ioe);
 			return null;
