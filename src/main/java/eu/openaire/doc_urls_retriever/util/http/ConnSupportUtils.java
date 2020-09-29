@@ -16,9 +16,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -470,6 +468,25 @@ public class ConnSupportUtils
 			logger.warn("[" + firstLineOfStackTrace.getFileName() + "->" + firstLineOfStackTrace.getMethodName() + "(@" + firstLineOfStackTrace.getLineNumber() + ")] - " + exMsg);
 		} else
 			logger.warn("Could not handle connection for \"" + resourceURL + "\"!");
+	}
+
+
+	public static void printConnectionDebugInfo(HttpURLConnection conn, boolean shouldShowFullHeaders)
+	{
+		if ( conn == null ) {
+			logger.warn("The given connection instance was null..");
+			return;
+		}
+		logger.debug("Connection debug info:\nURL: < {} >,\nContentType: \"{}\". ContentDisposition: \"{}\", HTTP-method: \"{}\"",
+				conn.getURL().toString(), conn.getContentType(), conn.getHeaderField("Content-Disposition"), conn.getRequestMethod());
+		if ( shouldShowFullHeaders ) {
+			StringBuilder sb = new StringBuilder(300).append("Headers:\n");
+			Map<String, List<String>> headers = conn.getHeaderFields();
+			for ( String headerKey : headers.keySet() )
+				for ( String headerValue : headers.get(headerKey) )
+					sb.append(headerKey).append(" : ").append(headerValue).append("\n");
+			logger.debug(sb.toString());
+		}
 	}
 	
 	
