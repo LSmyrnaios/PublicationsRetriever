@@ -249,7 +249,16 @@ public class HttpConnUtils
 			if ( !calledForPageUrl && shouldNOTacceptGETmethodForUncategorizedInternalLinks
 					&& !calledForPossibleDocUrl && domainsWithUnsupportedHeadMethod.contains(domainStr) )	// Exclude the possibleDocUrls and the ones which cannot connect with "HEAD".
 				throw new DomainWithUnsupportedHEADmethodException();
-			
+
+			// For the urls which has reached this point, make sure no weird "ampersand"-anomaly blocks us...
+			boolean weirdMetaDocUrlWhichNeedsGET = false;
+			if ( calledForPossibleDocUrl && resourceURL.contains("amp%3B") ) {
+				//logger.debug("Just arrived weirdMetaDocUrl: " + resourceURL);
+				resourceURL = StringUtils.replace(resourceURL, "amp%3B", "", -1);
+				//logger.debug("After replacement in the weirdMetaDocUrl: " + resourceURL);
+				weirdMetaDocUrlWhichNeedsGET = true;
+			}
+
 			if ( ConnSupportUtils.checkIfPathIs403BlackListed(resourceURL, domainStr) )
 				throw new RuntimeException("Avoid reaching 403ErrorCode with url: \"" + resourceURL + "\"!");
 			
@@ -259,9 +268,10 @@ public class HttpConnUtils
 			
 			conn.setInstanceFollowRedirects(false);	// We manage redirects on our own, in order to control redirectsNum, avoid redirecting to unwantedUrls and handling errors.
 			
-			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// Either for just-webPages or for docUrls, we want to use "GET" in order to download the content.
-				|| (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles)
-				|| domainsWithUnsupportedHeadMethod.contains(domainStr) )
+			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// For just-webPages, we want to use "GET" in order to download the content.
+				|| (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles)	// For docUrls, if we should download them.
+				|| weirdMetaDocUrlWhichNeedsGET	// If we have a weirdMetaDocUrl-case then we need "GET".
+				|| domainsWithUnsupportedHeadMethod.contains(domainStr) )	// If the domain doesn't support "HEAD", then we only do "GET".
 			{
 				conn.setRequestMethod("GET");	// Go directly with "GET".
 				conn.setConnectTimeout(maxConnGETWaitingTime);
