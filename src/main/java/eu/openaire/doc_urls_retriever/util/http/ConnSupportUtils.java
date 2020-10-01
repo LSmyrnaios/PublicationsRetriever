@@ -168,9 +168,10 @@ public class ConnSupportUtils
 				conn = HttpConnUtils.openHttpConnection(docUrl, domainStr, false, true);
 				reconnected = true;
 				int responseCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP response), inside openHttpConnection().
+				// Only a final-url will reach here, so no redirect should occur (thus, we don't check for it).
 				if ( (responseCode < 200) || (responseCode >= 400) ) {    // If we have unwanted/error codes.
-					onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode);
-					throw new DocFileNotRetrievedException();
+					String errorMessage = onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode);
+					throw new DocFileNotRetrievedException(errorMessage);
 				}
 			}
 			int contentSize = 0;
@@ -207,7 +208,7 @@ public class ConnSupportUtils
 	public static String getInternalLinkFromHTTP300Page(HttpURLConnection conn)
 	{
 		try {
-			return new ArrayList<>(PageCrawler.extractInternalLinksFromHtml(getHtmlString(conn))).get(0);
+			return new ArrayList<>(PageCrawler.extractInternalLinksFromHtml(getHtmlString(conn))).get(0);	// There will be only a couple of urls so it's not a big deal to gather them all.
 		} catch (JavaScriptDocLinkFoundException jsdlfe) {
 			return jsdlfe.getMessage();	// Return the Javascript link.
 		} catch (Exception e) {
@@ -410,13 +411,52 @@ public class ConnSupportUtils
 		} catch ( IOException ioe ) {
 			String exceptionMessage = ioe.getMessage();
 			if ( exceptionMessage != null )
-				logger.error("IOException when retrieving the HTML-code: " + ioe.getMessage() + "!");
+				logger.error("IOException when retrieving the HTML-code: " + exceptionMessage + "!");
 			else
 				logger.error("", ioe);
 			return null;
 		}
 		finally {
 			htmlStrB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating.
+		}
+	}
+
+
+	/**
+	 * This method examines the first line of the Response-body and returns the content-type.
+	 * TODO - The only "problem" is that after the "inputStream" closes, it cannot be opened again. So, we cannot parse the HTML afterwards nor download the pdf.
+	 * TODO - I guess it's fine to just re-connect but we should search for a way to reset the stream without the overhead of re-connecting.. (keeping the first line and using it later is the solution I use, but only for the html-type, since the pdf-download reads bytes and not lines)
+	 * @param conn
+	 * @return "html", "pdf", "undefined", null
+	 */
+	public static DetectedContentType extractContentTypeFromResponseBody(HttpURLConnection conn)
+	{
+		try {
+			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+			String inputLine = br.readLine();
+			//logger.debug("First line of RequestBody: " + inputLine);	// DEBUG!
+			if ( inputLine == null )
+				return null;
+
+			String lowercaseInputLine = inputLine.toLowerCase();
+			if ( lowercaseInputLine.startsWith("<!doctype html", 0) )
+				return new DetectedContentType("html", inputLine);
+			else {
+				br.close();	// We close the stream here, since if we got a pdf we should reconnect in order to get the very first bytes (we don't read "lines" when downloading PDFs).
+				if ( lowercaseInputLine.startsWith("%pdf-", 0) )
+					return new DetectedContentType("pdf", null);	// For PDFs we just going to re-connect in order to download the, since we read plain bytes for them and not String-lines, so we re-connect just to be sure we don't corrupt them.
+				else
+					return new DetectedContentType("undefined", null);
+			}
+
+		} catch ( IOException ioe ) {
+			String exceptionMessage = ioe.getMessage();
+			if ( exceptionMessage != null )
+				logger.error("IOException when retrieving the HTML-code: " + exceptionMessage + "!");
+			else
+				logger.error("", ioe);
+			return null;
 		}
 	}
 	

@@ -7,6 +7,7 @@ import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,23 +84,55 @@ public class HttpConnUtils
 			// Check if we are able to find the mime type, if not then try "Content-Disposition".
 			String mimeType = conn.getContentType();
 			String contentDisposition = null;
-			
+
+			String finalUrlStr = conn.getURL().toString();
+
+			if ( !finalUrlStr.contains(domainStr) )	// Get the new domain after possible change from redirects.
+				if ( (domainStr = UrlUtils.getDomainStr(finalUrlStr)) == null )
+					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
+
+			boolean foundDetectedContentType = false;
+			String firstHtmlLine = null;
+
 			if ( mimeType == null ) {
 				contentDisposition = conn.getHeaderField("Content-Disposition");
 				if ( contentDisposition == null ) {
-					String warnMsg = "No ContentType nor ContentDisposition, were able to be retrieved from url: " + conn.getURL().toString();
-					if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsReturnedNoType, domainStr, HttpConnUtils.timesToReturnNoTypeBeforeBlocked) ) {
-						logger.warn(warnMsg);
-						logger.warn("Domain: " + domainStr + " was blocked after returning no Type-info more than " + HttpConnUtils.timesToReturnNoTypeBeforeBlocked + " times.");
-						throw new DomainBlockedException();
+					String warnMsg = "No ContentType nor ContentDisposition, were able to be retrieved from url: " + finalUrlStr;
+					// Try to detect the content type.
+					if ( conn.getRequestMethod().equals("GET") ) {
+						DetectedContentType detectedContentType = ConnSupportUtils.extractContentTypeFromResponseBody(conn);
+						if ( detectedContentType != null ) {
+							if ( calledForPageUrl && detectedContentType.detectedContentType.equals("html") ) {
+								logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have HTML contentType! Going to visit the page..");
+								mimeType = "text/html";
+								foundDetectedContentType = true;
+								firstHtmlLine = detectedContentType.firstHtmlLine;
+							} else if ( detectedContentType.detectedContentType.equals("pdf") ) {
+								logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have PDF contentType!");
+								mimeType = "application/pdf";
+								calledForPossibleDocUrl = true;	// Important for the re-connection.
+								foundDetectedContentType = true;
+							} else if ( detectedContentType.detectedContentType.equals("undefined") )
+								logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have UNDEFINED contentType..");
+							else
+								logger.debug("Could not retrieve the HTML-code for url: " + finalUrlStr);
+						}
 					}
 					else
-						throw new RuntimeException(warnMsg);	// We can't retrieve any clue. This is not desired. The "warnMsg" will be printed by the caller method.
+						warnMsg += "\nThe initial connection was made with the \"HTTP-HEAD\" method, so there is no response-body to use to detect the content-type.";
+
+					if ( !foundDetectedContentType ) {
+						if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsReturnedNoType, domainStr, HttpConnUtils.timesToReturnNoTypeBeforeBlocked) ) {
+							logger.warn(warnMsg);
+							logger.warn("Domain: " + domainStr + " was blocked after returning no Type-info more than " + HttpConnUtils.timesToReturnNoTypeBeforeBlocked + " times.");
+							throw new DomainBlockedException();
+						}
+						else
+							throw new RuntimeException(warnMsg);	// We can't retrieve any clue. This is not desired. The "warnMsg" will be printed by the caller method.
+					}
 				}
 			}
-			
-			String finalUrlStr = conn.getURL().toString();
-			
+
 			//logger.debug("Url: " + finalUrlStr);	// DEBUG!
 			//logger.debug("MimeType: " + mimeType);	// DEBUG!
 			
@@ -108,6 +141,10 @@ public class HttpConnUtils
 				String fullPathFileName = "";
 				if ( FileUtils.shouldDownloadDocFiles ) {
 					try {
+						if ( foundDetectedContentType ) {	// If we went and detected the pdf from the request-code, then reconnect and proceed with downloading (reasons explained eslewhere).
+							conn.disconnect();
+							conn = handleConnection(urlId, sourceUrl, pageUrl, finalUrlStr, domainStr, calledForPageUrl, calledForPossibleDocUrl);
+						}
 						fullPathFileName = ConnSupportUtils.downloadAndStoreDocFile(conn, domainStr, finalUrlStr);
 						logger.info("DocFile: \"" + fullPathFileName + "\" has been downloaded.");
 					} catch (DocFileNotRetrievedException dfnde) {
@@ -125,7 +162,7 @@ public class HttpConnUtils
 					return false;
 				}
 				else if ( (mimeType != null) && ((mimeType.contains("htm") || mimeType.contains("text"))) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
-					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn);
+					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn, firstHtmlLine);
 				else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" with mimeType: \"" + mimeType + "\" will not be visited!");
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after not matching to a docUrl nor to an htm/text-like page.", domainStr);

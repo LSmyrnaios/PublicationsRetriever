@@ -39,9 +39,9 @@ public class PageCrawler
 	
 	public static final int timesToGiveNoInternalLinksBeforeBlocked = 5;
 	public static final int timesToGiveNoDocUrlsBeforeBlocked = 10;
-	
-	
-	public static void visit(String urlId, String sourceUrl, String pageUrl, String pageContentType, HttpURLConnection conn)
+
+
+	public static void visit(String urlId, String sourceUrl, String pageUrl, String pageContentType, HttpURLConnection conn, String firstHTMLlineFromDetectedContentType)
 	{
 		logger.debug("Visiting pageUrl: \"" + pageUrl + "\".");
 		
@@ -61,6 +61,10 @@ public class PageCrawler
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", null);
 			return;
 		}
+		if ( firstHTMLlineFromDetectedContentType != null ) {
+			pageHtml = firstHTMLlineFromDetectedContentType + pageHtml;
+		}
+
 		//logger.debug(pageHtml);	// DEBUG!
 		
 		// Check if the docLink is provided in a metaTag and connect to it directly.

@@ -9,4 +9,11 @@ package eu.openaire.doc_urls_retriever.exceptions;
 public class DocFileNotRetrievedException extends Exception
 {
 	public DocFileNotRetrievedException()	{}
+
+	private String errorMessage = null;
+
+	public DocFileNotRetrievedException(String errorMessage) { this.errorMessage = errorMessage; }
+
+	@Override
+	public String getMessage() { return errorMessage; }
 }
