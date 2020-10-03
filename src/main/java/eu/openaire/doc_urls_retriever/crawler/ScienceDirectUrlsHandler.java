@@ -83,7 +83,12 @@ public class ScienceDirectUrlsHandler
 			}
 			// We now have the "sciencedirect.com" url (either from the beginning or after "silent-redirect").
 			
-			String html = ConnSupportUtils.getHtmlString(conn);
+			String html = null;
+			if ( (html = ConnSupportUtils.getHtmlString(conn)) == null ) {
+				logger.warn("Could not retrieve the HTML-code for scienceDirect-pageUrl: " + pageUrl);
+				throw new FailedToProcessScienceDirectException();
+			}
+
 			Matcher metaDocUrlMatcher = MetaDocUrlsHandler.META_DOC_URL.matcher(html);
 			if ( !metaDocUrlMatcher.find() )
 			{
@@ -103,10 +108,12 @@ public class ScienceDirectUrlsHandler
 			currentConnectedUrl = metaDocUrl;
 			conn = HttpConnUtils.handleConnection(urlId, sourceUrl, pageUrl, metaDocUrl, pageDomain, true, false);
 
-			//logger.debug("Url after connecting: " + conn.getURL().toString());
-			//logger.debug("MimeType: " + conn.getContentType());
+			// Take the new html.
+			if ( (html = ConnSupportUtils.getHtmlString(conn)) == null ) {
+				logger.warn("Could not retrieve the HTML-code for scienceDirect-metaDocUrl: " + pageUrl);
+				throw new FailedToProcessScienceDirectException();
+			}
 
-			html = ConnSupportUtils.getHtmlString(conn);	// Take the new html.
 			Matcher finalDocUrlMatcher = SCIENCEDIRECT_FINAL_DOC_URL.matcher(html);
 			if ( !finalDocUrlMatcher.find() )
 			{

@@ -208,7 +208,12 @@ public class ConnSupportUtils
 	public static String getInternalLinkFromHTTP300Page(HttpURLConnection conn)
 	{
 		try {
-			return new ArrayList<>(PageCrawler.extractInternalLinksFromHtml(getHtmlString(conn))).get(0);	// There will be only a couple of urls so it's not a big deal to gather them all.
+			String html = null;
+			if ( (html = ConnSupportUtils.getHtmlString(conn)) == null ) {
+				logger.warn("Could not retrieve the HTML-code for HTTP300PageUrl: " + conn.getURL().toString());
+				return null;
+			}
+			return new ArrayList<>(PageCrawler.extractInternalLinksFromHtml(html)).get(0);	// There will be only a couple of urls so it's not a big deal to gather them all.
 		} catch (JavaScriptDocLinkFoundException jsdlfe) {
 			return jsdlfe.getMessage();	// Return the Javascript link.
 		} catch (Exception e) {

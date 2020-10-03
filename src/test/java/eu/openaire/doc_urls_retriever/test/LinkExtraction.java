@@ -8,10 +8,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 
-import static eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils.getHtmlString;
 import static eu.openaire.doc_urls_retriever.util.http.HttpConnUtils.handleConnection;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -47,7 +47,12 @@ public class LinkExtraction {
 		//exampleUrl = "https://doors.doshisha.ac.jp/duar/repository/ir/127/?lang=0";
 		//exampleUrl = "https://www.sciencedirect.com/science/article/pii/S0042682297988747?via%3Dihub";
 		//exampleUrl = "https://ieeexplore.ieee.org/document/8998177";
-		exampleUrl = "http://kups.ub.uni-koeln.de/1052/";
+		//exampleUrl = "http://kups.ub.uni-koeln.de/1052/";
+		//exampleUrl = "https://www.competitionpolicyinternational.com/from-collective-dominance-to-coordinated-effects-in-eu-competition-policy/";
+		//exampleUrl = "https://upcommons.upc.edu/handle/2117/20502";
+		//exampleUrl = "https://gala.gre.ac.uk/id/eprint/11492/";
+		//exampleUrl = "https://edoc.hu-berlin.de/handle/18452/16660";
+		exampleUrl = "https://docs.lib.purdue.edu/jtrp/124/";
 	}
 
 	
@@ -79,10 +84,16 @@ public class LinkExtraction {
 		String link;
 		try {
 			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl), true, false);
-			
-			link = new ArrayList<>(PageCrawler.extractInternalLinksFromHtml(getHtmlString(conn))).get(0);
-			logger.info("The single-retrieved internalLink is: \"" + link + "\"");
-			
+
+			String html = null;
+			if ( (html = ConnSupportUtils.getHtmlString(conn)) == null ) {
+				logger.error("Could not retrieve the HTML-code for pageUrl: " + conn.getURL().toString());
+				link = null;
+			}
+			else {
+				link = new ArrayList<>(PageCrawler.extractInternalLinksFromHtml(html)).get(0);
+				logger.info("The single-retrieved internalLink is: \"" + link + "\"");
+			}
 		} catch (Exception e) {
 			logger.error("", e);
 			link = null;
@@ -122,7 +133,11 @@ public class LinkExtraction {
 		try {
 			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl), true, false);
 
-			String html = getHtmlString(conn);
+			String html = null;
+			if ( (html = ConnSupportUtils.getHtmlString(conn)) == null ) {
+				logger.error("Could not retrieve the HTML-code for pageUrl: " + conn.getURL().toString());
+				return;
+			}
 			//logger.debug("HTML:\n" + html);
 
 			ArrayList<String> links = new ArrayList<>(PageCrawler.extractInternalLinksFromHtml(html));

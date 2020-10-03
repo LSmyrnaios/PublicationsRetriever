@@ -115,9 +115,12 @@ public class MetaDocUrlsHandler {
         String metaDocUrl = null;
         try {
             metaDocUrl = metaDocUrlMatcher.group(1);
-        } catch (Exception e) { logger.error("", e); }
-        if ( metaDocUrl == null )
-            metaDocUrl = metaDocUrlMatcher.group(2);	// Try the other group.
+        } catch ( Exception e ) { logger.error("", e); }
+        if ( metaDocUrl == null ) {
+            try {
+                metaDocUrl = metaDocUrlMatcher.group(2);    // Try the other group.
+            } catch ( Exception e ) { logger.error("", e); }
+        }
 
         //logger.debug("MetaDocUrl: " + metaDocUrl);	// DEBUG!
 

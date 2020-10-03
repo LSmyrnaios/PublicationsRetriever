@@ -57,7 +57,7 @@ public class PageCrawler
 		
 		String pageHtml = null;	// Get the pageHtml to parse the page.
 		if ( (pageHtml = ConnSupportUtils.getHtmlString(conn)) == null ) {
-			logger.debug("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
+			logger.warn("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", null);
 			return;
 		}
