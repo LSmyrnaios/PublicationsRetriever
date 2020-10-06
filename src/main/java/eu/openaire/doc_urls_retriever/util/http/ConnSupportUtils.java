@@ -174,17 +174,12 @@ public class ConnSupportUtils
 					throw new DocFileNotRetrievedException(errorMessage);
 				}
 			}
-			int contentSize = 0;
-			try {
-				contentSize = getContentSize(conn);
-				if ( (contentSize == 0) || (contentSize > HttpConnUtils.maxAllowedContentSize) ) {
-					logger.warn("DocUrl: \"" + docUrl + "\" had a non-acceptable contentSize: " + contentSize + ". The maxAllowed one is: " + HttpConnUtils.maxAllowedContentSize);
-					throw new DocFileNotRetrievedException();
-				}
-			} catch (NumberFormatException nfe) {
-				logger.warn("No \"Content-Length\" was retrieved from docUrl: \"" + conn.getURL().toString() + "\"! We will store the docFile anyway..");	// No action is needed.
-			}
-			
+
+			// Check if we should abort the download based on its content-size.
+			int contentSize = getContentSize(conn, true);
+			if ( contentSize == -1 )
+				throw new DocFileNotRetrievedException();
+
 			// Write the downloaded bytes to the docFile and return the docFileName.
 			return FileUtils.storeDocFile(conn.getInputStream(), docUrl, conn.getHeaderField("Content-Disposition"));
 			
@@ -406,6 +401,12 @@ public class ConnSupportUtils
 
 	public static String getHtmlString(HttpURLConnection conn)
 	{
+		int contentSize = getContentSize(conn, false);
+		if ( contentSize == -1 ) {
+			logger.warn("Aborting HTML-extraction..");
+			return null;
+		}
+
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream())))	// Try-with-resources
 		{
 			String inputLine;
@@ -441,6 +442,12 @@ public class ConnSupportUtils
 	 */
 	public static DetectedContentType extractContentTypeFromResponseBody(HttpURLConnection conn)
 	{
+		int contentSize = getContentSize(conn, false);
+		if ( contentSize == -1 ) {
+			logger.warn("Aborting HTML-extraction..");
+			return null;
+		}
+
 		try {
 			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
@@ -474,12 +481,27 @@ public class ConnSupportUtils
 	/**
 	 * This method returns the ContentSize of the content of an HttpURLConnection.
 	 * @param conn
+	 * @param calledForFullTextDownload
 	 * @return contentSize
 	 * @throws NumberFormatException
 	 */
-	public static int getContentSize(HttpURLConnection conn) throws NumberFormatException
+	public static int getContentSize(HttpURLConnection conn, boolean calledForFullTextDownload)
 	{
-		return Integer.parseInt(conn.getHeaderField("Content-Length"));
+		int contentSize = 0;
+		try {
+			contentSize = Integer.parseInt(conn.getHeaderField("Content-Length"));
+			if ( (contentSize <= 0) || (contentSize > HttpConnUtils.maxAllowedContentSize) ) {
+				logger.warn((calledForFullTextDownload ? "DocUrl: \"" : "Url: \"") + conn.getURL().toString() + "\" had a non-acceptable contentSize: " + contentSize + ". The maxAllowed one is: " + HttpConnUtils.maxAllowedContentSize);
+				return -1;
+			}
+			//logger.debug("Content-length of \"" + conn.getURL().toString() + "\" is: " + contentSize);	// DEBUG!
+			return contentSize;
+
+		} catch (NumberFormatException nfe) {
+			if ( calledForFullTextDownload )	// It's not useful otherwise.
+				logger.warn("No \"Content-Length\" was retrieved from docUrl: \"" + conn.getURL().toString() + "\"! We will store the docFile anyway..");	// No action is needed.
+			return -2;
+		}
 	}
 	
 	
