@@ -213,7 +213,12 @@ public class ConnSupportUtils
 				logger.warn("Could not retrieve the HTML-code for HTTP300PageUrl: " + conn.getURL().toString());
 				return null;
 			}
-			return new ArrayList<>(PageCrawler.extractInternalLinksFromHtml(html)).get(0);	// There will be only a couple of urls so it's not a big deal to gather them all.
+
+			HashSet<String> extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(html, conn.getURL().toString());
+			if ( extractedLinksHashSet == null || extractedLinksHashSet.size() == 0 )
+				return null;	// Logging is handled inside..
+
+			return new ArrayList<>(extractedLinksHashSet).get(0);	// There will be only a couple of urls so it's not a big deal to gather them all.
 		} catch (JavaScriptDocLinkFoundException jsdlfe) {
 			return jsdlfe.getMessage();	// Return the Javascript link.
 		} catch (Exception e) {

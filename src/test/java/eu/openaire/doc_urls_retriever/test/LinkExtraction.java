@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import static eu.openaire.doc_urls_retriever.util.http.HttpConnUtils.handleConnection;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -62,7 +63,11 @@ public class LinkExtraction {
 	{
 		String link;
 		try {
-			link = new ArrayList<>(PageCrawler.extractInternalLinksFromHtml(exampleHtml)).get(0);
+			HashSet<String> extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(exampleHtml, null);
+			if ( (extractedLinksHashSet == null) || (extractedLinksHashSet.size() == 0) )
+				return;	// Logging is handled inside..
+
+			link = new ArrayList<>(extractedLinksHashSet).get(0);
 			logger.info("The single-retrieved internalLink is: \"" + link + "\"");
 			
 		} catch (Exception e) {
@@ -85,13 +90,18 @@ public class LinkExtraction {
 		try {
 			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl), true, false);
 
+			String newUrl = conn.getURL().toString();
 			String html = null;
 			if ( (html = ConnSupportUtils.getHtmlString(conn)) == null ) {
-				logger.error("Could not retrieve the HTML-code for pageUrl: " + conn.getURL().toString());
+				logger.error("Could not retrieve the HTML-code for pageUrl: " + newUrl);
 				link = null;
 			}
 			else {
-				link = new ArrayList<>(PageCrawler.extractInternalLinksFromHtml(html)).get(0);
+				HashSet<String> extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(html, newUrl);
+				if ( extractedLinksHashSet == null || extractedLinksHashSet.size() == 0 )
+					return;	// Logging is handled inside..
+
+				link = new ArrayList<>(extractedLinksHashSet).get(0);
 				logger.info("The single-retrieved internalLink is: \"" + link + "\"");
 			}
 		} catch (Exception e) {
@@ -109,14 +119,16 @@ public class LinkExtraction {
 	public void testExtractAllLinksFromHtml()
 	{
 		try {
-			ArrayList<String> links = new ArrayList<>(PageCrawler.extractInternalLinksFromHtml(exampleHtml));
-			
+			HashSet<String> extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(exampleHtml, null);
+			if ( extractedLinksHashSet == null || extractedLinksHashSet.size() == 0 )
+				return;	// Logging is handled inside..
+
 			logger.info("The list of all the internalLinks of \"" + exampleUrl + "\" is:");
-			for ( String link: links )
+			for ( String link: extractedLinksHashSet )
 				logger.info(link);
 
 			logger.info("\nThe accepted links from the above are:");
-			for ( String link : links )
+			for ( String link : extractedLinksHashSet )
 				if ( !UrlTypeChecker.shouldNotAcceptInternalLink(link, null) )
 					logger.info(link);
 			
@@ -133,21 +145,24 @@ public class LinkExtraction {
 		try {
 			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl), true, false);
 
+			String newUrl = conn.getURL().toString();
 			String html = null;
 			if ( (html = ConnSupportUtils.getHtmlString(conn)) == null ) {
-				logger.error("Could not retrieve the HTML-code for pageUrl: " + conn.getURL().toString());
+				logger.error("Could not retrieve the HTML-code for pageUrl: " + newUrl);
 				return;
 			}
 			//logger.debug("HTML:\n" + html);
 
-			ArrayList<String> links = new ArrayList<>(PageCrawler.extractInternalLinksFromHtml(html));
-			
+			HashSet<String> extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(html, newUrl);
+			if ( extractedLinksHashSet == null || extractedLinksHashSet.size() == 0 )
+				return;	// Logging is handled inside..
+
 			logger.info("The list of all the internalLinks of \"" + exampleUrl + "\" is:");
-			for ( String link: links )
+			for ( String link: extractedLinksHashSet )
 				logger.info(link);
 
 			logger.info("\nThe accepted links from the above are:");
-			for ( String link : links )
+			for ( String link : extractedLinksHashSet )
 			{
 				String targetUrl = ConnSupportUtils.getFullyFormedUrl(null, link, conn.getURL());
 				if ( targetUrl == null ) {

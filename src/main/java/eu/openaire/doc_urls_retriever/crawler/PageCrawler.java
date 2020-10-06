@@ -200,7 +200,7 @@ public class PageCrawler
 	{
 		HashSet<String> currentPageLinks = null;
 		try {
-			currentPageLinks = extractInternalLinksFromHtml(pageHtml);
+			currentPageLinks = extractInternalLinksFromHtml(pageHtml, pageUrl);
 		} catch ( DynamicInternalLinksFoundException dilfe) {
 				logger.debug("Domain \"" + currentPageDomain + "\" was found to have dynamic links, so it will be blocked.");
 				HttpConnUtils.blacklistedDomains.add(currentPageDomain);
@@ -216,32 +216,44 @@ public class PageCrawler
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its internalLinks. Its contentType is: '" + pageContentType + "'", null);
 			return null;
 		}
-		
-		//logger.debug("Num of links in: \"" + pageUrl + "\" is: " + currentPageLinks.size());
-		
-		if ( currentPageLinks.isEmpty() ) {	// If no links were retrieved (e.g. the pageUrl was some kind of non-page binary content)
-			logger.warn("No links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, as no links were able to be retrieved from it. Its contentType is: '" + pageContentType + "'", null);
+
+		boolean isNull = (currentPageLinks == null);
+		boolean isEmpty = false;
+
+		if ( !isNull )
+			isEmpty = (currentPageLinks.size() == 0);
+
+		if ( isNull || isEmpty ) {	// If no links were retrieved (e.g. the pageUrl was some kind of non-page binary content)
+			logger.warn("No " + (isEmpty ? "valid " : "") + "links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
+			PageCrawler.contentProblematicUrls ++;
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, as no " + (isEmpty ? "valid " : "") + "links were able to be retrieved from it. Its contentType is: '" + pageContentType + "'", null);
 			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingInternalLinks, currentPageDomain, PageCrawler.timesToGiveNoInternalLinksBeforeBlocked) )
-				logger.debug("Domain: " + currentPageDomain + " was blocked after giving no internalLinks more than " + PageCrawler.timesToGiveNoInternalLinksBeforeBlocked + " times.");
+				logger.debug("Domain: " + currentPageDomain + " was blocked after not providing internalLinks more than " + PageCrawler.timesToGiveNoInternalLinksBeforeBlocked + " times.");
 			return null;
 		}
-		
-		//if ( pageUrl.contains(<keyWord> | <url>) )	// In case we want to print internal-links only for specific-pageTypes.
+
+		//logger.debug("Num of links in: \"" + pageUrl + "\" is: " + currentPageLinks.size());
+
+		//if ( pageUrl.contains(<keyWord> || <url>) )	// In case we want to print internal-links only for specific-pageTypes.
 			//printInternalLinksForDebugging(currentPageLinks);
 		
 		return currentPageLinks;
 	}
 
 
-	public static HashSet<String> extractInternalLinksFromHtml(String pageHtml) throws JavaScriptDocLinkFoundException, DynamicInternalLinksFoundException
+	public static HashSet<String> extractInternalLinksFromHtml(String pageHtml, String pageUrl) throws JavaScriptDocLinkFoundException, DynamicInternalLinksFoundException
 	{
-		HashSet<String> urls = new HashSet<>();	// It will surely not be null.
-		
 		// Get the internalLinks using "Jsoup".
 		Document document = Jsoup.parse(pageHtml);
 		Elements linksOnPage = document.select("a[href]");
-		
+
+		if ( linksOnPage.isEmpty() ) {	// It will surely not be null.
+			logger.warn("Jsoup did not extract any links from pageUrl: \"" + pageUrl + "\"");
+			return null;
+		}
+
+		HashSet<String> urls = new HashSet<>(linksOnPage.size()/2);	// Some
+
 		for ( Element el : linksOnPage )
 		{
 			String internalLink = el.attr("href");
