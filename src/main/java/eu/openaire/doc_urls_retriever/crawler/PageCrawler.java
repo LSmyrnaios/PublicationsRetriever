@@ -40,6 +40,8 @@ public class PageCrawler
 	public static final int timesToGiveNoInternalLinksBeforeBlocked = 5;
 	public static final int timesToGiveNoDocUrlsBeforeBlocked = 10;
 
+	public static int contentProblematicUrls = 0;
+
 
 	public static void visit(String urlId, String sourceUrl, String pageUrl, String pageContentType, HttpURLConnection conn, String firstHTMLlineFromDetectedContentType)
 	{
@@ -49,6 +51,7 @@ public class PageCrawler
 		if ( currentPageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"PageCrawler.visit()\": \"" + pageUrl + "\"");
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, after the occurrence of a domain-retrieval error.", null);
+			LoaderAndChecker.connProblematicUrls ++;
 			return;
 		}
 		
@@ -59,6 +62,7 @@ public class PageCrawler
 		if ( (pageHtml = ConnSupportUtils.getHtmlString(conn)) == null ) {
 			logger.warn("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", null);
+			LoaderAndChecker.connProblematicUrls ++;
 			return;
 		}
 		if ( firstHTMLlineFromDetectedContentType != null ) {
@@ -190,6 +194,7 @@ public class PageCrawler
 		
 		// If we get here it means that this pageUrl is not a docUrl itself, nor it contains a docUrl..
 		logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
+		UrlTypeChecker.pagesNotProvidingDocUrls ++;
 		UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as no docUrl was found inside.", null);
 		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingDocUrls, currentPageDomain, PageCrawler.timesToGiveNoDocUrlsBeforeBlocked) )
 			logger.debug("Domain: " + currentPageDomain + " was blocked after giving no docUrls more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
@@ -202,10 +207,11 @@ public class PageCrawler
 		try {
 			currentPageLinks = extractInternalLinksFromHtml(pageHtml, pageUrl);
 		} catch ( DynamicInternalLinksFoundException dilfe) {
-				logger.debug("Domain \"" + currentPageDomain + "\" was found to have dynamic links, so it will be blocked.");
-				HttpConnUtils.blacklistedDomains.add(currentPageDomain);
-				logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");	// Refer "PageCrawler.visit()" here for consistency with other similar messages.
-				UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.retrieveInternalLinks()', as it belongs to a domain with dynamic-links.", null);
+			logger.debug("Domain \"" + currentPageDomain + "\" was found to have dynamic links, so it will be blocked.");
+			HttpConnUtils.blacklistedDomains.add(currentPageDomain);
+			logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");	// Refer "PageCrawler.visit()" here for consistency with other similar messages.
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.retrieveInternalLinks()', as it belongs to a domain with dynamic-links.", null);
+			LoaderAndChecker.connProblematicUrls ++;
 			return null;
 		} catch (JavaScriptDocLinkFoundException jsdlfe) {
 			handleJavaScriptDocLink(urlId, sourceUrl, pageUrl, currentPageDomain, pageContentType, jsdlfe);	// url-logging is handled inside.
@@ -214,6 +220,7 @@ public class PageCrawler
 		} catch (Exception e) {
 			logger.debug("Could not retrieve the internalLinks for pageUrl: " + pageUrl);
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its internalLinks. Its contentType is: '" + pageContentType + "'", null);
+			LoaderAndChecker.connProblematicUrls ++;
 			return null;
 		}
 

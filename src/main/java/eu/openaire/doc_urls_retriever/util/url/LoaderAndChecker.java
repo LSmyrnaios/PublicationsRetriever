@@ -34,7 +34,8 @@ public class LoaderAndChecker
 	public static int connProblematicUrls = 0;	// Urls known to have connectivity problems, such as long conn-times etc.
 	public static int inputDuplicatesNum = 0;
 	
-	
+	public static int numOfIDsWithoutAcceptableSourceUrl = 0;	// The number of IDs which failed to give an acceptable sourceUrl.
+
 	public LoaderAndChecker() throws RuntimeException
 	{
 		try {
@@ -90,6 +91,7 @@ public class LoaderAndChecker
 				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null ) {
 					logger.warn("Could not cannonicalize url: " + retrievedUrl);
 					UrlUtils.logQuadruple(null, retrievedUrl, null, "unreachable", "Discarded at loading time, due to cannibalization's problems.", null);
+					LoaderAndChecker.connProblematicUrls ++;
 					continue;
 				}
 
@@ -97,7 +99,6 @@ public class LoaderAndChecker
 					HttpConnUtils.connectAndCheckMimeType(null, retrievedUrl, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);
 				} catch (Exception e) {
 					UrlUtils.logQuadruple(null, retrievedUrl, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
-					connProblematicUrls ++;
 				}
 			}// end for-loop
 		}// end while-loop
@@ -199,6 +200,7 @@ public class LoaderAndChecker
 					urlToCheck = neutralUrl;
 				else {
 					logger.debug("No acceptable sourceUrl was found for ID: \"" + retrievedId + "\".");
+					numOfIDsWithoutAcceptableSourceUrl ++;
 					continue;
 				}
 
@@ -209,6 +211,7 @@ public class LoaderAndChecker
 				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
 					logger.warn("Could not cannonicalize url: " + sourceUrl);
 					UrlUtils.logQuadruple(retrievedId, sourceUrl, null, "unreachable", "Discarded at loading time, due to cannibalization's problems.", null);
+					LoaderAndChecker.connProblematicUrls ++;
 					continue;
 				}
 
@@ -216,7 +219,6 @@ public class LoaderAndChecker
 					HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);
 				} catch (Exception e) {
 					UrlUtils.logQuadruple(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null);
-					connProblematicUrls ++;
 				}
 			}// end id-for-loop
 		}// end loading-while-loop
@@ -236,18 +238,24 @@ public class LoaderAndChecker
 		if ( currentUrlDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"UrlUtils.handleUrlChecks()\": \"" + retrievedUrl + "\"");
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' method, after the occurrence of a domain-retrieval error.", null);
+			if ( !useIdUrlPairs )
+				connProblematicUrls ++;
 			return null;
 		}
 		
 		if ( HttpConnUtils.blacklistedDomains.contains(currentUrlDomain) ) {	// Check if it has been blackListed after running internal links' checks.
 			logger.debug("Avoid connecting to blackListed domain: \"" + currentUrlDomain + "\"!");
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' method, as its domain was found blackListed.", null);
+			if ( !useIdUrlPairs )
+				connProblematicUrls ++;
 			return null;
 		}
 		
 		if ( ConnSupportUtils.checkIfPathIs403BlackListed(retrievedUrl, currentUrlDomain) ) {	// The path-extraction is independent of the jsessionid-removal, so this gets executed before.
 			logger.debug("Preventing reaching 403ErrorCode with url: \"" + retrievedUrl + "\"!");
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' as it had a blackListed urlPath.", null);
+			if ( !useIdUrlPairs )
+				connProblematicUrls ++;
 			return null;
 		}
 		
@@ -262,9 +270,10 @@ public class LoaderAndChecker
 		
 		// Check if it's a duplicate.
 		if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
-			logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already been seen!");
-			inputDuplicatesNum ++;
+			logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already be seen!");
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "duplicate", "Discarded in 'UrlUtils.handleUrlChecks()', as it's a duplicate.", null);
+			if ( !useIdUrlPairs )
+				inputDuplicatesNum ++;
 			return null;
 		}
 		

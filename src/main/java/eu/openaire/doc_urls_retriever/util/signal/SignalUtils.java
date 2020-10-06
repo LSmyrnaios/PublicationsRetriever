@@ -13,11 +13,15 @@ import sun.misc.Signal;
 public class SignalUtils {
 	
 	private static final Logger logger = LoggerFactory.getLogger(SignalUtils.class);
-	
+
+	public static boolean receivedSIGINT = false;
+
 	
 	public static void setSignalHandlers()
 	{
 		Signal.handle(new Signal("INT"), sig -> {
+
+			SignalUtils.receivedSIGINT = true;
 			
 			// Print the related interrupted-state-message.
 			String stopMessage = "The normal program execution was interrupted by a \"SIGINT\"-signal!";
