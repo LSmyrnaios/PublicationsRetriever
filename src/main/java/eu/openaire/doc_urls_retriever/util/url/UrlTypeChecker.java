@@ -149,7 +149,7 @@ public class UrlTypeChecker
 		}
 		// Avoid crawling pages having their DocUrls in larger depth (internalPagesToDocUrls or PreviousOfDocUrls).
 		else if ( lowerCaseUrl.contains("/view/") || lowerCaseUrl.contains("scielosp.org") || lowerCaseUrl.contains("dk.um.si") || lowerCaseUrl.contains("apospublications.com")
-				|| lowerCaseUrl.contains("jorr.org") || lowerCaseUrl.contains("redalyc.org") /* TODO - remove this when I figure out the content-type issue*/ || lowerCaseUrl.contains("rwth-aachen.de") ) {
+				|| lowerCaseUrl.contains("jorr.org") || lowerCaseUrl.contains("rwth-aachen.de") ) {
 			loggingMessage = "Discarded after matching to a site having its DocUrls in larger depth.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);

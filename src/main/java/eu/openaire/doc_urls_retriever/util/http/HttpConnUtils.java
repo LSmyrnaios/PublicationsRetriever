@@ -266,6 +266,8 @@ public class HttpConnUtils
 
 			conn = (HttpURLConnection) url.openConnection();
 
+			conn.setRequestProperty("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0");	// Used to bypass some domains' antipathy for java-crawlers.
+
 			conn.setInstanceFollowRedirects(false);	// We manage redirects on our own, in order to control redirectsNum, avoid redirecting to unwantedUrls and handling errors.
 
 			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// For just-webPages, we want to use "GET" in order to download the content.

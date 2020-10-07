@@ -125,7 +125,7 @@ public class PageCrawler
 
 				//logger.debug("InternalPossibleDocLink to connect with: " + urlToCheck);	// DEBUG!
 				try {
-					if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, urlToCheck, currentPageDomain, false, true) )	// We log the docUrl inside this method.
+					if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, urlToCheck, null, false, true) )	// We log the docUrl inside this method.
 						return;
 					else {	// It's not a DocUrl.
 						UrlUtils.duplicateUrls.add(urlToCheck);
@@ -171,7 +171,7 @@ public class PageCrawler
 
 			//logger.debug("InternalLink to connect with: " + currentLink);	// DEBUG!
 			try {
-				if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, currentLink, currentPageDomain, false, false) )	// We log the docUrl inside this method.
+				if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, currentLink, null, false, false) )	// We log the docUrl inside this method.
 					return;
 				else
 					UrlUtils.duplicateUrls.add(currentLink);
