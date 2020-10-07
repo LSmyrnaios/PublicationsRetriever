@@ -136,11 +136,11 @@ public class LoaderAndChecker
 				String nonDoiUrl = null;	// Url which is not a best case, but it's not a slow-doi url either.
 				String neutralUrl = null;	// Just a neutral url.
 				String urlToCheck = null;
-				
+
 				Set<String> retrievedUrlsOfCurrentId = loadedIdUrlPairs.get(retrievedId);
 				boolean isSingleIdUrlPair = (retrievedUrlsOfCurrentId.size() == 1);
 				HashSet<String> loggedUrlsOfCurrentId = new HashSet<>();	// New for every ID.
-				
+
 				for ( String retrievedUrl : retrievedUrlsOfCurrentId )
 				{
 					String checkedUrl = retrievedUrl;

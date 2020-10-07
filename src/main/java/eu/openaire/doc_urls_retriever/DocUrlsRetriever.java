@@ -24,30 +24,30 @@ import java.time.Instant;
 public class DocUrlsRetriever
 {
 	private static final Logger logger = LoggerFactory.getLogger(DocUrlsRetriever.class);
-	
+
 	private static int initialNumOfDocFile = 0;
-	
+
 	public static boolean docFilesStorageGivenByUser = false;
-	
+
 	public static Instant startTime = null;
-	
-	
+
+
     public static void main( String[] args )
     {
 		SignalUtils.setSignalHandlers();
-		
+
 		startTime = Instant.now();
-		
+
 		parseArgs(args);
-	
+
 		logger.info("Starting DocUrlsRetriever..");
-	
+
 		// Use standard input/output.
 		new FileUtils(System.in, System.out);
-		
+
 		if ( MachineLearning.useMLA )
 			new MachineLearning();
-		
+
 		try {
 			new LoaderAndChecker();
 		} catch (RuntimeException e) {  // In case there was no input, a RuntimeException will be thrown, after logging the cause.
@@ -57,14 +57,14 @@ public class DocUrlsRetriever
 			FileUtils.closeIO();
 			System.exit(-4);
 		}
-		
+
 		showStatistics(startTime);
-		
+
 		// Close the open streams (imported and exported content).
 		FileUtils.closeIO();
     }
-    
-	
+
+
 	public static void parseArgs(String[] mainArgs)
 	{
 		if ( mainArgs.length > 5 ) {
@@ -76,7 +76,7 @@ public class DocUrlsRetriever
 		}
 
 		boolean firstNumGiven = false;
-		
+
 		for ( short i = 0; i < mainArgs.length; i++ )
 		{
 			switch ( mainArgs[i] )
@@ -87,8 +87,9 @@ public class DocUrlsRetriever
 				case "-firstDocFileNum":
 					try {
 						i ++;	// Go get the following first-Number-argument.
-						DocUrlsRetriever.initialNumOfDocFile = Integer.parseInt(mainArgs[i]);
-						FileUtils.numOfDocFile = DocUrlsRetriever.initialNumOfDocFile;	// We don't assign it directly, since we use both in statistics.
+						FileUtils.numOfDocFile = DocUrlsRetriever.initialNumOfDocFile = Integer.parseInt(mainArgs[i]);	// We use both variables in statistics.
+						if ( DocUrlsRetriever.initialNumOfDocFile <= 0 )
+							logger.warn("The given \"initialNumOfDocFile\" (" + DocUrlsRetriever.initialNumOfDocFile + ") was a number less or equal to zero! Continuing downloading nevertheless..");	// The statistics are not affected by a "negative" or "zero" value.
 						firstNumGiven = true;
 						break;
 					} catch (NumberFormatException nfe) {
@@ -109,7 +110,7 @@ public class DocUrlsRetriever
 					break;
 			}
 		}
-		
+
 		if ( FileUtils.shouldDownloadDocFiles ) {
 			if ( !firstNumGiven ) {
 				logger.warn("No \"-firstDocFileNum\" argument was given. The original-docFilesNames will be used.");
@@ -117,8 +118,8 @@ public class DocUrlsRetriever
 			}
 		}
 	}
-	
-	
+
+
 	public static void showStatistics(Instant startTime)
 	{
 		long inputCheckedUrlNum = 0;

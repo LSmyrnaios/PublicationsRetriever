@@ -25,27 +25,27 @@ import java.util.regex.Pattern;
 public class MachineLearning
 {
 	private static final Logger logger = LoggerFactory.getLogger(MachineLearning.class);
-	
+
 	public static final boolean useMLA = false;	// Should we try the experimental-M.L.A.? This is intended to be like a "global switch", to use or not to use the MLA, throughout the program's execution.
-	
+
 	private static final StringBuilder strB = new StringBuilder(200);
-	
+
 	private static int latestMLADocUrlsFound = 0;
 	private static float leastSuccessPercentageForMLA = 51;	// The percentage which we want, in order to continue running the MLA.
-	
+
 	private static int urlsToGatherBeforeStarting = 5000;	// 5,000 urls.
 	private static int leastNumOfUrlsToCheckBeforeAccuracyTest = 1000;	// Least number of URLs to check before deciding if we should continue running it.
 	private static int urlsToWaitUntilRestartMLA = 30000;	// 30,000 urls
-	
+
 	private static boolean mlaStarted = false;	// Useful to know when the MLA started to make predictions (left the learning mode).
-	
+
 	private static int endOfSleepNumOfUrls = 0;
 	private static int latestSuccessBreakPoint = 0;
 	private static int latestUrlsMLAChecked = 0;
 	private static int timesGatheredData = 0;
 	private static int urlsCheckedWithMLA = 0;
 	private static boolean isInSleepMode = false;
-	
+
 	/**
 	 * From the Docs: The multimap does not store duplicate key-value pairs. Adding a new key-value pair equal to an existing key-value pair has no effect.
 	 */
@@ -53,15 +53,15 @@ public class MachineLearning
 	
 	public static int docUrlsFoundByMLA = 0;
 	// If we later want to show statistics, we should take into account only the number of the urls to which the MLA was tested against, not all of the urls in the inputFile.
-	
+
 	private static final HashSet<String> domainsBlockedFromMLA = new HashSet<String>();
 	private static final HashMap<String, Integer> timesDomainsFailedInMLA = new HashMap<String, Integer>();
 	private static final int timesToFailBeforeBlockedFromMLA = 10;
-	
-	private static List<Float> successRateList = new ArrayList<>();
+
+	private static final List<Float> successRateList = new ArrayList<>();
 
 	private static final Pattern EXTENSION_PATTERN = Pattern.compile("(\\.[^.]+)$");
-	
+
 	/**
 	 * Initialize the Machine Learning Algorithm (MLA).
 	 * It ensures that for small input (i.e. for testing purposes) the MLA can run properly.
@@ -69,39 +69,39 @@ public class MachineLearning
 	public MachineLearning()
 	{
 		logger.debug("Initializing the MLA..");
-		
+
 		long approxNumOfTotalUrlsToCheck;
-		
+
 		if ( LoaderAndChecker.useIdUrlPairs )
 			approxNumOfTotalUrlsToCheck = (long)(FileUtils.numOfLines * 0.7);	// Get the 70%, as the rest will be extra urls for the same id, along with failing urls.
 		else
 			approxNumOfTotalUrlsToCheck = (long)(FileUtils.numOfLines * 0.85);	// Get the 85%, as the rest will be failing urls.
-		
+
 		logger.debug("\"approxNumOfTotalUrlsToCheck\" = " + approxNumOfTotalUrlsToCheck);
-		
+
 		// For small input, make sure that we gather data for no more than 20% of the input, before starting the MLA.
 		int tenPercentOfInput = (int)(approxNumOfTotalUrlsToCheck * 0.1);
 		if ( urlsToGatherBeforeStarting > tenPercentOfInput )
 			urlsToGatherBeforeStarting = tenPercentOfInput;
-		
+
 		logger.debug("\"urlsToGatherBeforeStarting\" = " + urlsToGatherBeforeStarting);
-		
+
 		// For small input, make sure the least number of urls to check every time is no more than 10% of the input.
 		int fivePercentOfInput = (int)(approxNumOfTotalUrlsToCheck * 0.05);
 		if ( leastNumOfUrlsToCheckBeforeAccuracyTest < fivePercentOfInput )
 			leastNumOfUrlsToCheckBeforeAccuracyTest = fivePercentOfInput;
-		
+
 		logger.debug("\"leastNumOfUrlsToCheckBeforeAccuracyTest\" = " + leastNumOfUrlsToCheckBeforeAccuracyTest);
-		
+
 		// For small input, make sure the MLA can restart at least one time.
 		int twentyPercentOfInput = (int)(approxNumOfTotalUrlsToCheck * 0.2);
 		if ( urlsToWaitUntilRestartMLA > twentyPercentOfInput )
 			urlsToWaitUntilRestartMLA = twentyPercentOfInput;
-		
+
 		logger.debug("\"urlsToWaitUntilRestartMLA\" = " + urlsToWaitUntilRestartMLA);
 	}
-	
-	
+
+
 	/**
 	 * This method gathers docPagePath and docUrlPath data, for successful docUrl-found-cases.
 	 * This data is used by "MachineLearning.predictInternalDocUrl()".
@@ -114,13 +114,13 @@ public class MachineLearning
 		if ( domain == null )
 			if ( (domain = UrlUtils.getDomainStr(docUrl)) == null )
 				return;
-		
+
 		if ( domainsBlockedFromMLA.contains(domain) )	// Don't gather data for domains which are proven to not be compatible with the MLA.
 			return;
-		
+
 		if ( docPage.equals(docUrl) )	// It will be equal if the "docPage" is a docUrl itself.
 			return;	// No need to log anything.
-		
+
 		// Get the paths of the docPage and the docUrl and put them inside "successDomainPathsMultiMap".
 		
 		String docPagePath = UrlUtils.getPathStr(docPage);
@@ -135,14 +135,14 @@ public class MachineLearning
 		MachineLearning.successPathsMultiMap.put(docPagePath, docUrlPath);	// Add this pair in "successPathsMultiMap", if the key already exists then it will just add one more value to that key.
 		MachineLearning.timesGatheredData ++;
 	}
-	
-	
+
+
 	public static float getCurrentSuccessRate()
 	{
 		return (float)((docUrlsFoundByMLA - latestMLADocUrlsFound) * 100) / (urlsCheckedWithMLA - latestUrlsMLAChecked);
 	}
-	
-	
+
+
 	/**
 	 * This method checks if we should continue running predictions using the MLA.
 	 * Since the MLA is still experimental and it doesn't work on all domains, we take measures to stop running it, if it doesn't succeed.
@@ -161,7 +161,7 @@ public class MachineLearning
 			mlaStarted = true;
 			logger.info("Starting the MLA..");
 		}
-		
+
 		// If it's currently in sleepMode, check if it should restart.
 		if ( isInSleepMode ) {
 			if ( PageCrawler.totalPagesReachedCrawling > endOfSleepNumOfUrls ) {
@@ -173,27 +173,27 @@ public class MachineLearning
 				return false;
 		}
 		// Note that if it has never entered the sleepMode, the "endOfSleepNumOfUrls" will be 0.
-		
+
 		// If we reach here, it means that we are not in the "LearningPeriod", nor in "SleepMode".
-		
+
 		// Check if we should immediately continue running the MLA, or it's time to decide depending on the success-rate.
 		long nextBreakPoint = latestSuccessBreakPoint + leastNumOfUrlsToCheckBeforeAccuracyTest + endOfSleepNumOfUrls;
-		
+
 		if ( PageCrawler.totalPagesReachedCrawling <= nextBreakPoint )
 			return true;	// Always continue in this case, as we don't have enough success-rate-data to decide otherwise.
-		
+
 		// Else decide depending on successPercentage for all of the urls which reached the "PageCrawler.visit()" until now (this will be the case every time this is called, after we exceed the leastNumber)..
-		
+
 		float curSuccessRate = getCurrentSuccessRate();
 		logger.debug("CurSuccessRate of MLA = " + curSuccessRate + "%");
 		successRateList.add(curSuccessRate);	// Add it to the list in order to calculate the average in the end. It accepts duplicate values, which is important for the calculation of the average value.
-		
+
 		if ( curSuccessRate >= leastSuccessPercentageForMLA ) {    // After the safe-period, continue as long as the success-rate is high.
 			endOfSleepNumOfUrls = 0;	// Stop keeping out-of-date sleep-data.
 			latestSuccessBreakPoint = PageCrawler.totalPagesReachedCrawling -1;	// We use <-1>, as we want the latest number for which MLA was tested against.
 			return true;
 		}
-		
+
 		// Else enter "sleep-mode" and update the variables.
 		logger.debug("MLA's success-rate is lower than the satisfying one (" + leastSuccessPercentageForMLA + "). Entering \"sleep-mode\"...");
 		int latestNumOfUrlsBeforePauseMLA = PageCrawler.totalPagesReachedCrawling -1;
@@ -204,8 +204,8 @@ public class MachineLearning
 		isInSleepMode = true;
 		return false;
 	}
-	
-	
+
+
 	/**
 	 * This method tries to predict the docUrl of a page, if this page gives us the ID of the document, based on previous success cases.
 	 * The idea is that we might get a url which shows info about the publication and has the same ID with the wanted docUrl, but it just happens to be in a different directory (path).
@@ -230,7 +230,7 @@ public class MachineLearning
 			logger.warn("Unexpected URL_TRIPLE's (" + urlMatcher.toString() + ") mismatch for url: \"" + pageUrl + "\"");
 			return false;
 		}
-		
+
 		String pagePath = null;
 		try {
 			pagePath = urlMatcher.group(1);	// Group <1> is the PATH.
@@ -239,7 +239,7 @@ public class MachineLearning
 			logger.warn("Unexpected null or empty value returned by \"urlMatcher.group(1)\"");
 			return false;
 		}
-		
+
 		// If this path cannot be handled by the MLA (no known data in our model), then return.
 		if ( !successPathsMultiMap.containsKey(pagePath) )
 			return false;
@@ -255,7 +255,7 @@ public class MachineLearning
 		}
 		else if ( pathsSize > 3 )    // It's not worth risking connecting with more than 3 "predictedDocUrl"s, for which their success is non-granted.
 			return false;    // The difference here is that we avoid making the connections but we leave the data as it is.. this way we allow whole domains to be blocked based on docPaths' size.
-		
+
 		String docIdStr = null;
 		try {
 			docIdStr = urlMatcher.group(3);	// Group <3> is the ID.
@@ -268,9 +268,9 @@ public class MachineLearning
 		{	// The docID of this pageUrl contains a page-extension (not a document-one), which we don't want in the docUrl. Thus, we remove the extension from the end.
 			docIdStr = EXTENSION_PATTERN.matcher(docIdStr).replaceAll("");	// This version of "replaceAll" uses a pre-compiled regex-pattern for better performance.
 		}
-		
+
 		MachineLearning.urlsCheckedWithMLA ++;
-		
+
 		String predictedDocUrl = null;
 		String urlEnding = docIdStr + ".pdf";	// TODO - This might break docUrls.. but its absence might break predicted docUrls too.. maybe keep a list of domains of paths where the extension is used..
 		
@@ -280,7 +280,7 @@ public class MachineLearning
 			strB.append(knownDocUrlPath).append(urlEnding);
 			predictedDocUrl = strB.toString();
 			strB.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
-			
+
 			if ( UrlUtils.docUrlsWithKeys.containsKey(predictedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
 				logger.info("MachineLearningAlgorithm got a hit for pageUrl: \""+ pageUrl + "\"! Resulted (already found before) docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
 				logger.info("re-crossed docUrl found: < " + predictedDocUrl + " >");
@@ -291,11 +291,11 @@ public class MachineLearning
 				MachineLearning.docUrlsFoundByMLA ++;
 				return true;
 			}
-			
+
 			// Check if it's a truly-alive docUrl.
 			try {
 				logger.debug("Going to check predictedDocUrl: \"" + predictedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");
-				
+
 				if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, predictedDocUrl, null, false, true) ) {
 					logger.info("MachineLearningAlgorithm got a hit for pageUrl: \""+ pageUrl + "\"! Resulted docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
 					MachineLearning.docUrlsFoundByMLA ++;
@@ -317,20 +317,20 @@ public class MachineLearning
 		// If we reach here, it means that all of the predictions have failed.
 		return false;	// We can't find its docUrl.. so we return false and continue by crawling this page.
 	}
-	
-	
+
+
 	public static float getAverageSuccessRate()
 	{
 		int sizeOfList = successRateList.size();
-		
+
 		if ( sizeOfList == 0 )
 			return getCurrentSuccessRate();
-		
+
 		float sumOfSuccessRates = 0;
-		
+
 		for ( Float curSuccessRate : successRateList )
 			sumOfSuccessRates += curSuccessRate;
-		
+
 		return (sumOfSuccessRates / sizeOfList);
 	}
 }

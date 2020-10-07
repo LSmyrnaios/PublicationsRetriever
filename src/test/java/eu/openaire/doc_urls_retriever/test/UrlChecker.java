@@ -25,19 +25,19 @@ import static eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker.isFinishe
  * @author Lampros Smyrnaios
  */
 public class UrlChecker {
-	
+
 	private static final Logger logger = LoggerFactory.getLogger(UrlChecker.class);
-	
+
 	@Test
 	public void checkUrlConnectivity()
 	{
 		FileUtils.shouldDownloadDocFiles = false;	// Default is: "true".
 		//FileUtils.shouldUseOriginalDocFileNames = true;	// Default is: "false".
-		
+
 		// Here test individual urls.
-		
+
 		ArrayList<String> urlList = new ArrayList<>();
-		
+
 		//urlList.add("http://repositorio.ipen.br:8080/xmlui/bitstream/handle/123456789/11176/09808.pdf?sequence=1&isAllowed=y");
 		//urlList.add("https://ris.utwente.nl/ws/portalfiles/portal/5118887");
 		//urlList.add("http://biblioteca.ucm.es/tesis/19972000/X/0/X0040301.pdf");
@@ -120,9 +120,9 @@ public class UrlChecker {
 		logger.info("Urls to check:");
 		for ( String url: urlList )
 			logger.info(url);
-		
+
 		Instant start = Instant.now();
-		
+
 		for ( String url : urlList )
 		{
 			String urlToCheck = url;	// Use an extra String or it cannot be printed in the error-logging-message as it will be null.
@@ -130,10 +130,10 @@ public class UrlChecker {
 				logger.warn("Could not cannonicalize url: " + url);
 				return;
 			}
-			
+
 			if ( UrlTypeChecker.matchesUnwantedUrlType(null, urlToCheck, urlToCheck.toLowerCase()) )
 				continue;
-			
+
 			try {
 				HttpConnUtils.connectAndCheckMimeType(null, urlToCheck, urlToCheck, urlToCheck, null, true, false);
 			} catch (Exception e) {
@@ -149,10 +149,10 @@ public class UrlChecker {
 	public void checkUrlRegex()
 	{
 		logger.info("Going to test url-triple-regex on multiple urls..");
-		
+
 		// List contains urls for REGEX-check
 		ArrayList<String> urlList = new ArrayList<>();
-		
+
 		urlList.add("http://example.com/path/to/page?name=ferret&color=purple");
 		urlList.add("https://upcommons.upc.edu/bitstream/handle/2117/11500/FascinatE-D1.1.1-Requirements.pdf?sequence=1&isAllowed=y");
 		urlList.add("https://upcommons.upc.edu/bitstream/handle/2117/11500/?sequence=1&isAllowed=y");

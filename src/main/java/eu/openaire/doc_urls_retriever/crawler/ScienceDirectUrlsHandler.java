@@ -21,8 +21,10 @@ public class ScienceDirectUrlsHandler
 	private static final Logger logger = LoggerFactory.getLogger(ScienceDirectUrlsHandler.class);
 	
 	public static final Pattern SCIENCEDIRECT_FINAL_DOC_URL = Pattern.compile("(?:window.location[\\s]+\\=[\\s]+\\')(.*)(?:\\'\\;)");
-	
-	
+
+	private static final String scienceDirectBasePath = "https://www.sciencedirect.com/science/article/pii/";
+
+
 	/**
 	 * This method checks if the given url belongs to the "scienceDirect-family"-urls and if so it handles it.
 	 * If the given url is not a kindOf-scienceDirect-url, then it
@@ -50,8 +52,8 @@ public class ScienceDirectUrlsHandler
 		}
 		return false;
 	}
-	
-	
+
+
 	/**
 	 * This method handles the JavaScriptSites of "sciencedirect.com"-family. It retrieves the docLinks hiding inside.
 	 * It returns true if the docUrl was found, otherwise, it returns false.
@@ -82,7 +84,7 @@ public class ScienceDirectUrlsHandler
 					throw new FailedToProcessScienceDirectException();
 			}
 			// We now have the "sciencedirect.com" url (either from the beginning or after "silent-redirect").
-			
+
 			String html = null;
 			if ( (html = ConnSupportUtils.getHtmlString(conn)) == null ) {
 				logger.warn("Could not retrieve the HTML-code for scienceDirect-pageUrl: " + pageUrl);
@@ -156,8 +158,8 @@ public class ScienceDirectUrlsHandler
 				conn.disconnect();	// Disconnect from the final-"sciencedirect.com"-connection.
 		}
 	}
-	
-	
+
+
 	/**
 	 * This method receives a url from "linkinghub.elsevier.com" and returns it's matched url in "sciencedirect.com".
 	 * We do this because the "linkinghub.elsevier.com" urls have a javaScript redirect inside which we are not able to handle without doing html scraping.
@@ -182,8 +184,8 @@ public class ScienceDirectUrlsHandler
 			logger.warn("Unexpected \"URL_TRIPLE\" mismatch for: " + linkinghubElsevierUrl);
 			return null;
 		}
-		
-		return ("https://www.sciencedirect.com/science/article/pii/" + idStr);
+
+		return (scienceDirectBasePath + idStr);
 	}
 	
 }

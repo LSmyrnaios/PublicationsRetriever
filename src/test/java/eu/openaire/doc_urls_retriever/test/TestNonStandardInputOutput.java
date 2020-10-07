@@ -2,9 +2,9 @@ package eu.openaire.doc_urls_retriever.test;
 
 import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
 import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
+import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.signal.SignalUtils;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
-import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -23,17 +23,17 @@ import java.time.Instant;
  * @author Lampros Smyrnaios
  */
 public class TestNonStandardInputOutput  {
-	
+
 	private static final Logger logger = LoggerFactory.getLogger(TestNonStandardInputOutput.class);
-	
-	private static String testingSubDir = "idUrlPairs";	// "idUrlPairs" or "justUrls".
-	private static String testingDirectory = System.getProperty("user.dir") + File.separator + "testData" + File.separator + testingSubDir + File.separator;
-	private static String testInputFile = "testNewOrderedList5000.json";	// "sampleCleanUrls3000.json", "testNewOrderedList5000.json", "testRandomNewList100.csv"
-	
-	private static File inputFile = new File(testingDirectory + testInputFile);
-	private static File outputFile = new File(testingDirectory + "testOutputFile.json");
-	
-	
+
+	private static final String testingSubDir = "idUrlPairs";	// "idUrlPairs" or "justUrls".
+	private static final String testingDirectory = System.getProperty("user.dir") + File.separator + "testData" + File.separator + testingSubDir + File.separator;
+	private static final String testInputFile = "orderedList1000.json";	// "sampleCleanUrls3000.json", "orderedList1000.json", "orderedList5000.json", "testRandomNewList100.csv", "test.json"
+
+	private static final File inputFile = new File(testingDirectory + testInputFile);
+	private static final File outputFile = new File(testingDirectory + "testOutputFile.json");
+
+
 	@BeforeAll
 	private static void setTypeOfInputData()
 	{
@@ -51,11 +51,11 @@ public class TestNonStandardInputOutput  {
 		args[0] = "-downloadDocFiles";
 		args[1] = "-firstDocFileNum";
 		args[2] = "1";
-		
+
 		logger.info("Calling main method with these args: ");
 		for ( String arg: args )
 			logger.info("'" + arg + "'");
-		
+
 		main(args);
 	}
 	
@@ -66,9 +66,9 @@ public class TestNonStandardInputOutput  {
 	{
 		String[] args = new String[1];
 		args[0] = "-downloadDocFiles";
-		
+
 		logger.info("Calling main method with this arg: " + args[0]);
-		
+
 		main(args);
 	}
 	

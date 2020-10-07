@@ -17,24 +17,24 @@ import java.util.regex.Pattern;
 public class UrlUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(UrlUtils.class);
-	
+
 	public static final Pattern URL_TRIPLE = Pattern.compile("(.+://(?:ww(?:w|\\d)(?:(?:\\w+)?\\.)?)?([\\w.\\-]+)(?:[:\\d]+)?(?:.*/)?)(?:([^/^;^?]*)(?:(?:;|\\?)[^/^=]+(?:=.*)?)?)?");
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	// TODO - Add explanation also for the uncaptured groups for better maintenance. For example the "ww(?:w|\d)" can capture "www", "ww2", "ww3" ect.
-	
+
 	public static final Pattern JSESSIONID_FILTER = Pattern.compile("(.+://.+)(?:;(?:JSESSIONID|jsessionid)=[^?]+)(\\?.+)?");	// Remove the jsessionid but keep the url-params in the end.
 
 	public static final Pattern ANCHOR_FILTER = Pattern.compile("(.+)(#.+)");	// Remove the anchor at the end of the url to avoid duplicate versions. (anchors might exist even in docUrls themselves)
 
 	public static int sumOfDocUrlsFound = 0;	// Change it back to simple int if finally in singleThread mode
-	
+
 	public static final HashSet<String> duplicateUrls = new HashSet<String>();
-	
+
 	public static final HashMap<String, String> docUrlsWithKeys = new HashMap<String, String>();	// Null keys are allowed (in case they are not available in the input).
-	
+
 	public static final String alreadyDownloadedByIDMessage = "This file is probably already downloaded from ID=";
 
-	
+
 	/**
      * This method logs the outputEntry to be written, as well as the docUrlPath (if non-empty String) and adds entries in the blackList.
 	 * @param urlId (it may be null if no id was provided in the input)
@@ -70,12 +70,12 @@ public class UrlUtils
 		}
 
 		FileUtils.quadrupleToBeLoggedList.add(new QuadrupleToBeLogged(urlId, sourceUrl, finalDocUrl, comment));	// Log it to be written later in the outputFile.
-		
+
         if ( FileUtils.quadrupleToBeLoggedList.size() == FileUtils.jsonGroupSize )	// Write to file every time we have a group of <jsonGroupSize> quadruples.
             FileUtils.writeToFile();
     }
-    
-	
+
+
 	/**
 	 * This method returns the domain of the given url, in lowerCase (for better comparison).
 	 * @param urlStr
@@ -87,7 +87,7 @@ public class UrlUtils
 			logger.error("The received \"urlStr\" was null in \"getDomainStr()\"!");
 			return null;
 		}
-		
+
 		String domainStr = null;
 		Matcher matcher = URL_TRIPLE.matcher(urlStr);
 		if ( matcher.matches() ) {
@@ -102,7 +102,7 @@ public class UrlUtils
 			logger.error("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
 			return null;
 		}
-		
+
 		return domainStr.toLowerCase();	// We return it in lowerCase as we don't want to store double domains. (it doesn't play any part in connectivity, only the rest of the url is case-sensitive.)
 	}
 
@@ -118,7 +118,7 @@ public class UrlUtils
 			logger.error("The received \"urlStr\" was null in \"getPathStr()\"!");
 			return null;
 		}
-		
+
 		String pathStr = null;
 		Matcher matcher = URL_TRIPLE.matcher(urlStr);
 		if ( matcher.matches() ) {
@@ -133,11 +133,11 @@ public class UrlUtils
 			logger.error("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
 			return null;
 		}
-		
+
 		return pathStr;
 	}
-	
-	
+
+
 	/**
 	 * This method returns the path of the given url.
 	 * @param urlStr
@@ -165,11 +165,11 @@ public class UrlUtils
 			logger.error("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
 			return null;
 		}
-		
+
 		return docIdStr;
 	}
-	
-	
+
+
 	/**
 	 * This method is responsible for removing the "jsessionid" part of a url.
 	 * If no jsessionId is found, then it returns the string it received.
@@ -182,12 +182,12 @@ public class UrlUtils
 			logger.error("The received \"urlStr\" was null in \"removeJsessionid()\"!");
 			return null;
 		}
-		
+
 		String finalUrl = urlStr;
-		
+
 		String preJsessionidStr = null;
 		String afterJsessionidStr = null;
-		
+
 		Matcher jsessionidMatcher = JSESSIONID_FILTER.matcher(urlStr);
 		if ( jsessionidMatcher.matches() )
 		{
@@ -199,7 +199,7 @@ public class UrlUtils
 		    	return finalUrl;
 		    }
 		    finalUrl = preJsessionidStr;
-		    
+
 		    try {
 		    	afterJsessionidStr = jsessionidMatcher.group(2);
 			} catch (Exception e) { logger.error("", e); }
@@ -244,5 +244,5 @@ public class UrlUtils
 		else
 			return urlStr;
 	}
-	
+
 }

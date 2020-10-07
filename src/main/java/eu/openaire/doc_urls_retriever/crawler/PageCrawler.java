@@ -33,10 +33,10 @@ public class PageCrawler
 	public static final Pattern JAVASCRIPT_DOC_LINK = Pattern.compile("(?:javascript:pdflink.*')(http.+)(?:',.*)", Pattern.CASE_INSENSITIVE);
 	
 	public static int totalPagesReachedCrawling = 0;	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their internalLinks checked.
-	
+
 	public static final HashMap<String, Integer> timesDomainNotGivingInternalLinks = new HashMap<String, Integer>();
 	public static final HashMap<String, Integer> timesDomainNotGivingDocUrls = new HashMap<String, Integer>();
-	
+
 	public static final int timesToGiveNoInternalLinksBeforeBlocked = 5;
 	public static final int timesToGiveNoDocUrlsBeforeBlocked = 10;
 
@@ -46,7 +46,7 @@ public class PageCrawler
 	public static void visit(String urlId, String sourceUrl, String pageUrl, String pageContentType, HttpURLConnection conn, String firstHTMLlineFromDetectedContentType)
 	{
 		logger.debug("Visiting pageUrl: \"" + pageUrl + "\".");
-		
+
 		String currentPageDomain = UrlUtils.getDomainStr(pageUrl);
 		if ( currentPageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"PageCrawler.visit()\": \"" + pageUrl + "\"");
@@ -54,10 +54,10 @@ public class PageCrawler
 			LoaderAndChecker.connProblematicUrls ++;
 			return;
 		}
-		
+
 		if ( ScienceDirectUrlsHandler.checkIfAndHandleScienceDirect(urlId, sourceUrl, pageUrl, currentPageDomain, conn) )
 			return;	// We always return, if we have a kindOf-scienceDirect-url. The sourceUrl is already logged inside the called method.
-		
+
 		String pageHtml = null;	// Get the pageHtml to parse the page.
 		if ( (pageHtml = ConnSupportUtils.getHtmlString(conn)) == null ) {
 			logger.warn("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
@@ -70,11 +70,11 @@ public class PageCrawler
 		}
 
 		//logger.debug(pageHtml);	// DEBUG!
-		
+
 		// Check if the docLink is provided in a metaTag and connect to it directly.
 		if ( MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl(urlId, sourceUrl, pageUrl, currentPageDomain, pageHtml) )
 			return;	// The sourceUrl is already logged inside the called method.
-		
+
 	    // Check if we want to use AND if so, if we should run, the MLA.
 		if ( MachineLearning.useMLA ) {
 			PageCrawler.totalPagesReachedCrawling ++;	// Used for M.L.A.'s execution-manipulation.
@@ -82,15 +82,15 @@ public class PageCrawler
 				if ( MachineLearning.predictInternalDocUrl(urlId, sourceUrl, pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
 					return;	// If we were able to find the right path.. and hit a docUrl successfully.. return. The Quadruple is already logged.
 		}
-		
+
 		HashSet<String> currentPageLinks = null;
 		if ( (currentPageLinks = retrieveInternalLinks(urlId, sourceUrl, pageUrl, currentPageDomain, pageHtml, pageContentType)) == null )
 			return;	// The necessary logging is handled inside.
-		
+
 		HashSet<String> remainingLinks = new HashSet<>(currentPageLinks.size());	// Initialize with the total num of links (less will actually get stored there, but their num is unknown).
 		String urlToCheck = null;
 		String lowerCaseLink = null;
-		
+
 		// Do a fast-loop, try connecting only to a handful of promising links first.
 		// Check if urls inside this page, match to a docUrl regex, if they do, try connecting with them and see if they truly are docUrls. If they are, return.
 		for ( String currentLink : currentPageLinks )
@@ -100,7 +100,7 @@ public class PageCrawler
 				logger.warn("Could not cannonicalize internal url: " + currentLink);
 				continue;
 			}
-			
+
             if ( UrlUtils.docUrlsWithKeys.containsKey(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
 				logger.info("re-crossed docUrl found: < " + urlToCheck + " >");
 				if ( FileUtils.shouldDownloadDocFiles )
@@ -109,20 +109,20 @@ public class PageCrawler
 					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, "", currentPageDomain);
                 return;
             }
-            
+
             lowerCaseLink = urlToCheck.toLowerCase();
             if ( LoaderAndChecker.DOC_URL_FILTER.matcher(lowerCaseLink).matches() )
 			{
 				// Some docUrls may be in different domain, so after filtering the urls based on the possible type.. then we can allow to check for links in different domains.
-				
+
 				if ( UrlUtils.duplicateUrls.contains(urlToCheck) )
 					continue;
-				
+
 				if ( UrlTypeChecker.shouldNotAcceptInternalLink(urlToCheck, lowerCaseLink) ) {    // Avoid false-positives, such as images (a common one: ".../pdf.png").
 					UrlUtils.duplicateUrls.add(urlToCheck);
 					continue;	// Disclaimer: This way we might lose some docUrls like this: "http://repositorio.ipen.br:8080/xmlui/themes/Mirage/images/Portaria-387.pdf".
 				}
-				
+
 				//logger.debug("InternalPossibleDocLink to connect with: " + urlToCheck);	// DEBUG!
 				try {
 					if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, urlToCheck, currentPageDomain, false, true) )	// We log the docUrl inside this method.
@@ -147,10 +147,10 @@ public class PageCrawler
 					continue;
 				}
             }
-            
+
             remainingLinks.add(urlToCheck);	// Add the fully-formed & accepted remaining links into a new hashSet to be iterated.
 		}// end for-loop
-		
+
 		// If we reached here, it means that we couldn't find a docUrl the quick way.. so we have to check some (we exclude lots of them) of the internal links one by one.
 
 		for ( String currentLink : remainingLinks )	// Here we don't re-check already-checked links, as this is a new list. All the links here are full-canonicalized-urls.
@@ -158,17 +158,17 @@ public class PageCrawler
 			// Make sure we avoid connecting to different domains to save time. We allow to check different domains only after matching to possible-urls in the previous fast-loop.
 			if ( !currentLink.contains(currentPageDomain) )
 				continue;
-			
+
 			if ( UrlUtils.duplicateUrls.contains(currentLink) )
 				continue;
-			
+
 			// We re-check here, as, in the fast-loop not all of the links are checked against this.
 			if ( UrlTypeChecker.shouldNotAcceptInternalLink(currentLink, null) ) {	// If this link matches certain blackListed criteria, move on..
 				//logger.debug("Avoided link: " + currentLink );
 				UrlUtils.duplicateUrls.add(currentLink);
 				continue;
 			}
-			
+
 			//logger.debug("InternalLink to connect with: " + currentLink);	// DEBUG!
 			try {
 				if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, currentLink, currentPageDomain, false, false) )	// We log the docUrl inside this method.
@@ -191,7 +191,7 @@ public class PageCrawler
 				// No special handling here.. nor logging..
 			}
 		}	// end for-loop
-		
+
 		// If we get here it means that this pageUrl is not a docUrl itself, nor it contains a docUrl..
 		logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
 		UrlTypeChecker.pagesNotProvidingDocUrls ++;
@@ -200,7 +200,7 @@ public class PageCrawler
 			logger.debug("Domain: " + currentPageDomain + " was blocked after giving no docUrls more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
 	}
 
-	
+
 	public static HashSet<String> retrieveInternalLinks(String urlId, String sourceUrl, String pageUrl, String currentPageDomain, String pageHtml, String pageContentType)
 	{
 		HashSet<String> currentPageLinks = null;
@@ -243,7 +243,7 @@ public class PageCrawler
 
 		//if ( pageUrl.contains(<keyWord> || <url>) )	// In case we want to print internal-links only for specific-pageTypes.
 			//printInternalLinksForDebugging(currentPageLinks);
-		
+
 		return currentPageLinks;
 	}
 

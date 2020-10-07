@@ -25,35 +25,35 @@ import java.util.HashSet;
 public class HttpConnUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(HttpConnUtils.class);
-	
+
 	public static final HashSet<String> domainsWithUnsupportedHeadMethod = new HashSet<String>();
 	static {	// Add domains which were manually observed to act strangely and cannot be detected automatically at run-time.
 		domainsWithUnsupportedHeadMethod.add("os.zhdk.cloud.switch.ch");	// This domain returns "HTTP-403-ERROR" when it does not support the "HEAD" method, at least when checking an actual file.
 	}
 
 	public static final HashSet<String> blacklistedDomains = new HashSet<String>();	// Domains with which we don't want to connect again.
-	
+
 	public static final HashMap<String, Integer> timesDomainsHadInputNotBeingDocNorPage = new HashMap<String, Integer>();
 	public static final HashMap<String, Integer> timesDomainsReturnedNoType = new HashMap<String, Integer>();	// Domain which returned no content-type not content disposition in their response and amount of times they did.
-	
+
 	public static int numOfDomainsBlockedDueToSSLException = 0;
-	
+
 	public static String lastConnectedHost = "";
 	public static final int politenessDelay = 0;	// Time to wait before connecting to the same host again.
-	
+
 	public static final int maxConnGETWaitingTime = 20000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
 	public static final int maxConnHEADWaitingTime = 15000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
-	
+
 	private static final int maxRedirectsForPageUrls = 7;// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
 	private static final int maxRedirectsForInternalLinks = 2;	// Internal-DOC-Links shouldn't take more than 2 redirects.
-	
+
     private static final int timesToReturnNoTypeBeforeBlocked = 10;
 	private static final int timesToHaveNoDocNorPageInputBeforeBlocked = 10;
-    
-	public static final int maxAllowedContentSize = 1073741824;	// 1Gb
+
+	public static final int maxAllowedContentSize = 1073741824;	// 1Gb ; yes some publications can be huge..
 	private static final boolean shouldNOTacceptGETmethodForUncategorizedInternalLinks = true;
-	
-	
+
+
 	/**
 	 * This method checks if a certain url can give us its mimeType, as well as if this mimeType is a docMimeType.
 	 * It automatically calls the "logUrl()" method for the valid docUrls, while it doesn't call it for non-success cases, thus allowing calling method to handle the case.
@@ -78,9 +78,9 @@ public class HttpConnUtils
 			if ( domainStr == null )	// No info about domainStr from the calling method.. we have to find it here.
 				if ( (domainStr = UrlUtils.getDomainStr(resourceURL)) == null )
 					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
-			
+
 			conn = handleConnection(urlId, sourceUrl, pageUrl, resourceURL, domainStr, calledForPageUrl, calledForPossibleDocUrl);
-			
+
 			// Check if we are able to find the mime type, if not then try "Content-Disposition".
 			String mimeType = conn.getContentType();
 			String contentDisposition = null;
@@ -135,7 +135,7 @@ public class HttpConnUtils
 
 			//logger.debug("Url: " + finalUrlStr);	// DEBUG!
 			//logger.debug("MimeType: " + mimeType);	// DEBUG!
-			
+
 			if ( ConnSupportUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition, conn) ) {
 				logger.info("docUrl found: < " + finalUrlStr + " >");
 				String fullPathFileName = "";
@@ -198,13 +198,13 @@ public class HttpConnUtils
 		}
 		return false;
 	}
-	
-	
+
+
 	public static HttpURLConnection handleConnection(String urlId, String sourceUrl, String pageUrl, String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
 										throws AlreadyFoundDocUrlException, RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException, IOException
 	{
 		HttpURLConnection conn = openHttpConnection(resourceURL, domainStr, calledForPageUrl, calledForPossibleDocUrl);
-		
+
 		int responseCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP response), inside openHttpConnection().
 		if ( (responseCode >= 300) && (responseCode <= 399) ) {   // If we have redirections..
 			conn = handleRedirects(urlId, sourceUrl, pageUrl, resourceURL, conn, responseCode, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // Take care of redirects.
@@ -219,8 +219,8 @@ public class HttpConnUtils
 
 		return conn;
 	}
-	
-	
+
+
 	/**
      * This method sets up a connection with the given url, using the "HEAD" method. If the server doesn't support "HEAD", it logs it, then it resets the connection and tries again using "GET".
      * The "domainStr" may be either null, if the calling method doesn't know this String (then openHttpConnection() finds it on its own), or an actual "domainStr" String.
@@ -240,11 +240,11 @@ public class HttpConnUtils
     	URL url = null;
 		HttpURLConnection conn = null;
 		int responseCode = 0;
-		
+
 		try {
 			if ( blacklistedDomains.contains(domainStr) )
 		    	throw new RuntimeException("Avoid connecting to blackListed domain: \"" + domainStr + "\"!");
-			
+
 			// Check whether we don't accept "GET" method for uncategorizedInternalLinks and if this url is such a case.
 			if ( !calledForPageUrl && shouldNOTacceptGETmethodForUncategorizedInternalLinks
 					&& !calledForPossibleDocUrl && domainsWithUnsupportedHeadMethod.contains(domainStr) )	// Exclude the possibleDocUrls and the ones which cannot connect with "HEAD".
@@ -261,13 +261,13 @@ public class HttpConnUtils
 
 			if ( ConnSupportUtils.checkIfPathIs403BlackListed(resourceURL, domainStr) )
 				throw new RuntimeException("Avoid reaching 403ErrorCode with url: \"" + resourceURL + "\"!");
-			
+
 			url = new URL(resourceURL);
-			
+
 			conn = (HttpURLConnection) url.openConnection();
-			
+
 			conn.setInstanceFollowRedirects(false);	// We manage redirects on our own, in order to control redirectsNum, avoid redirecting to unwantedUrls and handling errors.
-			
+
 			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// For just-webPages, we want to use "GET" in order to download the content.
 				|| (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles)	// For docUrls, if we should download them.
 				|| weirdMetaDocUrlWhichNeedsGET	// If we have a weirdMetaDocUrl-case then we need "GET".
@@ -281,7 +281,7 @@ public class HttpConnUtils
 				conn.setConnectTimeout(maxConnHEADWaitingTime);
 				conn.setReadTimeout(maxConnHEADWaitingTime);
 			}
-			
+
 			if ( (politenessDelay > 0) && resourceURL.contains(lastConnectedHost) )	// If this is the last-visited domain, sleep a bit before re-connecting to it.
 				Thread.sleep(politenessDelay);	// Avoid server-overloading for the same host.
 			
