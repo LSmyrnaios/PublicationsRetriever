@@ -2,7 +2,6 @@ package eu.openaire.doc_urls_retriever.util.http;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
-import com.sun.istack.internal.NotNull;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
@@ -520,10 +519,11 @@ public class ConnSupportUtils
 	}
 
 
-	public static void closeBufferedReader(@NotNull BufferedReader bufferedReader)
+	public static void closeBufferedReader(BufferedReader bufferedReader)
 	{
 		try {
-			bufferedReader.close();
+			if ( bufferedReader != null )
+				bufferedReader.close();
 		} catch ( IOException ioe ) {
 			logger.warn("Problem when closing \"BufferedReader\": " + ioe.getMessage());
 		}

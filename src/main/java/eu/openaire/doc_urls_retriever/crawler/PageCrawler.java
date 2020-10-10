@@ -53,8 +53,7 @@ public class PageCrawler
 			logger.warn("Problematic URL in \"PageCrawler.visit()\": \"" + pageUrl + "\"");
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, after the occurrence of a domain-retrieval error.", null);
 			LoaderAndChecker.connProblematicUrls ++;
-			if ( bufferedReader != null )	// This page's content-type was auto-detected, and the process fails before re-requesting the conn-inputStream, then make sure we close the last one.
-				ConnSupportUtils.closeBufferedReader(bufferedReader);
+			ConnSupportUtils.closeBufferedReader(bufferedReader);	// This page's content-type was auto-detected, and the process fails before re-requesting the conn-inputStream, then make sure we close the last one.
 			return;
 		}
 
