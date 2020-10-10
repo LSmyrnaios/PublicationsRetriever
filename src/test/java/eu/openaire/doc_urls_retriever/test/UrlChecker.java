@@ -3,14 +3,19 @@ package eu.openaire.doc_urls_retriever.test;
 import com.google.common.collect.HashMultimap;
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
+import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
+import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
+import eu.openaire.doc_urls_retriever.util.http.DetectedContentType;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
+import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -141,10 +146,38 @@ public class UrlChecker {
 			}
 		}
 
+		logger.debug("Connection-problematic-urls: " + LoaderAndChecker.connProblematicUrls);
+		logger.debug("Content-problematic-urls: " + PageCrawler.contentProblematicUrls);
+
 		DocUrlsRetriever.calculateAndPrintElapsedTime(start, Instant.now());
 	}
-	
-	
+
+
+	@Test
+	public void checkContentExtraction()
+	{
+		String url = "http://ajcmi.umsha.ac.ir/";
+
+		try {
+			HttpURLConnection conn = HttpConnUtils.handleConnection(null, url, url, url, null, true, false);
+			DetectedContentType detConType = ConnSupportUtils.extractContentTypeFromResponseBody(conn);
+
+			if ( detConType == null ) {
+				logger.error("Error when extracting the content..");
+				return;
+			}
+
+			logger.debug(detConType.detectedContentType + " | " + detConType.firstHtmlLine);
+
+			if ( detConType.bufferedReader != null )
+				ConnSupportUtils.closeBufferedReader(detConType.bufferedReader);
+
+		} catch ( Exception e ) {
+			logger.warn("", e);
+		}
+	}
+
+
 	//@Test
 	public void checkUrlRegex()
 	{

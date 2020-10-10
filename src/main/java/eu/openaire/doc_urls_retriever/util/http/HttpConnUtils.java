@@ -372,10 +372,9 @@ public class HttpConnUtils
 			String errorMsg = se.getMessage();
 			if ( errorMsg != null )
 				errorMsg = "\"" + errorMsg + "\". This SocketException was received after trying to connect with the domain: \"" + domainStr + "\"";
-			
+
+			// We don't block the domain, since this is temporary.
 			throw new RuntimeException(errorMsg);
-			//blacklistedDomains.add(domainStr);
-			//throw new DomainBlockedException();
     	} catch (Exception e) {
 			logger.error("", e);
 			if ( conn != null )

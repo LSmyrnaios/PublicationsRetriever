@@ -455,7 +455,12 @@ public class ConnSupportUtils
 		try {
 			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
-			String inputLine = br.readLine();
+			String inputLine;
+
+			// Skip empty lines in the beginning of the HTML-code
+			while ( (inputLine = br.readLine()) != null && inputLine.isEmpty())
+			{ /* No action inside */ }
+
 			//logger.debug("First line of RequestBody: " + inputLine);	// DEBUG!
 			if ( inputLine == null )
 				return null;
@@ -483,7 +488,7 @@ public class ConnSupportUtils
 			return null;
 		}
 	}
-	
+
 	
 	/**
 	 * This method returns the ContentSize of the content of an HttpURLConnection.
