@@ -2,6 +2,7 @@ package eu.openaire.doc_urls_retriever.util.http;
 
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
+import eu.openaire.doc_urls_retriever.crawler.ScienceDirectUrlsHandler;
 import eu.openaire.doc_urls_retriever.exceptions.*;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
@@ -267,6 +268,21 @@ public class HttpConnUtils
 				weirdMetaDocUrlWhichNeedsGET = true;
 			}
 
+			boolean havingScienceDirectPDF = false;
+			if ( "pdf.sciencedirectassets.com".equals(domainStr) )	// Avoiding NPE.
+				havingScienceDirectPDF = true;
+			else if ( !calledForPossibleDocUrl ) {
+				try {
+					String scienceDirectPageUrl = null;
+					if ( (scienceDirectPageUrl = ScienceDirectUrlsHandler.checkAndGetScienceDirectUrl(resourceURL)) != null ) {
+						//logger.debug("ScienceDirect-PageURL to try: " + scienceDirectPageUrl);	// DEBUG!
+						resourceURL = scienceDirectPageUrl;
+					}
+				} catch ( FailedToProcessScienceDirectException sdhe ) {
+					throw new RuntimeException("Problem when handling the \"ScienceDirect\"-family-url: " + resourceURL);
+				}
+			}
+
 			if ( ConnSupportUtils.checkIfPathIs403BlackListed(resourceURL, domainStr) )
 				throw new RuntimeException("Avoid reaching 403ErrorCode with url: \"" + resourceURL + "\"!");
 
@@ -281,6 +297,7 @@ public class HttpConnUtils
 			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// For just-webPages, we want to use "GET" in order to download the content.
 				|| (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles)	// For docUrls, if we should download them.
 				|| weirdMetaDocUrlWhichNeedsGET	// If we have a weirdMetaDocUrl-case then we need "GET".
+				|| havingScienceDirectPDF	// If we got the new scienceDirect-DocUrl, then we should go only with "GET".
 				|| domainsWithUnsupportedHeadMethod.contains(domainStr) )	// If the domain doesn't support "HEAD", then we only do "GET".
 			{
 				conn.setRequestMethod("GET");	// Go directly with "GET".

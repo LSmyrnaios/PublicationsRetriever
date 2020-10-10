@@ -57,9 +57,6 @@ public class PageCrawler
 			return;
 		}
 
-		if ( ScienceDirectUrlsHandler.checkIfAndHandleScienceDirect(urlId, sourceUrl, pageUrl, currentPageDomain, conn) )
-			return;	// We always return, if we have a kindOf-scienceDirect-url. The sourceUrl is already logged inside the called method.
-
 		String pageHtml = null;	// Get the pageHtml to parse the page.
 		if ( (pageHtml = ConnSupportUtils.getHtmlString(conn, bufferedReader)) == null ) {
 			logger.warn("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
@@ -73,16 +70,18 @@ public class PageCrawler
 
 		//logger.debug(pageHtml);	// DEBUG!
 
-		// Check if the docLink is provided in a metaTag and connect to it directly.
-		if ( MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl(urlId, sourceUrl, pageUrl, currentPageDomain, pageHtml) )
-			return;	// The sourceUrl is already logged inside the called method.
+		if ( !pageUrl.contains("sciencedirect.com") ) {	// The scienceDirect-pageUrl do not benefit from the method below, so we skip them..
+			// Check if the docLink is provided in a metaTag and connect to it directly.
+			if ( MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl(urlId, sourceUrl, pageUrl, currentPageDomain, pageHtml) )
+				return;	// The sourceUrl is already logged inside the called method.
 
-	    // Check if we want to use AND if so, if we should run, the MLA.
-		if ( MachineLearning.useMLA ) {
-			PageCrawler.totalPagesReachedCrawling ++;	// Used for M.L.A.'s execution-manipulation.
-			if ( MachineLearning.shouldRunPrediction() )
-				if ( MachineLearning.predictInternalDocUrl(urlId, sourceUrl, pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
-					return;	// If we were able to find the right path.. and hit a docUrl successfully.. return. The Quadruple is already logged.
+			// Check if we want to use AND if so, if we should run, the MLA.
+			if ( MachineLearning.useMLA ) {
+				PageCrawler.totalPagesReachedCrawling ++;	// Used for M.L.A.'s execution-manipulation.
+				if ( MachineLearning.shouldRunPrediction() )
+					if ( MachineLearning.predictInternalDocUrl(urlId, sourceUrl, pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
+						return;	// If we were able to find the right path.. and hit a docUrl successfully.. return. The Quadruple is already logged.
+			}
 		}
 
 		HashSet<String> currentPageLinks = null;
