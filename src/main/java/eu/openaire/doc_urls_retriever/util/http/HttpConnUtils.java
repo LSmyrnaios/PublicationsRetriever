@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLException;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -93,6 +94,11 @@ public class HttpConnUtils
 
 			boolean foundDetectedContentType = false;
 			String firstHtmlLine = null;
+			BufferedReader bufferedReader = null;
+
+			///////////////////////////
+			//mimeType = null;	// DEBUG!
+			///////////////////////////
 
 			if ( mimeType == null ) {
 				contentDisposition = conn.getHeaderField("Content-Disposition");
@@ -107,6 +113,7 @@ public class HttpConnUtils
 								mimeType = "text/html";
 								foundDetectedContentType = true;
 								firstHtmlLine = detectedContentType.firstHtmlLine;
+								bufferedReader = detectedContentType.bufferedReader;
 							} else if ( detectedContentType.detectedContentType.equals("pdf") ) {
 								logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have PDF contentType!");
 								mimeType = "application/pdf";
@@ -115,8 +122,10 @@ public class HttpConnUtils
 							} else if ( detectedContentType.detectedContentType.equals("undefined") )
 								logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have UNDEFINED contentType..");
 							else
-								logger.debug("Could not retrieve the HTML-code for url: " + finalUrlStr);
+								logger.warn("Unspecified \"detectedContentType\":" + detectedContentType.detectedContentType);
 						}
+						else
+							logger.warn("Could not retrieve the response-body for url: " + finalUrlStr);
 					}
 					else
 						warnMsg += "\nThe initial connection was made with the \"HTTP-HEAD\" method, so there is no response-body to use to detect the content-type.";
@@ -141,9 +150,8 @@ public class HttpConnUtils
 				String fullPathFileName = "";
 				if ( FileUtils.shouldDownloadDocFiles ) {
 					try {
-						if ( foundDetectedContentType ) {	// If we went and detected the pdf from the request-code, then reconnect and proceed with downloading (reasons explained eslewhere).
-							conn.disconnect();
-							conn = handleConnection(urlId, sourceUrl, pageUrl, finalUrlStr, domainStr, calledForPageUrl, calledForPossibleDocUrl);
+						if ( foundDetectedContentType ) {	// If we went and detected the pdf from the request-code, then reconnect and proceed with downloading (reasons explained elsewhere).
+							conn = handleConnection(urlId, sourceUrl, pageUrl, finalUrlStr, domainStr, calledForPageUrl, calledForPossibleDocUrl);	// No need to "conn.disconnect()" before, as we are re-connecting to the same domain.
 						}
 						fullPathFileName = ConnSupportUtils.downloadAndStoreDocFile(conn, domainStr, finalUrlStr);
 						logger.info("DocFile: \"" + fullPathFileName + "\" has been downloaded.");
@@ -162,7 +170,7 @@ public class HttpConnUtils
 					return false;
 				}
 				else if ( (mimeType != null) && ((mimeType.contains("htm") || mimeType.contains("text"))) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
-					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn, firstHtmlLine);
+					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn, firstHtmlLine, bufferedReader);
 				else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" with mimeType: \"" + mimeType + "\" will not be visited!");
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after not matching to a docUrl nor to an htm/text-like page.", domainStr);

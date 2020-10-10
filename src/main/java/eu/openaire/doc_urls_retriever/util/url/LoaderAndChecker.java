@@ -90,7 +90,7 @@ public class LoaderAndChecker
 				String urlToCheck;
 				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null ) {
 					logger.warn("Could not cannonicalize url: " + retrievedUrl);
-					UrlUtils.logQuadruple(null, retrievedUrl, null, "unreachable", "Discarded at loading time, due to cannibalization's problems.", null);
+					UrlUtils.logQuadruple(null, retrievedUrl, null, "unreachable", "Discarded at loading time, due to cannonicalization's problems.", null);
 					LoaderAndChecker.connProblematicUrls ++;
 					continue;
 				}
@@ -210,7 +210,7 @@ public class LoaderAndChecker
 				String sourceUrl = urlToCheck;	// Hold it here for the logging-messages.
 				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
 					logger.warn("Could not cannonicalize url: " + sourceUrl);
-					UrlUtils.logQuadruple(retrievedId, sourceUrl, null, "unreachable", "Discarded at loading time, due to cannibalization's problems.", null);
+					UrlUtils.logQuadruple(retrievedId, sourceUrl, null, "unreachable", "Discarded at loading time, due to cannonicalization's problems.", null);
 					LoaderAndChecker.connProblematicUrls ++;
 					continue;
 				}

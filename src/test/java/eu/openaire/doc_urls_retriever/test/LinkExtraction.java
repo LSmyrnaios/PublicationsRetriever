@@ -53,7 +53,8 @@ public class LinkExtraction {
 		//exampleUrl = "https://upcommons.upc.edu/handle/2117/20502";
 		//exampleUrl = "https://gala.gre.ac.uk/id/eprint/11492/";
 		//exampleUrl = "https://edoc.hu-berlin.de/handle/18452/16660";
-		exampleUrl = "https://docs.lib.purdue.edu/jtrp/124/";
+		//exampleUrl = "https://docs.lib.purdue.edu/jtrp/124/";
+		exampleUrl = "https://www.rug.nl/research/portal/en/publications/op-welke-partijen-richten-lobbyisten-zich(9d42d785-f6a2-4630-b850-61b63d9bfc35).html";
 	}
 
 	
@@ -92,7 +93,7 @@ public class LinkExtraction {
 
 			String newUrl = conn.getURL().toString();
 			String html = null;
-			if ( (html = ConnSupportUtils.getHtmlString(conn)) == null ) {
+			if ( (html = ConnSupportUtils.getHtmlString(conn, null)) == null ) {
 				logger.error("Could not retrieve the HTML-code for pageUrl: " + newUrl);
 				link = null;
 			}
@@ -147,7 +148,7 @@ public class LinkExtraction {
 
 			String newUrl = conn.getURL().toString();
 			String html = null;
-			if ( (html = ConnSupportUtils.getHtmlString(conn)) == null ) {
+			if ( (html = ConnSupportUtils.getHtmlString(conn, null)) == null ) {
 				logger.error("Could not retrieve the HTML-code for pageUrl: " + newUrl);
 				return;
 			}

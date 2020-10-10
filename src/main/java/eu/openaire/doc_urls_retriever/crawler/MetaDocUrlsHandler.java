@@ -6,7 +6,6 @@ import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
 import eu.openaire.doc_urls_retriever.exceptions.DomainWithUnsupportedHEADmethodException;
 import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
-import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
@@ -80,7 +79,7 @@ public class MetaDocUrlsHandler {
             String tempMetaDocUrl = metaDocUrl;
             if ( (metaDocUrl = URLCanonicalizer.getCanonicalURL(metaDocUrl, null, StandardCharsets.UTF_8)) == null ) {
                 logger.warn("Could not cannonicalize metaDocUrl: " + tempMetaDocUrl);
-                UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in \"checkIfAndHandleMetaDocUrl()\", due to cannibalization's problems.", null);
+                UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in \"checkIfAndHandleMetaDocUrl()\", due to cannonicalization's problems.", null);
                 PageCrawler.contentProblematicUrls ++;
                 return true;
             }
@@ -89,18 +88,18 @@ public class MetaDocUrlsHandler {
             if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, currentPageDomain, false, true) ) {    // On success, we log the docUrl inside this method.
                 logger.warn("The retrieved metaDocUrl was not a docUrl (unexpected): " + metaDocUrl);
                 UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'MetaDocUrlsHandler.visit()' method, as the retrieved metaDocUrl was not a docUrl.", null);
-                PageCrawler.contentProblematicUrls ++;
+                PageCrawler.contentProblematicUrls ++;  // If the above failed, then the page is comes from failed.
             }
             return true;    // It should be the docUrl and it was handled.. so we don't continue checking the internalLink even if this wasn't a docUrl.
 
         } catch (RuntimeException re) {
             ConnSupportUtils.printEmbeddedExceptionMessage(re, metaDocUrl);
             UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag-url.", null);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
-            LoaderAndChecker.connProblematicUrls ++;
+            PageCrawler.contentProblematicUrls ++;  // The content (metaDocUrl) of the pageUrl failed.
             return true;
         } catch ( DomainBlockedException | ConnTimeoutException | DomainWithUnsupportedHEADmethodException ex ) {
             UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag-url.", null);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
-            LoaderAndChecker.connProblematicUrls ++;
+            PageCrawler.contentProblematicUrls ++;
             return true;	// It was found and handled. Even if an exception was thrown, we don't want to check any other internalLinks in that page.
         } catch (Exception e) {	// After connecting to the metaDocUrl.
             logger.warn("", e);

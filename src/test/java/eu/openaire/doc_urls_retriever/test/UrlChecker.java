@@ -128,7 +128,7 @@ public class UrlChecker {
 			String urlToCheck = url;	// Use an extra String or it cannot be printed in the error-logging-message as it will be null.
 			if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(url, null, StandardCharsets.UTF_8)) == null ) {
 				logger.warn("Could not cannonicalize url: " + url);
-				return;
+				continue;
 			}
 
 			if ( UrlTypeChecker.matchesUnwantedUrlType(null, urlToCheck, urlToCheck.toLowerCase()) )

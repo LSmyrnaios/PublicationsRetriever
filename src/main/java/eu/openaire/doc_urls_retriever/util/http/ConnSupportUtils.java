@@ -2,6 +2,7 @@ package eu.openaire.doc_urls_retriever.util.http;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
+import com.sun.istack.internal.NotNull;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
@@ -204,7 +205,7 @@ public class ConnSupportUtils
 	{
 		try {
 			String html = null;
-			if ( (html = ConnSupportUtils.getHtmlString(conn)) == null ) {
+			if ( (html = ConnSupportUtils.getHtmlString(conn, null)) == null ) {
 				logger.warn("Could not retrieve the HTML-code for HTTP300PageUrl: " + conn.getURL().toString());
 				return null;
 			}
@@ -399,7 +400,7 @@ public class ConnSupportUtils
 	}
 
 
-	public static String getHtmlString(HttpURLConnection conn)
+	public static String getHtmlString(HttpURLConnection conn, BufferedReader bufferedReader)
 	{
 		int contentSize = getContentSize(conn, false);
 		if ( contentSize == -1 ) {
@@ -407,7 +408,7 @@ public class ConnSupportUtils
 			return null;
 		}
 
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream())))	// Try-with-resources
+		try (BufferedReader br = (bufferedReader != null ? bufferedReader : new BufferedReader(new InputStreamReader(conn.getInputStream()))) )	// Try-with-resources
 		{
 			String inputLine;
 			while ( (inputLine = br.readLine()) != null ) {
@@ -425,6 +426,9 @@ public class ConnSupportUtils
 				logger.error("IOException when retrieving the HTML-code: " + exceptionMessage + "!");
 			else
 				logger.error("", ioe);
+			return null;
+		} catch ( Exception e ) {
+			logger.error("", e);
 			return null;
 		}
 		finally {
@@ -458,13 +462,13 @@ public class ConnSupportUtils
 
 			String lowercaseInputLine = inputLine.toLowerCase();
 			if ( lowercaseInputLine.startsWith("<!doctype html", 0) )
-				return new DetectedContentType("html", inputLine);
+				return new DetectedContentType("html", inputLine, br);
 			else {
 				br.close();	// We close the stream here, since if we got a pdf we should reconnect in order to get the very first bytes (we don't read "lines" when downloading PDFs).
 				if ( lowercaseInputLine.startsWith("%pdf-", 0) )
-					return new DetectedContentType("pdf", null);	// For PDFs we just going to re-connect in order to download the, since we read plain bytes for them and not String-lines, so we re-connect just to be sure we don't corrupt them.
+					return new DetectedContentType("pdf", null, null);	// For PDFs we just going to re-connect in order to download the, since we read plain bytes for them and not String-lines, so we re-connect just to be sure we don't corrupt them.
 				else
-					return new DetectedContentType("undefined", null);
+					return new DetectedContentType("undefined", inputLine, null);
 			}
 
 		} catch ( IOException ioe ) {
@@ -473,6 +477,9 @@ public class ConnSupportUtils
 				logger.error("IOException when retrieving the HTML-code: " + exceptionMessage + "!");
 			else
 				logger.error("", ioe);
+			return null;
+		} catch ( Exception e ) {
+			logger.error("", e);
 			return null;
 		}
 	}
@@ -501,9 +508,22 @@ public class ConnSupportUtils
 			if ( calledForFullTextDownload )	// It's not useful otherwise.
 				logger.warn("No \"Content-Length\" was retrieved from docUrl: \"" + conn.getURL().toString() + "\"! We will store the docFile anyway..");	// No action is needed.
 			return -2;
+		} catch ( Exception e ) {
+			logger.error("", e);
+			return -2;
 		}
 	}
-	
+
+
+	public static void closeBufferedReader(@NotNull BufferedReader bufferedReader)
+	{
+		try {
+			bufferedReader.close();
+		} catch ( IOException ioe ) {
+			logger.warn("Problem when closing \"BufferedReader\": " + ioe.getMessage());
+		}
+	}
+
 	
 	/**
 	 * This method constructs fully-formed urls which are connection-ready, as the retrieved links may be relative-links.

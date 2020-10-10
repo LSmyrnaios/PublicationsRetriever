@@ -38,7 +38,8 @@ public class TestNonStandardInputOutput  {
 	private static void setTypeOfInputData()
 	{
 		LoaderAndChecker.useIdUrlPairs = testingSubDir.equals("idUrlPairs");
-		FileUtils.skipFirstRow = false;
+		if ( !LoaderAndChecker.useIdUrlPairs )
+			FileUtils.skipFirstRow = false;	// Use "true", if we have a "column-name" in our csv file. Default: "false".
 		logger.info("Using the inputFile: \"" + inputFile.getName() + "\" and the outputFile: \"" + outputFile.getName() + "\".");
 	}
 	
