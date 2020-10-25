@@ -6,8 +6,6 @@ import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.regex.Matcher;
-
 
 /**
  * @author Lampros Smyrnaios
@@ -56,23 +54,11 @@ public class ScienceDirectUrlsHandler
 	 */
 	public static String offlineRedirectElsevierToScienceDirect(String linkinghubElsevierUrl)
 	{
-		String idStr = null;
-		Matcher matcher = UrlUtils.URL_TRIPLE.matcher(linkinghubElsevierUrl);
-		if ( matcher.matches() ) {
-			try {
-				idStr = matcher.group(3);
-			} catch (Exception e) { logger.error("", e); }
-			if ( (idStr == null) || idStr.isEmpty() ) {
-				logger.warn("Unexpected id-missing case for: " + linkinghubElsevierUrl);
-				return null;
-			}
-		}
-		else {
-			logger.warn("Unexpected \"URL_TRIPLE\" mismatch for: " + linkinghubElsevierUrl);
+		String idStr = UrlUtils.getDocIdStr(linkinghubElsevierUrl, null);
+		if ( idStr != null )
+			return (scienceDirectBasePath + idStr);
+		else
 			return null;
-		}
-
-		return (scienceDirectBasePath + idStr);
 	}
 	
 }

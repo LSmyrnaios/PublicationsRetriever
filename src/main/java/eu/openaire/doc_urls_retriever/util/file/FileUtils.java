@@ -377,7 +377,7 @@ public class FileUtils
 		
 		// If we couldn't get the fileName from the "Content-Disposition", try getting it from the url.
 		if ( docFileName == null )
-			docFileName = UrlUtils.getDocIdStr(docUrl);	// Extract the docID as the fileName from docUrl.
+			docFileName = UrlUtils.getDocIdStr(docUrl, null);	// Extract the docID as the fileName from docUrl.
 		
 		if ( (docFileName != null) && !docFileName.isEmpty() ) {
 

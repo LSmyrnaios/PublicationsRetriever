@@ -139,6 +139,12 @@ public class UrlChecker {
 			if ( UrlTypeChecker.matchesUnwantedUrlType(null, urlToCheck, urlToCheck.toLowerCase()) )
 				continue;
 
+/*			String urlPath = UrlUtils.getPathStr(urlToCheck, null);
+			if ( urlPath == null )
+				return;
+			else
+				logger.debug("urlPath: " + urlPath);*/
+
 			try {
 				HttpConnUtils.connectAndCheckMimeType(null, urlToCheck, urlToCheck, urlToCheck, null, true, false);
 			} catch (Exception e) {
@@ -240,11 +246,11 @@ public class UrlChecker {
 			logger.info("\t\tDomain: \"" + urlPart + "\"");
 		
 		urlPart = null;
-		if ( (urlPart = UrlUtils.getPathStr(url)) != null )
+		if ( (urlPart = UrlUtils.getPathStr(url, null)) != null )
 			logger.info("\t\tPath: \"" + urlPart + "\"");
 		
 		urlPart = null;
-		if ( (urlPart = UrlUtils.getDocIdStr(url)) != null )
+		if ( (urlPart = UrlUtils.getDocIdStr(url, null)) != null )
 			logger.info("\t\tDocID: \"" + urlPart + "\"");
 	}
 }

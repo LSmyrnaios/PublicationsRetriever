@@ -11,6 +11,7 @@ import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -30,6 +31,8 @@ public class DocUrlsRetriever
 	public static boolean docFilesStorageGivenByUser = false;
 
 	public static Instant startTime = null;
+
+	public static DecimalFormat df = new DecimalFormat("0.00");
 
 
     public static void main( String[] args )
@@ -161,7 +164,7 @@ public class DocUrlsRetriever
 					+ " The un-retrieved docFiles were either belonging to already-found docUrls or they had content-issues.");
 		}
 		if ( MachineLearning.useMLA )
-			logger.debug("The M.L.A. is responsible for the discovery of " + MachineLearning.docUrlsFoundByMLA + " of the docUrls (" +  (MachineLearning.docUrlsFoundByMLA * (float)100 / UrlUtils.sumOfDocUrlsFound) + "%). The M.L.A.'s average success-rate was: " + MachineLearning.getAverageSuccessRate() + "%");
+			logger.debug("The M.L.A. is responsible for the discovery of " + MachineLearning.docUrlsFoundByMLA + " of the docUrls (" + df.format(MachineLearning.docUrlsFoundByMLA * 100.0 / UrlUtils.sumOfDocUrlsFound) + "%). The M.L.A.'s average success-rate was: " + MachineLearning.getAverageSuccessRate() + "%");
 		else
 			logger.debug("The M.L.A. was not enabled.");
 
@@ -196,6 +199,10 @@ public class DocUrlsRetriever
 		logger.debug("The number of domains blocked due to an \"SSL Exception\" was: " + HttpConnUtils.numOfDomainsBlockedDueToSSLException);
 
 		calculateAndPrintElapsedTime(startTime, Instant.now());
+
+		// DEBUG! comment-out the following in production.
+		/*if ( MachineLearning.useMLA )
+			MachineLearning.printGatheredData();*/
 	}
 	
 	

@@ -110,27 +110,21 @@ public class UrlUtils
 	/**
 	 * This method returns the path of the given url.
 	 * @param urlStr
+	 * @param matcher
 	 * @return pathStr
 	 */
-	public static String getPathStr(String urlStr)
+	public static String getPathStr(String urlStr, Matcher matcher)
 	{
-		if ( urlStr == null ) {	// Avoid NPE in "Matcher"
-			logger.error("The received \"urlStr\" was null in \"getPathStr()\"!");
-			return null;
-		}
+		if ( matcher == null )
+			if ( (matcher = getUrlMatcher(urlStr)) == null )
+				return null;
 
 		String pathStr = null;
-		Matcher matcher = URL_TRIPLE.matcher(urlStr);
-		if ( matcher.matches() ) {
-			try {
-				pathStr = matcher.group(1);	// Group <1> is the PATH.
-			} catch (Exception e) { logger.error("", e); }
-			if ( (pathStr == null) || pathStr.isEmpty() ) {
-				logger.warn("No pathStr was extracted from url: \"" + urlStr + "\".");
-				return null;
-			}
-		} else {
-			logger.error("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
+		try {
+			pathStr = matcher.group(1);	// Group <1> is the PATH.
+		} catch (Exception e) { logger.error("", e); }
+		if ( (pathStr == null) || pathStr.isEmpty() ) {
+			logger.warn("No pathStr was extracted from url: \"" + urlStr + "\".");
 			return null;
 		}
 
@@ -141,32 +135,45 @@ public class UrlUtils
 	/**
 	 * This method returns the path of the given url.
 	 * @param urlStr
+	 * @param matcher
 	 * @return pathStr
 	 */
-	public static String getDocIdStr(String urlStr)
+	public static String getDocIdStr(String urlStr, Matcher matcher)
+	{
+		if ( matcher == null )
+			if ( (matcher = getUrlMatcher(urlStr)) == null )
+				return null;
+
+		String docIdStr = null;
+		try {
+			docIdStr = matcher.group(3);	// Group <3> is the docId.
+		} catch (Exception e) { logger.error("", e); }
+		if ( (docIdStr == null) || docIdStr.isEmpty() ) {
+			logger.warn("No docID was extracted from url: \"" + urlStr + "\".");
+			return null;
+		}
+
+		return docIdStr;
+	}
+
+
+	public static Matcher getUrlMatcher(String urlStr)
 	{
 		if ( urlStr == null ) {	// Avoid NPE in "Matcher"
 			logger.error("The received \"urlStr\" was null in \"getDocIdStr()\"!");
 			return null;
 		}
-		
-		String docIdStr = null;
-		Matcher matcher = URL_TRIPLE.matcher(urlStr);
-		if ( matcher.matches() ) {
-			try {
-				docIdStr = matcher.group(3);	// Group <3> is the docId.
-			} catch (Exception e) { logger.error("", e); }
-			if ( (docIdStr == null) || docIdStr.isEmpty() ) {
-				logger.warn("No docID was extracted from url: \"" + urlStr + "\".");
-				return null;
-			}
-		}
+
+		// If the url ends with "/" then remove it as its a "mistake" and the last part of it is the "docID" we want.
+		if ( urlStr.endsWith("/") )
+			urlStr = urlStr.substring(0, (urlStr.length() -1));
+		Matcher urlMatcher = UrlUtils.URL_TRIPLE.matcher(urlStr);
+		if ( urlMatcher.matches() )
+			return urlMatcher;
 		else {
-			logger.error("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
+			logger.warn("Unexpected URL_TRIPLE's (" + urlMatcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
 			return null;
 		}
-
-		return docIdStr;
 	}
 
 

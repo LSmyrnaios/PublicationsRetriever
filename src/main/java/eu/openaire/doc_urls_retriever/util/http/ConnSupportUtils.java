@@ -281,7 +281,7 @@ public class ConnSupportUtils
 	 */
 	public static void on403ErrorCode(String urlStr, String domainStr) throws DomainBlockedException
 	{
-		String pathStr = UrlUtils.getPathStr(urlStr);
+		String pathStr = UrlUtils.getPathStr(urlStr, null);
 		if ( pathStr == null )
 			return;
 		
@@ -326,7 +326,7 @@ public class ConnSupportUtils
 	{
 		if ( domainsMultimapWithPaths403BlackListed.containsKey(domainStr) )	// If this domain has returned 403 before, then go and check if the current path is blacklisted.
 		{
-			String pathStr = UrlUtils.getPathStr(urlStr);
+			String pathStr = UrlUtils.getPathStr(urlStr, null);
 			if ( pathStr == null )	// If there is a problem retrieving this athStr, return false;
 				return false;
 			
