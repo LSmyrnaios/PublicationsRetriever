@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.regex.Matcher;
 
 import static eu.openaire.doc_urls_retriever.test.TestNonStandardInputOutput.setInputOutput;
 import static eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker.isFinishedLoading;
@@ -206,7 +207,7 @@ public class UrlChecker {
 		urlList.add("http://paduaresearch.cab.unipd.it/5619/1/BEGHETTO_A_-_L'attività_di_revisione_legale_del_bilancio_d'esercizio.pdf");
 		urlList.add("http://paduaresearch.cab.unipd.it/5619/1/BEGHETTO_A_-_L'attivit%C3%A0_di_revisione_legale_del_bilancio_d'esercizio.pdf");
 		urlList.add("https://signon.utwente.nl:443/oam/server/obrareq.cgi?encquery%3DNag5hroDAYcZB73s6qFabcJrCLu93LkC%2B%2BehD6VzQDBXjyBeFwtDMuD1y8RrSDHeJy5fC5%2Fy2bJ06QJBGd1f0YAph8D4YcL49l8SbwEcjfrA7TYcvee8aiQakGx1o5pLUN4KrQC%2F3OBf5PrdrMwJb98CJjMkSBGdSMteofa1JVOMTxSQUwTdObMY04eHA51ReEiT3v3fpOlg6%2BcJgtdHSCEhYL2yCt2rgkgPSVoJ%2BqZvFzc6o3FhSmCeXtFiO1FpG5%2BzFSP5JEHVFUerdnw1GpLOtGOT6PpbDf9Fd%2BnAT6Q%3D%20agentid%3DRevProxyWebgate%20ver%3D1%20crmethod%3D2&ECID-Context=1.005YfySQ6km8LunDsnZBCX0002cY00001F%3BkXjE");
-		
+		urlList.add("http://www.ampere.cnrs.fr/correspondance/rdf/ampcorr-<? print $val['bookId'] ?>-RDF.xml");
 		
 		// Add more urls to test.
 		
@@ -240,17 +241,21 @@ public class UrlChecker {
 	private static void validateRegexOnUrl(String url)
 	{
 		logger.info("Checking \"URL_TRIPLE\"-REGEX on url: \"" + url + "\".");
-		
+
+		Matcher urlMatcher = UrlUtils.getUrlMatcher(url);
+		if ( urlMatcher == null )
+			return;
+
 		String urlPart = null;
-		if ( (urlPart = UrlUtils.getDomainStr(url)) != null )
+		if ( (urlPart = UrlUtils.getDomainStr(url, urlMatcher)) != null )
 			logger.info("\t\tDomain: \"" + urlPart + "\"");
 		
 		urlPart = null;
-		if ( (urlPart = UrlUtils.getPathStr(url, null)) != null )
+		if ( (urlPart = UrlUtils.getPathStr(url, urlMatcher)) != null )
 			logger.info("\t\tPath: \"" + urlPart + "\"");
 		
 		urlPart = null;
-		if ( (urlPart = UrlUtils.getDocIdStr(url, null)) != null )
+		if ( (urlPart = UrlUtils.getDocIdStr(url, urlMatcher)) != null )
 			logger.info("\t\tDocID: \"" + urlPart + "\"");
 	}
 }

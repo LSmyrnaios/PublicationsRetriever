@@ -54,7 +54,8 @@ public class LinkExtraction {
 		//exampleUrl = "https://gala.gre.ac.uk/id/eprint/11492/";
 		//exampleUrl = "https://edoc.hu-berlin.de/handle/18452/16660";
 		//exampleUrl = "https://docs.lib.purdue.edu/jtrp/124/";
-		exampleUrl = "https://www.rug.nl/research/portal/en/publications/op-welke-partijen-richten-lobbyisten-zich(9d42d785-f6a2-4630-b850-61b63d9bfc35).html";
+		//exampleUrl = "https://www.rug.nl/research/portal/en/publications/op-welke-partijen-richten-lobbyisten-zich(9d42d785-f6a2-4630-b850-61b63d9bfc35).html";
+		exampleUrl = "https://hal-iogs.archives-ouvertes.fr/hal-01576150";
 	}
 
 	
@@ -89,7 +90,7 @@ public class LinkExtraction {
 		
 		String link;
 		try {
-			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl), true, false);
+			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl, null), true, false);
 
 			String newUrl = conn.getURL().toString();
 			String html = null;
@@ -144,7 +145,7 @@ public class LinkExtraction {
 	public void testExtractAllLinksFromUrl()
 	{
 		try {
-			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl), true, false);
+			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl, null), true, false);
 
 			String newUrl = conn.getURL().toString();
 			String html = null;

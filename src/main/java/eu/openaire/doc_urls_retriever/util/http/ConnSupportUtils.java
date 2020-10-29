@@ -245,14 +245,14 @@ public class ConnSupportUtils
 			errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received: HTTP " + errorStatusCode + " Client Error.";
 			if ( errorStatusCode == 403 ) {
 				if ( domainStr == null ) {
-					if ( (domainStr = UrlUtils.getDomainStr(urlStr)) != null )
+					if ( (domainStr = UrlUtils.getDomainStr(urlStr, null)) != null )
 						on403ErrorCode(urlStr, domainStr);	// The "DomainBlockedException" will go up-method by its own, if thrown inside this one.
 				} else
 					on403ErrorCode(urlStr, domainStr);
 			}
 		}
 		else {	// Other errorCodes. Retrieve the domain and make the required actions.
-			domainStr = UrlUtils.getDomainStr(urlStr);
+			domainStr = UrlUtils.getDomainStr(urlStr, null);
 			
 			if ( (errorStatusCode >= 500) && (errorStatusCode <= 599) ) {	// Server Error.
 				errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received: HTTP " + errorStatusCode + " Server Error.";
@@ -391,7 +391,7 @@ public class ConnSupportUtils
 	public static void blockSharedSiteSessionDomain(String initialUrl, String pageDomain)
 	{
 		if ( pageDomain == null )
-			if ( (pageDomain = UrlUtils.getDomainStr(initialUrl)) == null )
+			if ( (pageDomain = UrlUtils.getDomainStr(initialUrl, null)) == null )
 				return;	// The problem is logged, but nothing more needs to bo done.
 
 		HttpConnUtils.blacklistedDomains.add(pageDomain);

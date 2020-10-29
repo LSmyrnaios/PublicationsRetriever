@@ -78,7 +78,7 @@ public class HttpConnUtils
 		HttpURLConnection conn = null;
 		try {
 			if ( domainStr == null )	// No info about domainStr from the calling method.. we have to find it here.
-				if ( (domainStr = UrlUtils.getDomainStr(resourceURL)) == null )
+				if ( (domainStr = UrlUtils.getDomainStr(resourceURL, null)) == null )
 					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
 
 			conn = handleConnection(urlId, sourceUrl, pageUrl, resourceURL, domainStr, calledForPageUrl, calledForPossibleDocUrl);
@@ -90,7 +90,7 @@ public class HttpConnUtils
 			String finalUrlStr = conn.getURL().toString();
 
 			if ( !finalUrlStr.contains(domainStr) )	// Get the new domain after possible change from redirects.
-				if ( (domainStr = UrlUtils.getDomainStr(finalUrlStr)) == null )
+				if ( (domainStr = UrlUtils.getDomainStr(finalUrlStr, null)) == null )
 					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
 
 			boolean foundDetectedContentType = false;
@@ -134,7 +134,7 @@ public class HttpConnUtils
 					if ( !foundDetectedContentType ) {
 						if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsReturnedNoType, domainStr, HttpConnUtils.timesToReturnNoTypeBeforeBlocked) ) {
 							logger.warn(warnMsg);
-							logger.warn("Domain: " + domainStr + " was blocked after returning no Type-info more than " + HttpConnUtils.timesToReturnNoTypeBeforeBlocked + " times.");
+							logger.warn("Domain: \"" + domainStr + "\" was blocked after returning no Type-info more than " + HttpConnUtils.timesToReturnNoTypeBeforeBlocked + " times.");
 							throw new DomainBlockedException();
 						}
 						else
@@ -161,22 +161,22 @@ public class HttpConnUtils
 						logger.warn(fullPathFileName, dfnde);
 					}
 				}
-				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, domainStr);	// we send the urls, before and after potential redirections.
+				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null);	// we send the urls, before and after potential redirections.
 				return true;
 			}
 			else if ( calledForPageUrl ) {	// Visit this url only if this method was called for an inputUrl.
 				if ( finalUrlStr.contains("viewcontent.cgi") ) {	// If this "viewcontent.cgi" isn't a docUrl, then don't check its internalLinks. Check this: "https://docs.lib.purdue.edu/cgi/viewcontent.cgi?referer=&httpsredir=1&params=/context/physics_articles/article/1964/type/native/&path_info="
 					logger.warn("Unwanted pageUrl: \"" + finalUrlStr + "\" will not be visited!");
-					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to a non-docUrl with 'viewcontent.cgi'.", domainStr);
+					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to a non-docUrl with 'viewcontent.cgi'.", null);
 					return false;
 				}
 				else if ( (mimeType != null) && ((mimeType.contains("htm") || mimeType.contains("text"))) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
 					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn, firstHtmlLine, bufferedReader);
 				else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" with mimeType: \"" + mimeType + "\" will not be visited!");
-					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after not matching to a docUrl nor to an htm/text-like page.", domainStr);
+					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after not matching to a docUrl nor to an htm/text-like page.", null);
 					if ( ConnSupportUtils.countAndBlockDomainAfterTimes(blacklistedDomains, timesDomainsHadInputNotBeingDocNorPage, domainStr, HttpConnUtils.timesToHaveNoDocNorPageInputBeforeBlocked) )
-						logger.warn("Domain: " + domainStr + " was blocked after having no Doc nor Pages in the input more than " + HttpConnUtils.timesToReturnNoTypeBeforeBlocked + " times.");
+						logger.warn("Domain: \"" + domainStr + "\" was blocked after having no Doc nor Pages in the input more than " + HttpConnUtils.timesToReturnNoTypeBeforeBlocked + " times.");
 				}	// We log the quadruple here, as there is connection-kind-of problem here.. it's just us considering it an unwanted case. We don't throw "DomainBlockedException()", as we don't handle it for inputUrls (it would also log the quadruple twice with diff comments).
 			}
 		} catch (AlreadyFoundDocUrlException afdue) {	// An already-found docUrl was discovered during redirections.
@@ -480,9 +480,9 @@ public class HttpConnUtils
 				if ( UrlUtils.docUrlsWithKeys.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
 					logger.info("re-crossed docUrl found: < " + targetUrl + " >");
 					if ( FileUtils.shouldDownloadDocFiles )
-						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(targetUrl), domainStr);
+						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(targetUrl), null);
 					else
-						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, "", domainStr);
+						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, "", null);
 					throw new AlreadyFoundDocUrlException();
 				}
 				/*else if ( calledForPageUrl && (targetUrl.contains("elsevier.com") && !targetUrl.contains("linkinghub")) ) {	// Avoid pageUrls redirecting to "elsevier.com" (mostly "doi.org"-urls).
@@ -492,7 +492,7 @@ public class HttpConnUtils
 
 				if ( !targetUrl.contains(HttpConnUtils.lastConnectedHost) ) {    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
 					conn.disconnect();	// Close the socket with that server.
-					if ( (domainStr = UrlUtils.getDomainStr(targetUrl)) == null )
+					if ( (domainStr = UrlUtils.getDomainStr(targetUrl, null)) == null )
 						throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
 				}
 

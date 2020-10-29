@@ -35,11 +35,11 @@ public class MetaDocUrlsHandler {
      * @param urlId
      * @param sourceUrl
      * @param pageUrl
-     * @param currentPageDomain
+     * @param pageDomain
      * @param pageHtml
      * @return
      */
-    public static boolean checkIfAndHandleMetaDocUrl(String urlId, String sourceUrl, String pageUrl, String currentPageDomain, String pageHtml)
+    public static boolean checkIfAndHandleMetaDocUrl(String urlId, String sourceUrl, String pageUrl, String pageDomain, String pageHtml)
     {
         // Check if the docLink is provided in a metaTag and connect to it directly.
         String metaDocUrl = null;
@@ -58,7 +58,7 @@ public class MetaDocUrlsHandler {
             {
                 logger.debug("The metaDocUrl is a dynamic-link. Abort the process nd block the domain of the pageUrl.");
                 // Block the domain and return "true" to indicate handled-state.
-                HttpConnUtils.blacklistedDomains.add(currentPageDomain);
+                HttpConnUtils.blacklistedDomains.add(pageDomain);
                 UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was a dynamic-link.", null);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
                 PageCrawler.contentProblematicUrls ++;
                 return true;
@@ -85,7 +85,7 @@ public class MetaDocUrlsHandler {
             }
 
             // Connect to it directly.
-            if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, currentPageDomain, false, true) ) {    // On success, we log the docUrl inside this method.
+            if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, pageDomain, false, true) ) {    // On success, we log the docUrl inside this method.
                 logger.warn("The retrieved metaDocUrl was not a docUrl (unexpected): " + metaDocUrl);
                 UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'MetaDocUrlsHandler.visit()' method, as the retrieved metaDocUrl was not a docUrl.", null);
                 PageCrawler.contentProblematicUrls ++;  // If the above failed, then the page is comes from failed.

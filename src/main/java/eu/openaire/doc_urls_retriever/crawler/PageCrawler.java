@@ -32,8 +32,6 @@ public class PageCrawler
 	private static final Logger logger = LoggerFactory.getLogger(PageCrawler.class);
 
 	public static final Pattern JAVASCRIPT_DOC_LINK = Pattern.compile("(?:javascript:pdflink.*')(http.+)(?:',.*)", Pattern.CASE_INSENSITIVE);
-	
-	public static int totalPagesReachedCrawling = 0;	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their internalLinks checked.
 
 	public static final HashMap<String, Integer> timesDomainNotGivingInternalLinks = new HashMap<String, Integer>();
 	public static final HashMap<String, Integer> timesDomainNotGivingDocUrls = new HashMap<String, Integer>();
@@ -48,8 +46,8 @@ public class PageCrawler
 	{
 		logger.debug("Visiting pageUrl: \"" + pageUrl + "\".");
 
-		String currentPageDomain = UrlUtils.getDomainStr(pageUrl);
-		if ( currentPageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
+		String pageDomain = UrlUtils.getDomainStr(pageUrl, null);
+		if ( pageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"PageCrawler.visit()\": \"" + pageUrl + "\"");
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, after the occurrence of a domain-retrieval error.", null);
 			LoaderAndChecker.connProblematicUrls ++;
@@ -72,20 +70,20 @@ public class PageCrawler
 
 		if ( !pageUrl.contains("sciencedirect.com") ) {	// The scienceDirect-pageUrl do not benefit from the method below, so we skip them..
 			// Check if the docLink is provided in a metaTag and connect to it directly.
-			if ( MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl(urlId, sourceUrl, pageUrl, currentPageDomain, pageHtml) )
+			if ( MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl(urlId, sourceUrl, pageUrl, pageDomain, pageHtml) )
 				return;	// The sourceUrl is already logged inside the called method.
 
 			// Check if we want to use AND if so, if we should run, the MLA.
 			if ( MachineLearning.useMLA ) {
-				PageCrawler.totalPagesReachedCrawling ++;	// Used for M.L.A.'s execution-manipulation.
+				MachineLearning.totalPagesReachedMLAStage ++;	// Used for M.L.A.'s execution-manipulation.
 				if ( MachineLearning.shouldRunPrediction() )
-					if ( MachineLearning.predictInternalDocUrl(urlId, sourceUrl, pageUrl, currentPageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
+					if ( MachineLearning.predictInternalDocUrl(urlId, sourceUrl, pageUrl, pageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
 						return;	// If we were able to find the right path.. and hit a docUrl successfully.. return. The Quadruple is already logged.
 			}
 		}
 
 		HashSet<String> currentPageLinks = null;
-		if ( (currentPageLinks = retrieveInternalLinks(urlId, sourceUrl, pageUrl, currentPageDomain, pageHtml, pageContentType)) == null )
+		if ( (currentPageLinks = retrieveInternalLinks(urlId, sourceUrl, pageUrl, pageDomain, pageHtml, pageContentType)) == null )
 			return;	// The necessary logging is handled inside.
 
 		HashSet<String> remainingLinks = new HashSet<>(currentPageLinks.size());	// Used later. Initialize with the total num of links (less will actually get stored there, but their num is unknown).
@@ -105,9 +103,9 @@ public class PageCrawler
             if ( UrlUtils.docUrlsWithKeys.containsKey(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
 				logger.info("re-crossed docUrl found: < " + urlToCheck + " >");
 				if ( FileUtils.shouldDownloadDocFiles )
-					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(urlToCheck), currentPageDomain);
+					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(urlToCheck), pageDomain);
 				else
-					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, "", currentPageDomain);
+					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, "", pageDomain);
                 return;
             }
 
@@ -136,14 +134,14 @@ public class PageCrawler
 					UrlUtils.duplicateUrls.add(urlToCheck);    // Don't check it ever again..
 					continue;
 				} catch (DomainBlockedException dbe) {
-					if ( urlToCheck.contains(currentPageDomain) ) {
+					if ( urlToCheck.contains(pageDomain) ) {
 						logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
 						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was blocked during crawling.", null);
 						return;
 					}
 					continue;
 				} catch (ConnTimeoutException cte) {	// In this case, it's unworthy to stay and check other internalLinks here.
-					if ( urlToCheck.contains(currentPageDomain) ) {
+					if ( urlToCheck.contains(pageDomain) ) {
 						logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after a potentialDocUrl caused a ConnTimeoutException.");
 						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as an internalLink of this page caused 'ConnTimeoutException'.", null);
 						return;
@@ -163,7 +161,7 @@ public class PageCrawler
 		for ( String currentLink : remainingLinks )	// Here we don't re-check already-checked links, as this is a new list. All the links here are full-canonicalized-urls.
 		{
 			// Make sure we avoid connecting to different domains to save time. We allow to check different domains only after matching to possible-urls in the previous fast-loop.
-			if ( !currentLink.contains(currentPageDomain) )
+			if ( !currentLink.contains(pageDomain) )
 				continue;
 
 			if ( UrlUtils.duplicateUrls.contains(currentLink) )
@@ -183,19 +181,19 @@ public class PageCrawler
 				else
 					UrlUtils.duplicateUrls.add(currentLink);
 			} catch (DomainBlockedException dbe) {
-				if ( currentLink.contains(currentPageDomain) ) {
+				if ( currentLink.contains(pageDomain) ) {
 					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was blocked during crawling.", null);
 					return;
 				}
 			} catch (DomainWithUnsupportedHEADmethodException dwuhe) {
-				if ( currentLink.contains(currentPageDomain) ) {
+				if ( currentLink.contains(pageDomain) ) {
 					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was caught to not support the HTTP HEAD method, as a result, the internal-links will stop being checked.");
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was caught to not support the HTTP HEAD method.", null);
 					return;
 				}
 			} catch (ConnTimeoutException cte) {	// In this case, it's unworthy to stay and check other internalLinks here.
-				if ( currentLink.contains(currentPageDomain) ) {
+				if ( currentLink.contains(pageDomain) ) {
 					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after an internalLink caused a ConnTimeoutException.");
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as an internalLink of this page caused 'ConnTimeoutException'.", null);
 					return;
@@ -209,8 +207,8 @@ public class PageCrawler
 		logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
 		UrlTypeChecker.pagesNotProvidingDocUrls ++;
 		UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as no docUrl was found inside.", null);
-		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingDocUrls, currentPageDomain, PageCrawler.timesToGiveNoDocUrlsBeforeBlocked) )
-			logger.debug("Domain: " + currentPageDomain + " was blocked after giving no docUrls more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
+		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingDocUrls, pageDomain, PageCrawler.timesToGiveNoDocUrlsBeforeBlocked) )
+			logger.debug("Domain: " + pageDomain + " was blocked after giving no docUrls more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
 	}
 
 

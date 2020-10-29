@@ -234,8 +234,8 @@ public class LoaderAndChecker
 	 */
 	public static String handleUrlChecks(String urlId, String retrievedUrl)
 	{
-		String currentUrlDomain = UrlUtils.getDomainStr(retrievedUrl);
-		if ( currentUrlDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
+		String urlDomain = UrlUtils.getDomainStr(retrievedUrl, null);
+		if ( urlDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"UrlUtils.handleUrlChecks()\": \"" + retrievedUrl + "\"");
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' method, after the occurrence of a domain-retrieval error.", null);
 			if ( !useIdUrlPairs )
@@ -243,15 +243,15 @@ public class LoaderAndChecker
 			return null;
 		}
 		
-		if ( HttpConnUtils.blacklistedDomains.contains(currentUrlDomain) ) {	// Check if it has been blackListed after running internal links' checks.
-			logger.debug("Avoid connecting to blackListed domain: \"" + currentUrlDomain + "\"!");
+		if ( HttpConnUtils.blacklistedDomains.contains(urlDomain) ) {	// Check if it has been blackListed after running internal links' checks.
+			logger.debug("Avoid connecting to blackListed domain: \"" + urlDomain + "\"!");
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' method, as its domain was found blackListed.", null);
 			if ( !useIdUrlPairs )
 				connProblematicUrls ++;
 			return null;
 		}
 		
-		if ( ConnSupportUtils.checkIfPathIs403BlackListed(retrievedUrl, currentUrlDomain) ) {	// The path-extraction is independent of the jsessionid-removal, so this gets executed before.
+		if ( ConnSupportUtils.checkIfPathIs403BlackListed(retrievedUrl, urlDomain) ) {	// The path-extraction is independent of the jsessionid-removal, so this gets executed before.
 			logger.debug("Preventing reaching 403ErrorCode with url: \"" + retrievedUrl + "\"!");
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' as it had a blackListed urlPath.", null);
 			if ( !useIdUrlPairs )

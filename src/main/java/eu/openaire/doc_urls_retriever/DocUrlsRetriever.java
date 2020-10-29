@@ -164,7 +164,7 @@ public class DocUrlsRetriever
 					+ " The un-retrieved docFiles were either belonging to already-found docUrls or they had content-issues.");
 		}
 		if ( MachineLearning.useMLA )
-			logger.debug("The M.L.A. is responsible for the discovery of " + MachineLearning.docUrlsFoundByMLA + " of the docUrls (" + df.format(MachineLearning.docUrlsFoundByMLA * 100.0 / UrlUtils.sumOfDocUrlsFound) + "%). The M.L.A.'s average success-rate was: " + MachineLearning.getAverageSuccessRate() + "%");
+			logger.debug("The M.L.A. is responsible for the discovery of " + MachineLearning.docUrlsFoundByMLA + " of the docUrls (" + df.format(MachineLearning.docUrlsFoundByMLA * 100.0 / UrlUtils.sumOfDocUrlsFound) + "%). The M.L.A.'s average success-rate was: " + df.format(MachineLearning.getAverageSuccessRate()) + "%. Gathered data for " + MachineLearning.timesGatheredData + " valid pageUrl-docUrl pairs.");
 		else
 			logger.debug("The M.L.A. was not enabled.");
 

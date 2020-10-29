@@ -43,9 +43,11 @@ public class MachineLearning
 	private static int endOfSleepNumOfUrls = 0;
 	private static int latestSuccessBreakPoint = 0;
 	private static int latestUrlsMLAChecked = 0;
-	private static int timesGatheredData = 0;
+	public static int timesGatheredData = 0;	// Used also for statistics.
 	private static int urlsCheckedWithMLA = 0;
 	private static boolean isInSleepMode = false;
+
+	public static int totalPagesReachedMLAStage = 0;	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their internalLinks checked.
 
 	/**
 	 * From the Docs: The multimap does not store duplicate key-value pairs. Adding a new key-value pair equal to an existing key-value pair has no effect.
@@ -112,27 +114,32 @@ public class MachineLearning
 	/**
 	 * This method gathers docPagePath and docUrlPath data, for successful docUrl-found-cases.
 	 * This data is used by "MachineLearning.predictInternalDocUrl()".
-	 * @param domain
 	 * @param docPage
 	 * @param docUrl
+	 * @param pageDomain (it may be null)
 	 */
-	public static void gatherMLData(String domain, String docPage, String docUrl)
+	public static void gatherMLData(String docPage, String docUrl, String pageDomain)
 	{
 		if ( docPage.equals(docUrl) )	// It will be equal if the "docPage" is a docUrl itself.
 			return;	// No need to log anything.
 
-		if ( domain == null )
-			if ( (domain = UrlUtils.getDomainStr(docPage)) == null )
-				return;
+		Matcher docPageMatcher = null;	// It's ok if it remains "null", the "getPathStr()" will create one then.
 
-		if ( domainsBlockedFromMLA.contains(domain) )	// Don't gather data for domains which are proven to not be compatible with the MLA.
+		if ( pageDomain == null ) {
+			if ( (docPageMatcher = UrlUtils.getUrlMatcher(docPage)) == null )
+				return;
+			if ( (pageDomain = UrlUtils.getDomainStr(docPage, docPageMatcher)) == null )
+				return;
+		}
+
+		if ( domainsBlockedFromMLA.contains(pageDomain) )	// Don't gather data for domains which are proven to not be compatible with the MLA.
 			return;
 
-		String docPagePath = UrlUtils.getPathStr(docPage, null);
+		String docPagePath = UrlUtils.getPathStr(docPage, docPageMatcher);
 		if ( docPagePath == null )
 			return;
 
-
+		// DocUrl part-extraction.
 		Matcher docUrlMatcher = UrlUtils.getUrlMatcher(docUrl);
 		if ( docUrlMatcher == null )
 			return;
@@ -193,7 +200,7 @@ public class MachineLearning
 
 		// If it's currently in sleepMode, check if it should restart.
 		if ( isInSleepMode ) {
-			if ( PageCrawler.totalPagesReachedCrawling > endOfSleepNumOfUrls ) {
+			if ( totalPagesReachedMLAStage > endOfSleepNumOfUrls ) {
 				logger.debug("MLA's \"sleepMode\" is finished, it will now restart.");
 				isInSleepMode = false;
 				return true;
@@ -208,7 +215,7 @@ public class MachineLearning
 		long nextBreakPointForSuccessRate = latestSuccessBreakPoint + leastNumOfUrlsToCheckBeforeAccuracyTest + endOfSleepNumOfUrls;
 
 		// Check if we should immediately continue running the MLA, or it's time to decide depending on the success-rate.
-		if ( PageCrawler.totalPagesReachedCrawling < nextBreakPointForSuccessRate )
+		if ( totalPagesReachedMLAStage < nextBreakPointForSuccessRate )
 			return true;	// Always continue in this case, as we don't have enough success-rate-data to decide otherwise.
 
 		// Else decide depending on successPercentage for all of the urls which reached the "PageCrawler.visit()" in this round.
@@ -218,13 +225,13 @@ public class MachineLearning
 
 		if ( curSuccessRate >= leastSuccessPercentageForMLA ) {    // After the safe-period, continue as long as the success-rate is high.
 			endOfSleepNumOfUrls = 0;	// Stop keeping sleep-data.
-			latestSuccessBreakPoint = PageCrawler.totalPagesReachedCrawling;	// The latest number for which MLA was tested against.
+			latestSuccessBreakPoint = totalPagesReachedMLAStage;	// The latest number for which MLA was tested against.
 			return true;
 		}
 
 		// Else enter "sleep-mode" and update the variables.
 		logger.debug("MLA's success-rate is lower than the satisfying one (" + leastSuccessPercentageForMLA + "). Entering \"sleep-mode\", but continuing to gather ML-data...");
-		endOfSleepNumOfUrls = PageCrawler.totalPagesReachedCrawling + urlsToWaitUntilRestartMLA;	// Update num of urls to reach before the "sleep period" ends.
+		endOfSleepNumOfUrls = totalPagesReachedMLAStage + urlsToWaitUntilRestartMLA;	// Update num of urls to reach before the "sleep period" ends.
 		latestMLADocUrlsFound = docUrlsFoundByMLA;	// Keep latest num of docUrls found by the MLA, in order to calculate the success rate only for up-to-date data.
 		latestUrlsMLAChecked = urlsCheckedWithMLA;	// Keep latest num of urls checked by MLA...
 		latestSuccessBreakPoint = 0;	// Stop keeping successBreakPoint as we get in "sleepMode".
@@ -242,13 +249,13 @@ public class MachineLearning
 	 * @param urlId
 	 * @param sourceUrl
 	 * @param pageUrl
-	 * @param domainStr
+	 * @param pageDomain
 	 * @return true / false
 	 */
-	public static boolean predictInternalDocUrl(String urlId, String sourceUrl, String pageUrl, String domainStr)
+	public static boolean predictInternalDocUrl(String urlId, String sourceUrl, String pageUrl, String pageDomain)
 	{
-		if ( domainsBlockedFromMLA.contains(domainStr) ) {    // Check if this domain is not compatible with the MLA.
-			logger.debug("Avoiding the MLA-prediction for incompatible domain: \"" + domainStr + "\".");
+		if ( domainsBlockedFromMLA.contains(pageDomain) ) {    // Check if this domain is not compatible with the MLA.
+			logger.debug("Avoiding the MLA-prediction for incompatible domain: \"" + pageDomain + "\".");
 			return false;
 		}
 
@@ -266,8 +273,8 @@ public class MachineLearning
 		if ( pathsSize == 0 )	// If this path cannot be handled by the MLA (no known data in our model), then return.
 			return false;
 		else if ( pathsSize > 5 ) {	// Too many docPaths for this pagePath, means that there's probably only one pagePath we get for this domain (paths are not mapped to domains so we can't actually check).
-			logger.debug("Domain: \"" + domainStr + "\" was blocked from being accessed again by the MLA, after retrieving a proved-to-be incompatible pagePath.");
-			domainsBlockedFromMLA.add(domainStr);
+			logger.debug("Domain: \"" + pageDomain + "\" was blocked from being accessed again by the MLA, after retrieving a proved-to-be incompatible pagePath.");
+			domainsBlockedFromMLA.add(pageDomain);
 			successPathsHashMultiMap.removeAll(pagePath);	// This domain was blocked, remove current non-needed paths-data.
 			return false;
 		}
@@ -304,9 +311,9 @@ public class MachineLearning
 				logger.info("MachineLearningAlgorithm got a hit for pageUrl: \""+ pageUrl + "\"! Resulted (already found before) docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
 				logger.info("re-crossed docUrl found: < " + predictedDocUrl + " >");
 				if ( FileUtils.shouldDownloadDocFiles )
-					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(predictedDocUrl), null);
+					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(predictedDocUrl), pageDomain);
 				else
-					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, "", null);
+					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, "", pageDomain);
 				MachineLearning.docUrlsFoundByMLA ++;
 				return true;
 			}
@@ -327,8 +334,8 @@ public class MachineLearning
 		}// end for-loop
 
 		// If we reach here, it means that all of the predictions have failed.
-		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, domainStr, timesToFailBeforeBlockedFromMLA) ) {
-			logger.debug("Domain: \"" + domainStr + "\" was blocked from being accessed again by the MLA, after proved to be incompatible "
+		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, pageDomain, timesToFailBeforeBlockedFromMLA) ) {
+			logger.debug("Domain: \"" + pageDomain + "\" was blocked from being accessed again by the MLA, after proved to be incompatible "
 					+ timesToFailBeforeBlockedFromMLA + " times.");
 
 			// This domain was blocked, remove current non-needed paths-data. Note that we can't remove all of this domain's paths, since there is no mapping between a domain and its paths.
@@ -366,7 +373,7 @@ public class MachineLearning
 		logger.debug("Data was gathered and accepted for " + docPagePaths.size() + " docPagePaths:");
 		for ( String docPagePath : docPagePaths )
 		{
-			logger.debug("DocPagePath: " + docPagePath + "\n\tdocUrlPaths:");
+			logger.debug("\nDocPagePath: " + docPagePath + "\n\tdocUrlPaths:");
 			for ( String docUrlPath : successPathsHashMultiMap.get(docPagePath) )
 			{
 				logger.debug("\tDocUrlPath: " + docUrlPath);

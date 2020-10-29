@@ -20,7 +20,7 @@ public class UrlUtils
 
 	public static final Pattern URL_TRIPLE = Pattern.compile("(.+://(?:ww(?:w|\\d)(?:(?:\\w+)?\\.)?)?([\\w.\\-]+)(?:[:\\d]+)?(?:.*/)?)(?:([^/^;^?]*)(?:(?:;|\\?)[^/^=]+(?:=.*)?)?)?");
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
-	// TODO - Add explanation also for the uncaptured groups for better maintenance. For example the "ww(?:w|\d)" can capture "www", "ww2", "ww3" ect.
+	// TODO - Add explanation also for the non-captured groups for better maintenance. For example the "ww(?:w|\d)" can capture "www", "ww2", "ww3" ect.
 
 	public static final Pattern JSESSIONID_FILTER = Pattern.compile("(.+://.+)(?:;(?:JSESSIONID|jsessionid)=[^?]+)(\\?.+)?");	// Remove the jsessionid but keep the url-params in the end.
 
@@ -60,7 +60,7 @@ public class UrlUtils
 
 				// Gather data for the MLA, if we decide to have it enabled.
 				if ( MachineLearning.useMLA )
-					MachineLearning.gatherMLData(pageDomain, pageUrl, finalDocUrl);
+					MachineLearning.gatherMLData(pageUrl, finalDocUrl, pageDomain);
 
 				if ( !comment.contains(UrlUtils.alreadyDownloadedByIDMessage) )	// Add this id, only if this is a first-crossed docUrl.
 					docUrlsWithKeys.put(finalDocUrl, urlId);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
@@ -79,27 +79,21 @@ public class UrlUtils
 	/**
 	 * This method returns the domain of the given url, in lowerCase (for better comparison).
 	 * @param urlStr
+	 * @param matcher
 	 * @return domainStr
 	 */
-	public static String getDomainStr(String urlStr)
+	public static String getDomainStr(String urlStr, Matcher matcher)
 	{
-		if ( urlStr == null ) {	// Avoid NPE in "Matcher"
-			logger.error("The received \"urlStr\" was null in \"getDomainStr()\"!");
-			return null;
-		}
+		if ( matcher == null )
+			if ( (matcher = getUrlMatcher(urlStr)) == null )
+				return null;
 
 		String domainStr = null;
-		Matcher matcher = URL_TRIPLE.matcher(urlStr);
-		if ( matcher.matches() ) {
-			try {
-				domainStr = matcher.group(2);	// Group <2> is the DOMAIN.
-			} catch (Exception e) { logger.error("", e); }
-			if ( (domainStr == null) || domainStr.isEmpty() ) {
-				logger.warn("No domain was extracted from url: \"" + urlStr + "\".");
-				return null;
-			}
-		} else {
-			logger.error("Unexpected URL_TRIPLE's (" + matcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
+		try {
+			domainStr = matcher.group(2);	// Group <2> is the DOMAIN.
+		} catch (Exception e) { logger.error("", e); }
+		if ( (domainStr == null) || domainStr.isEmpty() ) {
+			logger.warn("No domain was extracted from url: \"" + urlStr + "\".");
 			return null;
 		}
 
@@ -160,7 +154,7 @@ public class UrlUtils
 	public static Matcher getUrlMatcher(String urlStr)
 	{
 		if ( urlStr == null ) {	// Avoid NPE in "Matcher"
-			logger.error("The received \"urlStr\" was null in \"getDocIdStr()\"!");
+			logger.error("The received \"urlStr\" was null in \"getUrlMatcher()\"!");
 			return null;
 		}
 
