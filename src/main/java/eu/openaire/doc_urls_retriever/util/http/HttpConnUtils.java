@@ -467,7 +467,7 @@ public class HttpConnUtils
 						|| (!calledForPageUrl && UrlTypeChecker.shouldNotAcceptInternalLink(targetUrl, lowerCaseTargetUrl)) )	// Redirecting an internalPageLink.
 					throw new RuntimeException("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + targetUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code.");
 				else if ( lowerCaseTargetUrl.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
-					ConnSupportUtils.blockSharedSiteSessionDomain(initialUrl, domainStr);
+					ConnSupportUtils.blockSharedSiteSessionDomain(targetUrl);
 					throw new DomainBlockedException();
 				}
 

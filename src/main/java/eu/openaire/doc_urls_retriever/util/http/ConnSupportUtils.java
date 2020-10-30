@@ -388,14 +388,14 @@ public class ConnSupportUtils
 	}
 	
 	
-	public static void blockSharedSiteSessionDomain(String initialUrl, String pageDomain)
+	public static void blockSharedSiteSessionDomain(String forbiddenUrl)
 	{
-		if ( pageDomain == null )
-			if ( (pageDomain = UrlUtils.getDomainStr(initialUrl, null)) == null )
-				return;	// The problem is logged, but nothing more needs to bo done.
+		String urlDomain = null;
+		if ( (urlDomain = UrlUtils.getDomainStr(forbiddenUrl, null)) == null )
+			return;	// The problem is logged, but nothing more needs to bo done.
 
-		HttpConnUtils.blacklistedDomains.add(pageDomain);
-		logger.debug("Domain: \"" + pageDomain + "\" was blocked after trying to cause a \"sharedSiteSession-redirectionPack\"!");
+		HttpConnUtils.blacklistedDomains.add(urlDomain);
+		logger.debug("Domain: \"" + urlDomain + "\" was blocked after trying to cause a \"sharedSiteSession-redirectionPack\" with url: \"" + forbiddenUrl + "\"!");
 	}
 
 

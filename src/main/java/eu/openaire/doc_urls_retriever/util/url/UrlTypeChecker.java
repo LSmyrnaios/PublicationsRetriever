@@ -187,7 +187,7 @@ public class UrlTypeChecker
 		}*/
 		// Avoid urls which contain either "getSharedSiteSession" or "consumeSharedSiteSession" as these cause an infinite loop.
 		else if ( lowerCaseUrl.contains("sharedsitesession") ) {
-			ConnSupportUtils.blockSharedSiteSessionDomain(retrievedUrl, null);
+			ConnSupportUtils.blockSharedSiteSessionDomain(retrievedUrl);
 			loggingMessage = "It was discarded after participating in a 'sharedSiteSession-endlessRedirectionPack'.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null);
