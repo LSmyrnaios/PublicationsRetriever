@@ -150,10 +150,10 @@ public class LoaderAndChecker
 						continue;
 					}	// The "retrievedUrl" might have changed (inside "handleUrlChecks()").
 					
-					if ( UrlUtils.docUrlsWithKeys.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
+					if ( UrlUtils.docUrlsWithIDs.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
 						logger.info("re-crossed docUrl found: < " + retrievedUrl + " >");
 						if ( FileUtils.shouldDownloadDocFiles )
-							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(retrievedUrl), null);
+							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(retrievedUrl), null);
 						else
 							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, "", null);
 

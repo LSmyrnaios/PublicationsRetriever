@@ -32,7 +32,7 @@ public class ScienceDirectUrlsHandler
 		if ( pageUrl.contains("linkinghub.elsevier.com") )
 		{
 			if ( (pageUrl = offlineRedirectElsevierToScienceDirect(pageUrl)) == null ) {
-				throw new FailedToProcessScienceDirectException();	// Logging is handled inside "silentRedirectElsevierToScienceDirect()".
+				throw new FailedToProcessScienceDirectException();	// Logging is handled inside "offlineRedirectElsevierToScienceDirect()".
 				//logger.debug("Produced ScienceDirect-url: " + pageUrl);	// DEBUG!
 			}
 			wasLinkinghubElsevier = true;

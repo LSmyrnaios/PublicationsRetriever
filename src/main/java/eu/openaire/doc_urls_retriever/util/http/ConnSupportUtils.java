@@ -534,24 +534,25 @@ public class ConnSupportUtils
 	 * This method constructs fully-formed urls which are connection-ready, as the retrieved links may be relative-links.
 	 * @param pageUrl
 	 * @param currentLink
-	 * @param URLTypeUrl
+	 * @param UrlBase
 	 * @return
 	 */
-	public static String getFullyFormedUrl(String pageUrl, String currentLink, URL URLTypeUrl)
+	public static String getFullyFormedUrl(String pageUrl, String currentLink, URL UrlBase)
 	{
 		try {
-			URL base = null;
-			
-			if ( URLTypeUrl != null )
-				base = URLTypeUrl;
-			else if ( pageUrl != null )
-				base = new URL(pageUrl);
-			// Else -> there will be an exception in the next command..
-			
-			return	new URL(base, currentLink).toString();	// Return the TargetUrl.
-			
+			if ( UrlBase == null ) {
+				if ( pageUrl != null )
+					UrlBase = new URL(pageUrl);
+				else {
+					logger.error("No UrlBase to produce a fully-formedUrl for internal-link: " + currentLink);
+					return null;
+				}
+			}
+
+			return	new URL(UrlBase, currentLink).toString();	// Return the TargetUrl.
+
 		} catch (Exception e) {
-			logger.error("Error when producing fully-formedUrl for: " + currentLink);
+			logger.error("Error when producing fully-formedUrl for internal-link: " + currentLink, e.getMessage());
 			return null;
 		}
 	}

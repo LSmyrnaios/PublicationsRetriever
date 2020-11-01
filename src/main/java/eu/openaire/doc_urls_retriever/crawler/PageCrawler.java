@@ -100,10 +100,10 @@ public class PageCrawler
 				continue;
 			}
 
-            if ( UrlUtils.docUrlsWithKeys.containsKey(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
+            if ( UrlUtils.docUrlsWithIDs.containsKey(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
 				logger.info("re-crossed docUrl found: < " + urlToCheck + " >");
 				if ( FileUtils.shouldDownloadDocFiles )
-					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithKeys.get(urlToCheck), pageDomain);
+					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(urlToCheck), pageDomain);
 				else
 					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, "", pageDomain);
                 return;

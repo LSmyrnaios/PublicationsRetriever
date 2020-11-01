@@ -30,7 +30,7 @@ public class UrlUtils
 
 	public static final HashSet<String> duplicateUrls = new HashSet<String>();
 
-	public static final HashMap<String, String> docUrlsWithKeys = new HashMap<String, String>();	// Null keys are allowed (in case they are not available in the input).
+	public static final HashMap<String, String> docUrlsWithIDs = new HashMap<String, String>();	// Null keys are allowed (in case they are not available in the input).
 
 	public static final String alreadyDownloadedByIDMessage = "This file is probably already downloaded from ID=";
 
@@ -63,7 +63,7 @@ public class UrlUtils
 					MachineLearning.gatherMLData(pageUrl, finalDocUrl, pageDomain);
 
 				if ( !comment.contains(UrlUtils.alreadyDownloadedByIDMessage) )	// Add this id, only if this is a first-crossed docUrl.
-					docUrlsWithKeys.put(finalDocUrl, urlId);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
+					docUrlsWithIDs.put(finalDocUrl, urlId);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
 			}
 			else	// Else if this url is not a docUrl and has not been processed before..
 				duplicateUrls.add(sourceUrl);	// Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future. We don't add docUrls here, as we want them to be separate for checking purposes.
@@ -71,7 +71,7 @@ public class UrlUtils
 
 		FileUtils.quadrupleToBeLoggedList.add(new QuadrupleToBeLogged(urlId, sourceUrl, finalDocUrl, comment));	// Log it to be written later in the outputFile.
 
-        if ( FileUtils.quadrupleToBeLoggedList.size() == FileUtils.jsonGroupSize )	// Write to file every time we have a group of <jsonGroupSize> quadruples.
+        if ( FileUtils.quadrupleToBeLoggedList.size() == FileUtils.jsonBatchSize )	// Write to file every time we have a group of <jsonBatchSize> quadruples.
             FileUtils.writeToFile();
     }
 

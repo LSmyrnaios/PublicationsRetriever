@@ -35,9 +35,9 @@ public class FileUtils
 	
 	public static long numOfLines;
 	
-	public static final int jsonGroupSize = 300;
+	public static final int jsonBatchSize = 300;
 	
-	private static final StringBuilder strB = new StringBuilder(jsonGroupSize * 500);  // 500: the usual-maximum-expected-length for an <id-sourceUrl-docUrl-comment> quadruple.
+	private static final StringBuilder strB = new StringBuilder(jsonBatchSize * 500);  // 500: the usual-maximum-expected-length for an <id-sourceUrl-docUrl-comment> quadruple.
 	
 	private static int fileIndex = 0;	// Index in the input file
 	public static boolean skipFirstRow = false;	// Use this to skip the HeaderLine in a csv-kindOf-File.
@@ -46,7 +46,7 @@ public class FileUtils
     public static int unretrievableUrlsOnly = 0;
     public static final int maxStoringWaitingTime = 45000;	// 45sec (some files can take several minutes or even half an hour)
 	
-	public static final List<QuadrupleToBeLogged> quadrupleToBeLoggedList = new ArrayList<>(jsonGroupSize);
+	public static final List<QuadrupleToBeLogged> quadrupleToBeLoggedList = new ArrayList<>(jsonBatchSize);
 	
 	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<String, Integer>();	// Holds docFileNa,es with their duplicatesNum.
 	
@@ -192,7 +192,7 @@ public class FileUtils
 		
 		int curBeginning = FileUtils.fileIndex;
 		
-		while ( inputScanner.hasNextLine() && (FileUtils.fileIndex < (curBeginning + jsonGroupSize)) )
+		while ( inputScanner.hasNextLine() && (FileUtils.fileIndex < (curBeginning + jsonBatchSize)) )
 		{// While (!EOF) and inside the current url-group, iterate through lines.
 
 			//logger.debug("fileIndex: " + FileUtils.fileIndex);	// DEBUG!
@@ -271,7 +271,7 @@ public class FileUtils
 		
 		logger.debug("Finished writing " + FileUtils.quadrupleToBeLoggedList.size() + " quadruples to the outputFile.");
 		
-		FileUtils.quadrupleToBeLoggedList.clear();	// Clear the list to put the new <jsonGroupSize> values. The backing array used by List is not de-allocated. Only the String-references contained get GC-ed.
+		FileUtils.quadrupleToBeLoggedList.clear();	// Clear the list to put the new <jsonBatchSize> values. The backing array used by List is not de-allocated. Only the String-references contained get GC-ed.
 	}
 	
 	
@@ -491,13 +491,13 @@ public class FileUtils
 	{
 		Collection<String> urlGroup = new HashSet<String>();
 		
-		// Take a group of <jsonGroupSize> urls from the file..
-		// If we are at the end and there are less than <jsonGroupSize>.. take as many as there are..
+		// Take a group of <jsonBatchSize> urls from the file..
+		// If we are at the end and there are less than <jsonBatchSize>.. take as many as there are..
 		
-		//logger.debug("Retrieving the next group of " + jsonGroupSize + " elements from the inputFile.");
+		//logger.debug("Retrieving the next group of " + jsonBatchSize + " elements from the inputFile.");
 		int curBeginning = FileUtils.fileIndex;
 		
-		while ( inputScanner.hasNextLine() && (FileUtils.fileIndex < (curBeginning + jsonGroupSize)) )
+		while ( inputScanner.hasNextLine() && (FileUtils.fileIndex < (curBeginning + jsonBatchSize)) )
 		{// While (!EOF) and inside the current url-group, iterate through lines.
 			
 			// Take each line, remove potential double quotes.
@@ -520,7 +520,7 @@ public class FileUtils
 			if ( !urlGroup.add(retrievedLineStr) )    // We have a duplicate in the input.. log it here as we cannot pass it through the HashSet. It's possible that this as well as the original might be/give a docUrl.
 				UrlUtils.logQuadruple(null, retrievedLineStr, null, "duplicate", "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null);
 		}
-		//logger.debug("FileUtils.fileIndex's value after taking urls after " + FileUtils.fileIndex / jsonGroupSize + " time(s), from input file: " + FileUtils.fileIndex);	// DEBUG!
+		//logger.debug("FileUtils.fileIndex's value after taking urls after " + FileUtils.fileIndex / jsonBatchSize + " time(s), from input file: " + FileUtils.fileIndex);	// DEBUG!
 		
 		return urlGroup;
 	}
