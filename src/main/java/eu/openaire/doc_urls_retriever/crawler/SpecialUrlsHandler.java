@@ -10,9 +10,9 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Lampros Smyrnaios
  */
-public class ScienceDirectUrlsHandler
+public class SpecialUrlsHandler
 {
-	private static final Logger logger = LoggerFactory.getLogger(ScienceDirectUrlsHandler.class);
+	private static final Logger logger = LoggerFactory.getLogger(SpecialUrlsHandler.class);
 	
 	// The following regex-pattern was used in ScienceDirect-handling in early days. Keep it here, as it may be of need in any domain in the future..
 	// public static final Pattern JAVASCRIPT_REDIRECT_URL = Pattern.compile("(?:window.location[\\s]+\\=[\\s]+\\')(.*)(?:\\'\\;)");

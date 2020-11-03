@@ -2,7 +2,7 @@ package eu.openaire.doc_urls_retriever.util.http;
 
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
-import eu.openaire.doc_urls_retriever.crawler.ScienceDirectUrlsHandler;
+import eu.openaire.doc_urls_retriever.crawler.SpecialUrlsHandler;
 import eu.openaire.doc_urls_retriever.exceptions.*;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
@@ -274,7 +274,7 @@ public class HttpConnUtils
 			else if ( !calledForPossibleDocUrl ) {
 				try {
 					String scienceDirectPageUrl = null;
-					if ( (scienceDirectPageUrl = ScienceDirectUrlsHandler.checkAndGetScienceDirectUrl(resourceURL)) != null ) {
+					if ( (scienceDirectPageUrl = SpecialUrlsHandler.checkAndGetScienceDirectUrl(resourceURL)) != null ) {
 						//logger.debug("ScienceDirect-PageURL to try: " + scienceDirectPageUrl);	// DEBUG!
 						resourceURL = scienceDirectPageUrl;
 					}
