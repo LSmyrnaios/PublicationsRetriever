@@ -43,8 +43,8 @@ public class HttpConnUtils
 	public static String lastConnectedHost = "";
 	public static final int politenessDelay = 0;	// Time to wait before connecting to the same host again.
 
-	public static final int maxConnGETWaitingTime = 20000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
-	public static final int maxConnHEADWaitingTime = 15000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
+	public static final int maxConnGETWaitingTime = 15000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
+	public static final int maxConnHEADWaitingTime = 10000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
 
 	private static final int maxRedirectsForPageUrls = 7;// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
 	private static final int maxRedirectsForInternalLinks = 2;	// Internal-DOC-Links shouldn't take more than 2 redirects.
@@ -219,7 +219,7 @@ public class HttpConnUtils
 			conn = handleRedirects(urlId, sourceUrl, pageUrl, resourceURL, conn, responseCode, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // Take care of redirects.
 		}
 		else if ( (responseCode < 200) || (responseCode >= 400) ) {	// If we have error codes.
-			String errorLogMessage = ConnSupportUtils.onErrorStatusCode(resourceURL, domainStr, responseCode);
+			String errorLogMessage = ConnSupportUtils.onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode);
 			throw new RuntimeException(errorLogMessage);	// This is only thrown if a "DomainBlockedException" is caught.
 		}
 		// Else it's an HTTP 2XX SUCCESS CODE.
@@ -259,6 +259,9 @@ public class HttpConnUtils
 					&& !calledForPossibleDocUrl && domainsWithUnsupportedHeadMethod.contains(domainStr) )	// Exclude the possibleDocUrls and the ones which cannot connect with "HEAD".
 				throw new DomainWithUnsupportedHEADmethodException();
 
+			if ( ConnSupportUtils.checkIfPathIs403BlackListed(resourceURL, domainStr) )
+				throw new RuntimeException("Avoid reaching 403ErrorCode with url: \"" + resourceURL + "\"!");
+
 			// For the urls which has reached this point, make sure no weird "ampersand"-anomaly blocks us...
 			boolean weirdMetaDocUrlWhichNeedsGET = false;
 			if ( calledForPossibleDocUrl && resourceURL.contains("amp%3B") ) {
@@ -282,9 +285,6 @@ public class HttpConnUtils
 					throw new RuntimeException("Problem when handling the \"ScienceDirect\"-family-url: " + resourceURL);
 				}
 			}
-
-			if ( ConnSupportUtils.checkIfPathIs403BlackListed(resourceURL, domainStr) )
-				throw new RuntimeException("Avoid reaching 403ErrorCode with url: \"" + resourceURL + "\"!");
 
 			url = new URL(resourceURL);
 
@@ -470,13 +470,16 @@ public class HttpConnUtils
 					ConnSupportUtils.blockSharedSiteSessionDomain(targetUrl);
 					throw new DomainBlockedException();
 				}
+				else if ( calledForPageUrl && (lowerCaseTargetUrl.contains("elsevier.com") && !lowerCaseTargetUrl.contains("linkinghub")) ) {	// Avoid pageUrls redirecting to plain "elsevier.com" (mostly "doi.org"-urls).
+					throw new RuntimeException("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + targetUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code.");
+				}
 
 				String tempTargetUrl = targetUrl;
 				if ( (targetUrl = URLCanonicalizer.getCanonicalURL(targetUrl, null, StandardCharsets.UTF_8)) == null )
 					throw new RuntimeException("Could not cannonicalize target url: " + tempTargetUrl);	// Don't let it continue.
 
 				//ConnSupportUtils.printRedirectDebugInfo(conn, location, targetUrl, curRedirectsNum);	// throws IOException
-				
+
 				if ( UrlUtils.docUrlsWithIDs.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
 					logger.info("re-crossed docUrl found: < " + targetUrl + " >");
 					if ( FileUtils.shouldDownloadDocFiles )
@@ -485,10 +488,6 @@ public class HttpConnUtils
 						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, "", null);
 					throw new AlreadyFoundDocUrlException();
 				}
-				/*else if ( calledForPageUrl && (targetUrl.contains("elsevier.com") && !targetUrl.contains("linkinghub")) ) {	// Avoid pageUrls redirecting to "elsevier.com" (mostly "doi.org"-urls).
-					logger.debug("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + targetUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code.");
-					throw new RuntimeException();
-				}*/
 
 				if ( !targetUrl.contains(HttpConnUtils.lastConnectedHost) ) {    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
 					conn.disconnect();	// Close the socket with that server.

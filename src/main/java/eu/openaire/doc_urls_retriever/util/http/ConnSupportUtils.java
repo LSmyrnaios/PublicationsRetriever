@@ -34,6 +34,8 @@ public class ConnSupportUtils
 
 	public static final Pattern POSSIBLE_DOC_MIME_TYPE = Pattern.compile("(?:(?:application|binary)/(?:(?:x-)?octet-stream|save|force-download))|unknown");	// We don't take it for granted.. if a match is found, then we check for the "pdf" keyword in the "contentDisposition" (if it exists) or in the url.
 
+	public static final Pattern HTML_STRING_MATCH = Pattern.compile("^(?:[\\s]*<(?:!doctype\\s)?html).*");
+
 	public static final HashMap<String, Integer> timesDomainsReturned5XX = new HashMap<String, Integer>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
 	public static final HashMap<String, Integer> timesDomainsHadTimeoutEx = new HashMap<String, Integer>();
 	public static final HashMap<String, Integer> timesPathsReturned403 = new HashMap<String, Integer>();
@@ -240,11 +242,11 @@ public class ConnSupportUtils
 
 		String errorLogMessage;
 
-		if ( (errorStatusCode >= 400) && (errorStatusCode <= 499) ) {	// Client Error.
-
+		if ( (errorStatusCode >= 400) && (errorStatusCode <= 499) )	// Client Error.
+		{
 			errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received: HTTP " + errorStatusCode + " Client Error.";
 			if ( errorStatusCode == 403 ) {
-				if ( domainStr == null ) {
+				if ( (domainStr == null) || !urlStr.contains(domainStr) ) {	// The domain might have changed after redirections.
 					if ( (domainStr = UrlUtils.getDomainStr(urlStr, null)) != null )
 						on403ErrorCode(urlStr, domainStr);	// The "DomainBlockedException" will go up-method by its own, if thrown inside this one.
 				} else
@@ -252,8 +254,9 @@ public class ConnSupportUtils
 			}
 		}
 		else {	// Other errorCodes. Retrieve the domain and make the required actions.
-			domainStr = UrlUtils.getDomainStr(urlStr, null);
-			
+			if ( (domainStr == null) || !urlStr.contains(domainStr) )	// The domain might have changed after redirections.
+				domainStr = UrlUtils.getDomainStr(urlStr, null);
+
 			if ( (errorStatusCode >= 500) && (errorStatusCode <= 599) ) {	// Server Error.
 				errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received: HTTP " + errorStatusCode + " Server Error.";
 				if ( domainStr != null )
@@ -465,7 +468,7 @@ public class ConnSupportUtils
 				return null;
 
 			String lowercaseInputLine = inputLine.toLowerCase();
-			if ( lowercaseInputLine.startsWith("<!doctype html", 0) )
+			if ( HTML_STRING_MATCH.matcher(lowercaseInputLine).matches() )
 				return new DetectedContentType("html", inputLine, br);
 			else {
 				br.close();	// We close the stream here, since if we got a pdf we should reconnect in order to get the very first bytes (we don't read "lines" when downloading PDFs).

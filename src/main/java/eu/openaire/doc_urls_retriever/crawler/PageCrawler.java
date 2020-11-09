@@ -36,7 +36,7 @@ public class PageCrawler
 	public static final HashMap<String, Integer> timesDomainNotGivingInternalLinks = new HashMap<String, Integer>();
 	public static final HashMap<String, Integer> timesDomainNotGivingDocUrls = new HashMap<String, Integer>();
 
-	public static final int timesToGiveNoInternalLinksBeforeBlocked = 5;
+	public static final int timesToGiveNoInternalLinksBeforeBlocked = 20;
 	public static final int timesToGiveNoDocUrlsBeforeBlocked = 10;
 
 	public static int contentProblematicUrls = 0;
@@ -208,7 +208,7 @@ public class PageCrawler
 		UrlTypeChecker.pagesNotProvidingDocUrls ++;
 		UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as no docUrl was found inside.", null);
 		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingDocUrls, pageDomain, PageCrawler.timesToGiveNoDocUrlsBeforeBlocked) )
-			logger.debug("Domain: " + pageDomain + " was blocked after giving no docUrls more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
+			logger.debug("Domain: \"" + pageDomain + "\" was blocked after giving no docUrls more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
 	}
 
 
@@ -217,7 +217,7 @@ public class PageCrawler
 		HashSet<String> currentPageLinks = null;
 		try {
 			currentPageLinks = extractInternalLinksFromHtml(pageHtml, pageUrl);
-		} catch ( DynamicInternalLinksFoundException dilfe) {
+		} catch (DynamicInternalLinksFoundException dilfe) {
 			logger.debug("Domain \"" + currentPageDomain + "\" was found to have dynamic links, so it will be blocked.");
 			HttpConnUtils.blacklistedDomains.add(currentPageDomain);
 			logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");	// Refer "PageCrawler.visit()" here for consistency with other similar messages.
@@ -246,7 +246,7 @@ public class PageCrawler
 			PageCrawler.contentProblematicUrls ++;
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, as no " + (isEmpty ? "valid " : "") + "links were able to be retrieved from it. Its contentType is: '" + pageContentType + "'", null);
 			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingInternalLinks, currentPageDomain, PageCrawler.timesToGiveNoInternalLinksBeforeBlocked) )
-				logger.debug("Domain: " + currentPageDomain + " was blocked after not providing internalLinks more than " + PageCrawler.timesToGiveNoInternalLinksBeforeBlocked + " times.");
+				logger.debug("Domain: \"" + currentPageDomain + "\" was blocked after not providing internalLinks more than " + PageCrawler.timesToGiveNoInternalLinksBeforeBlocked + " times.");
 			return null;
 		}
 

@@ -149,7 +149,7 @@ public class LoaderAndChecker
 							loggedUrlsOfCurrentId.add(checkedUrl);
 						continue;
 					}	// The "retrievedUrl" might have changed (inside "handleUrlChecks()").
-					
+
 					if ( UrlUtils.docUrlsWithIDs.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
 						logger.info("re-crossed docUrl found: < " + retrievedUrl + " >");
 						if ( FileUtils.shouldDownloadDocFiles )
