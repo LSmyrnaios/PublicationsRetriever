@@ -311,9 +311,9 @@ public class MachineLearning
 				logger.info("MachineLearningAlgorithm got a hit for pageUrl: \""+ pageUrl + "\"! Resulted (already found before) docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
 				logger.info("re-crossed docUrl found: < " + predictedDocUrl + " >");
 				if ( FileUtils.shouldDownloadDocFiles )
-					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(predictedDocUrl), pageDomain);
+					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(predictedDocUrl), pageDomain, false);
 				else
-					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, "", pageDomain);
+					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, "", pageDomain, false);
 				MachineLearning.docUrlsFoundByMLA ++;
 				return true;
 			}

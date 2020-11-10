@@ -161,20 +161,20 @@ public class HttpConnUtils
 						logger.warn(fullPathFileName, dfnde);
 					}
 				}
-				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null);	// we send the urls, before and after potential redirections.
+				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true);	// we send the urls, before and after potential redirections.
 				return true;
 			}
 			else if ( calledForPageUrl ) {	// Visit this url only if this method was called for an inputUrl.
 				if ( finalUrlStr.contains("viewcontent.cgi") ) {	// If this "viewcontent.cgi" isn't a docUrl, then don't check its internalLinks. Check this: "https://docs.lib.purdue.edu/cgi/viewcontent.cgi?referer=&httpsredir=1&params=/context/physics_articles/article/1964/type/native/&path_info="
 					logger.warn("Unwanted pageUrl: \"" + finalUrlStr + "\" will not be visited!");
-					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to a non-docUrl with 'viewcontent.cgi'.", null);
+					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to a non-docUrl with 'viewcontent.cgi'.", null, true);
 					return false;
 				}
 				else if ( (mimeType != null) && ((mimeType.contains("htm") || mimeType.contains("text"))) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
 					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn, firstHtmlLine, bufferedReader);
 				else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" with mimeType: \"" + mimeType + "\" will not be visited!");
-					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after not matching to a docUrl nor to an htm/text-like page.", null);
+					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after not matching to a docUrl nor to an htm/text-like page.", null, true);
 					if ( ConnSupportUtils.countAndBlockDomainAfterTimes(blacklistedDomains, timesDomainsHadInputNotBeingDocNorPage, domainStr, HttpConnUtils.timesToHaveNoDocNorPageInputBeforeBlocked) )
 						logger.warn("Domain: \"" + domainStr + "\" was blocked after having no Doc nor Pages in the input more than " + HttpConnUtils.timesToReturnNoTypeBeforeBlocked + " times.");
 				}	// We log the quadruple here, as there is connection-kind-of problem here.. it's just us considering it an unwanted case. We don't throw "DomainBlockedException()", as we don't handle it for inputUrls (it would also log the quadruple twice with diff comments).
@@ -483,9 +483,9 @@ public class HttpConnUtils
 				if ( UrlUtils.docUrlsWithIDs.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
 					logger.info("re-crossed docUrl found: < " + targetUrl + " >");
 					if ( FileUtils.shouldDownloadDocFiles )
-						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(targetUrl), null);
+						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(targetUrl), null, false);
 					else
-						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, "", null);
+						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, "", null, false);
 					throw new AlreadyFoundDocUrlException();
 				}
 

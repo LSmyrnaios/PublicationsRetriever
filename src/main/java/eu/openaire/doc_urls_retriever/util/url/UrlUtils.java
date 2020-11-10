@@ -43,8 +43,9 @@ public class UrlUtils
 	 * @param docUrl
 	 * @param comment
 	 * @param pageDomain (it may be null)
+	 * @param isFirstCrossed
 	 */
-    public static void logQuadruple(String urlId, String sourceUrl, String pageUrl, String docUrl, String comment, String pageDomain)
+    public static void logQuadruple(String urlId, String sourceUrl, String pageUrl, String docUrl, String comment, String pageDomain, boolean isFirstCrossed)
     {
         String finalDocUrl = docUrl;
 
@@ -62,7 +63,7 @@ public class UrlUtils
 				if ( MachineLearning.useMLA )
 					MachineLearning.gatherMLData(pageUrl, finalDocUrl, pageDomain);
 
-				if ( !comment.contains(UrlUtils.alreadyDownloadedByIDMessage) )	// Add this id, only if this is a first-crossed docUrl.
+				if ( isFirstCrossed )	// Add this id, only if this is a first-crossed docUrl.
 					docUrlsWithIDs.put(finalDocUrl, urlId);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
 			}
 			else	// Else if this url is not a docUrl and has not been processed before..

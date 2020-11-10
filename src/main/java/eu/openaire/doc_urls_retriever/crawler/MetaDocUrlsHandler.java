@@ -59,7 +59,7 @@ public class MetaDocUrlsHandler {
                 logger.debug("The metaDocUrl is a dynamic-link. Abort the process nd block the domain of the pageUrl.");
                 // Block the domain and return "true" to indicate handled-state.
                 HttpConnUtils.blacklistedDomains.add(pageDomain);
-                UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was a dynamic-link.", null);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
+                UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was a dynamic-link.", null, true);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
                 PageCrawler.contentProblematicUrls ++;
                 return true;
             }
@@ -71,7 +71,7 @@ public class MetaDocUrlsHandler {
                 || COMMON_UNSUPPORTED_META_DOC_URL_EXTENSIONS.matcher(lowerCaseMetaDocUrl).matches() )
             {
                 logger.debug("The retrieved metaDocUrl ( " + metaDocUrl + " ) is pointing to an unsupported file.");
-                UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was unsupported.", null);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
+                UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was unsupported.", null, true);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
                 PageCrawler.contentProblematicUrls ++;
                 return true;    // It was found and handled.
             }
@@ -79,7 +79,7 @@ public class MetaDocUrlsHandler {
             String tempMetaDocUrl = metaDocUrl;
             if ( (metaDocUrl = URLCanonicalizer.getCanonicalURL(metaDocUrl, null, StandardCharsets.UTF_8)) == null ) {
                 logger.warn("Could not cannonicalize metaDocUrl: " + tempMetaDocUrl);
-                UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in \"checkIfAndHandleMetaDocUrl()\", due to cannonicalization's problems.", null);
+                UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in \"checkIfAndHandleMetaDocUrl()\", due to cannonicalization's problems.", null, true);
                 PageCrawler.contentProblematicUrls ++;
                 return true;
             }
@@ -87,23 +87,23 @@ public class MetaDocUrlsHandler {
             // Connect to it directly.
             if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, pageDomain, false, true) ) {    // On success, we log the docUrl inside this method.
                 logger.warn("The retrieved metaDocUrl was not a docUrl (unexpected): " + metaDocUrl);
-                UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'MetaDocUrlsHandler.visit()' method, as the retrieved metaDocUrl was not a docUrl.", null);
+                UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'MetaDocUrlsHandler.visit()' method, as the retrieved metaDocUrl was not a docUrl.", null, true);
                 PageCrawler.contentProblematicUrls ++;  // If the above failed, then the page is comes from failed.
             }
             return true;    // It should be the docUrl and it was handled.. so we don't continue checking the internalLink even if this wasn't a docUrl.
 
         } catch (RuntimeException re) {
             ConnSupportUtils.printEmbeddedExceptionMessage(re, metaDocUrl);
-            UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag-url.", null);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
+            UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag-url.", null, true);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
             PageCrawler.contentProblematicUrls ++;  // The content (metaDocUrl) of the pageUrl failed.
             return true;
         } catch ( DomainBlockedException | ConnTimeoutException | DomainWithUnsupportedHEADmethodException ex ) {
-            UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag-url.", null);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
+            UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag-url.", null, true);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
             PageCrawler.contentProblematicUrls ++;
             return true;	// It was found and handled. Even if an exception was thrown, we don't want to check any other internalLinks in that page.
         } catch (Exception e) {	// After connecting to the metaDocUrl.
             logger.warn("", e);
-            UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag-url.", null);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
+            UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag-url.", null, true);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
             PageCrawler.contentProblematicUrls ++;
             return true;	// It was found and handled. Even if an exception was thrown, we don't want to check any other internalLinks in that page.
         }

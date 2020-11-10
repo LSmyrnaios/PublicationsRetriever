@@ -49,7 +49,7 @@ public class PageCrawler
 		String pageDomain = UrlUtils.getDomainStr(pageUrl, null);
 		if ( pageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"PageCrawler.visit()\": \"" + pageUrl + "\"");
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, after the occurrence of a domain-retrieval error.", null);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, after the occurrence of a domain-retrieval error.", null, true);
 			LoaderAndChecker.connProblematicUrls ++;
 			ConnSupportUtils.closeBufferedReader(bufferedReader);	// This page's content-type was auto-detected, and the process fails before re-requesting the conn-inputStream, then make sure we close the last one.
 			return;
@@ -58,7 +58,7 @@ public class PageCrawler
 		String pageHtml = null;	// Get the pageHtml to parse the page.
 		if ( (pageHtml = ConnSupportUtils.getHtmlString(conn, bufferedReader)) == null ) {
 			logger.warn("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", null);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", null, true);
 			LoaderAndChecker.connProblematicUrls ++;
 			return;
 		}
@@ -103,9 +103,9 @@ public class PageCrawler
             if ( UrlUtils.docUrlsWithIDs.containsKey(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
 				logger.info("re-crossed docUrl found: < " + urlToCheck + " >");
 				if ( FileUtils.shouldDownloadDocFiles )
-					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(urlToCheck), pageDomain);
+					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(urlToCheck), pageDomain, false);
 				else
-					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, "", pageDomain);
+					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, "", pageDomain, false);
                 return;
             }
 
@@ -136,14 +136,14 @@ public class PageCrawler
 				} catch (DomainBlockedException dbe) {
 					if ( urlToCheck.contains(pageDomain) ) {
 						logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
-						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was blocked during crawling.", null);
+						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was blocked during crawling.", null, true);
 						return;
 					}
 					continue;
 				} catch (ConnTimeoutException cte) {	// In this case, it's unworthy to stay and check other internalLinks here.
 					if ( urlToCheck.contains(pageDomain) ) {
 						logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after a potentialDocUrl caused a ConnTimeoutException.");
-						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as an internalLink of this page caused 'ConnTimeoutException'.", null);
+						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as an internalLink of this page caused 'ConnTimeoutException'.", null, true);
 						return;
 					}
 					continue;
@@ -183,19 +183,19 @@ public class PageCrawler
 			} catch (DomainBlockedException dbe) {
 				if ( currentLink.contains(pageDomain) ) {
 					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
-					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was blocked during crawling.", null);
+					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was blocked during crawling.", null, true);
 					return;
 				}
 			} catch (DomainWithUnsupportedHEADmethodException dwuhe) {
 				if ( currentLink.contains(pageDomain) ) {
 					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was caught to not support the HTTP HEAD method, as a result, the internal-links will stop being checked.");
-					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was caught to not support the HTTP HEAD method.", null);
+					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was caught to not support the HTTP HEAD method.", null, true);
 					return;
 				}
 			} catch (ConnTimeoutException cte) {	// In this case, it's unworthy to stay and check other internalLinks here.
 				if ( currentLink.contains(pageDomain) ) {
 					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after an internalLink caused a ConnTimeoutException.");
-					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as an internalLink of this page caused 'ConnTimeoutException'.", null);
+					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as an internalLink of this page caused 'ConnTimeoutException'.", null, true);
 					return;
 				}
 			} catch (RuntimeException e) {
@@ -206,7 +206,7 @@ public class PageCrawler
 		// If we get here it means that this pageUrl is not a docUrl itself, nor it contains a docUrl..
 		logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
 		UrlTypeChecker.pagesNotProvidingDocUrls ++;
-		UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as no docUrl was found inside.", null);
+		UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as no docUrl was found inside.", null, true);
 		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingDocUrls, pageDomain, PageCrawler.timesToGiveNoDocUrlsBeforeBlocked) )
 			logger.debug("Domain: \"" + pageDomain + "\" was blocked after giving no docUrls more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
 	}
@@ -221,7 +221,7 @@ public class PageCrawler
 			logger.debug("Domain \"" + currentPageDomain + "\" was found to have dynamic links, so it will be blocked.");
 			HttpConnUtils.blacklistedDomains.add(currentPageDomain);
 			logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");	// Refer "PageCrawler.visit()" here for consistency with other similar messages.
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.retrieveInternalLinks()', as it belongs to a domain with dynamic-links.", null);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.retrieveInternalLinks()', as it belongs to a domain with dynamic-links.", null, true);
 			PageCrawler.contentProblematicUrls ++;
 			return null;
 		} catch (JavaScriptDocLinkFoundException jsdlfe) {
@@ -230,7 +230,7 @@ public class PageCrawler
 			// If this "JavaScriptDocLink" is a DocUrl, then returning "null" here, will trigger the 'PageCrawler.visit()' method to exit immediately (and normally).
 		} catch (Exception e) {
 			logger.debug("Could not retrieve the internalLinks for pageUrl: " + pageUrl);
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its internalLinks. Its contentType is: '" + pageContentType + "'", null);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its internalLinks. Its contentType is: '" + pageContentType + "'", null, true);
 			PageCrawler.contentProblematicUrls ++;
 			return null;
 		}
@@ -244,7 +244,7 @@ public class PageCrawler
 		if ( isNull || isEmpty ) {	// If no links were retrieved (e.g. the pageUrl was some kind of non-page binary content)
 			logger.warn("No " + (isEmpty ? "valid " : "") + "links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
 			PageCrawler.contentProblematicUrls ++;
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, as no " + (isEmpty ? "valid " : "") + "links were able to be retrieved from it. Its contentType is: '" + pageContentType + "'", null);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, as no " + (isEmpty ? "valid " : "") + "links were able to be retrieved from it. Its contentType is: '" + pageContentType + "'", null, true);
 			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingInternalLinks, currentPageDomain, PageCrawler.timesToGiveNoInternalLinksBeforeBlocked) )
 				logger.debug("Domain: \"" + currentPageDomain + "\" was blocked after not providing internalLinks more than " + PageCrawler.timesToGiveNoInternalLinksBeforeBlocked + " times.");
 			return null;
@@ -326,15 +326,15 @@ public class PageCrawler
 		String javaScriptDocLink = jsdlfe.getMessage();
 		if ( javaScriptDocLink == null ) {
 			logger.debug("JavaScriptLink was not retrieved!");
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its internalLinks. Its contentType is: '" + pageContentType + "'", null);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its internalLinks. Its contentType is: '" + pageContentType + "'", null, true);
 		}
 		else {
 			//logger.debug("Going to check JavaScriptDocLink: " + javaScriptDocLink);	// DEBUG!
 			try {
 				if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, javaScriptDocLink, currentPageDomain, false, true) )	// We log the docUrl inside this method.
-					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved JavaScriptDocLink: <" + javaScriptDocLink + "> was not a docUrl.", null);
+					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved JavaScriptDocLink: <" + javaScriptDocLink + "> was not a docUrl.", null, true);
 			} catch (Exception e) {
-				UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved JavaScriptDocLink: <" + javaScriptDocLink + "> had connectivity problems.", null);
+				UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved JavaScriptDocLink: <" + javaScriptDocLink + "> had connectivity problems.", null, true);
 			}
 		}
 	}
