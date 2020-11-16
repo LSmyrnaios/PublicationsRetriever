@@ -1,6 +1,7 @@
 package eu.openaire.doc_urls_retriever;
 
 import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
+import eu.openaire.doc_urls_retriever.crawler.MetaDocUrlsHandler;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
@@ -163,6 +164,7 @@ public class DocUrlsRetriever
 			logger.info("From which docUrls, we were able to retrieve: " + numOfStoredDocFiles + " distinct docFiles. That's about: " + df.format(numOfStoredDocFiles * 100.0 / UrlUtils.sumOfDocUrlsFound) + "%."
 					+ " The un-retrieved docFiles were either belonging to already-found docUrls or they had content-issues.");
 		}
+		logger.debug("The metaDocUrl-handler is responsible for the discovery of " + MetaDocUrlsHandler.numOfMetaDocUrlsFound + " of the docUrls (" + df.format(MetaDocUrlsHandler.numOfMetaDocUrlsFound* 100.0 / UrlUtils.sumOfDocUrlsFound) + "%).");
 		if ( MachineLearning.useMLA )
 			logger.debug("The M.L.A. is responsible for the discovery of " + MachineLearning.docUrlsFoundByMLA + " of the docUrls (" + df.format(MachineLearning.docUrlsFoundByMLA * 100.0 / UrlUtils.sumOfDocUrlsFound) + "%). The M.L.A.'s average success-rate was: " + df.format(MachineLearning.getAverageSuccessRate()) + "%. Gathered data for " + MachineLearning.timesGatheredData + " valid pageUrl-docUrl pairs.");
 		else

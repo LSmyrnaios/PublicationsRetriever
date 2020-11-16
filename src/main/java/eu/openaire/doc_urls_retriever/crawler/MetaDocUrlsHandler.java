@@ -4,6 +4,7 @@ import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.exceptions.ConnTimeoutException;
 import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
 import eu.openaire.doc_urls_retriever.exceptions.DomainWithUnsupportedHEADmethodException;
+import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
@@ -20,12 +21,14 @@ public class MetaDocUrlsHandler {
     private static final Logger logger = LoggerFactory.getLogger(MetaDocUrlsHandler.class);
 
     // Order-independent META_DOC_URL-regex.
-    // (?:<meta(?:[\\s]*name=\"(?:citation_pdf_url|eprints.document_url)\"[\\s]*content=\"(http[\\w/.,\\-_%&;:~()\\[\\]?=]+)(?:\"))|(?:[\\s]*content=\"(http[\\w/.,\\-_%&;:~()\\[\\]?=]+)(?:\")[\\s]*name=\"(?:citation_pdf_url|eprints.document_url)\"))(?:[\\s]*(?:/)?>)
-    private static final String metaName = "name=\"(?:citation_pdf_url|eprints.document_url)\"";
+    // (?:<meta(?:[\\s]*name=\"(?:.*citation_pdf|eprints.document)_url\"[\\s]*content=\"(http[\\w/.,\\-_%&;:~()\\[\\]?=]+)(?:\"))|(?:[\\s]*content=\"(http[\\w/.,\\-_%&;:~()\\[\\]?=]+)(?:\")[\\s]*name=\"(?:.*citation_pdf|eprints.document)_url\"))(?:[\\s]*(?:/)?>)
+    private static final String metaName = "name=\"(?:.*citation_pdf|eprints.document)_url\"";
     private static final String metaContent = "content=\"(http[\\w/.,\\-_%&;:~()\\[\\]?=]+)\"";
     public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta(?:[\\s]*" + metaName + "[\\s]*" + metaContent + ")|(?:[\\s]*" + metaContent + "[\\s]*" + metaName + ")(?:[\\s]*(?:/)?>))");
 
     public static final Pattern COMMON_UNSUPPORTED_META_DOC_URL_EXTENSIONS = Pattern.compile("\".+\\.(?:zip|rar|apk|jpg)(?:\\?.+)?$");
+
+    public static int numOfMetaDocUrlsFound = 0;
 
     /**
      * This method takes in the "pageHtml" of an already-connected url and checks if there is a metaDocUrl inside.
@@ -84,13 +87,26 @@ public class MetaDocUrlsHandler {
                 return true;
             }
 
+            if ( UrlUtils.docUrlsWithIDs.containsKey(metaDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
+                logger.info("re-crossed docUrl found: < " + metaDocUrl + " >");
+                if ( FileUtils.shouldDownloadDocFiles )
+                    UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, metaDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(metaDocUrl), pageDomain, false);
+                else
+                    UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, metaDocUrl, "", pageDomain, false);
+                numOfMetaDocUrlsFound ++;
+                return true;
+            }
+
             // Connect to it directly.
             if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, pageDomain, false, true) ) {    // On success, we log the docUrl inside this method.
                 logger.warn("The retrieved metaDocUrl was not a docUrl (unexpected): " + metaDocUrl);
                 UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'MetaDocUrlsHandler.visit()' method, as the retrieved metaDocUrl was not a docUrl.", null, true);
                 PageCrawler.contentProblematicUrls ++;  // If the above failed, then the page is comes from failed.
             }
-            return true;    // It should be the docUrl and it was handled.. so we don't continue checking the internalLink even if this wasn't a docUrl.
+            else
+                numOfMetaDocUrlsFound ++;
+
+            return true;    // It should be the docUrl and it was handled.. so we don't continue checking the internalLink even if this wasn't an actual docUrl.
 
         } catch (RuntimeException re) {
             ConnSupportUtils.printEmbeddedExceptionMessage(re, metaDocUrl);
