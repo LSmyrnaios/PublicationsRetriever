@@ -135,7 +135,7 @@ public class ConnSupportUtils
 		if ( mimeMatcher.matches() ) {
 			try {
 				plainMimeType = mimeMatcher.group(1);
-			} catch (Exception e) { logger.error("", e); }
+			} catch (Exception e) { logger.error("", e); return null; }
 			if ( (plainMimeType == null) || plainMimeType.isEmpty() ) {
 				logger.warn("Unexpected null or empty value returned by \"mimeMatcher.group(1)\" for mimeType: \"" + mimeType + "\".");
 				return null;
@@ -179,7 +179,7 @@ public class ConnSupportUtils
 
 			// Check if we should abort the download based on its content-size.
 			int contentSize = getContentSize(conn, true);
-			if ( contentSize == -1 )
+			if ( contentSize == -1 )	// "Unacceptable size"-code..
 				throw new DocFileNotRetrievedException();
 
 			// Write the downloaded bytes to the docFile and return the docFileName.
@@ -405,7 +405,7 @@ public class ConnSupportUtils
 	public static String getHtmlString(HttpURLConnection conn, BufferedReader bufferedReader)
 	{
 		int contentSize = getContentSize(conn, false);
-		if ( contentSize == -1 ) {
+		if ( contentSize == -1 ) {	// "Unacceptable size"-code..
 			logger.warn("Aborting HTML-extraction..");
 			return null;
 		}
@@ -423,11 +423,7 @@ public class ConnSupportUtils
 			return (htmlStrB.length() != 0) ? htmlStrB.toString() : null;	// Make sure we return a "null" on empty string, to better handle the case in the caller-function.
 
 		} catch ( IOException ioe ) {
-			String exceptionMessage = ioe.getMessage();
-			if ( exceptionMessage != null )
-				logger.error("IOException when retrieving the HTML-code: " + exceptionMessage + "!");
-			else
-				logger.error("", ioe);
+			logger.error("IOException when retrieving the HTML-code: " + ioe.getMessage());
 			return null;
 		} catch ( Exception e ) {
 			logger.error("", e);
@@ -449,7 +445,7 @@ public class ConnSupportUtils
 	public static DetectedContentType extractContentTypeFromResponseBody(HttpURLConnection conn)
 	{
 		int contentSize = getContentSize(conn, false);
-		if ( contentSize == -1 ) {
+		if ( contentSize == -1 ) {	// "Unacceptable size"-code..
 			logger.warn("Aborting HTML-extraction..");
 			return null;
 		}
@@ -479,11 +475,7 @@ public class ConnSupportUtils
 			}
 
 		} catch ( IOException ioe ) {
-			String exceptionMessage = ioe.getMessage();
-			if ( exceptionMessage != null )
-				logger.error("IOException when retrieving the HTML-code: " + exceptionMessage + "!");
-			else
-				logger.error("", ioe);
+			logger.error("IOException when retrieving the HTML-code: " + ioe.getMessage());
 			return null;
 		} catch ( Exception e ) {
 			logger.error("", e);
@@ -512,7 +504,7 @@ public class ConnSupportUtils
 			return contentSize;
 
 		} catch (NumberFormatException nfe) {
-			if ( calledForFullTextDownload )	// It's not useful otherwise.
+			if ( calledForFullTextDownload )	// It's not useful to show a logging-message otherwise.
 				logger.warn("No \"Content-Length\" was retrieved from docUrl: \"" + conn.getURL().toString() + "\"! We will store the docFile anyway..");	// No action is needed.
 			return -2;
 		} catch ( Exception e ) {

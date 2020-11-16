@@ -31,15 +31,15 @@ public class SpecialUrlsHandler
 		boolean wasLinkinghubElsevier = false;
 		if ( pageUrl.contains("linkinghub.elsevier.com") )
 		{
-			if ( (pageUrl = offlineRedirectElsevierToScienceDirect(pageUrl)) == null ) {
-				throw new FailedToProcessScienceDirectException();	// Logging is handled inside "offlineRedirectElsevierToScienceDirect()".
+			if ( (pageUrl = offlineRedirectElsevierToScienceDirect(pageUrl)) == null ) {	// Logging is handled inside "offlineRedirectElsevierToScienceDirect()".
+				throw new FailedToProcessScienceDirectException();	// Throw the exception to avoid the connection.
 				//logger.debug("Produced ScienceDirect-url: " + pageUrl);	// DEBUG!
 			}
 			wasLinkinghubElsevier = true;
 		}
 
 		if ( wasLinkinghubElsevier || (pageUrl.contains("sciencedirect.com") && !pageUrl.endsWith("/pdf")) )
-			return (pageUrl + (pageUrl.endsWith("/") ? "pdf" : "/pdf"));	// Add a "/pdf" in the end. That's
+			return (pageUrl + (pageUrl.endsWith("/") ? "pdf" : "/pdf"));	// Add a "/pdf" in the end. That will indicate we are asking for the docUrl.
 		else
 			return null;	// This indicates that the calling method will not replace the url.
 	}

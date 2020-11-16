@@ -470,13 +470,13 @@ public class HttpConnUtils
 					ConnSupportUtils.blockSharedSiteSessionDomain(targetUrl);
 					throw new DomainBlockedException();
 				}
-				else if ( calledForPageUrl && (lowerCaseTargetUrl.contains("elsevier.com") && !lowerCaseTargetUrl.contains("linkinghub")) ) {	// Avoid pageUrls redirecting to plain "elsevier.com" (mostly "doi.org"-urls).
+				else if ( calledForPageUrl && (lowerCaseTargetUrl.contains("elsevier.com") && !lowerCaseTargetUrl.contains("linkinghub")) ) {	// Avoid pageUrls redirecting to plain "elsevier.com"  ("(www|journals).elsevier.com", coming mostly from "doi.org"-urls).
 					throw new RuntimeException("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + targetUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code.");
 				}
 
 				String tempTargetUrl = targetUrl;
 				if ( (targetUrl = URLCanonicalizer.getCanonicalURL(targetUrl, null, StandardCharsets.UTF_8)) == null )
-					throw new RuntimeException("Could not cannonicalize target url: " + tempTargetUrl);	// Don't let it continue.
+					throw new RuntimeException("Could not canonicalize target url: " + tempTargetUrl);	// Don't let it continue.
 
 				//ConnSupportUtils.printRedirectDebugInfo(conn, location, targetUrl, curRedirectsNum);	// throws IOException
 

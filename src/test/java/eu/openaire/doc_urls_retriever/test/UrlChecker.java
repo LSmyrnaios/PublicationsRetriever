@@ -133,7 +133,7 @@ public class UrlChecker {
 		{
 			String urlToCheck = url;	// Use an extra String or it cannot be printed in the error-logging-message as it will be null.
 			if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(url, null, StandardCharsets.UTF_8)) == null ) {
-				logger.warn("Could not cannonicalize url: " + url);
+				logger.warn("Could not canonicalize url: " + url);
 				continue;
 			}
 
@@ -208,43 +208,61 @@ public class UrlChecker {
 		urlList.add("http://paduaresearch.cab.unipd.it/5619/1/BEGHETTO_A_-_L'attivit%C3%A0_di_revisione_legale_del_bilancio_d'esercizio.pdf");
 		urlList.add("https://signon.utwente.nl:443/oam/server/obrareq.cgi?encquery%3DNag5hroDAYcZB73s6qFabcJrCLu93LkC%2B%2BehD6VzQDBXjyBeFwtDMuD1y8RrSDHeJy5fC5%2Fy2bJ06QJBGd1f0YAph8D4YcL49l8SbwEcjfrA7TYcvee8aiQakGx1o5pLUN4KrQC%2F3OBf5PrdrMwJb98CJjMkSBGdSMteofa1JVOMTxSQUwTdObMY04eHA51ReEiT3v3fpOlg6%2BcJgtdHSCEhYL2yCt2rgkgPSVoJ%2BqZvFzc6o3FhSmCeXtFiO1FpG5%2BzFSP5JEHVFUerdnw1GpLOtGOT6PpbDf9Fd%2BnAT6Q%3D%20agentid%3DRevProxyWebgate%20ver%3D1%20crmethod%3D2&ECID-Context=1.005YfySQ6km8LunDsnZBCX0002cY00001F%3BkXjE");
 		urlList.add("http://www.ampere.cnrs.fr/correspondance/rdf/ampcorr-<? print $val['bookId'] ?>-RDF.xml");
-		
+		urlList.add("https:/articles/matecconf/abs/2018/32/matecconf_smima2018_03065/matecconf_smima2018_03065.html");
+
+		// The following are "made-up"..
+		urlList.add("https://upcommons.upc.edu/bitstream/handle/2117/115::00/docID:Check?sequence=1&isAllowed=y");
+		urlList.add("https://upcommons.upc.edu/bitstream/handle/2117/11500/docID:Check?sequence=1&isAllowed=y");
 		// Add more urls to test.
-		
+
+		int regex_problematic_urls = 0;
+
 		for ( String url : urlList )
-			validateRegexOnUrl(url);
-		
-		// Check the urls provided in the input-file.
-		setInputOutput();
-		
-		// Start loading and checking urls.
-		HashMultimap<String, String> loadedIdUrlPairs;
-		boolean isFirstRun = true;
-		while ( true )
+			if ( !validateRegexOnUrl(url) )
+				regex_problematic_urls ++;
+
+		boolean shouldCheckWholeInput = false;
+
+		if ( shouldCheckWholeInput )
 		{
-			loadedIdUrlPairs = FileUtils.getNextIdUrlPairGroupFromJson(); // Take urls from jsonFile.
-			
-			if ( isFinishedLoading(loadedIdUrlPairs.isEmpty(), isFirstRun) )    // Throws RuntimeException which is automatically passed on.
-				break;
-			else
-				isFirstRun = false;
-			
-			Set<String> keys = loadedIdUrlPairs.keySet();
-			
-			for ( String retrievedId : keys )
-				for ( String retrievedUrl : loadedIdUrlPairs.get(retrievedId) )
-					validateRegexOnUrl(retrievedUrl);
-		}// End-while
+			logger.info("Now we are going to check the urls provided in the input-file.");
+			TestNonStandardInputOutput.setInputOutput();
+
+			// Start loading and checking urls.
+			HashMultimap<String, String> loadedIdUrlPairs;
+			boolean isFirstRun = true;
+			while ( true )
+			{
+				loadedIdUrlPairs = FileUtils.getNextIdUrlPairGroupFromJson(); // Take urls from jsonFile.
+
+				if ( LoaderAndChecker.isFinishedLoading(loadedIdUrlPairs.isEmpty(), isFirstRun) )    // Throws RuntimeException which is automatically passed on.
+					break;
+				else
+					isFirstRun = false;
+
+				Set<String> keys = loadedIdUrlPairs.keySet();
+
+				for ( String retrievedId : keys )
+					for ( String retrievedUrl : loadedIdUrlPairs.get(retrievedId) )
+						if ( !validateRegexOnUrl(retrievedUrl) )
+							regex_problematic_urls ++;
+			}// End-while
+		}
+
+		if ( regex_problematic_urls == 0 )
+			logger.info("All of the urls matched with the URL_REGEX.");
+		else
+			logger.error(regex_problematic_urls + " urls were found to not match with the URL_REGEX..!");
 	}
 	
 	
-	private static void validateRegexOnUrl(String url)
+	private static boolean validateRegexOnUrl(String url)
 	{
 		logger.info("Checking \"URL_TRIPLE\"-REGEX on url: \"" + url + "\".");
 
 		Matcher urlMatcher = UrlUtils.getUrlMatcher(url);
 		if ( urlMatcher == null )
-			return;
+			return false;
 
 		String urlPart = null;
 		if ( (urlPart = UrlUtils.getDomainStr(url, urlMatcher)) != null )
@@ -257,5 +275,7 @@ public class UrlChecker {
 		urlPart = null;
 		if ( (urlPart = UrlUtils.getDocIdStr(url, urlMatcher)) != null )
 			logger.info("\t\tDocID: \"" + urlPart + "\"");
+
+		return true;
 	}
 }

@@ -96,7 +96,7 @@ public class PageCrawler
 		{
 			// Produce fully functional internal links, NOT internal paths or non-canonicalized.
 			if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl, StandardCharsets.UTF_8)) == null ) {
-				logger.warn("Could not cannonicalize internal url: " + currentLink);
+				logger.warn("Could not canonicalize internal url: " + currentLink);
 				continue;
 			}
 

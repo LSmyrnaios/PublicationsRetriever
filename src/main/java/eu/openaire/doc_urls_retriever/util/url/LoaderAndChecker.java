@@ -89,8 +89,8 @@ public class LoaderAndChecker
 
 				String urlToCheck;
 				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null ) {
-					logger.warn("Could not cannonicalize url: " + retrievedUrl);
-					UrlUtils.logQuadruple(null, retrievedUrl, null, "unreachable", "Discarded at loading time, due to cannonicalization's problems.", null, true);
+					logger.warn("Could not canonicalize url: " + retrievedUrl);
+					UrlUtils.logQuadruple(null, retrievedUrl, null, "unreachable", "Discarded at loading time, due to canonicalization's problems.", null, true);
 					LoaderAndChecker.connProblematicUrls ++;
 					continue;
 				}
@@ -209,8 +209,8 @@ public class LoaderAndChecker
 
 				String sourceUrl = urlToCheck;	// Hold it here for the logging-messages.
 				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
-					logger.warn("Could not cannonicalize url: " + sourceUrl);
-					UrlUtils.logQuadruple(retrievedId, sourceUrl, null, "unreachable", "Discarded at loading time, due to cannonicalization's problems.", null, true);
+					logger.warn("Could not canonicalize url: " + sourceUrl);
+					UrlUtils.logQuadruple(retrievedId, sourceUrl, null, "unreachable", "Discarded at loading time, due to canonicalization's problems.", null, true);
 					LoaderAndChecker.connProblematicUrls ++;
 					continue;
 				}
@@ -271,7 +271,7 @@ public class LoaderAndChecker
 		// Check if it's a duplicate.
 		if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
 			logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already be seen!");
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "duplicate", "Discarded in 'UrlUtils.handleUrlChecks()', as it's a duplicate.", null, true);
+			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "duplicate", "Discarded in 'UrlUtils.handleUrlChecks()', as it's a duplicate.", null, false);
 			if ( !useIdUrlPairs )
 				inputDuplicatesNum ++;
 			return null;

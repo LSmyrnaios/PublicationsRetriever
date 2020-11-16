@@ -92,7 +92,7 @@ public class UrlUtils
 		String domainStr = null;
 		try {
 			domainStr = matcher.group(2);	// Group <2> is the DOMAIN.
-		} catch (Exception e) { logger.error("", e); }
+		} catch (Exception e) { logger.error("", e); return null; }
 		if ( (domainStr == null) || domainStr.isEmpty() ) {
 			logger.warn("No domain was extracted from url: \"" + urlStr + "\".");
 			return null;
@@ -117,7 +117,7 @@ public class UrlUtils
 		String pathStr = null;
 		try {
 			pathStr = matcher.group(1);	// Group <1> is the PATH.
-		} catch (Exception e) { logger.error("", e); }
+		} catch (Exception e) { logger.error("", e); return null; }
 		if ( (pathStr == null) || pathStr.isEmpty() ) {
 			logger.warn("No pathStr was extracted from url: \"" + urlStr + "\".");
 			return null;
@@ -142,7 +142,7 @@ public class UrlUtils
 		String docIdStr = null;
 		try {
 			docIdStr = matcher.group(3);	// Group <3> is the docId.
-		} catch (Exception e) { logger.error("", e); }
+		} catch (Exception e) { logger.error("", e); return null; }
 		if ( (docIdStr == null) || docIdStr.isEmpty() ) {
 			logger.warn("No docID was extracted from url: \"" + urlStr + "\".");
 			return null;
@@ -195,7 +195,7 @@ public class UrlUtils
 		{
 			try {
 				preJsessionidStr = jsessionidMatcher.group(1);	// Take only the 1st part of the urlStr, without the jsessionid.
-			} catch (Exception e) { logger.error("", e); }
+			} catch (Exception e) { logger.error("", e); return finalUrl; }
 		    if ( (preJsessionidStr == null) || preJsessionidStr.isEmpty() ) {
 		    	logger.warn("Unexpected null or empty value returned by \"jsessionidMatcher.group(1)\" for url: \"" + urlStr + "\"");
 		    	return finalUrl;
@@ -204,7 +204,7 @@ public class UrlUtils
 
 		    try {
 		    	afterJsessionidStr = jsessionidMatcher.group(2);
-			} catch (Exception e) { logger.error("", e); }
+			} catch (Exception e) { logger.error("", e); return finalUrl; }
 			if ( (afterJsessionidStr == null) || afterJsessionidStr.isEmpty() )
 				return finalUrl;
 			else
@@ -235,7 +235,7 @@ public class UrlUtils
 		{
 			try {
 				noAnchorUrl = anchorMatcher.group(1);	// Take only the 1st part of the urlStr, without the jsessionid.
-			} catch (Exception e) { logger.error("", e); }
+			} catch (Exception e) { logger.error("", e); return urlStr; }
 			if ( (noAnchorUrl == null) || noAnchorUrl.isEmpty() ) {
 				logger.warn("Unexpected null or empty value returned by \"anchorMatcher.group(1)\" for url: \"" + urlStr + "\"");
 				return urlStr;

@@ -215,7 +215,7 @@ public class FileUtils
 			}
 
 			if ( !idAndUrlMappedInput.put(inputIdUrlTuple.id, inputIdUrlTuple.url) )    // We have a duplicate in the input.. log it here as we cannot pass it through the HashMultimap. It's possible that this as well as the original might be/give a docUrl.
-				UrlUtils.logQuadruple(inputIdUrlTuple.id, inputIdUrlTuple.url, null, "duplicate", "Discarded in FileUtils.getNextIdUrlPairGroupFromJson(), as it is a duplicate.", null, true);
+				UrlUtils.logQuadruple(inputIdUrlTuple.id, inputIdUrlTuple.url, null, "duplicate", "Discarded in FileUtils.getNextIdUrlPairGroupFromJson(), as it is a duplicate.", null, false);
 		}
 
 		return idAndUrlMappedInput;
@@ -518,7 +518,7 @@ public class FileUtils
 			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
 
 			if ( !urlGroup.add(retrievedLineStr) )    // We have a duplicate in the input.. log it here as we cannot pass it through the HashSet. It's possible that this as well as the original might be/give a docUrl.
-				UrlUtils.logQuadruple(null, retrievedLineStr, null, "duplicate", "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null, true);
+				UrlUtils.logQuadruple(null, retrievedLineStr, null, "duplicate", "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null, false);
 		}
 		//logger.debug("FileUtils.fileIndex's value after taking urls after " + FileUtils.fileIndex / jsonBatchSize + " time(s), from input file: " + FileUtils.fileIndex);	// DEBUG!
 		
