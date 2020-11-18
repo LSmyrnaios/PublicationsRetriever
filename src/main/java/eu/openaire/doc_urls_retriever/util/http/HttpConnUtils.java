@@ -158,7 +158,13 @@ public class HttpConnUtils
 						logger.info("DocFile: \"" + fullPathFileName + "\" has been downloaded.");
 					} catch (DocFileNotRetrievedException dfnde) {
 						fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored.";
-						logger.warn(fullPathFileName, dfnde);
+						StackTraceElement[] stels = dfnde.getStackTrace();
+						StringBuilder sb = new StringBuilder(22).append(fullPathFileName).append(FileUtils.endOfLine);
+						for ( int i = 0; (i < stels.length) && (i < 10); ++i ) {
+							sb.append(stels[i]);
+							if (i < 9) sb.append(FileUtils.endOfLine);
+						}
+						logger.error(sb.toString());	// TODO - Instead of the stacktrace, provide the right message when first thrown, just like in "RuntimeException".
 					}
 				}
 				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true);	// we send the urls, before and after potential redirections.

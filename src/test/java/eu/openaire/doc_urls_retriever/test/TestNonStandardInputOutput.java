@@ -48,10 +48,12 @@ public class TestNonStandardInputOutput  {
 	@Test
 	public void testCustomInputOutputWithNums()
 	{
-		String[] args = new String[3];
+		String[] args = new String[5];
 		args[0] = "-downloadDocFiles";
-		args[1] = "-firstDocFileNum";
-		args[2] = "1";
+		args[1] = "-docFilesStorage";
+		args[2] = "/srv/docFiles";
+		args[3] = "-firstDocFileNum";
+		args[4] = "1";
 
 		logger.info("Calling main method with these args: ");
 		for ( String arg: args )
@@ -65,10 +67,14 @@ public class TestNonStandardInputOutput  {
 	@Test
 	public void testCustomInputOutputWithOriginalDocFileNames()
 	{
-		String[] args = new String[1];
+		String[] args = new String[3];
 		args[0] = "-downloadDocFiles";
+		args[1] = "-docFilesStorage";
+		args[2] = "/srv/docFiles";
 
-		logger.info("Calling main method with this arg: " + args[0]);
+		logger.info("Calling main method with these args: ");
+		for ( String arg: args )
+			logger.info("'" + arg + "'");
 
 		main(args);
 	}

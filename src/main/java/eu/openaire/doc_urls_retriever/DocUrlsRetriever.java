@@ -12,6 +12,7 @@ import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
@@ -104,7 +105,8 @@ public class DocUrlsRetriever
 					}
 				case "-docFilesStorage":
 					i ++;
-					FileUtils.storeDocFilesDir = mainArgs[i];
+					String dir = mainArgs[i];
+					FileUtils.storeDocFilesDir = dir + (!dir.endsWith(File.separator) ? File.separator : "");	// Pre-process it.. otherwise it may cause problems.
 					DocUrlsRetriever.docFilesStorageGivenByUser = true;
 					break;
 				default:	// log & ignore the argument

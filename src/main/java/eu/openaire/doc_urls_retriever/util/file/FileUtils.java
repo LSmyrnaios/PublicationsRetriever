@@ -41,7 +41,7 @@ public class FileUtils
 	
 	private static int fileIndex = 0;	// Index in the input file
 	public static boolean skipFirstRow = false;	// Use this to skip the HeaderLine in a csv-kindOf-File.
-	private static final String endOfLine = System.lineSeparator();
+	public static final String endOfLine = System.lineSeparator();
 	public static int unretrievableInputLines = 0;	// For better statistics in the end.
     public static int unretrievableUrlsOnly = 0;
     public static final int maxStoringWaitingTime = 45000;	// 45sec (some files can take several minutes or even half an hour)
@@ -79,7 +79,7 @@ public class FileUtils
 		if ( shouldDownloadDocFiles ) {
 			File dir = new File(storeDocFilesDir);
 			if ( shouldDeleteOlderDocFiles ) {
-				logger.debug("Deleting old docFiles..");
+				logger.info("Deleting old docFiles..");
 				try {
 					deleteDirectory(dir);	// org.apache.commons.io.FileUtils
 				} catch (IOException ioe) {
@@ -306,7 +306,7 @@ public class FileUtils
 			{
 				long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
 				if ( (elapsedTime > FileUtils.maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {
-					logger.warn("Storing docFile from docUrl: \"" + docUrl + "\" took over "+ TimeUnit.MILLISECONDS.toSeconds(FileUtils.maxStoringWaitingTime) + "secs!");
+					logger.warn("Storing docFile from docUrl: \"" + docUrl + "\" is taking over "+ TimeUnit.MILLISECONDS.toSeconds(FileUtils.maxStoringWaitingTime) + "secs! Aborting..");
 					if ( !docFile.delete() )
 						logger.error("Error when deleting the half-retrieved file from docUrl: " + docUrl);
 					numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
