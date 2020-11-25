@@ -2,6 +2,7 @@ package eu.openaire.doc_urls_retriever.util.url;
 
 import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +23,8 @@ public class UrlUtils
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	// TODO - Add explanation also for the non-captured groups for better maintenance. For example the "ww(?:w|\d)" can capture "www", "ww2", "ww3" ect.
 
-	public static final Pattern JSESSIONID_FILTER = Pattern.compile("(.+://.+)(?:;(?:JSESSIONID|jsessionid)=[^?]+)(\\?.+)?");	// Remove the jsessionid but keep the url-params in the end.
+	public static final Pattern TEMPORAL_IDENTIFIER_FILTER = Pattern.compile("(.+://.+)(?:(?:(?i)(?:\\?|&|;|%3b)(?:.*token|jsessionid)(?:=|%3d))[^?&]+)([?&].+)?");	// Remove the token or the jsessionid (with case-insensitive) but keep the url-params in the end.
+	// Simpler, non-encoding-aware regex: (.+://.+)(?:(?:[?&;](?i)(?:.*token|jsessionid))=[^?&]+)([?&].+)?
 
 	public static final Pattern ANCHOR_FILTER = Pattern.compile("(.+)(#.+)");	// Remove the anchor at the end of the url to avoid duplicate versions. (anchors might exist even in docUrls themselves)
 
@@ -51,13 +53,14 @@ public class UrlUtils
 
         if ( !finalDocUrl.equals("duplicate") )
         {
-			if ( !finalDocUrl.equals("unreachable") ) {
+			if ( !finalDocUrl.equals("unreachable") )
+			{
 				sumOfDocUrlsFound ++;
 
-				// Remove "jsessionid" from urls for "cleaner" output and "already found docUrl"-matching.
+				// Remove the "temporalId" from urls for "cleaner" output and "already found docUrl"-matching. These IDs will expire eventually anyway.
 				String lowerCaseUrl = finalDocUrl.toLowerCase();
-				if ( lowerCaseUrl.contains("jsessionid") )
-					finalDocUrl = UrlUtils.removeJsessionid(docUrl);
+				if ( lowerCaseUrl.contains("token") || lowerCaseUrl.contains("jsessionid") )
+					finalDocUrl = UrlUtils.removeTemporalIdentifier(finalDocUrl);	// We send the non-lowerCase-url as we may want to continue with that docUrl in case of an error.
 
 				// Gather data for the MLA, if we decide to have it enabled.
 				if ( MachineLearning.useMLA )
@@ -173,45 +176,44 @@ public class UrlUtils
 
 
 	/**
-	 * This method is responsible for removing the "jsessionid" part of a url.
-	 * If no jsessionId is found, then it returns the string it received.
+	 * This method is responsible for removing the "temporalId" part of a url.
+	 * If no temporalId is found, then it returns the string it received.
 	 * @param urlStr
-	 * @return urlWithoutJsessionId
+	 * @return urlWithoutTemporalId
 	 */
-	public static String removeJsessionid(String urlStr)
+	public static String removeTemporalIdentifier(String urlStr)
 	{
 		if ( urlStr == null ) {	// Avoid NPE in "Matcher"
-			logger.error("The received \"urlStr\" was null in \"removeJsessionid()\"!");
+			logger.error("The received \"urlStr\" was null in \"removeTemporalIdentifier()\"!");
 			return null;
 		}
 
-		String finalUrl = urlStr;
+		Matcher temporalIdMatcher = TEMPORAL_IDENTIFIER_FILTER.matcher(urlStr);
+		if ( !temporalIdMatcher.matches() )
+			return urlStr;
 
-		String preJsessionidStr = null;
-		String afterJsessionidStr = null;
+		String preTemporalIdStr = null;
+		String afterTemporalIdStr = null;
 
-		Matcher jsessionidMatcher = JSESSIONID_FILTER.matcher(urlStr);
-		if ( jsessionidMatcher.matches() )
-		{
-			try {
-				preJsessionidStr = jsessionidMatcher.group(1);	// Take only the 1st part of the urlStr, without the jsessionid.
-			} catch (Exception e) { logger.error("", e); return finalUrl; }
-		    if ( (preJsessionidStr == null) || preJsessionidStr.isEmpty() ) {
-		    	logger.warn("Unexpected null or empty value returned by \"jsessionidMatcher.group(1)\" for url: \"" + urlStr + "\"");
-		    	return finalUrl;
-		    }
-		    finalUrl = preJsessionidStr;
-
-		    try {
-		    	afterJsessionidStr = jsessionidMatcher.group(2);
-			} catch (Exception e) { logger.error("", e); return finalUrl; }
-			if ( (afterJsessionidStr == null) || afterJsessionidStr.isEmpty() )
-				return finalUrl;
-			else
-				return finalUrl + afterJsessionidStr;
+		try {
+			preTemporalIdStr = temporalIdMatcher.group(1);	// Take only the 1st part of the urlStr, without the temporalId.
+		} catch (Exception e) { logger.error("", e); return urlStr; }
+		if ( (preTemporalIdStr == null) || preTemporalIdStr.isEmpty() ) {
+			logger.warn("Unexpected null or empty value returned by \"temporalIdMatcher.group(1)\" for url: \"" + urlStr + "\"");
+			return urlStr;
 		}
-		else
-			return finalUrl;
+
+		try {
+			afterTemporalIdStr = temporalIdMatcher.group(2);
+		} catch (Exception e) { logger.error("", e); return preTemporalIdStr; }
+		if ( (afterTemporalIdStr == null) || afterTemporalIdStr.isEmpty() )
+			return preTemporalIdStr;	// This is expected in many cases. The "afterTemporalIdStr" might not always exist.
+		else {
+			if ( afterTemporalIdStr.startsWith("&", 0) && !preTemporalIdStr.contains("?") )	// The "afterTemporalIdStr" should start with "?", if not (because the "token" was the first param) then..
+				afterTemporalIdStr = StringUtils.replace(afterTemporalIdStr, "&", "?", 1);	// ..replace only the 1st matching character.
+
+			return preTemporalIdStr + afterTemporalIdStr;
+		}
 	}
 
 

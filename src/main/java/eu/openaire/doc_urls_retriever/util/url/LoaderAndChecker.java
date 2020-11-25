@@ -264,10 +264,10 @@ public class LoaderAndChecker
 		if ( UrlTypeChecker.matchesUnwantedUrlType(urlId, retrievedUrl, lowerCaseUrl) )
 			return null;	// The url-logging is happening inside this method (per urlType).
 		
-		// Remove "jsessionid" for urls. Most of them, if not all, will already be expired. If an error occurs, the jsessionid will remain in the url.
-		if ( lowerCaseUrl.contains("jsessionid") )
-			retrievedUrl = UrlUtils.removeJsessionid(retrievedUrl);
-		
+		// Remove the "temporalId" from the urls. Most of them, if not all, will already be expired. If an error occurs, the temporalId will remain in the url.
+		if ( lowerCaseUrl.contains("token") || lowerCaseUrl.contains("jsessionid") )
+			retrievedUrl = UrlUtils.removeTemporalIdentifier(retrievedUrl);	// We send the non-lowerCase-url as we may want to continue with that url in case of an error.
+
 		// Check if it's a duplicate.
 		if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
 			logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already be seen!");
