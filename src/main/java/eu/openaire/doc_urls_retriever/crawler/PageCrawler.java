@@ -31,6 +31,8 @@ public class PageCrawler
 {
 	private static final Logger logger = LoggerFactory.getLogger(PageCrawler.class);
 
+	private static final Pattern INTERNAL_LINKS_STARTING_FROM_FILTER = Pattern.compile("^(?:(?:mailto|tel|fax|file|data):|\\{openurl}|[/]*\\?(?:locale(?:-attribute)?|ln)=).*");
+
 	public static final Pattern JAVASCRIPT_DOC_LINK = Pattern.compile("(?:javascript:pdflink.*')(http.+)(?:',.*)", Pattern.CASE_INSENSITIVE);
 
 	public static final HashMap<String, Integer> timesDomainNotGivingInternalLinks = new HashMap<String, Integer>();
@@ -82,7 +84,7 @@ public class PageCrawler
 			}
 		}
 
-		HashSet<String> currentPageLinks = null;
+		HashSet<String> currentPageLinks = null;	// We use "HashSet" to avoid duplicates.
 		if ( (currentPageLinks = retrieveInternalLinks(urlId, sourceUrl, pageUrl, pageDomain, pageHtml, pageContentType)) == null )
 			return;	// The necessary logging is handled inside.
 
@@ -203,33 +205,53 @@ public class PageCrawler
 			}
 		}	// end for-loop
 
-		// If we get here it means that this pageUrl is not a docUrl itself, nor it contains a docUrl..
-		logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
-		UrlTypeChecker.pagesNotProvidingDocUrls ++;
-		UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as no docUrl was found inside.", null, true);
-		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingDocUrls, pageDomain, PageCrawler.timesToGiveNoDocUrlsBeforeBlocked) )
-			logger.debug("Domain: \"" + pageDomain + "\" was blocked after giving no docUrls more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
+		handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false);
 	}
 
 
-	public static HashSet<String> retrieveInternalLinks(String urlId, String sourceUrl, String pageUrl, String currentPageDomain, String pageHtml, String pageContentType)
+	/**
+	 * This method handles
+	 * @param urlId
+	 * @param sourceUrl
+	 * @param pageUrl
+	 * @param pageDomain
+	 * @param isAlreadyLoggedToOutput
+	 */
+	private static void handlePageWithNoDocUrls(String urlId, String sourceUrl, String pageUrl, String pageDomain, boolean isAlreadyLoggedToOutput)
+	{
+		// If we get here it means that this pageUrl is not a docUrl itself, nor it contains a docUrl..
+		logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
+		UrlTypeChecker.pagesNotProvidingDocUrls ++;
+		if ( !isAlreadyLoggedToOutput )	// This check is used in error-cases, where we have already logged the Quadruple.
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as no docUrl was found inside.", null, true);
+		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingDocUrls, pageDomain, PageCrawler.timesToGiveNoDocUrlsBeforeBlocked) )
+			logger.warn("Domain: \"" + pageDomain + "\" was blocked after giving no docUrls more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
+	}
+
+
+	public static HashSet<String> retrieveInternalLinks(String urlId, String sourceUrl, String pageUrl, String pageDomain, String pageHtml, String pageContentType)
 	{
 		HashSet<String> currentPageLinks = null;
 		try {
 			currentPageLinks = extractInternalLinksFromHtml(pageHtml, pageUrl);
 		} catch (DynamicInternalLinksFoundException dilfe) {
-			logger.debug("Domain \"" + currentPageDomain + "\" was found to have dynamic links, so it will be blocked.");
-			HttpConnUtils.blacklistedDomains.add(currentPageDomain);
-			logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");	// Refer "PageCrawler.visit()" here for consistency with other similar messages.
+			HttpConnUtils.blacklistedDomains.add(pageDomain);
+			logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after found to have dynamic links. Its domain \"" + pageDomain + "\"  was blocked.");	// Refer "PageCrawler.visit()" here for consistency with other similar messages.
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.retrieveInternalLinks()', as it belongs to a domain with dynamic-links.", null, true);
 			PageCrawler.contentProblematicUrls ++;
 			return null;
-		} catch (JavaScriptDocLinkFoundException jsdlfe) {
-			handleJavaScriptDocLink(urlId, sourceUrl, pageUrl, currentPageDomain, pageContentType, jsdlfe);	// url-logging is handled inside.
-			return null;	// This JavaScriptDocLink is the only docLink we will ever gonna get from this page. The sourceUrl is logged inside the called method.
-			// If this "JavaScriptDocLink" is a DocUrl, then returning "null" here, will trigger the 'PageCrawler.visit()' method to exit immediately (and normally).
+		} catch ( DocLinkFoundException dlfe) {
+			if ( !verifyDocLink(urlId, sourceUrl, pageUrl, pageDomain, pageContentType, dlfe) )	// url-logging is handled inside.
+				handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, true);
+			return null;	// This DocLink is the only docLink we will ever gonna get from this page. The sourceUrl is logged inside the called method.
+			// If this "DocLink" is a DocUrl, then returning "null" here, will trigger the 'PageCrawler.visit()' method to exit immediately (and normally).
+		} catch ( DocLinkInvalidException dlie ) {
+			logger.warn("An invalid docLink < " + dlie.getMessage() + " > was found for pageUrl: \"" + pageUrl + "\". Search was stopped.");
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was an invalid docLink. Its contentType is: '" + pageContentType + "'", null, true);
+			handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, true);
+			return null;
 		} catch (Exception e) {
-			logger.debug("Could not retrieve the internalLinks for pageUrl: " + pageUrl);
+			logger.warn("Could not retrieve the internalLinks for pageUrl: " + pageUrl);
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its internalLinks. Its contentType is: '" + pageContentType + "'", null, true);
 			PageCrawler.contentProblematicUrls ++;
 			return null;
@@ -245,8 +267,8 @@ public class PageCrawler
 			logger.warn("No " + (isEmpty ? "valid " : "") + "links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
 			PageCrawler.contentProblematicUrls ++;
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, as no " + (isEmpty ? "valid " : "") + "links were able to be retrieved from it. Its contentType is: '" + pageContentType + "'", null, true);
-			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingInternalLinks, currentPageDomain, PageCrawler.timesToGiveNoInternalLinksBeforeBlocked) )
-				logger.debug("Domain: \"" + currentPageDomain + "\" was blocked after not providing internalLinks more than " + PageCrawler.timesToGiveNoInternalLinksBeforeBlocked + " times.");
+			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingInternalLinks, pageDomain, PageCrawler.timesToGiveNoInternalLinksBeforeBlocked) )
+				logger.warn("Domain: \"" + pageDomain + "\" was blocked after not providing internalLinks more than " + PageCrawler.timesToGiveNoInternalLinksBeforeBlocked + " times.");
 			return null;
 		}
 
@@ -259,86 +281,161 @@ public class PageCrawler
 	}
 
 
-	public static HashSet<String> extractInternalLinksFromHtml(String pageHtml, String pageUrl) throws JavaScriptDocLinkFoundException, DynamicInternalLinksFoundException
+	/**
+	 * Get the internalLinks using "Jsoup".
+	 * @param pageHtml
+	 * @param pageUrl
+	 * @return The internalLinks
+	 * @throws DocLinkFoundException
+	 * @throws DynamicInternalLinksFoundException
+	 */
+	public static HashSet<String> extractInternalLinksFromHtml(String pageHtml, String pageUrl) throws DocLinkFoundException, DynamicInternalLinksFoundException, DocLinkInvalidException
 	{
-		// Get the internalLinks using "Jsoup".
 		Document document = Jsoup.parse(pageHtml);
-		Elements linksOnPage = document.select("a[href]");
-
-		if ( linksOnPage.isEmpty() ) {	// It will surely not be null.
+		Elements elementLinksOnPage = document.select("a, link[href][type*=pdf]");
+		if ( elementLinksOnPage.isEmpty() ) {	// It will surely not be null, by Jsoup-documentation.
 			logger.warn("Jsoup did not extract any links from pageUrl: \"" + pageUrl + "\"");
 			return null;
 		}
 
-		HashSet<String> urls = new HashSet<>(linksOnPage.size()/2);	// Some
+		HashSet<String> urls = new HashSet<>(elementLinksOnPage.size()/2);	// Only some of the links will be added in the final set.
+		String linkAttr, internalLink;
 
-		for ( Element el : linksOnPage )
+		for ( Element el : elementLinksOnPage )
 		{
-			String internalLink = el.attr("href");
-
-			if ( internalLink.isEmpty() )
-				continue;
-
-			if ( internalLink.contains("{{") || internalLink.contains("<?") )	// If "{{" or "<?" is found inside any link, then all the links of this domain are dynamic, so throw an exception for the calling method to catch and log the pageUrl and return immediately.
-				throw new DynamicInternalLinksFoundException();
-
-			if ( internalLink.equals("/")
-					|| internalLink.startsWith("mailto:", 0) || internalLink.startsWith("tel:", 0) || internalLink.startsWith("fax:", 0)
-					|| internalLink.startsWith("file:", 0) || internalLink.startsWith("{openurl}", 0) || internalLink.startsWith("?locale", 0) )
-				continue;
-
-			// Remove anchors from possible docUrls and add the remaining part to the list. Non-possibleDocUrls having anchors are rejected.
-			if ( internalLink.contains("#") )
-			{
-				if ( LoaderAndChecker.DOC_URL_FILTER.matcher(internalLink.toLowerCase()).matches() ) {
-					// There are some docURLs with anchors!! Like this: https://www.redalyc.org/pdf/104/10401515.pdf#page=1&zoom=auto,-13,792
-					internalLink = UrlUtils.removeAnchor(internalLink);
-					//logger.debug("Filtered InternalLink: " + internalLink);	// DEBUG!
-					urls.add(internalLink);
+			linkAttr = el.text();
+			if ( !linkAttr.isEmpty() && linkAttr.toLowerCase().contains("pdf") ) {
+				internalLink = el.attr("href");
+				if ( !internalLink.isEmpty() && !internalLink.startsWith("#", 0) ) {
+					logger.debug("Found the docLink < " + internalLink + " > from link-text: \"" + linkAttr + "\"");
+					throw new DocLinkFoundException(internalLink);
 				}
-				// Else we reject it (don't add it in the hashSet)..
-				continue;
+				throw new DocLinkInvalidException(internalLink);
 			}
 
-			//logger.debug("Filtered InternalLink: " + internalLink);	// DEBUG!
+			linkAttr = el.attr("title");
+			if ( !linkAttr.isEmpty() && linkAttr.toLowerCase().contains("pdf") ) {
+				internalLink = el.attr("href");
+				if ( !internalLink.isEmpty() && !internalLink.startsWith("#", 0) ) {
+					logger.debug("Found the docLink < " + internalLink + " > from link-title: \"" + linkAttr + "\"");
+					throw new DocLinkFoundException(internalLink);
+				}
+				throw new DocLinkInvalidException(internalLink);
+			}
 
-			if ( internalLink.toLowerCase().startsWith("javascript:", 0) ) {
-				String pdfLink = null;
-				Matcher pdfLinkMatcher = JAVASCRIPT_DOC_LINK.matcher(internalLink);	// Send the non-lower-case version as we need the inside url untouched, in order to open a valid connection.
-				if ( pdfLinkMatcher.matches() ) {
-					try {
-						pdfLink = pdfLinkMatcher.group(1);
-					} catch (Exception e) { logger.error("", e); }
-					throw new JavaScriptDocLinkFoundException(pdfLink);    // If it's 'null', we treat it when handling this exception.
-				} else {    // It's a javaScript link or element which we don't treat.
-					//logger.debug("This javaScript element was not handled: " + internalLink);	// Enable only if needed for specific debugging.
+			// Check if we have a "link[href][type*=pdf]" get the docUrl. This also check all the "types" even from the HTML-"a" elements.
+			linkAttr = el.attr("type");
+			if ( !linkAttr.isEmpty() && ConnSupportUtils.knownDocMimeTypes.contains(linkAttr) ) {
+				internalLink = el.attr("href");
+				if ( !internalLink.isEmpty() && !internalLink.startsWith("#", 0) ) {
+					logger.debug("Found the docLink < " + internalLink + " > from link-type: \"" + linkAttr + "\"");
+					throw new DocLinkFoundException(internalLink);
+				}
+				throw new DocLinkInvalidException(internalLink);
+			}
+
+			internalLink = el.attr("href");
+			if ( internalLink.isEmpty() || internalLink.equals("#") ) {
+				internalLink = el.attr("data-popup");	// Ex: https://www.ingentaconnect.com/content/cscript/cvia/2017/00000002/00000003/art00008
+				if ( internalLink.isEmpty() )
 					continue;
-				}
 			}
-			urls.add(internalLink);
+			if ( (internalLink = gatherInternalLink(internalLink)) != null )	// Throws exceptions which go to the caller method.
+				urls.add(internalLink);
 		}
 		return urls;
 	}
-	
-	
-	public static void handleJavaScriptDocLink(String urlId, String sourceUrl, String pageUrl, String currentPageDomain, String pageContentType, JavaScriptDocLinkFoundException jsdlfe)
+
+
+	public static String gatherInternalLink(String internalLink) throws DynamicInternalLinksFoundException, DocLinkFoundException
 	{
-		String javaScriptDocLink = jsdlfe.getMessage();
-		if ( javaScriptDocLink == null ) {
-			logger.debug("JavaScriptLink was not retrieved!");
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its internalLinks. Its contentType is: '" + pageContentType + "'", null, true);
-		}
-		else {
-			//logger.debug("Going to check JavaScriptDocLink: " + javaScriptDocLink);	// DEBUG!
-			try {
-				if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, javaScriptDocLink, currentPageDomain, false, true) )	// We log the docUrl inside this method.
-					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved JavaScriptDocLink: <" + javaScriptDocLink + "> was not a docUrl.", null, true);
-			} catch (Exception e) {
-				UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved JavaScriptDocLink: <" + javaScriptDocLink + "> had connectivity problems.", null, true);
+		if ( internalLink.equals("/") )
+			return null;
+
+		if ( internalLink.contains("{{") || internalLink.contains("<?") )	// If "{{" or "<?" is found inside any link, then all the links of this domain are dynamic, so throw an exception for the calling method to catch and log the pageUrl and return immediately.
+			throw new DynamicInternalLinksFoundException();
+
+		String lowerCaseInternalLink = internalLink.toLowerCase();
+
+		if ( INTERNAL_LINKS_STARTING_FROM_FILTER.matcher(lowerCaseInternalLink).matches() )
+			return null;
+
+		// Remove anchors from possible docUrls and add the remaining part to the list. Non-possibleDocUrls having anchors are rejected (except for hashtag-directories).
+		if ( lowerCaseInternalLink.contains("#") )
+		{
+			if ( LoaderAndChecker.DOC_URL_FILTER.matcher(lowerCaseInternalLink).matches() ) {
+				// There are some docURLs with anchors. We should get the docUrl but remove the anchors to keep them clean and connectable.
+				// Like this: https://www.redalyc.org/pdf/104/10401515.pdf#page=1&zoom=auto,-13,792
+				internalLink = UrlUtils.removeAnchor(internalLink);
+				//logger.debug("Filtered InternalLink: " + internalLink);	// DEBUG!
+				return internalLink;
 			}
+			else if ( !lowerCaseInternalLink.contains("/#/") )
+				return null;	// Else if it has not a hashtag-directory we reject it (don't add it in the hashSet)..
+		}
+
+		//logger.debug("Filtered InternalLink: " + internalLink);	// DEBUG!
+
+		if ( lowerCaseInternalLink.startsWith("javascript:", 0) ) {
+			String pdfLink = null;
+			Matcher pdfLinkMatcher = JAVASCRIPT_DOC_LINK.matcher(internalLink);	// Send the non-lower-case version as we need the inside url untouched, in order to open a valid connection.
+			if ( !pdfLinkMatcher.matches() ) {  // It's a javaScript link or element which we don't treat.
+				//logger.warn("This javaScript element was not handled: " + internalLink);	// Enable only if needed for specific debugging.
+				return null;
+			}
+			try {
+				pdfLink = pdfLinkMatcher.group(1);
+			} catch (Exception e) { logger.error("", e); }	// Do not "return null;" here, as we want the page-search to stop, not just for this link to not be connected..
+			throw new DocLinkFoundException(pdfLink);    // If it's 'null' or 'empty', we treat it when handling this exception.
+		}
+
+		return internalLink;
+	}
+
+
+	public static boolean verifyDocLink(String urlId, String sourceUrl, String pageUrl, String pageDomain, String pageContentType, DocLinkFoundException dlfe)
+	{
+		String docLink = dlfe.getMessage();
+		if ( (docLink == null) || docLink.isEmpty() ) {
+			logger.warn("DocLink was not retrieved!");
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its internalLinks. Its contentType is: '" + pageContentType + "'", null, true);
+			return false;
+		}
+
+		// Produce fully functional internal links, NOT internal paths or non-canonicalized.
+		String tempLink = docLink;
+		if ( (docLink = URLCanonicalizer.getCanonicalURL(docLink, pageUrl, StandardCharsets.UTF_8)) == null ) {
+			logger.warn("Could not canonicalize internal url: " + tempLink);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there were canonicalization problems with the 'possibleDocUrl' found inside: " + tempLink, null, true);
+			return false;
+		}
+
+		if ( UrlUtils.docUrlsWithIDs.containsKey(docLink) ) {    // If we got into an already-found docUrl, log it and return.
+			logger.info("re-crossed docUrl found: < " + docLink + " >");
+			if ( FileUtils.shouldDownloadDocFiles )
+				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, docLink, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(docLink), pageDomain, false);
+			else
+				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, docLink, "", pageDomain, false);
+			return true;
+		}
+
+		//logger.debug("Going to check DocLink: " + docLink);	// DEBUG!
+		try {
+			if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, docLink, pageDomain, false, true) ) {    // We log the docUrl inside this method.
+				logger.warn("The DocLink < " + docLink + " > was not a docUrl (unexpected)!");
+				UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved DocLink: < " + docLink + " > was not a docUrl.", null, true);
+				return false;
+			}
+			return true;
+		} catch (Exception e) {	// After connecting to the metaDocUrl.
+			logger.warn("The DocLink < " + docLink + " > was not reached!");
+			if (e instanceof RuntimeException)
+				ConnSupportUtils.printEmbeddedExceptionMessage(e, docLink);
+			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved DocLink: < " + docLink + " > had connectivity problems.", null, true);
+			return false;
 		}
 	}
-	
+
 	
 	public static void printInternalLinksForDebugging(HashSet<String> currentPageLinks)
 	{

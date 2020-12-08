@@ -55,7 +55,13 @@ public class LinkExtraction {
 		//exampleUrl = "https://edoc.hu-berlin.de/handle/18452/16660";
 		//exampleUrl = "https://docs.lib.purdue.edu/jtrp/124/";
 		//exampleUrl = "https://www.rug.nl/research/portal/en/publications/op-welke-partijen-richten-lobbyisten-zich(9d42d785-f6a2-4630-b850-61b63d9bfc35).html";
-		exampleUrl = "https://hal-iogs.archives-ouvertes.fr/hal-01576150";
+		//exampleUrl = "https://hal-iogs.archives-ouvertes.fr/hal-01576150";
+		//exampleUrl = "https://academic.microsoft.com/#/detail/2945595536";
+		//exampleUrl = "https://www.ingentaconnect.com/content/cscript/cvia/2017/00000002/00000003/art00008";
+		//exampleUrl = "http://europepmc.org/article/PMC/7392279";
+		//exampleUrl = "https://www.ingentaconnect.com/content/cscript/cvia/2017/00000002/00000003/art00008";
+		//exampleUrl = "https://www.atlantis-press.com/journals/artres/125928993";
+		exampleUrl = "https://pubmed.ncbi.nlm.nih.gov/1461747/";
 	}
 
 	

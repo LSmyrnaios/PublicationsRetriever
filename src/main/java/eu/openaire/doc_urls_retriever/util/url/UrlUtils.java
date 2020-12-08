@@ -26,7 +26,8 @@ public class UrlUtils
 	public static final Pattern TEMPORAL_IDENTIFIER_FILTER = Pattern.compile("(.+://.+)(?:(?:(?i)(?:\\?|&|;|%3b)(?:.*token|jsessionid)(?:=|%3d))[^?&]+)([?&].+)?");	// Remove the token or the jsessionid (with case-insensitive) but keep the url-params in the end.
 	// Simpler, non-encoding-aware regex: (.+://.+)(?:(?:[?&;](?i)(?:.*token|jsessionid))=[^?&]+)([?&].+)?
 
-	public static final Pattern ANCHOR_FILTER = Pattern.compile("(.+)(#.+)");	// Remove the anchor at the end of the url to avoid duplicate versions. (anchors might exist even in docUrls themselves)
+	public static final Pattern ANCHOR_FILTER = Pattern.compile("(.+)(#(?!/).+)");	// Remove the anchor at the end of the url to avoid duplicate versions. (anchors might exist even in docUrls themselves)
+	// Note that we may have this: https://academic.microsoft.com/#/detail/2945595536
 
 	public static int sumOfDocUrlsFound = 0;	// Change it back to simple int if finally in singleThread mode
 
@@ -218,8 +219,7 @@ public class UrlUtils
 
 
 	/**
-	 * This method removes the anchor part in the end of the URL.
-	 * Unlike the jsessionid-case, the anchor consists from everything is from "#" to the right of the url-string till the end of it. No "valuable part" exist after the anchor.
+	 * This method removes the anchor part in the end of the URL, unless a "#" directory is detected.
 	 * @param urlStr
 	 * @return
 	 */
@@ -233,20 +233,18 @@ public class UrlUtils
 		String noAnchorUrl = null;
 
 		Matcher anchorMatcher = ANCHOR_FILTER.matcher(urlStr);
-		if ( anchorMatcher.matches() )
-		{
-			try {
-				noAnchorUrl = anchorMatcher.group(1);	// Take only the 1st part of the urlStr, without the jsessionid.
-			} catch (Exception e) { logger.error("", e); return urlStr; }
-			if ( (noAnchorUrl == null) || noAnchorUrl.isEmpty() ) {
-				logger.warn("Unexpected null or empty value returned by \"anchorMatcher.group(1)\" for url: \"" + urlStr + "\"");
-				return urlStr;
-			}
-			else
-				return noAnchorUrl;
+		if ( !anchorMatcher.matches() )
+			return urlStr;
+
+		try {
+			noAnchorUrl = anchorMatcher.group(1);	// Take only the 1st part of the urlStr, without the anchor.
+		} catch (Exception e) { logger.error("", e); return urlStr; }
+		if ( (noAnchorUrl == null) || noAnchorUrl.isEmpty() ) {
+			logger.warn("Unexpected null or empty value returned by \"anchorMatcher.group(1)\" for url: \"" + urlStr + "\"");
+			return urlStr;
 		}
 		else
-			return urlStr;
+			return noAnchorUrl;
 	}
 
 }

@@ -5,7 +5,7 @@ import com.google.common.collect.SetMultimap;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
-import eu.openaire.doc_urls_retriever.exceptions.JavaScriptDocLinkFoundException;
+import eu.openaire.doc_urls_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
@@ -216,8 +216,8 @@ public class ConnSupportUtils
 				return null;	// Logging is handled inside..
 
 			return new ArrayList<>(extractedLinksHashSet).get(0);	// There will be only a couple of urls so it's not a big deal to gather them all.
-		} catch (JavaScriptDocLinkFoundException jsdlfe) {
-			return jsdlfe.getMessage();	// Return the Javascript link.
+		} catch ( DocLinkFoundException dlfe) {
+			return dlfe.getMessage();	// Return the DocLink to connect with.
 		} catch (Exception e) {
 			logger.error("", e);
 			return null;
