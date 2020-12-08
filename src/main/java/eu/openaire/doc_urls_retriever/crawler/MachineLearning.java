@@ -135,7 +135,7 @@ public class MachineLearning
 		if ( domainsBlockedFromMLA.contains(pageDomain) )	// Don't gather data for domains which are proven to not be compatible with the MLA.
 			return;
 
-		String docPagePath = UrlUtils.getPathStr(docPage, docPageMatcher);
+		String docPagePath = UrlUtils.getPathStr(docPage, docPageMatcher);	// The "docPageMatcher" might be null, but it's ok.
 		if ( docPagePath == null )
 			return;
 
@@ -310,6 +310,7 @@ public class MachineLearning
 			if ( UrlUtils.docUrlsWithIDs.containsKey(predictedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
 				logger.info("MachineLearningAlgorithm got a hit for pageUrl: \""+ pageUrl + "\"! Resulted (already found before) docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
 				logger.info("re-crossed docUrl found: < " + predictedDocUrl + " >");
+				LoaderAndChecker.reCrossedDocUrls ++;
 				if ( FileUtils.shouldDownloadDocFiles )
 					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(predictedDocUrl), pageDomain, false);
 				else

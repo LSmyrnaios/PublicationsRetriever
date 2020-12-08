@@ -488,6 +488,7 @@ public class HttpConnUtils
 
 				if ( UrlUtils.docUrlsWithIDs.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
 					logger.info("re-crossed docUrl found: < " + targetUrl + " >");
+					LoaderAndChecker.reCrossedDocUrls ++;
 					if ( FileUtils.shouldDownloadDocFiles )
 						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(targetUrl), null, false);
 					else

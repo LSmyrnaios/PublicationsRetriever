@@ -33,6 +33,8 @@ public class LoaderAndChecker
 	public static int numOfIDs = 0;	// The number of IDs existing in the input.
 	public static int connProblematicUrls = 0;	// Urls known to have connectivity problems, such as long conn-times etc.
 	public static int inputDuplicatesNum = 0;
+
+	public static int reCrossedDocUrls = 0;
 	
 	public static int numOfIDsWithoutAcceptableSourceUrl = 0;	// The number of IDs which failed to give an acceptable sourceUrl.
 
@@ -152,6 +154,7 @@ public class LoaderAndChecker
 
 					if ( UrlUtils.docUrlsWithIDs.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
 						logger.info("re-crossed docUrl found: < " + retrievedUrl + " >");
+						LoaderAndChecker.reCrossedDocUrls ++;
 						if ( FileUtils.shouldDownloadDocFiles )
 							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(retrievedUrl), null, false);
 						else
