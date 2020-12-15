@@ -95,7 +95,7 @@ public class UrlTypeChecker
 			return true;
 		}
 		// Avoid known-crawler-sensitive domains, which easily block crawlers.
-		else if ( lowerCaseUrl.contains("europepmc.org") || lowerCaseUrl.contains("ncbi.nlm.nih.gov") ) {
+		else if ( lowerCaseUrl.contains("europepmc.org") ) {
 			loggingMessage = "Discarded after matching to a crawler-sensitive domain.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true);
@@ -142,7 +142,7 @@ public class UrlTypeChecker
 		}
 		// Avoid crawling pages having their DocUrls in larger depth (internalPagesToDocUrls or PreviousOfDocUrls).
 		else if ( lowerCaseUrl.contains("/view/") || lowerCaseUrl.contains("scielosp.org") || lowerCaseUrl.contains("dk.um.si") || lowerCaseUrl.contains("apospublications.com")
-				|| lowerCaseUrl.contains("jorr.org") || lowerCaseUrl.contains("rwth-aachen.de") ) {
+				|| lowerCaseUrl.contains("jorr.org") || lowerCaseUrl.contains("rwth-aachen.de") || lowerCaseUrl.contains("pubmed.ncbi.nlm.nih.gov") ) {
 			loggingMessage = "Discarded after matching to a site having its DocUrls in larger depth.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true);
