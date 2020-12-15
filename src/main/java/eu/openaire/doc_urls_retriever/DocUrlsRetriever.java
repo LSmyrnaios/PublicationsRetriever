@@ -184,7 +184,6 @@ public class DocUrlsRetriever
 		{
 			logger.debug("About " + df.format(UrlTypeChecker.crawlerSensitiveDomains * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.crawlerSensitiveDomains  + " urls) were from known crawler-sensitive domains.");
 			logger.debug("About " + df.format(UrlTypeChecker.javascriptPageUrls * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.javascriptPageUrls + " urls) were from a JavaScript-powered domain, other than the \"sciencedirect.com\", which has dynamic links.");
-			//logger.debug("About " + df.format(UrlTypeChecker.sciencedirectUrls * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.sciencedirectUrls + " urls) were from the \"sciencedirect.com\"-family urls, with dynamic links.");
 			logger.debug("About " + df.format(UrlTypeChecker.elsevierUnwantedUrls * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.elsevierUnwantedUrls + " urls) were from, or reached after redirects, the unwanted domain: \"elsevier.com\", which either doesn't provide docUrls in its docPages, or it redirects to \"sciencedirect.com\", thus being avoided to be crawled.");
 			logger.debug("About " + df.format(UrlTypeChecker.doajResultPageUrls * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.doajResultPageUrls + " urls) were \"doaj.org/toc/\" urls, which are resultPages, thus being avoided to be crawled.");
 			logger.debug("About " + df.format(UrlTypeChecker.pagesWithHtmlDocUrls * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.pagesWithHtmlDocUrls + " urls) were docUrls, but, in HTML, thus being avoided to be crawled.");
