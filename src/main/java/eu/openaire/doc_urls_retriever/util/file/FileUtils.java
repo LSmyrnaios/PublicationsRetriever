@@ -414,10 +414,10 @@ public class FileUtils
 			if ( !hasUnretrievableDocName ) {	// If we retrieved the fileName, go check if it's a duplicate.
 				
 				boolean isDuplicate = false;
-				int curDuplicateNum = 1;
-				
-				if ( numbersOfDuplicateDocFileNames.containsKey(docFileName) ) {	// First check -in O(1)- if it's an already-known duplicate. (also helps to avoid getting "null" in "numbersOfDuplicateDocFileNames.get()")
-					curDuplicateNum += numbersOfDuplicateDocFileNames.get(docFileName);
+				Integer curDuplicateNum = 1;
+
+				if ( (curDuplicateNum = numbersOfDuplicateDocFileNames.get(docFileName)) != null ) {
+					curDuplicateNum += 1;
 					isDuplicate = true;
 				} else if ( docFile.exists() )	// If it's not an already-known duplicate (this is the first duplicate-case for this file), go check if it exists in the fileSystem.
 					isDuplicate = true;
