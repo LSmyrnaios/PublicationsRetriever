@@ -247,7 +247,7 @@ public class PageCrawler
 			return null;	// This DocLink is the only docLink we will ever gonna get from this page. The sourceUrl is logged inside the called method.
 			// If this "DocLink" is a DocUrl, then returning "null" here, will trigger the 'PageCrawler.visit()' method to exit immediately (and normally).
 		} catch ( DocLinkInvalidException dlie ) {
-			logger.warn("An invalid docLink < " + dlie.getMessage() + " > was found for pageUrl: \"" + pageUrl + "\". Search was stopped.");
+			//logger.warn("An invalid docLink < " + dlie.getMessage() + " > was found for pageUrl: \"" + pageUrl + "\". Search was stopped.");	// DEBUG!
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was an invalid docLink. Its contentType is: '" + pageContentType + "'", null, true);
 			handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, true);
 			return null;

@@ -17,6 +17,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -49,7 +50,6 @@ public class HttpConnUtils
 	private static final int maxRedirectsForPageUrls = 7;// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
 	private static final int maxRedirectsForInternalLinks = 2;	// Internal-DOC-Links shouldn't take more than 2 redirects.
 
-    private static final int timesToReturnNoTypeBeforeBlocked = 10;
 	private static final int timesToHaveNoDocNorPageInputBeforeBlocked = 10;
 
 	public static final int maxAllowedContentSize = 1073741824;	// 1Gb ; yes some publications can be huge..
@@ -104,49 +104,24 @@ public class HttpConnUtils
 			if ( mimeType == null ) {
 				contentDisposition = conn.getHeaderField("Content-Disposition");
 				if ( contentDisposition == null ) {
-					String warnMsg = "No ContentType nor ContentDisposition, were able to be retrieved from url: " + finalUrlStr;
-					// Try to detect the content type.
-					if ( conn.getRequestMethod().equals("GET") ) {
-						DetectedContentType detectedContentType = ConnSupportUtils.extractContentTypeFromResponseBody(conn);
-						if ( detectedContentType != null ) {
-							if ( calledForPageUrl && detectedContentType.detectedContentType.equals("html") ) {
-								logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have HTML contentType! Going to visit the page..");
-								mimeType = "text/html";
-								foundDetectedContentType = true;
-								firstHtmlLine = detectedContentType.firstHtmlLine;
-								bufferedReader = detectedContentType.bufferedReader;
-							} else if ( detectedContentType.detectedContentType.equals("pdf") ) {
-								logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have PDF contentType!");
-								mimeType = "application/pdf";
-								calledForPossibleDocUrl = true;	// Important for the re-connection.
-								foundDetectedContentType = true;
-							} else if ( detectedContentType.detectedContentType.equals("undefined") )
-								logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have UNDEFINED contentType..");
-							else
-								logger.warn("Unspecified \"detectedContentType\":" + detectedContentType.detectedContentType);
-						}
-						else
-							logger.warn("Could not retrieve the response-body for url: " + finalUrlStr);
-					}
-					else
-						warnMsg += "\nThe initial connection was made with the \"HTTP-HEAD\" method, so there is no response-body to use to detect the content-type.";
-
-					if ( !foundDetectedContentType ) {
-						if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsReturnedNoType, domainStr, HttpConnUtils.timesToReturnNoTypeBeforeBlocked) ) {
-							logger.warn(warnMsg);
-							logger.warn("Domain: \"" + domainStr + "\" was blocked after returning no Type-info more than " + HttpConnUtils.timesToReturnNoTypeBeforeBlocked + " times.");
-							throw new DomainBlockedException();
-						}
-						else
-							throw new RuntimeException(warnMsg);	// We can't retrieve any clue. This is not desired. The "warnMsg" will be printed by the caller method.
-					}
+					ArrayList<Object> detectionList = ConnSupportUtils.detectContentTypeFromResponseBody(finalUrlStr, domainStr, conn, calledForPageUrl);
+					mimeType = (String)detectionList.get(0);
+					foundDetectedContentType = (boolean)detectionList.get(1);
+					firstHtmlLine = (String)detectionList.get(2);
+					bufferedReader = (BufferedReader) detectionList.get(3);
+					calledForPossibleDocUrl = (boolean) detectionList.get(4);
+					//logger.debug(mimeType); logger.debug(String.valueOf(foundDetectedContentType)); logger.debug(firstHtmlLine); logger.debug(String.valueOf(bufferedReader)); logger.debug(String.valueOf(calledForPossibleDocUrl));	// DEBUG!
 				}
 			}
+
+			String lowerCaseMimeType = mimeType;
+			if ( mimeType != null && !foundDetectedContentType )	// It may have gained a value after auto-detection, so we check again. If it was auto-detected, then it's already in lowercase.
+				lowerCaseMimeType = mimeType.toLowerCase();	// I found the rare case of "Application/pdf", so we need lowercase as any mimeType could have either uppercase or lowercase version..
 
 			//logger.debug("Url: " + finalUrlStr);	// DEBUG!
 			//logger.debug("MimeType: " + mimeType);	// DEBUG!
 
-			if ( ConnSupportUtils.hasDocMimeType(finalUrlStr, mimeType, contentDisposition, conn) ) {
+			if ( ConnSupportUtils.hasDocMimeType(finalUrlStr, lowerCaseMimeType, contentDisposition, conn) ) {
 				logger.info("docUrl found: < " + finalUrlStr + " >");
 				String fullPathFileName = "";
 				if ( FileUtils.shouldDownloadDocFiles ) {
@@ -176,13 +151,13 @@ public class HttpConnUtils
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to a non-docUrl with 'viewcontent.cgi'.", null, true);
 					return false;
 				}
-				else if ( (mimeType != null) && ((mimeType.contains("htm") || mimeType.contains("text"))) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
+				else if ( (lowerCaseMimeType != null) && ((lowerCaseMimeType.contains("htm") || lowerCaseMimeType.contains("text"))) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
 					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn, firstHtmlLine, bufferedReader);
 				else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" with mimeType: \"" + mimeType + "\" will not be visited!");
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after not matching to a docUrl nor to an htm/text-like page.", null, true);
 					if ( ConnSupportUtils.countAndBlockDomainAfterTimes(blacklistedDomains, timesDomainsHadInputNotBeingDocNorPage, domainStr, HttpConnUtils.timesToHaveNoDocNorPageInputBeforeBlocked) )
-						logger.warn("Domain: \"" + domainStr + "\" was blocked after having no Doc nor Pages in the input more than " + HttpConnUtils.timesToReturnNoTypeBeforeBlocked + " times.");
+						logger.warn("Domain: \"" + domainStr + "\" was blocked after having no Doc nor Pages in the input more than " + HttpConnUtils.timesToHaveNoDocNorPageInputBeforeBlocked + " times.");
 				}	// We log the quadruple here, as there is connection-kind-of problem here.. it's just us considering it an unwanted case. We don't throw "DomainBlockedException()", as we don't handle it for inputUrls (it would also log the quadruple twice with diff comments).
 			}
 		} catch (AlreadyFoundDocUrlException afdue) {	// An already-found docUrl was discovered during redirections.
@@ -252,7 +227,6 @@ public class HttpConnUtils
 	public static HttpURLConnection openHttpConnection(String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
 									throws RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
     {
-    	URL url = null;
 		HttpURLConnection conn = null;
 		int responseCode = 0;
 
@@ -292,7 +266,7 @@ public class HttpConnUtils
 				}
 			}
 
-			url = new URL(resourceURL);
+			URL url = new URL(resourceURL);
 
 			conn = (HttpURLConnection) url.openConnection();
 
@@ -471,13 +445,13 @@ public class HttpConnUtils
 				String lowerCaseTargetUrl = targetUrl.toLowerCase();
 				if ( (calledForPageUrl && UrlTypeChecker.shouldNotAcceptPageUrl(targetUrl, lowerCaseTargetUrl))	// Redirecting a pageUrl.
 						|| (!calledForPageUrl && UrlTypeChecker.shouldNotAcceptInternalLink(targetUrl, lowerCaseTargetUrl)) )	// Redirecting an internalPageLink.
-					throw new RuntimeException("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + targetUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code.");
+					throw new RuntimeException("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + targetUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code, in redirection-number: " + curRedirectsNum);
 				else if ( lowerCaseTargetUrl.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
 					ConnSupportUtils.blockSharedSiteSessionDomain(targetUrl);
 					throw new DomainBlockedException();
 				}
 				else if ( calledForPageUrl && (lowerCaseTargetUrl.contains("elsevier.com") && !lowerCaseTargetUrl.contains("linkinghub")) ) {	// Avoid pageUrls redirecting to plain "elsevier.com"  ("(www|journals).elsevier.com", coming mostly from "doi.org"-urls).
-					throw new RuntimeException("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + targetUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code.");
+					throw new RuntimeException("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + targetUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code, in redirection-number: " + curRedirectsNum);
 				}
 
 				String tempTargetUrl = targetUrl;

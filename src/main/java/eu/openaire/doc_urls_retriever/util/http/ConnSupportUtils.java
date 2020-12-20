@@ -8,6 +8,7 @@ import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
 import eu.openaire.doc_urls_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,8 +34,11 @@ public class ConnSupportUtils
 	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("(?:\\((?:')?)?([\\w]+/[\\w+\\-.]+).*");
 
 	public static final Pattern POSSIBLE_DOC_MIME_TYPE = Pattern.compile("(?:(?:application|binary)/(?:(?:x-)?octet-stream|save|force-download))|unknown");	// We don't take it for granted.. if a match is found, then we check for the "pdf" keyword in the "contentDisposition" (if it exists) or in the url.
+	// There are special cases. (see: "https://kb.iu.edu/d/agtj" for "octet" info.
+	// and an example for "unknown" : "http://imagebank.osa.org/getExport.xqy?img=OG0kcC5vZS0yMy0xNy0yMjE0OS1nMDAy&xtype=pdf&article=oe-23-17-22149-g002")
 
 	public static final Pattern HTML_STRING_MATCH = Pattern.compile("^(?:[\\s]*<(?:!doctype\\s)?html).*");
+	public static final Pattern RESPONSE_BODY_UNWANTED_MATCH = Pattern.compile("^(?:[\\s]+|(?:[\\s]*<(?:\\?xml|!--)).*)");	// TODO - Avoid matching to "  <?xml>sddfs<html" (as some times the whole page-code is a single line)
 
 	public static final HashMap<String, Integer> timesDomainsReturned5XX = new HashMap<String, Integer>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
 	public static final HashMap<String, Integer> timesDomainsHadTimeoutEx = new HashMap<String, Integer>();
@@ -47,11 +51,14 @@ public class ConnSupportUtils
 
 	private static final int timesToHave5XXerrorCodeBeforeDomainBlocked = 10;
 	private static final int timesToHaveTimeoutExBeforeDomainBlocked = 25;
-	
+
+	private static final int timesToReturnNoTypeBeforeBlocked = 10;
+
 	public static final HashSet<String> knownDocMimeTypes = new HashSet<String>();
 	static {
 		logger.debug("Setting up the official document mime types. Currently there is support only for pdf documents.");
 		knownDocMimeTypes.add("application/pdf");
+		knownDocMimeTypes.add("application/x-pdf");
 		knownDocMimeTypes.add("image/pdf");
 	}
 	
@@ -59,26 +66,26 @@ public class ConnSupportUtils
 	/**
 	 * This method takes a url and its mimeType and checks if it's a document mimeType or not.
 	 * @param urlStr
-	 * @param mimeType
+	 * @param mimeType in lowercase
 	 * @param contentDisposition
 	 * @return boolean
 	 */
 	public static boolean hasDocMimeType(String urlStr, String mimeType, String contentDisposition, HttpURLConnection conn)
 	{
 		if ( mimeType != null )
-		{
-			if ( mimeType.contains("System.IO.FileInfo") ) {	// Check this out: "http://www.esocialsciences.org/Download/repecDownload.aspx?fname=Document110112009530.6423303.pdf&fcategory=Articles&AId=2279&fref=repec", ιt has: "System.IO.FileInfo".
+		{	// The "mimeType" here is in lowercase
+			if ( mimeType.contains("system.io.fileinfo") ) {	// Check this out: "http://www.esocialsciences.org/Download/repecDownload.aspx?fname=Document110112009530.6423303.pdf&fcategory=Articles&AId=2279&fref=repec", ιt has: "System.IO.FileInfo".
 				// In this case, we want first to try the "Content-Disposition", as it's more trustworthy. If that's not available, use the urlStr as the last resort.
 				if ( conn != null )	// Just to be sure we avoid an NPE.
 					contentDisposition = conn.getHeaderField("Content-Disposition");
-				// The "contentDisposition" will be definitely "null", since "mimeType != null" and so, the "contentDisposition" will not have been retrieved.
+				// The "contentDisposition" will be definitely "null", since "mimeType != null" and so, the "contentDisposition" will not have been retrieved by the caller method.
 				
 				if ( (contentDisposition != null) && !contentDisposition.equals("attachment") )
 					return	contentDisposition.contains("pdf");	// TODO - add more types as needed. Check: "http://www.esocialsciences.org/Download/repecDownload.aspx?qs=Uqn/rN48N8UOPcbSXUd2VFI+dpOD3MDPRfIL8B3DH+6L18eo/yEvpYEkgi9upp2t8kGzrjsWQHUl44vSn/l7Uc1SILR5pVtxv8VYECXSc8pKLF6QJn6MioA5dafPj/8GshHBvLyCex2df4aviMvImCZpwMHvKoPiO+4B7yHRb97u1IHg45E+Z6ai0Z/0vacWHoCsNT9O4FNZKMsSzen2Cw=="
 				else
 					return	urlStr.toLowerCase().contains("pdf");
 			}
-			
+
 			String plainMimeType = mimeType;	// Make sure we don't cause any NPE later on..
 			if ( mimeType.contains("charset") || mimeType.contains("name")
 					|| mimeType.startsWith("(", 0) )	// See: "https://www.mamsie.bbk.ac.uk/articles/10.16995/sim.138/galley/134/download/" -> "Content-Type: ('application/pdf', none)"
@@ -89,22 +96,23 @@ public class ConnSupportUtils
 					return	urlStr.toLowerCase().contains("pdf");
 				}
 			}
-			
+
+			// Cleanup the mimeType further, e.g.: < application/pdf' > (with the < ' > in the end): http://www.ccsenet.org/journal/index.php/ijb/article/download/48805/26704
+			plainMimeType = StringUtils.replace(plainMimeType, "'", "", -1);
+			plainMimeType = StringUtils.replace(plainMimeType, "\"", "", -1);
+
 			if ( knownDocMimeTypes.contains(plainMimeType) )
 				return true;
 			else if ( POSSIBLE_DOC_MIME_TYPE.matcher(plainMimeType).matches() )
 			{
 				contentDisposition = conn.getHeaderField("Content-Disposition");
-				if ( (contentDisposition != null) && !contentDisposition.equals("attachment") )
+				if ( (contentDisposition != null) && !contentDisposition.equals("attachment") )	// It may be "attachment" but also be a pdf.. but we have to check if the "pdf" exists inside the url-string.
 					return	contentDisposition.contains("pdf");
 				else
 					return	urlStr.toLowerCase().contains("pdf");
-			}
+			}	// TODO - When we will accept more docTypes, match it also against other docTypes, not just "pdf".
 			else
 				return false;
-			// This is a special case. (see: "https://kb.iu.edu/d/agtj" for "octet" info.
-			// and an example for "unknown" : "http://imagebank.osa.org/getExport.xqy?img=OG0kcC5vZS0yMy0xNy0yMjE0OS1nMDAy&xtype=pdf&article=oe-23-17-22149-g002")
-			// TODO - When we will accept more docTypes, match it also against other docTypes, not just "pdf".
 		}
 		else if ( (contentDisposition != null) && !contentDisposition.equals("attachment") ) {	// If the mimeType was not retrieved, then try the "Content Disposition".
 				// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
@@ -144,7 +152,6 @@ public class ConnSupportUtils
 			logger.warn("Unexpected MIME_TYPE_FILTER's (" + mimeMatcher.toString() + ") mismatch for mimeType: \"" + mimeType + "\"");
 			return null;
 		}
-		
 		return plainMimeType;
 	}
 	
@@ -269,7 +276,6 @@ public class ConnSupportUtils
 				throw new DomainBlockedException();	// Throw this even if there was an error preventing the domain from getting blocked.
 			}
 		}
-
 		return errorLogMessage;
 	}
 	
@@ -291,7 +297,6 @@ public class ConnSupportUtils
 		if ( countAndBlockPathAfterTimes(domainsMultimapWithPaths403BlackListed, timesPathsReturned403, pathStr, domainStr, timesToHave403errorCodeBeforePathBlocked) )
 		{
 			logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code.");
-			
 			// Block the whole domain if it has more than a certain number of blocked paths.
 			if ( domainsMultimapWithPaths403BlackListed.get(domainStr).size() > numberOf403BlockedPathsBeforeDomainBlocked )
 			{
@@ -311,8 +316,7 @@ public class ConnSupportUtils
 			pathsWithTimes.remove(pathStr);	// No need to keep the count for a blocked path.
 			return true;
 		}
-		else
-			return false;
+		return false;
 	}
 	
 	
@@ -374,8 +378,8 @@ public class ConnSupportUtils
 			blackList.add(domainStr);    // Block this domain.
 			domainsWithTimes.remove(domainStr);	// Remove counting-data.
 			return true;	// This domain was blocked.
-		} else
-			return false;	// It wasn't blocked.
+		}
+		return false;	// It wasn't blocked.
 	}
 	
 	
@@ -436,6 +440,71 @@ public class ConnSupportUtils
 
 
 	/**
+	 *
+	 * @param finalUrlStr
+	 * @param domainStr
+	 * @param conn
+	 * @param calledForPageUrl
+	 * @return
+	 * @throws DomainBlockedException
+	 * @throws RuntimeException
+	 */
+	public static ArrayList<Object> detectContentTypeFromResponseBody(String finalUrlStr, String domainStr, HttpURLConnection conn, boolean calledForPageUrl)
+			throws DomainBlockedException, RuntimeException
+	{
+		String warnMsg = "No ContentType nor ContentDisposition, were able to be retrieved from url: " + finalUrlStr;
+		String mimeType = null;
+		boolean foundDetectedContentType = false;
+		String firstHtmlLine = null;
+		BufferedReader bufferedReader = null;
+		boolean calledForPossibleDocUrl = false;
+
+		// Try to detect the content type.
+		if ( conn.getRequestMethod().equals("GET") ) {
+			DetectedContentType detectedContentType = ConnSupportUtils.extractContentTypeFromResponseBody(conn);
+			if ( detectedContentType != null ) {
+				if ( calledForPageUrl && detectedContentType.detectedContentType.equals("html") ) {
+					logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have HTML contentType! Going to visit the page.");
+					mimeType = "text/html";
+					foundDetectedContentType = true;
+					firstHtmlLine = detectedContentType.firstHtmlLine;
+					bufferedReader = detectedContentType.bufferedReader;
+				} else if ( detectedContentType.detectedContentType.equals("pdf") ) {
+					logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have PDF contentType!");
+					mimeType = "application/pdf";
+					calledForPossibleDocUrl = true;	// Important for the re-connection.
+					foundDetectedContentType = true;
+				} else if ( detectedContentType.detectedContentType.equals("undefined") )
+					logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have UNDEFINED contentType.");
+				else
+					warnMsg += "\nUnspecified \"detectedContentType\":" + detectedContentType.detectedContentType;
+			}
+			else	//  ( detectedContentType == null )
+				warnMsg += "\nCould not retrieve the response-body for url: " + finalUrlStr;
+		}
+		else	// ( connection-method == "HEAD" )
+			warnMsg += "\nThe initial connection was made with the \"HTTP-HEAD\" method, so there is no response-body to use to detect the content-type.";
+
+		if ( !foundDetectedContentType ) {
+			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, HttpConnUtils.timesDomainsReturnedNoType, domainStr, timesToReturnNoTypeBeforeBlocked) ) {
+				logger.warn(warnMsg);
+				logger.warn("Domain: \"" + domainStr + "\" was blocked after returning no Type-info more than " + timesToReturnNoTypeBeforeBlocked + " times.");
+				throw new DomainBlockedException();
+			} else
+				throw new RuntimeException(warnMsg);	// We can't retrieve any clue. This is not desired. The "warnMsg" will be printed by the caller method.
+		}
+
+		ArrayList<Object> detectionList = new ArrayList<>(5);
+		detectionList.add(0, mimeType);
+		detectionList.add(1, foundDetectedContentType);
+		detectionList.add(2, firstHtmlLine);
+		detectionList.add(3, bufferedReader);
+		detectionList.add(4, calledForPossibleDocUrl);
+		return detectionList;
+	}
+
+
+	/**
 	 * This method examines the first line of the Response-body and returns the content-type.
 	 * TODO - The only "problem" is that after the "inputStream" closes, it cannot be opened again. So, we cannot parse the HTML afterwards nor download the pdf.
 	 * TODO - I guess it's fine to just re-connect but we should search for a way to reset the stream without the overhead of re-connecting.. (keeping the first line and using it later is the solution I use, but only for the html-type, since the pdf-download reads bytes and not lines)
@@ -452,28 +521,33 @@ public class ConnSupportUtils
 
 		try {
 			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-
 			String inputLine;
 
 			// Skip empty lines in the beginning of the HTML-code
-			while ( (inputLine = br.readLine()) != null && inputLine.isEmpty())
-			{ /* No action inside */ }
+			while ( ((inputLine = br.readLine()) != null) && (inputLine.isEmpty() || inputLine.length() == 1 || RESPONSE_BODY_UNWANTED_MATCH.matcher(inputLine).matches()) )	// https://repositorio.uam.es/handle/10486/687988
+			{	/* No action inside */	}	// https://bv.fapesp.br/pt/publicacao/96198/homogeneous-gaussian-profile-p-type-emitters-updated-param/		http://naosite.lb.nagasaki-u.ac.jp/dspace/handle/10069/29792
+
+			// For DEBUGing..
+			/*while ( ((inputLine = br.readLine()) != null) && !(inputLine.isEmpty() || inputLine.length() == 1 || RESPONSE_BODY_UNWANTED_MATCH.matcher(inputLine).matches()) )
+			{ logger.debug(inputLine + "\nLength of line: " + inputLine.length());
+				logger.debug(Arrays.toString(inputLine.chars().toArray()));
+			}*/
 
 			//logger.debug("First line of RequestBody: " + inputLine);	// DEBUG!
 			if ( inputLine == null )
 				return null;
 
-			String lowercaseInputLine = inputLine.toLowerCase();
-			if ( HTML_STRING_MATCH.matcher(lowercaseInputLine).matches() )
+			String lowerCaseInputLine = inputLine.toLowerCase();
+			//logger.debug(lowerCaseInputLine + "\nLength of line: "  + lowerCaseInputLine.length());	// DEBUG!
+			if ( HTML_STRING_MATCH.matcher(lowerCaseInputLine).matches() )
 				return new DetectedContentType("html", inputLine, br);
 			else {
 				br.close();	// We close the stream here, since if we got a pdf we should reconnect in order to get the very first bytes (we don't read "lines" when downloading PDFs).
-				if ( lowercaseInputLine.startsWith("%pdf-", 0) )
+				if ( lowerCaseInputLine.startsWith("%pdf-", 0) )
 					return new DetectedContentType("pdf", null, null);	// For PDFs we just going to re-connect in order to download the, since we read plain bytes for them and not String-lines, so we re-connect just to be sure we don't corrupt them.
 				else
 					return new DetectedContentType("undefined", inputLine, null);
 			}
-
 		} catch ( IOException ioe ) {
 			logger.error("IOException when retrieving the HTML-code: " + ioe.getMessage());
 			return null;
