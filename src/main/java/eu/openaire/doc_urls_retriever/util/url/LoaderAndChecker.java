@@ -89,8 +89,8 @@ public class LoaderAndChecker
 				if ( DOC_URL_FILTER.matcher(retrievedUrl.toLowerCase()).matches() )
 					isPossibleDocUrl = true;
 
-				String urlToCheck;
-				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null ) {
+				String urlToCheck= retrievedUrl;
+				if ( !urlToCheck.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null ) {
 					logger.warn("Could not canonicalize url: " + retrievedUrl);
 					UrlUtils.logQuadruple(null, retrievedUrl, null, "unreachable", "Discarded at loading time, due to canonicalization's problems.", null, true);
 					LoaderAndChecker.connProblematicUrls ++;
@@ -211,7 +211,7 @@ public class LoaderAndChecker
 					handleLogOfRemainingUrls(urlToCheck, retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId);
 
 				String sourceUrl = urlToCheck;	// Hold it here for the logging-messages.
-				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
+				if ( !sourceUrl.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
 					logger.warn("Could not canonicalize url: " + sourceUrl);
 					UrlUtils.logQuadruple(retrievedId, sourceUrl, null, "unreachable", "Discarded at loading time, due to canonicalization's problems.", null, true);
 					LoaderAndChecker.connProblematicUrls ++;

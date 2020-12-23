@@ -94,15 +94,6 @@ public class UrlTypeChecker
 				elsevierUnwantedUrls ++;
 			return true;
 		}
-		// Avoid known-crawler-sensitive domains, which easily block crawlers.
-		else if ( lowerCaseUrl.contains("europepmc.org") ) {
-			loggingMessage = "Discarded after matching to a crawler-sensitive domain.";
-			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true);
-			if ( !LoaderAndChecker.useIdUrlPairs )
-				crawlerSensitiveDomains ++;
-			return true;
-		}
 		// Avoid resultPages (containing multiple publication-results).
 		else if ( lowerCaseUrl.contains("doaj.org/toc/") ) {
 			loggingMessage = "Discarded after matching to the Results-directory: 'doaj.org/toc/'.";

@@ -153,6 +153,9 @@ public class HttpConnUtils
 				}
 				else if ( (lowerCaseMimeType != null) && ((lowerCaseMimeType.contains("htm") || lowerCaseMimeType.contains("text"))) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
 					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn, firstHtmlLine, bufferedReader);
+				else if ( finalUrlStr.contains("academic.microsoft.com/api/") ) {	// JSON content.
+					SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson(urlId, sourceUrl, finalUrlStr, conn);
+				}
 				else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" with mimeType: \"" + mimeType + "\" will not be visited!");
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after not matching to a docUrl nor to an htm/text-like page.", null, true);
@@ -257,9 +260,19 @@ public class HttpConnUtils
 			else if ( !calledForPossibleDocUrl ) {
 				try {
 					String scienceDirectPageUrl = null;
+					String europepmcDocUrl = null;
+					String academicMicrosoftPageUrl = null;
 					if ( (scienceDirectPageUrl = SpecialUrlsHandler.checkAndGetScienceDirectUrl(resourceURL)) != null ) {
 						//logger.debug("ScienceDirect-PageURL to try: " + scienceDirectPageUrl);	// DEBUG!
 						resourceURL = scienceDirectPageUrl;
+					}
+					else if ( (europepmcDocUrl = SpecialUrlsHandler.checkAndGetEuropepmcDocUrl(resourceURL)) != null ) {
+						//logger.debug("Europepmc-PageURL: " + resourceURL + " to possible-docUrl: " + europepmcDocUrl);	// DEBUG!
+						resourceURL = europepmcDocUrl;
+					}
+					else if ( (academicMicrosoftPageUrl = SpecialUrlsHandler.checkAndGetAcademicMicrosoftPageUrl(resourceURL)) != null ){
+						//logger.debug("AcademicMicrosoft-PageURL: " + resourceURL + " to api-entity-pageUrl: " + academicMicrosoftPageUrl);	// DEBUG!
+						resourceURL = academicMicrosoftPageUrl;
 					}
 				} catch ( FailedToProcessScienceDirectException sdhe ) {
 					throw new RuntimeException("Problem when handling the \"ScienceDirect\"-family-url: " + resourceURL);
@@ -455,7 +468,7 @@ public class HttpConnUtils
 				}
 
 				String tempTargetUrl = targetUrl;
-				if ( (targetUrl = URLCanonicalizer.getCanonicalURL(targetUrl, null, StandardCharsets.UTF_8)) == null )
+				if ( !targetUrl.contains("#/") && (targetUrl = URLCanonicalizer.getCanonicalURL(targetUrl, null, StandardCharsets.UTF_8)) == null )
 					throw new RuntimeException("Could not canonicalize target url: " + tempTargetUrl);	// Don't let it continue.
 
 				//ConnSupportUtils.printRedirectDebugInfo(conn, location, targetUrl, curRedirectsNum);	// throws IOException

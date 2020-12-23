@@ -132,7 +132,7 @@ public class UrlChecker {
 		for ( String url : urlList )
 		{
 			String urlToCheck = url;	// Use an extra String or it cannot be printed in the error-logging-message as it will be null.
-			if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(url, null, StandardCharsets.UTF_8)) == null ) {
+			if ( !urlToCheck.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(url, null, StandardCharsets.UTF_8)) == null ) {
 				logger.warn("Could not canonicalize url: " + url);
 				continue;
 			}
