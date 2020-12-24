@@ -43,6 +43,8 @@ public class PageCrawler
 
 	public static int contentProblematicUrls = 0;
 
+	private static final int MAX_REMAINING_INTERNAL_LINKS_TO_CHECK = 10;	// The < 10 > is the optimal value, figured out after tests.
+
 
 	public static void visit(String urlId, String sourceUrl, String pageUrl, String pageContentType, HttpURLConnection conn, String firstHTMLlineFromDetectedContentType, BufferedReader bufferedReader)
 	{
@@ -161,6 +163,8 @@ public class PageCrawler
 
 		// If we reached here, it means that we couldn't find a docUrl the quick way.. so we have to check some (we exclude lots of them) of the internal links one by one.
 
+		int remainingUrlsCounter = 0;
+
 		for ( String currentLink : remainingLinks )	// Here we don't re-check already-checked links, as this is a new list. All the links here are full-canonicalized-urls.
 		{
 			// Make sure we avoid connecting to different domains to save time. We allow to check different domains only after matching to possible-urls in the previous fast-loop.
@@ -175,6 +179,11 @@ public class PageCrawler
 				//logger.debug("Avoided link: " + currentLink );
 				UrlUtils.duplicateUrls.add(currentLink);
 				continue;
+			}
+
+			if ( (++remainingUrlsCounter) > MAX_REMAINING_INTERNAL_LINKS_TO_CHECK ) {	// The counter is incremented only on "wanted" links, so no need to pre-clean the "remainingLinks"-set.
+				logger.warn("The maximum limit (" + MAX_REMAINING_INTERNAL_LINKS_TO_CHECK + ") of remaining links to be checked was reached for pageUrl: \"" + pageUrl + "\"");
+				break;	// It will reach the end of this function, will call "handlePageWithNoDocUrls()" and then return.
 			}
 
 			//logger.debug("InternalLink to connect with: " + currentLink);	// DEBUG!
