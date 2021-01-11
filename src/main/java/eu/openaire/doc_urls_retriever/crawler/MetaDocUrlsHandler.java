@@ -19,10 +19,10 @@ public class MetaDocUrlsHandler {
     private static final Logger logger = LoggerFactory.getLogger(MetaDocUrlsHandler.class);
 
     // Order-independent META_DOC_URL-regex.
-    // (?:<meta(?:[\\s]*name=\"(?:.*citation_pdf|eprints.document)_url\"[\\s]*content=\"(http[\\w/.,\\-_%&;:~()\\[\\]?=]+)(?:\"))|(?:[\\s]*content=\"(http[\\w/.,\\-_%&;:~()\\[\\]?=]+)(?:\")[\\s]*name=\"(?:.*citation_pdf|eprints.document)_url\"))(?:[\\s]*(?:/)?>)
+    // (?:<meta(?:(?:[^<]*name=\"(?:.*citation_pdf|eprints.document)_url\"[^<]*content=\"(http[^\"]+)(?:\"))|(?:[^<]*content=\"(http[^\"]+)(?:\")[^<]*name=\"(?:.*citation_pdf|eprints.document)_url\"))(?:[^>]*(?:/)?>)
     private static final String metaName = "name=\"(?:.*citation_pdf|eprints.document)_url\"";
-    private static final String metaContent = "content=\"(http[\\w/.,\\-_%&;:~()\\[\\]?=]+)\"";
-    public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta(?:[\\s]*" + metaName + "[\\s]*" + metaContent + ")|(?:[\\s]*" + metaContent + "[\\s]*" + metaName + ")(?:[\\s]*(?:/)?>))");
+    private static final String metaContent = "content=\"(http[^\"]+)\"";
+    public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta(?:(?:[^<]*" + metaName + "[^<]*" + metaContent + ")|(?:[^<]*" + metaContent + "[^<]*" + metaName + "))(?:[^>]*(?:/)?>))");
 
     public static final Pattern COMMON_UNSUPPORTED_META_DOC_URL_EXTENSIONS = Pattern.compile("\".+\\.(?:zip|rar|apk|jpg)(?:\\?.+)?$");
 
@@ -78,7 +78,7 @@ public class MetaDocUrlsHandler {
             logger.debug("The retrieved metaDocUrl ( " + metaDocUrl + " ) is pointing to an unsupported file.");
             UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was unsupported.", null, true);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
             PageCrawler.contentProblematicUrls ++;
-            return true;    // It was found and handled.
+            return true;    // It was found and handled. Do not continue crawling as we wont find any docUrl..
         }
 
         String tempMetaDocUrl = metaDocUrl;
@@ -102,23 +102,19 @@ public class MetaDocUrlsHandler {
 
         // Connect to it directly.
         try {
-            if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, pageDomain, false, true) ) {    // On success, we log the docUrl inside this method.
-                logger.warn("The retrieved metaDocUrl was not a docUrl (unexpected): " + metaDocUrl);
-                UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'MetaDocUrlsHandler.visit()' method, as the retrieved metaDocUrl was not a docUrl.", null, true);
-                PageCrawler.contentProblematicUrls ++;  // If the above failed, then the page is comes from failed.
-            }
-            else
+            if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, pageDomain, false, true) ) {    // On success, we log the docUrl inside this method.
                 numOfMetaDocUrlsFound ++;
+                return true;    // It should be the docUrl and it was handled.. so we don't continue checking the internalLink even if this wasn't an actual docUrl.
+            }
 
-            return true;    // It should be the docUrl and it was handled.. so we don't continue checking the internalLink even if this wasn't an actual docUrl.
+            logger.warn("The retrieved metaDocUrl was not a docUrl (unexpected): " + metaDocUrl);
+            return false;   // Continue crawling the page..
 
         } catch (Exception e) {
             logger.debug("The MetaDocUrl < " + metaDocUrl + " > had connectivity problems!");
             if (e instanceof RuntimeException)
                 ConnSupportUtils.printEmbeddedExceptionMessage(e, metaDocUrl);
-            UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem with the metaTag-url.", null, true);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
-            PageCrawler.contentProblematicUrls ++;  // The content (metaDocUrl) of the pageUrl failed.
-            return true;
+            return false;   // Continue crawling the page..
         }
     }
 
