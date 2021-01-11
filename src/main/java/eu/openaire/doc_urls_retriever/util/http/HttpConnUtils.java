@@ -151,7 +151,7 @@ public class HttpConnUtils
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to a non-docUrl with 'viewcontent.cgi'.", null, true);
 					return false;
 				}
-				else if ( (lowerCaseMimeType != null) && ((lowerCaseMimeType.contains("htm") || lowerCaseMimeType.contains("text"))) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
+				else if ( (lowerCaseMimeType != null) && ((lowerCaseMimeType.contains("htm") || (lowerCaseMimeType.contains("text") && !lowerCaseMimeType.contains("xml")))) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
 					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn, firstHtmlLine, bufferedReader);
 				else if ( finalUrlStr.contains("academic.microsoft.com/api/") ) {	// JSON content.
 					SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson(urlId, sourceUrl, finalUrlStr, conn);
@@ -197,6 +197,7 @@ public class HttpConnUtils
 										throws AlreadyFoundDocUrlException, RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException, IOException
 	{
 		HttpURLConnection conn = openHttpConnection(resourceURL, domainStr, calledForPageUrl, calledForPossibleDocUrl);
+		//ConnSupportUtils.printConnectionDebugInfo(conn, false);	// DEBUG!
 
 		int responseCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP response), inside openHttpConnection().
 		if ( (responseCode >= 300) && (responseCode <= 399) ) {   // If we have redirections..
@@ -207,9 +208,6 @@ public class HttpConnUtils
 			throw new RuntimeException(errorLogMessage);	// This is only thrown if a "DomainBlockedException" is caught.
 		}
 		// Else it's an HTTP 2XX SUCCESS CODE.
-
-		//ConnSupportUtils.printConnectionDebugInfo(conn, false);	// DEBUG!
-
 		return conn;
 	}
 

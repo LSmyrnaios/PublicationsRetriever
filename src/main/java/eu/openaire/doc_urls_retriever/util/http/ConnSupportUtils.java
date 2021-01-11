@@ -4,8 +4,8 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
-import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
 import eu.openaire.doc_urls_retriever.exceptions.DocLinkFoundException;
+import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -39,6 +39,11 @@ public class ConnSupportUtils
 
 	public static final Pattern HTML_STRING_MATCH = Pattern.compile("^(?:[\\s]*<(?:!doctype\\s)?html).*");
 	public static final Pattern RESPONSE_BODY_UNWANTED_MATCH = Pattern.compile("^(?:[\\s]+|(?:[\\s]*<(?:\\?xml|!--)).*)");	// TODO - Avoid matching to "  <?xml>sddfs<html" (as some times the whole page-code is a single line)
+
+	public static final Pattern SPACE_ONLY_LINE = Pattern.compile("^[\\s]+$");	// For full-HTML-extraction.
+
+	// Note: We cannot remove all the spaces from the HTML, as the JSOUP fails to extract the internal links. If a custom-approach will be followed, then we can take the space-removal into account.
+	//public static final Pattern REMOVE_SPACES = Pattern.compile("([\\s]+)");
 
 	public static final HashMap<String, Integer> timesDomainsReturned5XX = new HashMap<String, Integer>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
 	public static final HashMap<String, Integer> timesDomainsHadTimeoutEx = new HashMap<String, Integer>();
@@ -417,10 +422,12 @@ public class ConnSupportUtils
 		try (BufferedReader br = (bufferedReader != null ? bufferedReader : new BufferedReader(new InputStreamReader(conn.getInputStream()))) )	// Try-with-resources
 		{
 			String inputLine;
-			while ( (inputLine = br.readLine()) != null ) {
-				htmlStrB.append(inputLine);
-//				if ( !inputLine.isEmpty() )
-//					logger.debug(inputLine);	// DEBUG!
+			while ( (inputLine = br.readLine()) != null )
+			{
+				if ( !inputLine.isEmpty() && (inputLine.length() != 1) && !SPACE_ONLY_LINE.matcher(inputLine).matches() ) {	// We check for (inputLine.length() != 1), as some lines contain an unrecognized byte.
+					htmlStrB.append(inputLine);
+					//logger.debug(inputLine);	// DEBUG!
+				}
 			}
 			//logger.debug("Chars in html: " + String.valueOf(htmlStrB.length()));	// DEBUG!
 
@@ -524,7 +531,7 @@ public class ConnSupportUtils
 			String inputLine;
 
 			// Skip empty lines in the beginning of the HTML-code
-			while ( ((inputLine = br.readLine()) != null) && (inputLine.isEmpty() || inputLine.length() == 1 || RESPONSE_BODY_UNWANTED_MATCH.matcher(inputLine).matches()) )	// https://repositorio.uam.es/handle/10486/687988
+			while ( ((inputLine = br.readLine()) != null) && (inputLine.isEmpty() || (inputLine.length() == 1) || RESPONSE_BODY_UNWANTED_MATCH.matcher(inputLine).matches()) )	// https://repositorio.uam.es/handle/10486/687988
 			{	/* No action inside */	}	// https://bv.fapesp.br/pt/publicacao/96198/homogeneous-gaussian-profile-p-type-emitters-updated-param/		http://naosite.lb.nagasaki-u.ac.jp/dspace/handle/10069/29792
 
 			// For DEBUGing..
@@ -647,7 +654,7 @@ public class ConnSupportUtils
 		logger.debug("Connection debug info:\nURL: < {} >,\nContentType: \"{}\". ContentDisposition: \"{}\", HTTP-method: \"{}\"",
 				conn.getURL().toString(), conn.getContentType(), conn.getHeaderField("Content-Disposition"), conn.getRequestMethod());
 		if ( shouldShowFullHeaders ) {
-			StringBuilder sb = new StringBuilder(300).append("Headers:\n");
+			StringBuilder sb = new StringBuilder(1000).append("Headers:\n");
 			Map<String, List<String>> headers = conn.getHeaderFields();
 			for ( String headerKey : headers.keySet() )
 				for ( String headerValue : headers.get(headerKey) )

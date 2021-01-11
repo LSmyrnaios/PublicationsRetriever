@@ -213,6 +213,7 @@ public class MachineLearning
 		// If we reach here, it means that we are not in the "LearningPeriod", nor in "SleepMode".
 
 		long nextBreakPointForSuccessRate = latestSuccessBreakPoint + leastNumOfUrlsToCheckBeforeAccuracyTest + endOfSleepNumOfUrls;
+		//logger.debug("nextBreakPointForSuccessRate = " + nextBreakPointForSuccessRate);	// DEBUG!
 
 		// Check if we should immediately continue running the MLA, or it's time to decide depending on the success-rate.
 		if ( totalPagesReachedMLAStage < nextBreakPointForSuccessRate )
@@ -243,9 +244,7 @@ public class MachineLearning
 	/**
 	 * This method tries to predict the docUrl of a page, if this page gives us the ID of the document, based on previous success cases.
 	 * The idea is that we might get a url which shows info about the publication and has the same ID with the wanted docUrl, but it just happens to be in a different directory (path).
-	 * So, before going and checking each and every one of the internal links, we should check if by using known paths that gave docUrls before (for the current specific domain), we are able to retrieve the docUrl immediately.
-	 * Note that we don't send the "domainStr" for the guessedDocUrls here, as at the moment an internal link might not be in the same "full-domain". We don't make use of TLDs at the moment. TODO - Investigate their potential.
-	 * Disclaimer: This is still in experimental stage. The success-rate might not be high in some cases.
+	 * So, before going and checking each and every one of the internal links, we should check if by using known docUrl-paths that gave docUrls before (for the current pageUrl-path), we are able to retrieve the docUrl immediately.
 	 * @param urlId
 	 * @param sourceUrl
 	 * @param pageUrl
@@ -320,6 +319,8 @@ public class MachineLearning
 			}
 
 			// Check if it's a truly-alive docUrl.
+			// TODO - Before doing this we should check if it exists inside the list of the internal-links, thus avoiding connecting with non-existed urls..
+			// Todo this we will have to re-think where the MLA's code should be called for optimal usage.
 			try {
 				logger.debug("Going to connect & check predictedDocUrl: \"" + predictedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");	// DEBUG!
 

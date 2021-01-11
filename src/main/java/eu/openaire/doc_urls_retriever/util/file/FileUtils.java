@@ -268,7 +268,6 @@ public class FileUtils
 		printStream.flush();
 		
 		strB.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
-		
 		logger.debug("Finished writing " + FileUtils.quadrupleToBeLoggedList.size() + " quadruples to the outputFile.");
 		
 		FileUtils.quadrupleToBeLoggedList.clear();	// Clear the list to put the new <jsonBatchSize> values. The backing array used by List is not de-allocated. Only the String-references contained get GC-ed.
@@ -306,7 +305,7 @@ public class FileUtils
 			{
 				long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
 				if ( (elapsedTime > FileUtils.maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {
-					logger.warn("Storing docFile from docUrl: \"" + docUrl + "\" is taking over "+ TimeUnit.MILLISECONDS.toSeconds(FileUtils.maxStoringWaitingTime) + "secs! Aborting..");
+					logger.warn("Storing docFile from docUrl: \"" + docUrl + "\" is taking over "+ TimeUnit.MILLISECONDS.toSeconds(FileUtils.maxStoringWaitingTime) + "seconds! Aborting..");
 					if ( !docFile.delete() )
 						logger.error("Error when deleting the half-retrieved file from docUrl: " + docUrl);
 					numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.

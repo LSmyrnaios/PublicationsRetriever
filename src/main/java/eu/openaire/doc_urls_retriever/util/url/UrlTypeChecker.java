@@ -35,7 +35,7 @@ public class UrlTypeChecker
 	// The diff with the "login" being here, in compare with being in "URL_DIRECTORY_FILTER"-regex, is that it can be found in a random place inside a url.. not just as a directory..
 
 	// So, we make a new REGEX for these extensions, this time, without a potential argument in the end (e.g. ?id=XXX..), except for the potential "lang".
-	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:" + phpExtensionsPattern + "|" + htExtensionsPattern + "|[aj]sp[x]*|do|asc|cgi)$");
+	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:" + phpExtensionsPattern + "|" + htExtensionsPattern + "|[aj]sp[x]*|jsf|do|asc|cgi)$");
 	
 	public static final Pattern INTERNAL_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+format=(?:xml|" + htExtensionsPattern + "|rss|ris|bib).*");	// This exists as a url-parameter.
 
