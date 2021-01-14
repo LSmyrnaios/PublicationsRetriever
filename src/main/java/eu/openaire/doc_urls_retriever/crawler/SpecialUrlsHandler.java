@@ -7,6 +7,7 @@ import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -38,8 +39,10 @@ public class SpecialUrlsHandler
 
 	private static final Pattern ACADEMIC_MICROSOFT_ID = Pattern.compile(".+/([\\d]+).*");
 
+	private static final String nasaBaseDomainPath = "https://ntrs.nasa.gov/";
 
-	/////////// "linkinghub.elsevier.com //// sciencedirect.com ////////////////////
+
+	/////////// sciencedirect.com //// "linkinghub.elsevier.com //// api.elsevier.com ////////////////////
 	/**
 	 * This method checks if the given url belongs to the "scienceDirect-family"-urls and if so it handles it.
 	 * If the given url is not a kindOf-scienceDirect-url, then it
@@ -49,7 +52,7 @@ public class SpecialUrlsHandler
 	public static String checkAndGetScienceDirectUrl(String pageUrl) throws FailedToProcessScienceDirectException
 	{
 		boolean wasLinkinghubElsevier = false;
-		if ( pageUrl.contains("linkinghub.elsevier.com") )
+		if ( pageUrl.contains("linkinghub.elsevier.com") || pageUrl.contains("api.elsevier.com") )	// Avoid plain "elsevier.com"-rule as there are: "www.elsevier.com" and "journals.elsevier.com" which don't give docUrls and are handled differently.
 		{
 			if ( (pageUrl = offlineRedirectElsevierToScienceDirect(pageUrl)) == null ) {	// Logging is handled inside "offlineRedirectElsevierToScienceDirect()".
 				throw new FailedToProcessScienceDirectException();	// Throw the exception to avoid the connection.
@@ -66,23 +69,24 @@ public class SpecialUrlsHandler
 
 
 	/**
-	 * This method receives a url from "linkinghub.elsevier.com" and returns it's matched url in "sciencedirect.com".
+	 * This method receives a url from "linkinghub.elsevier.com" or "api.elsevier.com" and returns it's matched url in "sciencedirect.com".
 	 * We do this because the "linkinghub.elsevier.com" urls have a javaScript redirect inside which we are not able to handle without doing html scraping.
 	 * If there is any error this method returns the URL it first received.
-	 * @param linkinghubElsevierUrl
+	 * @param elsevierUrl
 	 * @return
 	 */
-	public static String offlineRedirectElsevierToScienceDirect(String linkinghubElsevierUrl)
+	public static String offlineRedirectElsevierToScienceDirect(String elsevierUrl)
 	{
-		String idStr = UrlUtils.getDocIdStr(linkinghubElsevierUrl, null);
-		if ( idStr != null )
+		String idStr = UrlUtils.getDocIdStr(elsevierUrl, null);
+		if ( idStr != null ) {
+			idStr = StringUtils.replace(idStr, "PII:", "", 1);	// In case of an "api.elsevier.com" pageUrl.
 			return (scienceDirectBasePath + idStr);
-		else
-			return null;
+		}
+		return null;
 	}
 
 
-	/////////// europepmc ////////////////////
+	/////////// europepmc.org ////////////////////
 	public static String checkAndGetEuropepmcDocUrl(String pageUrl)
 	{
 		if ( pageUrl.contains("europepmc.org") && !pageUrl.contains("ptpmcrender.fcgi") )	// The "ptpmcrender.fcgi" indicates that this is already a "europepmc"-docUrl.
@@ -102,7 +106,7 @@ public class SpecialUrlsHandler
 	}
 
 
-	/////////// academic.microsoft ////////////////////
+	/////////// academic.microsoft.com ////////////////////
 	public static String checkAndGetAcademicMicrosoftPageUrl(String initialAcademicMicrosoftUrl)
 	{
 		if ( initialAcademicMicrosoftUrl.contains("academic.microsoft") )
@@ -117,12 +121,12 @@ public class SpecialUrlsHandler
 	public static String offlineRedirectToAcademicMicrosoftFinalPageUrl(String initialAcademicMicrosoftUrl)
 	{
 		String idStr = null;
-		Matcher ad_mic_id_matcher = ACADEMIC_MICROSOFT_ID.matcher(initialAcademicMicrosoftUrl);
-		if ( !ad_mic_id_matcher.matches() )
+		Matcher academicMicrosoftIdMatcher = ACADEMIC_MICROSOFT_ID.matcher(initialAcademicMicrosoftUrl);
+		if ( !academicMicrosoftIdMatcher.matches() )
 			return null;
 
 		try {
-			idStr = ad_mic_id_matcher.group(1);
+			idStr = academicMicrosoftIdMatcher.group(1);
 		} catch (Exception e) { logger.error("", e); return null; }
 		if ( (idStr != null) && !idStr.isEmpty() )
 			return (academicMicrosoftFinalPageUrlBasePath + idStr + "?entityType=2");
@@ -215,5 +219,28 @@ public class SpecialUrlsHandler
 			// No handling here, go check for other docUrls.
 		}
 		return false;
+	}
+
+
+	/////////// ntrs.nasa.gov ////////////////////
+	public static String checkAndGetNasaDocUrl(String pageUrl)
+	{
+		if ( pageUrl.contains("ntrs.nasa.gov") && ! pageUrl.contains("api/") )
+			return offlineRedirectToNasaDocUrl(pageUrl);
+		else
+			return null;
+	}
+
+
+	public static String offlineRedirectToNasaDocUrl(String nasaPageUrl)
+	{
+		String idStr = UrlUtils.getDocIdStr(nasaPageUrl, null);
+		if ( idStr == null )
+			return null;
+
+		String citationPath = StringUtils.replace(nasaPageUrl, nasaBaseDomainPath, "", 1);
+		citationPath = (citationPath.endsWith("/") ? citationPath : citationPath+"/");	// Make sure the "citationPath" has an ending slash.
+
+		return (nasaBaseDomainPath + "api/" + citationPath + "downloads/" + idStr + ".pdf");
 	}
 }

@@ -260,6 +260,7 @@ public class HttpConnUtils
 					String scienceDirectPageUrl = null;
 					String europepmcDocUrl = null;
 					String academicMicrosoftPageUrl = null;
+					String nasaDocUrl = null;
 					if ( (scienceDirectPageUrl = SpecialUrlsHandler.checkAndGetScienceDirectUrl(resourceURL)) != null ) {
 						//logger.debug("ScienceDirect-PageURL to try: " + scienceDirectPageUrl);	// DEBUG!
 						resourceURL = scienceDirectPageUrl;
@@ -271,6 +272,10 @@ public class HttpConnUtils
 					else if ( (academicMicrosoftPageUrl = SpecialUrlsHandler.checkAndGetAcademicMicrosoftPageUrl(resourceURL)) != null ){
 						//logger.debug("AcademicMicrosoft-PageURL: " + resourceURL + " to api-entity-pageUrl: " + academicMicrosoftPageUrl);	// DEBUG!
 						resourceURL = academicMicrosoftPageUrl;
+					}
+					else if ( (nasaDocUrl = SpecialUrlsHandler.checkAndGetNasaDocUrl(resourceURL)) != null ) {
+						//logger.debug("Nasa-PageURL: " + resourceURL + " to possible-docUrl: " + nasaDocUrl);	// DEBUG!
+						resourceURL = nasaDocUrl;
 					}
 				} catch ( FailedToProcessScienceDirectException sdhe ) {
 					throw new RuntimeException("Problem when handling the \"ScienceDirect\"-family-url: " + resourceURL);
