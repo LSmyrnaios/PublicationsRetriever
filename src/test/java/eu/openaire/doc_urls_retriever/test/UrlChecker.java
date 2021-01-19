@@ -233,7 +233,7 @@ public class UrlChecker {
 			boolean isFirstRun = true;
 			while ( true )
 			{
-				loadedIdUrlPairs = FileUtils.getNextIdUrlPairGroupFromJson(); // Take urls from jsonFile.
+				loadedIdUrlPairs = FileUtils.getNextIdUrlPairBatchFromJson(); // Take urls from jsonFile.
 
 				if ( LoaderAndChecker.isFinishedLoading(loadedIdUrlPairs.isEmpty(), isFirstRun) )    // Throws RuntimeException which is automatically passed on.
 					break;

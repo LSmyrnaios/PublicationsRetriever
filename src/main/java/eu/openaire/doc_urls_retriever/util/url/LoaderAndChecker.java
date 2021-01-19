@@ -120,7 +120,7 @@ public class LoaderAndChecker
 		// Start loading and checking urls.
 		while ( true )
 		{
-			loadedIdUrlPairs = FileUtils.getNextIdUrlPairGroupFromJson(); // Take urls from jsonFile.
+			loadedIdUrlPairs = FileUtils.getNextIdUrlPairBatchFromJson(); // Take urls from jsonFile.
 			
 			if ( isFinishedLoading(loadedIdUrlPairs.isEmpty(), isFirstRun) )	// Throws RuntimeException which is automatically passed on.
 				break;
@@ -167,7 +167,7 @@ public class LoaderAndChecker
 						break;
 					}
 					
-					// Check if it's a possible-DocUrl, if so, this is the only url which will be checked from this group, unless there's a canonicalization problem.
+					// Check if it's a possible-DocUrl, if so, this is the only url which will be checked from this id-group, unless there's a canonicalization problem.
 					if ( DOC_URL_FILTER.matcher(retrievedUrl.toLowerCase()).matches() ) {
 						//logger.debug("Possible docUrl: " + retrievedUrl);
 						possibleDocUrl = retrievedUrl;
@@ -320,7 +320,7 @@ public class LoaderAndChecker
 	
 	/**
 	 * This method logs the remaining retrievedUrls which were not checked & connected.
-	 * The method loadAndCheckIdUrlPairs() pics just one -the best- url from a group of urls belonging to a specific ID.
+	 * The method loadAndCheckIdUrlPairs() picks just one -the best- url from a group of urls belonging to a specific ID.
 	 * The rest urls will either get rejected as problematic -and so get logged- or get skipped and be left non-logged.
 	 * @param urlToCheck : It may be null, but that's ok, the "equals()"-comparison will return "false".
 	 * @param retrievedId

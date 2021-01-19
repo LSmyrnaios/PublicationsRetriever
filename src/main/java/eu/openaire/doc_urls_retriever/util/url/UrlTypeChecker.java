@@ -22,11 +22,11 @@ public class UrlTypeChecker
 
 	public static final Pattern URL_DIRECTORY_FILTER =
 			Pattern.compile(".+://.*/(?:(discover|profile|user)(?!.+(?:file|pdf))|(?:ldap-)?login|auth(?:entication)?\\.|ac(?:c)?ess(?!\\.)|sign(?:in|out)|join|subscr|register|submit|(?:post|send|shop|view|export|(?:wp-)?admin|home)/|watch|browse|import|bookmark|announcement|rss|feed|share|about|faq|wiki|news|events|cart|support|(?:site|html)map|documentation|help|contact|license|disclaimer|copyright|polic(?:y|ies)|privacy|terms|law"
-					+ "|(?:my|your)?account|settings|fund|aut(?:h)?or|editor|citation|review|external|facets|statistics|application|selfarchive|permission|ethic|conta(?:c)?t|survey|wallet|contribute|deposit|donate|template|logo|image|photo|video|media|theme|advertiser|product|people|(?:the)?press|forum|blog|column|row|for-authors|css|js|captcha|clipboard"
+					+ "|(?:my|your)?account|settings|fund|aut(?:h)?or|editor|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic|conta(?:c)?t|survey|wallet|contribute|deposit|donate|template|logo|image|photo|video|media|theme|advertiser|product|people|(?:the)?press|forum|blog|column|row|for-authors|css|js|captcha|clipboard"
 					+ "|error|(?:mis|ab)use|\\?denied|gateway|sorryserver|cookie|notfound|404\\." + htExtensionsPattern + "|\\*/).*");
 	// We check them as a directory to avoid discarding publications' urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
 	
-	public static final Pattern CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER = Pattern.compile(".+\\.(?:doc|docx|ppt|pptx|ps|odt|djvu|rtf)(?:\\?.+)?$");	// Doc-extensions which are currently unsupported. Some pageUrls give also .zip files, but that's another story.
+	public static final Pattern CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER = Pattern.compile(".+\\.(?:(?:doc|ppt)(?:x)?|ps|epub|odt|djvu|rtf)(?:\\?.+)?$");	// Doc-extensions which are currently unsupported. Some pageUrls give also .zip files, but that's another story.
 
 	public static final Pattern URL_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:css|js(?:\\?y)?|" + mediaExtensionsPattern + "|pt|xml|rdf|bib|nt|refer|enw|ris|n3|csv|tsv|mso|dtl|svg|do|asc|txt|c|cc|cxx|cpp|java|py|xls(?:[\\w])?)(?:\\?.+)?$");
 	// In the above, don't include .php and relative extensions, since even this can be a docUrl. For example: https://www.dovepress.com/getfile.php?fileID=5337

@@ -50,7 +50,7 @@ public class FileUtils
 	
 	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<String, Integer>();	// Holds docFileNa,es with their duplicatesNum.
 	
-	public static boolean shouldDownloadDocFiles = false;	// It will be set to "true" if the related command-;ine-argument is given.
+	public static boolean shouldDownloadDocFiles = false;	// It will be set to "true" if the related command-line-argument is given.
 	public static final boolean shouldDeleteOlderDocFiles = false;	// Should we delete any older stored docFiles? This is useful for testing.
 	public static boolean shouldUseOriginalDocFileNames = false;	// Use number-fileNames by default.
 	public static final boolean shouldLogFullPathName = true;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
@@ -58,7 +58,7 @@ public class FileUtils
 	public static final String workingDir = System.getProperty("user.dir") + File.separator;
 	public static String storeDocFilesDir = workingDir + "docFiles" + File.separator;
 	public static int unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
-	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*(?:filename(?:\\*)?=(?:.*(?:\\\"|\\'))?)([^\\\"^\\;]+)[\\\"\\;]*.*");
+	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*(?:filename(?:\\*)?=(?:.*[\"'])?)([^\"^;]+)[\";]*.*");
 	
 	public static final int MAX_FILENAME_LENGTH = 250;	// TODO - Find a way to get the current-system's MAX-value.
 	
@@ -185,7 +185,7 @@ public class FileUtils
 	 * This method parses a Json file and extracts the urls, along with the IDs.
 	 * @return HashMultimap<String, String>
 	 */
-	public static HashMultimap<String, String> getNextIdUrlPairGroupFromJson()
+	public static HashMultimap<String, String> getNextIdUrlPairBatchFromJson()
 	{
 		IdUrlTuple inputIdUrlTuple;
 		HashMultimap<String, String> idAndUrlMappedInput = HashMultimap.create();
@@ -193,7 +193,7 @@ public class FileUtils
 		int curBeginning = FileUtils.fileIndex;
 		
 		while ( inputScanner.hasNextLine() && (FileUtils.fileIndex < (curBeginning + jsonBatchSize)) )
-		{// While (!EOF) and inside the current url-group, iterate through lines.
+		{// While (!EOF) and inside the current url-batch, iterate through lines.
 
 			//logger.debug("fileIndex: " + FileUtils.fileIndex);	// DEBUG!
 
@@ -490,14 +490,14 @@ public class FileUtils
 	{
 		Collection<String> urlGroup = new HashSet<String>();
 		
-		// Take a group of <jsonBatchSize> urls from the file..
+		// Take a batch of <jsonBatchSize> urls from the file..
 		// If we are at the end and there are less than <jsonBatchSize>.. take as many as there are..
 		
-		//logger.debug("Retrieving the next group of " + jsonBatchSize + " elements from the inputFile.");
+		//logger.debug("Retrieving the next batch of " + jsonBatchSize + " elements from the inputFile.");
 		int curBeginning = FileUtils.fileIndex;
 		
 		while ( inputScanner.hasNextLine() && (FileUtils.fileIndex < (curBeginning + jsonBatchSize)) )
-		{// While (!EOF) and inside the current url-group, iterate through lines.
+		{// While (!EOF) and inside the current url-batch, iterate through lines.
 			
 			// Take each line, remove potential double quotes.
 			String retrievedLineStr = inputScanner.nextLine();

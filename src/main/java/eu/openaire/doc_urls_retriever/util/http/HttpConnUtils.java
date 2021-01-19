@@ -56,6 +56,10 @@ public class HttpConnUtils
 	private static final boolean shouldNOTacceptGETmethodForUncategorizedInternalLinks = true;
 
 
+	public static final HashSet<String> domainsSupportingHTTPS = new HashSet<>();
+	public static int timesDidOfflineHTTPSredirect = 0;
+
+
 	/**
 	 * This method checks if a certain url can give us its mimeType, as well as if this mimeType is a docMimeType.
 	 * It automatically calls the "logUrl()" method for the valid docUrls, while it doesn't call it for non-success cases, thus allowing calling method to handle the case.
@@ -197,6 +201,8 @@ public class HttpConnUtils
 										throws AlreadyFoundDocUrlException, RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException, IOException
 	{
 		HttpURLConnection conn = openHttpConnection(resourceURL, domainStr, calledForPageUrl, calledForPossibleDocUrl);
+		// The "resourceUrl" might have changed (due to special-handling of some pages), but it doesn't cause any problem. It's only used with "internalLinks" which are not affected by the special handling.
+
 		//ConnSupportUtils.printConnectionDebugInfo(conn, false);	// DEBUG!
 
 		int responseCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP response), inside openHttpConnection().
@@ -243,6 +249,13 @@ public class HttpConnUtils
 			if ( ConnSupportUtils.checkIfPathIs403BlackListed(resourceURL, domainStr) )
 				throw new RuntimeException("Avoid reaching 403ErrorCode with url: \"" + resourceURL + "\"!");
 
+
+			if ( !resourceURL.startsWith("https", 0) && domainsSupportingHTTPS.contains(domainStr) ) {
+				resourceURL = ConnSupportUtils.offlineRedirectToHTTPS(resourceURL);
+				timesDidOfflineHTTPSredirect++;
+			}
+
+
 			// For the urls which has reached this point, make sure no weird "ampersand"-anomaly blocks us...
 			boolean weirdMetaDocUrlWhichNeedsGET = false;
 			if ( calledForPossibleDocUrl && resourceURL.contains("amp%3B") ) {
@@ -255,7 +268,7 @@ public class HttpConnUtils
 			boolean havingScienceDirectPDF = false;
 			if ( "pdf.sciencedirectassets.com".equals(domainStr) )	// Avoiding NPE.
 				havingScienceDirectPDF = true;
-			else if ( !calledForPossibleDocUrl ) {
+			else if ( calledForPageUrl && !calledForPossibleDocUrl ) {
 				try {
 					String scienceDirectPageUrl = null;
 					String europepmcDocUrl = null;
@@ -269,7 +282,7 @@ public class HttpConnUtils
 						//logger.debug("Europepmc-PageURL: " + resourceURL + " to possible-docUrl: " + europepmcDocUrl);	// DEBUG!
 						resourceURL = europepmcDocUrl;
 					}
-					else if ( (academicMicrosoftPageUrl = SpecialUrlsHandler.checkAndGetAcademicMicrosoftPageUrl(resourceURL)) != null ){
+					else if ( (academicMicrosoftPageUrl = SpecialUrlsHandler.checkAndGetAcademicMicrosoftPageUrl(resourceURL)) != null ) {
 						//logger.debug("AcademicMicrosoft-PageURL: " + resourceURL + " to api-entity-pageUrl: " + academicMicrosoftPageUrl);	// DEBUG!
 						resourceURL = academicMicrosoftPageUrl;
 					}
@@ -283,11 +296,8 @@ public class HttpConnUtils
 			}
 
 			URL url = new URL(resourceURL);
-
 			conn = (HttpURLConnection) url.openConnection();
-
 			conn.setRequestProperty("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0");	// Used to bypass some domains' antipathy for java-crawlers.
-
 			conn.setInstanceFollowRedirects(false);	// We manage redirects on our own, in order to control redirectsNum, avoid redirecting to unwantedUrls and handling errors.
 
 			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// For just-webPages, we want to use "GET" in order to download the content.
@@ -314,7 +324,7 @@ public class HttpConnUtils
 			if ( (responseCode = conn.getResponseCode()) == -1 )
 				throw new RuntimeException("Invalid HTTP response for \"" + resourceURL + "\"");
 			
-			if ( (responseCode == 405 || responseCode == 501) && conn.getRequestMethod().equals("HEAD") )	// If this SERVER doesn't support "HEAD" method or doesn't allow us to use it..
+			if ( ((responseCode == 405) || (responseCode == 501)) && conn.getRequestMethod().equals("HEAD") )	// If this SERVER doesn't support "HEAD" method or doesn't allow us to use it..
 			{
 				//logger.debug("HTTP \"HEAD\" method is not supported for: \"" + resourceURL +"\". Server's responseCode was: " + responseCode);
 				
@@ -327,7 +337,6 @@ public class HttpConnUtils
 				// If we accept connection's retrying, using "GET", move on reconnecting.
 				// No call of "conn.disconnect()" here, as we will connect to the same server.
 				conn = (HttpURLConnection) url.openConnection();
-				
 				conn.setRequestMethod("GET");	// To reach here, it means that the HEAD method is unsupported.
 				conn.setConnectTimeout(maxConnGETWaitingTime);
 				conn.setReadTimeout(maxConnGETWaitingTime);
@@ -435,28 +444,31 @@ public class HttpConnUtils
 			initialUrl = internalLink;
 			urlType = "internalLink";
 		}
-		
+		String currentUrl;
+
 		try {
 			do {	// We assume we already have an HTTP-3XX response code.
 				curRedirectsNum ++;
 				if ( curRedirectsNum > maxRedirects )
 					throw new RuntimeException("Redirects exceeded their limit (" + maxRedirects + ") for " + urlType + ": \"" + initialUrl + "\"");
-				
+
+				currentUrl = conn.getURL().toString();
+
 				String location = conn.getHeaderField("Location");
 				if ( location == null )
 				{
 					if ( responseCode == 300 ) {	// The "Location"-header MAY be provided, giving the proposed link by the server.
 						// Go and parse the page and select one of the links to redirect to. Assign it to the "location".
 						if ( (location = ConnSupportUtils.getInternalLinkFromHTTP300Page(conn)) == null )
-							throw new RuntimeException("No \"link\" was retrieved from the HTTP-300-page: \"" + conn.getURL().toString() + "\".");
+							throw new RuntimeException("No \"link\" was retrieved from the HTTP-300-page: \"" + currentUrl + "\".");
 					}
 					else	// It's unacceptable for codes > 300 to not provide the "location" field.
-						throw new RuntimeException("No \"Location\" field was found in the HTTP Header of \"" + conn.getURL().toString() + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code.");
+						throw new RuntimeException("No \"Location\" field was found in the HTTP Header of \"" + currentUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code.");
 				}
 
 				String targetUrl = ConnSupportUtils.getFullyFormedUrl(null, location, conn.getURL());
 				if ( targetUrl == null )
-					throw new RuntimeException("Could not create target url for resourceUrl: " + conn.getURL().toString() + " having location: " + location);
+					throw new RuntimeException("Could not create target url for resourceUrl: " + currentUrl + " having location: " + location);
 
 				String lowerCaseTargetUrl = targetUrl.toLowerCase();
 				if ( (calledForPageUrl && UrlTypeChecker.shouldNotAcceptPageUrl(targetUrl, lowerCaseTargetUrl))	// Redirecting a pageUrl.
@@ -492,6 +504,13 @@ public class HttpConnUtils
 						throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
 				}
 
+				// Check if this redirection is just http-to-https and store the domain to do offline-redirection in the future.
+				// If the domain supports it, do an offline-redirect to "HTTPS", thus avoiding the expensive real-redirect.
+				if ( ConnSupportUtils.isJustAnHTTPSredirect(currentUrl, targetUrl) ) {
+					domainsSupportingHTTPS.add(domainStr);    // It does not store duplicates.
+					//logger.debug("Found an HTTP-TO-HTTPS redirect: " + currentUrl + " --> " + targetUrl);	// DEBUG!
+				}
+
 				conn = HttpConnUtils.openHttpConnection(targetUrl, domainStr, calledForPageUrl, calledForPossibleDocUrl);
 
 				responseCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
@@ -503,7 +522,7 @@ public class HttpConnUtils
 			} while ( (responseCode >= 300) && (responseCode <= 399) );
 			
 			// It should have returned if there was an HTTP 2XX code. Now we have to handle the error-code.
-			String errorLogMessage = ConnSupportUtils.onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode);
+			String errorLogMessage = ConnSupportUtils.onErrorStatusCode(currentUrl, domainStr, responseCode);
 			throw new RuntimeException(errorLogMessage);	// This is not thrown if a "DomainBlockedException" was thrown first.
 			
 		} catch (AlreadyFoundDocUrlException | RuntimeException | ConnTimeoutException | DomainBlockedException | DomainWithUnsupportedHEADmethodException e) {	// We already logged the right messages.
@@ -515,5 +534,5 @@ public class HttpConnUtils
 			throw new RuntimeException();
 		}
 	}
-	
+
 }

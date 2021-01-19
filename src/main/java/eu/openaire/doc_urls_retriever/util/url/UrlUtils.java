@@ -76,7 +76,7 @@ public class UrlUtils
 
 		FileUtils.quadrupleToBeLoggedList.add(new QuadrupleToBeLogged(urlId, sourceUrl, finalDocUrl, comment));	// Log it to be written later in the outputFile.
 
-        if ( FileUtils.quadrupleToBeLoggedList.size() == FileUtils.jsonBatchSize )	// Write to file every time we have a group of <jsonBatchSize> quadruples.
+        if ( FileUtils.quadrupleToBeLoggedList.size() == FileUtils.jsonBatchSize )	// Write to file every time we have a batch of <jsonBatchSize> quadruples.
             FileUtils.writeToFile();
     }
 

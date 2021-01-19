@@ -42,6 +42,8 @@ public class ConnSupportUtils
 
 	public static final Pattern SPACE_ONLY_LINE = Pattern.compile("^[\\s]+$");	// For full-HTML-extraction.
 
+	private static final Pattern NON_PROTOCOL_URL = Pattern.compile("^(?:[^:/]+://)(.*)");
+
 	// Note: We cannot remove all the spaces from the HTML, as the JSOUP fails to extract the internal links. If a custom-approach will be followed, then we can take the space-removal into account.
 	//public static final Pattern REMOVE_SPACES = Pattern.compile("([\\s]+)");
 
@@ -206,6 +208,17 @@ public class ConnSupportUtils
 			if ( reconnected )	// Otherwise the given-previous connection will be closed by the calling method.
 				conn.disconnect();
 		}
+	}
+
+
+	/**
+	 * This method does an offline-redirect to HTTPS. It is called when the url uses HTTP, but handles exceptions as well.
+	 * @param url
+	 * @return
+	 */
+	public static String offlineRedirectToHTTPS(String url)
+	{
+		return StringUtils.replace(url, "http:", "https:", 1);
 	}
 	
 	
@@ -632,8 +645,61 @@ public class ConnSupportUtils
 			return null;
 		}
 	}
-	
-	
+
+
+	public static boolean isJustAnHTTPSredirect(String currentUrl, String targetUrl)
+	{
+		// First check if we go from an http to an https in general.
+		if ( !currentUrl.startsWith("http://", 0) || !targetUrl.startsWith("https", 0) )
+			return false;
+
+		// Take the url after the protocol and check if it's the same, if it is then we have our HTTPS redirect, if not then it's another type of redirect.
+		return haveOnlyProtocolDifference(currentUrl, targetUrl);
+	}
+
+
+	/**
+	 * This method returns "true" if the two urls have only a protocol-difference.
+	 * @param url1
+	 * @param url2
+	 * @return
+	 */
+	public static boolean haveOnlyProtocolDifference(String url1, String url2)
+	{
+		Matcher url1NonProtocolMatcher = NON_PROTOCOL_URL.matcher(url1);
+		if ( !url1NonProtocolMatcher.matches() ) {
+			logger.warn("URL < " + url1 + " > failed to match with \"NON_PROTOCOL_URL\"-regex: " + NON_PROTOCOL_URL.toString());
+			return false;
+		}
+
+		String non_protocol_url1;
+		try {
+			non_protocol_url1 = url1NonProtocolMatcher.group(1);
+		} catch (Exception e) { logger.error("No match for url1: " + url1, e); return false; }
+		if ( (non_protocol_url1 == null) || non_protocol_url1.isEmpty() ) {
+			logger.warn("Unexpected null or empty value returned by \"url1NonProtocolMatcher.group(1)\" for url: \"" + url1 + "\"");
+			return false;
+		}
+
+		Matcher url2UrlNonProtocolMatcher = NON_PROTOCOL_URL.matcher(url2);
+		if ( !url2UrlNonProtocolMatcher.matches() ) {
+			logger.warn("URL < " + url2 + " > failed to match with \"NON_PROTOCOL_URL\"-regex: " + NON_PROTOCOL_URL.toString());
+			return false;
+		}
+
+		String non_protocol_url2Url;
+		try {
+			non_protocol_url2Url = url2UrlNonProtocolMatcher.group(1);
+		} catch (Exception e) { logger.error("No match for url2: " + url2, e); return false; }
+		if ( (non_protocol_url2Url == null) || non_protocol_url2Url.isEmpty() ) {
+			logger.warn("Unexpected null or empty value returned by \"url2UrlNonProtocolMatcher.group(1)\" for url: \"" + url2 + "\"");
+			return false;
+		}
+
+		return ( non_protocol_url1.equals(non_protocol_url2Url) );
+	}
+
+
 	public static void printEmbeddedExceptionMessage(Exception e, String resourceURL)
 	{
 		String exMsg = e.getMessage();

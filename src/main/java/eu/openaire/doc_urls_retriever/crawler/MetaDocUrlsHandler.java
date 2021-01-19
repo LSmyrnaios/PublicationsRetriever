@@ -54,7 +54,7 @@ public class MetaDocUrlsHandler {
         }
         //logger.debug("MetaDocUrl: " + metaDocUrl);  // DEBUG!
 
-        if ( metaDocUrl.equals(pageUrl) ) {
+        if ( metaDocUrl.equals(pageUrl) || ConnSupportUtils.haveOnlyProtocolDifference(metaDocUrl, pageUrl) ) {
             logger.warn("The metaDocUrl was found to be the same as the pageUrl! Continue by crawling the page..");
             return false;   // This metaDocUrl cannot be handled, return to "PageCrawler.visit()" to continue.
         }
