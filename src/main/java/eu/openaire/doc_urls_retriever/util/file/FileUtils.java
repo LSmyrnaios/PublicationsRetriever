@@ -209,7 +209,7 @@ public class FileUtils
 			}
 
 			if ( (inputIdUrlTuple = jsonDecoder(retrievedLineStr)) == null ) {	// Decode the jsonLine and take the two attributes.
-				logger.warn("A problematic inputLine found: \"" + retrievedLineStr + "\"");
+				logger.warn("A problematic inputLine found: \t" + retrievedLineStr);
 				FileUtils.unretrievableInputLines++;
 				continue;
 			}
@@ -229,16 +229,15 @@ public class FileUtils
 	 */
 	public static IdUrlTuple jsonDecoder(String jsonLine)
 	{
-		JSONObject jObj = new JSONObject(jsonLine); // Construct a JSONObject from the retrieved jsonLine.
-		
 		// Get ID and url and put them in the HashMap
 		String idStr = null;
 		String urlStr = null;
 		try {
+			JSONObject jObj = new JSONObject(jsonLine); // Construct a JSONObject from the retrieved jsonLine.
 			idStr = jObj.get("id").toString();
 			urlStr = jObj.get("url").toString();
 		} catch (JSONException je) {
-			logger.warn("JSONException caught when tried to retrieve values from jsonLine: \"" + jsonLine + "\"", je);
+			logger.warn("JSONException caught when tried to retrieve values from jsonLine: \t" + jsonLine, je);
 			return null;
 		}
 		
