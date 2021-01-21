@@ -16,6 +16,7 @@ import java.io.File;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.*;
 
 
 /**
@@ -205,12 +206,18 @@ public class DocUrlsRetriever
 
 		calculateAndPrintElapsedTime(startTime, Instant.now());
 
-		// DEBUG! comment-out the following in production.
-		/*if ( MachineLearning.useMLA )
-			MachineLearning.printGatheredData();*/
+
+		if ( logger.isDebugEnabled() )
+		{
+			sortHashMapByValueAndPrint(UrlUtils.domainsAndHits, true);
+
+			// DEBUG! comment-out the following in production (even in debug-mode).
+			/*if ( MachineLearning.useMLA )
+				MachineLearning.printGatheredData();*/
+		}
 	}
-	
-	
+
+
 	public static void calculateAndPrintElapsedTime(Instant startTime, Instant finishTime)
 	{
 		/*
@@ -268,6 +275,23 @@ public class DocUrlsRetriever
 			daysMessage = days + " days, ";
 		
 		logger.info("The program finished after: " + daysMessage + hoursMessage + minutesMessage + secondsMessage + millisMessage);
+	}
+
+
+	public static void sortHashMapByValueAndPrint(HashMap<String, Integer> map, boolean descendingOrder)
+	{
+		List<Map.Entry<String, Integer>> list = new LinkedList<>(map.entrySet());
+		list.sort((o1, o2) -> {
+			if ( descendingOrder )
+				return o2.getValue().compareTo(o1.getValue());
+			else
+				return o1.getValue().compareTo(o2.getValue());
+		});
+		logger.debug("The " + list.size() + " domains which gave docUrls and their number:");
+		for ( Map.Entry<String, Integer> entry : list )
+		{
+			logger.debug(entry.getKey() + " : " + entry.getValue());
+		}
 	}
 	
 }

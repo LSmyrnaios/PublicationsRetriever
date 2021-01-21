@@ -2,6 +2,7 @@ package eu.openaire.doc_urls_retriever.util.url;
 
 import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
+import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,8 @@ public class UrlUtils
 
 	public static final String alreadyDownloadedByIDMessage = "This file is probably already downloaded from ID=";
 
+	public static final HashMap<String, Integer> domainsAndHits = new HashMap<>();
+
 
 	/**
      * This method logs the outputEntry to be written, as well as the docUrlPath (if non-empty String) and adds entries in the blackList.
@@ -63,12 +66,20 @@ public class UrlUtils
 				if ( lowerCaseUrl.contains("token") || lowerCaseUrl.contains("jsessionid") )
 					finalDocUrl = UrlUtils.removeTemporalIdentifier(finalDocUrl);	// We send the non-lowerCase-url as we may want to continue with that docUrl in case of an error.
 
-				// Gather data for the MLA, if we decide to have it enabled.
-				if ( MachineLearning.useMLA )
-					MachineLearning.gatherMLData(pageUrl, finalDocUrl, pageDomain);
-
 				if ( isFirstCrossed )	// Add this id, only if this is a first-crossed docUrl.
 					docUrlsWithIDs.put(finalDocUrl, urlId);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
+
+				if ( pageDomain == null )
+					pageDomain = UrlUtils.getDomainStr(pageUrl, null);
+
+				if ( pageDomain != null )	// It may be null if "UrlUtils.getDomainStr()" failed.
+				{
+					ConnSupportUtils.countInsertAndGetTimes(domainsAndHits, pageDomain);
+
+					// Gather data for the MLA, if we decide to have it enabled.
+					if ( MachineLearning.useMLA )
+						MachineLearning.gatherMLData(pageUrl, finalDocUrl, pageDomain);
+				}
 			}
 			else	// Else if this url is not a docUrl and has not been processed before..
 				duplicateUrls.add(sourceUrl);	// Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future. We don't add docUrls here, as we want them to be separate for checking purposes.

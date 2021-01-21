@@ -336,7 +336,7 @@ public class MachineLearning
 		}// end for-loop
 
 		// If we reach here, it means that all of the predictions have failed.
-		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, pageDomain, timesToFailBeforeBlockedFromMLA) ) {
+		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, pageDomain, timesToFailBeforeBlockedFromMLA, false) ) {
 			logger.debug("Domain: \"" + pageDomain + "\" was blocked from being accessed again by the MLA, after proved to be incompatible "
 					+ timesToFailBeforeBlockedFromMLA + " times.");
 

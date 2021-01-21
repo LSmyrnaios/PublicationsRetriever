@@ -2,6 +2,7 @@ package eu.openaire.doc_urls_retriever.util.http;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
+import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.doc_urls_retriever.exceptions.DocLinkFoundException;
@@ -171,10 +172,11 @@ public class ConnSupportUtils
 	 * @param conn
 	 * @param domainStr
 	 * @param docUrl
+	 * @param calledForPageUrl
 	 * @return
 	 * @throws DocFileNotRetrievedException
 	 */
-	public static String downloadAndStoreDocFile(HttpURLConnection conn, String domainStr, String docUrl)
+	public static String downloadAndStoreDocFile(HttpURLConnection conn, String domainStr, String docUrl, boolean calledForPageUrl)
 			throws DocFileNotRetrievedException
 	{
 		boolean reconnected = false;
@@ -186,7 +188,7 @@ public class ConnSupportUtils
 				int responseCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP response), inside openHttpConnection().
 				// Only a final-url will reach here, so no redirect should occur (thus, we don't check for it).
 				if ( (responseCode < 200) || (responseCode >= 400) ) {    // If we have unwanted/error codes.
-					String errorMessage = onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode);
+					String errorMessage = onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode, calledForPageUrl);
 					throw new DocFileNotRetrievedException(errorMessage);
 				}
 			}
@@ -255,10 +257,11 @@ public class ConnSupportUtils
 	 * @param urlStr
 	 * @param domainStr
 	 * @param errorStatusCode
+	 * @param calledForPageUrl
 	 * @throws DomainBlockedException
 	 * @return
 	 */
-	public static String onErrorStatusCode(String urlStr, String domainStr, int errorStatusCode) throws DomainBlockedException
+	public static String onErrorStatusCode(String urlStr, String domainStr, int errorStatusCode, boolean calledForPageUrl) throws DomainBlockedException
 	{
 		if ( (errorStatusCode == 500) && domainStr.contains("handle.net") ) {    // Don't take the 500 of "handle.net", into consideration, it returns many times 500, where it should return 404.. so treat it like a 404.
 			//logger.warn("\"handle.com\" returned 500 where it should return 404.. so we will treat it like a 404.");    // See an example: "https://hdl.handle.net/10655/10123".
@@ -271,11 +274,11 @@ public class ConnSupportUtils
 		{
 			errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received: HTTP " + errorStatusCode + " Client Error.";
 			if ( errorStatusCode == 403 ) {
-				if ( (domainStr == null) || !urlStr.contains(domainStr) ) {	// The domain might have changed after redirections.
-					if ( (domainStr = UrlUtils.getDomainStr(urlStr, null)) != null )
-						on403ErrorCode(urlStr, domainStr);	// The "DomainBlockedException" will go up-method by its own, if thrown inside this one.
-				} else
-					on403ErrorCode(urlStr, domainStr);
+				if ( (domainStr == null) || !urlStr.contains(domainStr) )	// The domain might have changed after redirections.
+					domainStr = UrlUtils.getDomainStr(urlStr, null);
+
+				if ( domainStr != null )	// It may be null if "UrlUtils.getDomainStr()" failed.
+					on403ErrorCode(urlStr, domainStr, calledForPageUrl);	// The "DomainBlockedException" will go up-method by its own, if thrown inside this one.
 			}
 		}
 		else {	// Other errorCodes. Retrieve the domain and make the required actions.
@@ -304,15 +307,16 @@ public class ConnSupportUtils
 	 * If a domain ends up having more paths blocked than a certain number, we block the whole domain itself.
 	 * @param urlStr
 	 * @param domainStr
+	 * @param calledForPageUrl
 	 * @throws DomainBlockedException
 	 */
-	public static void on403ErrorCode(String urlStr, String domainStr) throws DomainBlockedException
+	public static void on403ErrorCode(String urlStr, String domainStr, boolean calledForPageUrl) throws DomainBlockedException
 	{
 		String pathStr = UrlUtils.getPathStr(urlStr, null);
 		if ( pathStr == null )
 			return;
 		
-		if ( countAndBlockPathAfterTimes(domainsMultimapWithPaths403BlackListed, timesPathsReturned403, pathStr, domainStr, timesToHave403errorCodeBeforePathBlocked) )
+		if ( countAndBlockPathAfterTimes(domainsMultimapWithPaths403BlackListed, timesPathsReturned403, pathStr, domainStr, timesToHave403errorCodeBeforePathBlocked, calledForPageUrl) )
 		{
 			logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code.");
 			// Block the whole domain if it has more than a certain number of blocked paths.
@@ -327,9 +331,15 @@ public class ConnSupportUtils
 	}
 	
 	
-	public static boolean countAndBlockPathAfterTimes(SetMultimap<String, String> domainsWithPaths, HashMap<String, Integer> pathsWithTimes, String pathStr, String domainStr, int timesBeforeBlocked)
+	public static boolean countAndBlockPathAfterTimes(SetMultimap<String, String> domainsWithPaths, HashMap<String, Integer> pathsWithTimes, String pathStr, String domainStr, int timesBeforeBlocked, boolean calledForPageUrl)
 	{
 		if ( countInsertAndGetTimes(pathsWithTimes, pathStr) > timesBeforeBlocked ) {
+
+			// If we use MLA, we are storing the docPage-successful-paths, so check if this is one of them, if it is then don't block it.
+			// If it's an internal-link, then.. we can't iterate over every docUrl-successful-path of every docPage-successful-path.. it's too expensive O(5*n), not O(1)..
+			if ( calledForPageUrl && MachineLearning.useMLA && MachineLearning.successPathsHashMultiMap.containsKey(pathStr) )
+				return false;
+
 			domainsWithPaths.put(domainStr, pathStr);	// Add this path in the list of blocked paths of this domain.
 			pathsWithTimes.remove(pathStr);	// No need to keep the count for a blocked path.
 			return true;
@@ -363,7 +373,7 @@ public class ConnSupportUtils
 	
 	public static void on5XXerrorCode(String domainStr) throws DomainBlockedException
 	{
-		if ( countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsReturned5XX, domainStr, timesToHave5XXerrorCodeBeforeDomainBlocked) ) {
+		if ( countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsReturned5XX, domainStr, timesToHave5XXerrorCodeBeforeDomainBlocked, true) ) {
 			logger.debug("Domain: \"" + domainStr + "\" was blocked after returning 5XX Error Code " + timesToHave5XXerrorCodeBeforeDomainBlocked + " times.");
 			throw new DomainBlockedException();
 		}
@@ -372,7 +382,7 @@ public class ConnSupportUtils
 	
 	public static void onTimeoutException(String domainStr) throws DomainBlockedException
 	{
-		if ( countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsHadTimeoutEx, domainStr, timesToHaveTimeoutExBeforeDomainBlocked) ) {
+		if ( countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsHadTimeoutEx, domainStr, timesToHaveTimeoutExBeforeDomainBlocked, true) ) {
 			logger.debug("Domain: \"" + domainStr + "\" was blocked after causing TimeoutException " + timesToHaveTimeoutExBeforeDomainBlocked + " times.");
 			throw new DomainBlockedException();
 		}
@@ -388,11 +398,21 @@ public class ConnSupportUtils
 	 * @param domainsWithTimes
 	 * @param domainStr
 	 * @param timesBeforeBlock
+	 * @param checkAgainstDocUrlsHits
 	 * @return boolean
 	 */
-	public static boolean countAndBlockDomainAfterTimes(HashSet<String> blackList, HashMap<String, Integer> domainsWithTimes, String domainStr, int timesBeforeBlock)
+	public static boolean countAndBlockDomainAfterTimes(HashSet<String> blackList, HashMap<String, Integer> domainsWithTimes, String domainStr, int timesBeforeBlock, boolean checkAgainstDocUrlsHits)
 	{
-		if ( countInsertAndGetTimes(domainsWithTimes, domainStr) > timesBeforeBlock ) {
+		int badTimes = countInsertAndGetTimes(domainsWithTimes, domainStr);
+
+		if ( badTimes > timesBeforeBlock )
+		{
+			if ( checkAgainstDocUrlsHits ) {	// This will not be the case for MLA-blocked-domains.
+				Integer goodTimes = UrlUtils.domainsAndHits.get(domainStr);
+				if ( (goodTimes != null) && (goodTimes >= badTimes) )
+					return false;
+			}
+
 			blackList.add(domainStr);    // Block this domain.
 			domainsWithTimes.remove(domainStr);	// Remove counting-data.
 			return true;	// This domain was blocked.
@@ -506,7 +526,7 @@ public class ConnSupportUtils
 			warnMsg += "\nThe initial connection was made with the \"HTTP-HEAD\" method, so there is no response-body to use to detect the content-type.";
 
 		if ( !foundDetectedContentType ) {
-			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, HttpConnUtils.timesDomainsReturnedNoType, domainStr, timesToReturnNoTypeBeforeBlocked) ) {
+			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, HttpConnUtils.timesDomainsReturnedNoType, domainStr, timesToReturnNoTypeBeforeBlocked, true) ) {
 				logger.warn(warnMsg);
 				logger.warn("Domain: \"" + domainStr + "\" was blocked after returning no Type-info more than " + timesToReturnNoTypeBeforeBlocked + " times.");
 				throw new DomainBlockedException();

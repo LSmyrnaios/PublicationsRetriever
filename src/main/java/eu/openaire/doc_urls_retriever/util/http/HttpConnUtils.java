@@ -133,7 +133,7 @@ public class HttpConnUtils
 						if ( foundDetectedContentType ) {	// If we went and detected the pdf from the request-code, then reconnect and proceed with downloading (reasons explained elsewhere).
 							conn = handleConnection(urlId, sourceUrl, pageUrl, finalUrlStr, domainStr, calledForPageUrl, calledForPossibleDocUrl);	// No need to "conn.disconnect()" before, as we are re-connecting to the same domain.
 						}
-						fullPathFileName = ConnSupportUtils.downloadAndStoreDocFile(conn, domainStr, finalUrlStr);
+						fullPathFileName = ConnSupportUtils.downloadAndStoreDocFile(conn, domainStr, finalUrlStr, calledForPageUrl);
 						logger.info("DocFile: \"" + fullPathFileName + "\" has been downloaded.");
 					} catch (DocFileNotRetrievedException dfnde) {
 						fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored.";
@@ -163,7 +163,7 @@ public class HttpConnUtils
 				else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" with mimeType: \"" + mimeType + "\" will not be visited!");
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after not matching to a docUrl nor to an htm/text-like page.", null, true);
-					if ( ConnSupportUtils.countAndBlockDomainAfterTimes(blacklistedDomains, timesDomainsHadInputNotBeingDocNorPage, domainStr, HttpConnUtils.timesToHaveNoDocNorPageInputBeforeBlocked) )
+					if ( ConnSupportUtils.countAndBlockDomainAfterTimes(blacklistedDomains, timesDomainsHadInputNotBeingDocNorPage, domainStr, HttpConnUtils.timesToHaveNoDocNorPageInputBeforeBlocked, true) )
 						logger.warn("Domain: \"" + domainStr + "\" was blocked after having no Doc nor Pages in the input more than " + HttpConnUtils.timesToHaveNoDocNorPageInputBeforeBlocked + " times.");
 				}	// We log the quadruple here, as there is connection-kind-of problem here.. it's just us considering it an unwanted case. We don't throw "DomainBlockedException()", as we don't handle it for inputUrls (it would also log the quadruple twice with diff comments).
 			}
@@ -210,8 +210,8 @@ public class HttpConnUtils
 			conn = handleRedirects(urlId, sourceUrl, pageUrl, resourceURL, conn, responseCode, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // Take care of redirects.
 		}
 		else if ( (responseCode < 200) || (responseCode >= 400) ) {	// If we have error codes.
-			String errorLogMessage = ConnSupportUtils.onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode);
-			throw new RuntimeException(errorLogMessage);	// This is only thrown if a "DomainBlockedException" is caught.
+			String errorMessage = ConnSupportUtils.onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode, calledForPageUrl);
+			throw new RuntimeException(errorMessage);	// This is only thrown if a "DomainBlockedException" is caught.
 		}
 		// Else it's an HTTP 2XX SUCCESS CODE.
 		return conn;
@@ -522,8 +522,8 @@ public class HttpConnUtils
 			} while ( (responseCode >= 300) && (responseCode <= 399) );
 			
 			// It should have returned if there was an HTTP 2XX code. Now we have to handle the error-code.
-			String errorLogMessage = ConnSupportUtils.onErrorStatusCode(currentUrl, domainStr, responseCode);
-			throw new RuntimeException(errorLogMessage);	// This is not thrown if a "DomainBlockedException" was thrown first.
+			String errorMessage = ConnSupportUtils.onErrorStatusCode(currentUrl, domainStr, responseCode, calledForPageUrl);
+			throw new RuntimeException(errorMessage);	// This is not thrown if a "DomainBlockedException" was thrown first.
 			
 		} catch (AlreadyFoundDocUrlException | RuntimeException | ConnTimeoutException | DomainBlockedException | DomainWithUnsupportedHEADmethodException e) {	// We already logged the right messages.
 			conn.disconnect();
