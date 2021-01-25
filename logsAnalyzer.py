@@ -73,26 +73,27 @@ def check_contained_strings(current_line):
 def load_and_check_log_files():
     # Open directory and show the files inside:
     print("Opening log_directory: " + log_files_directory)
-    for file in os.listdir(log_files_directory):
+    for file in os.scandir(log_files_directory):
 
-        full_file_path = os.path.join(log_files_directory, file)
+        file_name = file.name
+        full_file_path = os.path.join(log_files_directory, file_name)
 
-        if file.endswith(".zip"):
+        if file_name.endswith(".zip"):
             with zipfile.ZipFile(full_file_path, 'r') as zip_ref:
                 zip_ref.extractall(".")
                 file_list_size = len(zip_ref.filelist)
                 if file_list_size != 1:
-                    print("The zip-file \"" + file + "\" contained more than one files (" + str(file_list_size) + ")!")
+                    print("The zip-file \"" + file_name + "\" contained more than one files (" + str(file_list_size) + ")!")
                     continue
-                file = zip_ref.filelist[0].filename
-                print("File name inside zip: " + file)
+                file_name = zip_ref.filelist[0].filename
+                print("File name inside zip: " + file_name)
                 zip_ref.extractall(log_files_directory)  # Just extract in the logs directory.
-            full_file_path = os.path.join(log_files_directory, file)
+            full_file_path = os.path.join(log_files_directory, file_name)
 
-        if not file.endswith(".log"):
-            print("Found a non \"LOG-file\": " + file)
+        if not file_name.endswith(".log"):
+            print("Found a non \"LOG-file\": " + file_name)
 
-        print("Opening log_file: " + str(file))
+        print("Opening log_file: " + str(file_name))
         previous_line = ""
 
         with open(full_file_path, 'r+') as log_file:
