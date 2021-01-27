@@ -60,7 +60,7 @@ public class ConnSupportUtils
 	private static final int timesToHave5XXerrorCodeBeforeDomainBlocked = 10;
 	private static final int timesToHaveTimeoutExBeforeDomainBlocked = 25;
 
-	private static final int timesToReturnNoTypeBeforeBlocked = 10;
+	private static final int timesToReturnNoTypeBeforeDomainBlocked = 10;
 
 	public static final HashSet<String> knownDocMimeTypes = new HashSet<String>();
 	static {
@@ -291,8 +291,10 @@ public class ConnSupportUtils
 					on5XXerrorCode(domainStr);
 			} else {	// Unknown Error (including non-handled: 1XX and the weird one: 999 (used for example on Twitter), responseCodes).
 				logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Received unexpected responseCode: " + errorStatusCode);
-				if ( domainStr != null )
+				if ( domainStr != null ) {
 					HttpConnUtils.blacklistedDomains.add(domainStr);
+					logger.debug("Domain: \"" + domainStr + "\" was blocked, after giving a " + errorStatusCode + " HTTP-status-code.");
+				}
 				
 				throw new DomainBlockedException();	// Throw this even if there was an error preventing the domain from getting blocked.
 			}
@@ -526,9 +528,9 @@ public class ConnSupportUtils
 			warnMsg += "\nThe initial connection was made with the \"HTTP-HEAD\" method, so there is no response-body to use to detect the content-type.";
 
 		if ( !foundDetectedContentType ) {
-			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, HttpConnUtils.timesDomainsReturnedNoType, domainStr, timesToReturnNoTypeBeforeBlocked, true) ) {
+			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, HttpConnUtils.timesDomainsReturnedNoType, domainStr, timesToReturnNoTypeBeforeDomainBlocked, true) ) {
 				logger.warn(warnMsg);
-				logger.warn("Domain: \"" + domainStr + "\" was blocked after returning no Type-info more than " + timesToReturnNoTypeBeforeBlocked + " times.");
+				logger.warn("Domain: \"" + domainStr + "\" was blocked after returning no Type-info more than " + timesToReturnNoTypeBeforeDomainBlocked + " times.");
 				throw new DomainBlockedException();
 			} else
 				throw new RuntimeException(warnMsg);	// We can't retrieve any clue. This is not desired. The "warnMsg" will be printed by the caller method.

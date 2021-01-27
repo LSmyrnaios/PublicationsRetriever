@@ -61,9 +61,10 @@ public class MetaDocUrlsHandler {
 
         if ( metaDocUrl.contains("{{") || metaDocUrl.contains("<?") )   // Dynamic link! The only way to handle it is by blocking the "currentPageUrlDomain".
         {
-            logger.debug("The metaDocUrl is a dynamic-link. Abort the process nd block the domain of the pageUrl.");
+            logger.debug("The metaDocUrl is a dynamic-link. Abort the process and block the domain of the pageUrl.");
             // Block the domain and return "true" to indicate handled-state.
             HttpConnUtils.blacklistedDomains.add(pageDomain);
+            logger.debug("Domain: \"" + pageDomain + "\" was blocked, after giving a dynamic metaDocUrl: " + metaDocUrl);
             UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was a dynamic-link.", null, true);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
             PageCrawler.contentProblematicUrls ++;
             return true;

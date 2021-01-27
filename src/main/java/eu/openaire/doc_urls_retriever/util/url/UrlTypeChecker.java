@@ -22,7 +22,7 @@ public class UrlTypeChecker
 
 	public static final Pattern URL_DIRECTORY_FILTER =
 			Pattern.compile(".+://.*/(?:(discover|profile|user)(?!.+(?:file|pdf))|(?:ldap-)?login|auth(?:entication)?\\.|ac(?:c)?ess(?!\\.)|sign(?:in|out)|join|subscr|register|submit|(?:post|send|shop|view|export|(?:wp-)?admin|home)/|watch|browse|import|bookmark|announcement|rss|feed|share|about|faq|wiki|news|events|cart|support|(?:site|html)map|documentation|help|contact|license|disclaimer|copyright|polic(?:y|ies)|privacy|terms|law"
-					+ "|(?:my|your)?account|settings|fund|aut(?:h)?or|editor|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic|conta(?:c)?t|survey|wallet|contribute|deposit|donate|template|logo|image|photo|video|media|theme|advertiser|product|people|(?:the)?press|forum|blog|column|row|for-authors|css|js|captcha|clipboard"
+					+ "|(?:my|your|create)?account|settings|fund|aut(?:h)?or|editor|author:|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic(s)?/.*/view/|conta(?:c)?t|survey|wallet|contribute|deposit|donate|template|logo|image|photo|video|media|theme|advertiser|product|people|(?:the)?press|forum|blog|column|row|for-authors|css|js|captcha|clipboard"
 					+ "|error|(?:mis|ab)use|\\?denied|gateway|sorryserver|cookie|notfound|404\\." + htExtensionsPattern + "|\\*/).*");
 	// We check them as a directory to avoid discarding publications' urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
 	

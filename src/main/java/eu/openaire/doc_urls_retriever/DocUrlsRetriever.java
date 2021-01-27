@@ -130,11 +130,13 @@ public class DocUrlsRetriever
 	public static void showStatistics(Instant startTime)
 	{
 		long inputCheckedUrlNum = 0;
+		long notConnectedIDs = 0;
 		int currentlyLoadedUrls = FileUtils.getCurrentlyLoadedUrls();
 
 		if ( LoaderAndChecker.useIdUrlPairs ) {
 			logger.debug(LoaderAndChecker.numOfIDsWithoutAcceptableSourceUrl + " IDs (about " + df.format(LoaderAndChecker.numOfIDsWithoutAcceptableSourceUrl * 100.0 / LoaderAndChecker.numOfIDs) + "%) had no acceptable sourceUrl.");
-			inputCheckedUrlNum = LoaderAndChecker.numOfIDs - LoaderAndChecker.numOfIDsWithoutAcceptableSourceUrl;	// For each ID we check only one of its urls anyway.
+			notConnectedIDs = LoaderAndChecker.numOfIDsWithoutAcceptableSourceUrl + FileUtils.duplicateIdUrlEntries;
+			inputCheckedUrlNum = LoaderAndChecker.numOfIDs - notConnectedIDs;	// For each ID we check only one of its urls anyway.
 		} else {
 			inputCheckedUrlNum = currentlyLoadedUrls;
 			if ( (FileUtils.skipFirstRow && (inputCheckedUrlNum < 0)) || (!FileUtils.skipFirstRow && (inputCheckedUrlNum == 0)) ) {
@@ -146,11 +148,9 @@ public class DocUrlsRetriever
 			}
 		}
 
-		if ( LoaderAndChecker.useIdUrlPairs && (inputCheckedUrlNum < currentlyLoadedUrls) ) {
-			long restIDs = currentlyLoadedUrls - inputCheckedUrlNum;
+		if ( LoaderAndChecker.useIdUrlPairs && (inputCheckedUrlNum < currentlyLoadedUrls) )
 			logger.info("Total num of urls checked (& connected) from the input was: " + inputCheckedUrlNum
-					+ ". The rest " + restIDs + " urls (about " + df.format(restIDs * 100.0 / LoaderAndChecker.numOfIDs) + "%) belonged to duplicate (" + (restIDs - LoaderAndChecker.numOfIDsWithoutAcceptableSourceUrl) +") or problematic (" + LoaderAndChecker.numOfIDsWithoutAcceptableSourceUrl + ") IDs.");
-		}
+					+ ". The rest " + notConnectedIDs + " urls (about " + df.format(notConnectedIDs * 100.0 / LoaderAndChecker.numOfIDs) + "%) belonged to duplicate (" + FileUtils.duplicateIdUrlEntries +") or problematic (" + LoaderAndChecker.numOfIDsWithoutAcceptableSourceUrl + ") IDs.");
 		else
 			logger.info("Total num of urls checked from the input was: " + inputCheckedUrlNum);
 

@@ -203,7 +203,7 @@ public class HttpConnUtils
 		HttpURLConnection conn = openHttpConnection(resourceURL, domainStr, calledForPageUrl, calledForPossibleDocUrl);
 		// The "resourceUrl" might have changed (due to special-handling of some pages), but it doesn't cause any problem. It's only used with "internalLinks" which are not affected by the special handling.
 
-		//ConnSupportUtils.printConnectionDebugInfo(conn, false);	// DEBUG!
+		//ConnSupportUtils.printConnectionDebugInfo(conn, true);	// DEBUG!
 
 		int responseCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP response), inside openHttpConnection().
 		if ( (responseCode >= 300) && (responseCode <= 399) ) {   // If we have redirections..
@@ -239,7 +239,7 @@ public class HttpConnUtils
 
 		try {
 			if ( blacklistedDomains.contains(domainStr) )
-		    	throw new RuntimeException("Avoid connecting to blackListed domain: \"" + domainStr + "\"!");
+		    	throw new RuntimeException("Avoid connecting to blackListed domain: \"" + domainStr + "\" with url: " + resourceURL);
 
 			// Check whether we don't accept "GET" method for uncategorizedInternalLinks and if this url is such a case.
 			if ( !calledForPageUrl && shouldNOTacceptGETmethodForUncategorizedInternalLinks

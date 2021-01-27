@@ -1,5 +1,6 @@
 """
 This program analyzes the logfiles and extracts useful info :-)
+@author Lampros Smyrnaios
 """
 
 import sys

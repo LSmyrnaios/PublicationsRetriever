@@ -73,7 +73,7 @@ public class LoaderAndChecker
 		// Start loading and checking urls.
 		while ( true )
 		{
-			loadedUrlGroup = FileUtils.getNextUrlGroupTest();	// Take urls from single-columned (testing) csvFile.
+			loadedUrlGroup = FileUtils.getNextUrlBatchTest();	// Take urls from single-columned (testing) csvFile.
 			
 			if ( isFinishedLoading(loadedUrlGroup.isEmpty(), isFirstRun) )	// Throws RuntimeException which is automatically passed on.
 				break;
@@ -247,7 +247,7 @@ public class LoaderAndChecker
 		}
 		
 		if ( HttpConnUtils.blacklistedDomains.contains(urlDomain) ) {	// Check if it has been blackListed after running internal links' checks.
-			logger.debug("Avoid connecting to blackListed domain: \"" + urlDomain + "\"!");
+			logger.debug("Avoid connecting to blackListed domain: \"" + urlDomain + "\" with url: " + retrievedUrl);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' method, as its domain was found blackListed.", null, true);
 			if ( !useIdUrlPairs )
 				connProblematicUrls ++;

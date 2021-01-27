@@ -63,19 +63,29 @@ public class FileUtils
 	public static final int MAX_FILENAME_LENGTH = 250;	// TODO - Find a way to get the current-system's MAX-value.
 	
 	public static String fullInputFilePath = null;	// Used when the MLA is enabled and we want to count the number of lines in the inputFile, in order to optimize the M.L.A.'s execution.
-	
+
+	public static int duplicateIdUrlEntries = 0;
+
+	private static final String utf8Charset = "UTF-8";
+
 	
 	public FileUtils(InputStream input, OutputStream output)
 	{
-		FileUtils.inputScanner = new Scanner(input);
+		FileUtils.inputScanner = new Scanner(input, utf8Charset);
 		
 		if ( MachineLearning.useMLA ) {	// In case we are using the MLA, go get the numOfLines to be used.
 			numOfLines = getInputNumOfLines();
 			logger.debug("Num of lines in the inputFile: " + numOfLines);
 		}
-		
-		FileUtils.printStream = new PrintStream(output);
-		
+
+		try {
+			FileUtils.printStream = new PrintStream(output, false, utf8Charset);
+		}
+		catch ( Exception e ) {
+			logger.error(e.getMessage(), e);
+			System.exit(20);
+		}
+
 		if ( shouldDownloadDocFiles ) {
 			File dir = new File(storeDocFilesDir);
 			if ( shouldDeleteOlderDocFiles ) {
@@ -140,7 +150,7 @@ public class FileUtils
 		}
 		
 		try {
-			printStream = new PrintStream(new FileOutputStream(file));
+			printStream = new PrintStream(new FileOutputStream(file), false, utf8Charset);
 			
 			while ( inputScanner.hasNextLine() ) {
 				printStream.print(inputScanner.nextLine());
@@ -188,7 +198,10 @@ public class FileUtils
 	public static HashMultimap<String, String> getNextIdUrlPairBatchFromJson()
 	{
 		IdUrlTuple inputIdUrlTuple;
-		HashMultimap<String, String> idAndUrlMappedInput = HashMultimap.create();
+		int expectedPathsPerID = 5;
+		int expectedIDsPerBatch = jsonBatchSize / expectedPathsPerID;
+
+		HashMultimap<String, String> idAndUrlMappedInput = HashMultimap.create(expectedIDsPerBatch, expectedPathsPerID);
 		
 		int curBeginning = FileUtils.fileIndex;
 		
@@ -214,8 +227,10 @@ public class FileUtils
 				continue;
 			}
 
-			if ( !idAndUrlMappedInput.put(inputIdUrlTuple.id, inputIdUrlTuple.url) )    // We have a duplicate in the input.. log it here as we cannot pass it through the HashMultimap. It's possible that this as well as the original might be/give a docUrl.
-				UrlUtils.logQuadruple(inputIdUrlTuple.id, inputIdUrlTuple.url, null, "duplicate", "Discarded in FileUtils.getNextIdUrlPairGroupFromJson(), as it is a duplicate.", null, false);
+			if ( !idAndUrlMappedInput.put(inputIdUrlTuple.id, inputIdUrlTuple.url) ) {    // We have a duplicate url in the input.. log it here as we cannot pass it through the HashMultimap. It's possible that this as well as the original might be/give a docUrl.
+				duplicateIdUrlEntries ++;
+				UrlUtils.logQuadruple(inputIdUrlTuple.id, inputIdUrlTuple.url, null, "duplicate", "Discarded in FileUtils.getNextIdUrlPairBatchFromJson(), as it is a duplicate.", null, false);
+			}
 		}
 
 		return idAndUrlMappedInput;
@@ -237,7 +252,7 @@ public class FileUtils
 			idStr = jObj.get("id").toString();
 			urlStr = jObj.get("url").toString();
 		} catch (JSONException je) {
-			logger.warn("JSONException caught when tried to retrieve values from jsonLine: \t" + jsonLine, je);
+			logger.warn("JSONException caught when tried to parse and extract values from jsonLine: \t" + jsonLine, je);
 			return null;
 		}
 		
@@ -485,9 +500,9 @@ public class FileUtils
 	 * This method parses a testFile with one-url-per-line and extracts the urls (e.g. ".txt", ".csv", ".tsv").
 	 * @return Collection<String>
 	 */
-	public static Collection<String> getNextUrlGroupTest()
+	public static Collection<String> getNextUrlBatchTest()
 	{
-		Collection<String> urlGroup = new HashSet<String>();
+		Collection<String> urlGroup = new HashSet<String>(jsonBatchSize);
 		
 		// Take a batch of <jsonBatchSize> urls from the file..
 		// If we are at the end and there are less than <jsonBatchSize>.. take as many as there are..
