@@ -155,7 +155,8 @@ public class HttpConnUtils
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to a non-docUrl with 'viewcontent.cgi'.", null, true);
 					return false;
 				}
-				else if ( (lowerCaseMimeType != null) && ((lowerCaseMimeType.contains("htm") || (lowerCaseMimeType.contains("text") && !lowerCaseMimeType.contains("xml")))) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
+				else if ( (lowerCaseMimeType != null) && ((lowerCaseMimeType.contains("htm") || (lowerCaseMimeType.contains("text") && !lowerCaseMimeType.contains("xml") && !lowerCaseMimeType.contains("csv") && !lowerCaseMimeType.contains("tsv")))) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
+					// TODO - Better make a regex for the above checks..
 					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn, firstHtmlLine, bufferedReader);
 				else if ( finalUrlStr.contains("academic.microsoft.com/api/") ) {	// JSON content.
 					SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson(urlId, sourceUrl, finalUrlStr, conn);
@@ -297,7 +298,7 @@ public class HttpConnUtils
 
 			URL url = new URL(resourceURL);
 			conn = (HttpURLConnection) url.openConnection();
-			conn.setRequestProperty("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0");	// Used to bypass some domains' antipathy for java-crawlers.
+			conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:84.0) Gecko/20100101 Firefox/84.0");
 			conn.setInstanceFollowRedirects(false);	// We manage redirects on our own, in order to control redirectsNum, avoid redirecting to unwantedUrls and handling errors.
 
 			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// For just-webPages, we want to use "GET" in order to download the content.
@@ -338,6 +339,7 @@ public class HttpConnUtils
 				// No call of "conn.disconnect()" here, as we will connect to the same server.
 				conn = (HttpURLConnection) url.openConnection();
 				conn.setRequestMethod("GET");	// To reach here, it means that the HEAD method is unsupported.
+				conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:84.0) Gecko/20100101 Firefox/84.0");
 				conn.setConnectTimeout(maxConnGETWaitingTime);
 				conn.setReadTimeout(maxConnGETWaitingTime);
 				conn.setInstanceFollowRedirects(false);

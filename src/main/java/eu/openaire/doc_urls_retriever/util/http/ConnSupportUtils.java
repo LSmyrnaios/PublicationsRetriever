@@ -450,7 +450,7 @@ public class ConnSupportUtils
 	{
 		int contentSize = getContentSize(conn, false);
 		if ( contentSize == -1 ) {	// "Unacceptable size"-code..
-			logger.warn("Aborting HTML-extraction..");
+			logger.warn("Aborting HTML-extraction for pageUrl: " + conn.getURL().toString());
 			return null;
 		}
 
@@ -557,7 +557,7 @@ public class ConnSupportUtils
 	{
 		int contentSize = getContentSize(conn, false);
 		if ( contentSize == -1 ) {	// "Unacceptable size"-code..
-			logger.warn("Aborting HTML-extraction..");
+			logger.warn("Aborting HTML-extraction for pageUrl: " + conn.getURL().toString());
 			return null;
 		}
 
@@ -659,9 +659,7 @@ public class ConnSupportUtils
 					return null;
 				}
 			}
-
 			return	new URL(UrlBase, currentLink).toString();	// Return the TargetUrl.
-
 		} catch (Exception e) {
 			logger.error("Error when producing fully-formedUrl for internal-link: " + currentLink, e.getMessage());
 			return null;
