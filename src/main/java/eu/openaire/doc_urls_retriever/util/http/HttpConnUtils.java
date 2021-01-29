@@ -269,32 +269,8 @@ public class HttpConnUtils
 			boolean havingScienceDirectPDF = false;
 			if ( "pdf.sciencedirectassets.com".equals(domainStr) )	// Avoiding NPE.
 				havingScienceDirectPDF = true;
-			else if ( calledForPageUrl && !calledForPossibleDocUrl ) {
-				try {
-					String scienceDirectPageUrl = null;
-					String europepmcDocUrl = null;
-					String academicMicrosoftPageUrl = null;
-					String nasaDocUrl = null;
-					if ( (scienceDirectPageUrl = SpecialUrlsHandler.checkAndGetScienceDirectUrl(resourceURL)) != null ) {
-						//logger.debug("ScienceDirect-PageURL to try: " + scienceDirectPageUrl);	// DEBUG!
-						resourceURL = scienceDirectPageUrl;
-					}
-					else if ( (europepmcDocUrl = SpecialUrlsHandler.checkAndGetEuropepmcDocUrl(resourceURL)) != null ) {
-						//logger.debug("Europepmc-PageURL: " + resourceURL + " to possible-docUrl: " + europepmcDocUrl);	// DEBUG!
-						resourceURL = europepmcDocUrl;
-					}
-					else if ( (academicMicrosoftPageUrl = SpecialUrlsHandler.checkAndGetAcademicMicrosoftPageUrl(resourceURL)) != null ) {
-						//logger.debug("AcademicMicrosoft-PageURL: " + resourceURL + " to api-entity-pageUrl: " + academicMicrosoftPageUrl);	// DEBUG!
-						resourceURL = academicMicrosoftPageUrl;
-					}
-					else if ( (nasaDocUrl = SpecialUrlsHandler.checkAndGetNasaDocUrl(resourceURL)) != null ) {
-						//logger.debug("Nasa-PageURL: " + resourceURL + " to possible-docUrl: " + nasaDocUrl);	// DEBUG!
-						resourceURL = nasaDocUrl;
-					}
-				} catch ( FailedToProcessScienceDirectException sdhe ) {
-					throw new RuntimeException("Problem when handling the \"ScienceDirect\"-family-url: " + resourceURL);
-				}
-			}
+			else if ( calledForPageUrl && !calledForPossibleDocUrl )
+				resourceURL = SpecialUrlsHandler.checkAndHandleSpecialUrls(resourceURL);	// May throw a "RuntimeException".
 
 			URL url = new URL(resourceURL);
 			conn = (HttpURLConnection) url.openConnection();

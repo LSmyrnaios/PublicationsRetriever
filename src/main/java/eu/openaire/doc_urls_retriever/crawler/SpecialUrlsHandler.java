@@ -1,7 +1,6 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
 
-import eu.openaire.doc_urls_retriever.exceptions.FailedToProcessScienceDirectException;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
@@ -42,6 +41,41 @@ public class SpecialUrlsHandler
 	private static final String nasaBaseDomainPath = "https://ntrs.nasa.gov/";
 
 
+
+	public static String checkAndHandleSpecialUrls(String resourceUrl)
+	{
+		String scienceDirectPageUrl = null;
+		String europepmcDocUrl = null;
+		String academicMicrosoftPageUrl = null;
+		String nasaDocUrl = null;
+		String frontiersinUrl = null;
+		if ( (scienceDirectPageUrl = SpecialUrlsHandler.checkAndGetScienceDirectUrl(resourceUrl)) != null ) {
+			//logger.debug("ScienceDirect-PageURL to try: " + scienceDirectPageUrl);	// DEBUG!
+			resourceUrl = scienceDirectPageUrl;
+		}
+		else if ( (europepmcDocUrl = SpecialUrlsHandler.checkAndGetEuropepmcDocUrl(resourceUrl)) != null ) {
+			//logger.debug("Europepmc-PageURL: " + resourceURL + " to possible-docUrl: " + europepmcDocUrl);	// DEBUG!
+			resourceUrl = europepmcDocUrl;
+		}
+		else if ( (academicMicrosoftPageUrl = SpecialUrlsHandler.checkAndGetAcademicMicrosoftPageUrl(resourceUrl)) != null ) {
+			//logger.debug("AcademicMicrosoft-PageURL: " + resourceURL + " to api-entity-pageUrl: " + academicMicrosoftPageUrl);	// DEBUG!
+			resourceUrl = academicMicrosoftPageUrl;
+		}
+		else if ( (nasaDocUrl = SpecialUrlsHandler.checkAndGetNasaDocUrl(resourceUrl)) != null ) {
+			//logger.debug("Nasa-PageURL: " + resourceURL + " to possible-docUrl: " + nasaDocUrl);	// DEBUG!
+			resourceUrl = nasaDocUrl;
+		}
+		else if ( (frontiersinUrl = SpecialUrlsHandler.checkAndGetFrontiersinDocUrl(resourceUrl)) != null ) {
+			//logger.debug("Frontiersin-PageURL: " + resourceURL + " to possible-docUrl: " + frontiersinUrl);	// DEBUG!
+			resourceUrl = frontiersinUrl;
+		}
+		else
+			resourceUrl = checkAndHandleDergipark(resourceUrl);	// It returns the same url if nothing was handled.
+
+		return resourceUrl;
+	}
+
+
 	/////////// sciencedirect.com //// "linkinghub.elsevier.com //// api.elsevier.com ////////////////////
 	/**
 	 * This method checks if the given url belongs to the "scienceDirect-family"-urls and if so it handles it.
@@ -49,15 +83,23 @@ public class SpecialUrlsHandler
 	 * @param pageUrl
 	 * @return
 	 */
-	public static String checkAndGetScienceDirectUrl(String pageUrl) throws FailedToProcessScienceDirectException
+	public static String checkAndGetScienceDirectUrl(String pageUrl)
 	{
 		boolean wasLinkinghubElsevier = false;
 		if ( pageUrl.contains("linkinghub.elsevier.com") || pageUrl.contains("api.elsevier.com") )	// Avoid plain "elsevier.com"-rule as there are: "www.elsevier.com" and "journals.elsevier.com" which don't give docUrls and are handled differently.
 		{
-			if ( (pageUrl = offlineRedirectElsevierToScienceDirect(pageUrl)) == null ) {	// Logging is handled inside "offlineRedirectElsevierToScienceDirect()".
-				throw new FailedToProcessScienceDirectException();	// Throw the exception to avoid the connection.
-				//logger.debug("Produced ScienceDirect-url: " + pageUrl);	// DEBUG!
+			// Offline-redirect Elsevier to ScienceDirect.
+			// The "linkinghub.elsevier.com" urls have a javaScript redirect inside which we are not able to handle without doing html scraping.
+			// The "api.elsevier.com" contains xml which contains the docUrl, but we can go there faster by "offlineRedirect".
+			String idStr = UrlUtils.getDocIdStr(pageUrl, null);
+			if ( idStr != null ) {
+				idStr = StringUtils.replace(idStr, "PII:", "", 1);	// In case of an "api.elsevier.com" pageUrl.
+				pageUrl = scienceDirectBasePath + idStr;
 			}
+			else
+				throw new RuntimeException("Problem when handling the \"elsevier\"-family-url: " + pageUrl);
+
+			//logger.debug("Produced ScienceDirect-url: " + pageUrl);	// DEBUG!
 			wasLinkinghubElsevier = true;
 		}
 
@@ -68,70 +110,41 @@ public class SpecialUrlsHandler
 	}
 
 
-	/**
-	 * This method receives a url from "linkinghub.elsevier.com" or "api.elsevier.com" and returns it's matched url in "sciencedirect.com".
-	 * We do this because the "linkinghub.elsevier.com" urls have a javaScript redirect inside which we are not able to handle without doing html scraping.
-	 * If there is any error this method returns the URL it first received.
-	 * @param elsevierUrl
-	 * @return
-	 */
-	public static String offlineRedirectElsevierToScienceDirect(String elsevierUrl)
+	/////////// europepmc.org ////////////////////
+	public static String checkAndGetEuropepmcDocUrl(String europepmcUrl)
 	{
-		String idStr = UrlUtils.getDocIdStr(elsevierUrl, null);
-		if ( idStr != null ) {
-			idStr = StringUtils.replace(idStr, "PII:", "", 1);	// In case of an "api.elsevier.com" pageUrl.
-			return (scienceDirectBasePath + idStr);
+		if ( europepmcUrl.contains("europepmc.org") && !europepmcUrl.contains("ptpmcrender.fcgi") )	// The "ptpmcrender.fcgi" indicates that this is already a "europepmc"-docUrl.
+		{
+			// Offline-redirect to the docUrl.
+			String idStr = UrlUtils.getDocIdStr(europepmcUrl, null);
+			if ( idStr != null )
+				return (europepmcPageUrlBasePath + (!idStr.startsWith("PMC", 0) ? "PMC"+idStr : idStr) + "&blobtype=pdf");    // TODO - Investigate some 404-failures (THE DOCURLS belong to diff domain)
 		}
 		return null;
-	}
-
-
-	/////////// europepmc.org ////////////////////
-	public static String checkAndGetEuropepmcDocUrl(String pageUrl)
-	{
-		if ( pageUrl.contains("europepmc.org") && !pageUrl.contains("ptpmcrender.fcgi") )	// The "ptpmcrender.fcgi" indicates that this is already a "europepmc"-docUrl.
-			return offlineRedirectToEuropepmcDocUrl(pageUrl);
-		else
-			return null;
-	}
-
-
-	public static String offlineRedirectToEuropepmcDocUrl(String europepmcPageUrl)
-	{
-		String idStr = UrlUtils.getDocIdStr(europepmcPageUrl, null);
-		if ( idStr != null )
-			return (europepmcPageUrlBasePath + (!idStr.startsWith("PMC", 0) ? "PMC"+idStr : idStr) + "&blobtype=pdf");    // TODO - Investigate some 404-failures (THE DOCURLS belong to diff domain)
-		else
-			return null;
 	}
 
 
 	/////////// academic.microsoft.com ////////////////////
 	public static String checkAndGetAcademicMicrosoftPageUrl(String initialAcademicMicrosoftUrl)
 	{
+		// https://academic.microsoft.com/#/detail/2084896083
+		// https://academic.microsoft.com/paper/1585286892/related
+
+		// Offline-redirect to the docUrl.
 		if ( initialAcademicMicrosoftUrl.contains("academic.microsoft") )
-			return offlineRedirectToAcademicMicrosoftFinalPageUrl(initialAcademicMicrosoftUrl);
-		else
-			return null;
-	}
+		{
+			Matcher academicMicrosoftIdMatcher = ACADEMIC_MICROSOFT_ID.matcher(initialAcademicMicrosoftUrl);
+			if ( !academicMicrosoftIdMatcher.matches() )
+				return null;
 
-
-	// https://academic.microsoft.com/#/detail/2084896083
-	// https://academic.microsoft.com/paper/1585286892/related
-	public static String offlineRedirectToAcademicMicrosoftFinalPageUrl(String initialAcademicMicrosoftUrl)
-	{
-		String idStr = null;
-		Matcher academicMicrosoftIdMatcher = ACADEMIC_MICROSOFT_ID.matcher(initialAcademicMicrosoftUrl);
-		if ( !academicMicrosoftIdMatcher.matches() )
-			return null;
-
-		try {
-			idStr = academicMicrosoftIdMatcher.group(1);
-		} catch (Exception e) { logger.error("", e); return null; }
-		if ( (idStr != null) && !idStr.isEmpty() )
-			return (academicMicrosoftFinalPageUrlBasePath + idStr + "?entityType=2");
-		else
-			return null;
+			String idStr = null;
+			try {
+				idStr = academicMicrosoftIdMatcher.group(1);
+			} catch (Exception e) { logger.error("", e); return null; }
+			if ( (idStr != null) && !idStr.isEmpty() )
+				return (academicMicrosoftFinalPageUrlBasePath + idStr + "?entityType=2");
+		}
+		return null;
 	}
 
 
@@ -223,24 +236,61 @@ public class SpecialUrlsHandler
 
 
 	/////////// ntrs.nasa.gov ////////////////////
-	public static String checkAndGetNasaDocUrl(String pageUrl)
+	public static String checkAndGetNasaDocUrl(String nasaPageUrl)
 	{
-		if ( pageUrl.contains("ntrs.nasa.gov") && ! pageUrl.contains("api/") )
-			return offlineRedirectToNasaDocUrl(pageUrl);
-		else
-			return null;
+		if ( nasaPageUrl.contains("ntrs.nasa.gov") && ! nasaPageUrl.contains("api/") )
+		{
+			// Offline-redirect to the docUrl.
+			String idStr = UrlUtils.getDocIdStr(nasaPageUrl, null);
+			if ( idStr == null )
+				return null;
+
+			String citationPath = StringUtils.replace(nasaPageUrl, nasaBaseDomainPath, "", 1);
+			citationPath = (citationPath.endsWith("/") ? citationPath : citationPath+"/");	// Make sure the "citationPath" has an ending slash.
+
+			return (nasaBaseDomainPath + "api/" + citationPath + "downloads/" + idStr + ".pdf");
+		}
+		return null;
 	}
 
 
-	public static String offlineRedirectToNasaDocUrl(String nasaPageUrl)
+	/////////// www.frontiersin.org ////////////////////
+	public static String checkAndGetFrontiersinDocUrl(String frontiersinPageUrl)
 	{
-		String idStr = UrlUtils.getDocIdStr(nasaPageUrl, null);
-		if ( idStr == null )
-			return null;
+		//https://www.frontiersin.org/article/10.3389/feart.2017.00079
+		//https://www.frontiersin.org/articles/10.3389/fphys.2018.00414/full
 
-		String citationPath = StringUtils.replace(nasaPageUrl, nasaBaseDomainPath, "", 1);
-		citationPath = (citationPath.endsWith("/") ? citationPath : citationPath+"/");	// Make sure the "citationPath" has an ending slash.
+		if ( frontiersinPageUrl.contains("www.frontiersin.org") )
+		{
+			if ( frontiersinPageUrl.endsWith("/pdf") )
+				return null;	// It's already a docUrl, go connect.
+			else if ( !frontiersinPageUrl.contains("/article") )
+				throw new RuntimeException("This \"frontiersin\"-url is known to not lead to a docUrl: " + frontiersinPageUrl);	// Avoid the connection.
 
-		return (nasaBaseDomainPath + "api/" + citationPath + "downloads/" + idStr + ".pdf");
+			// Offline-redirect to the docUrl.
+			String idStr = UrlUtils.getDocIdStr(frontiersinPageUrl, null);
+			if ( idStr == null )
+				return null;
+
+			if ( frontiersinPageUrl.endsWith("/full") )
+				return StringUtils.replace(frontiersinPageUrl, "/full", "/pdf");
+			else
+				return frontiersinPageUrl + "/pdf";
+		}
+		return null;	// It may be already a frontiersin-docUrl or url from another domain.
 	}
+
+
+	///////// dergipark.gov.tr ///////////////////////
+	// http://dergipark.gov.tr/beuscitech/issue/40162/477737
+	/**
+	 * This domain has been transferred to dergipark.org.tr. In 2021 the old domain will be inaccessible at some poit.
+	 * @param pageUrl
+	 * @return
+	 */
+	public static String checkAndHandleDergipark(String pageUrl)
+	{
+		return StringUtils.replace(pageUrl, "dergipark.gov.tr", "dergipark.org.tr");
+	}
+
 }
