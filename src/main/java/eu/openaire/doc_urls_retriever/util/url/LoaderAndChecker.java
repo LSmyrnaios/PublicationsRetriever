@@ -38,6 +38,9 @@ public class LoaderAndChecker
 	
 	public static int numOfIDsWithoutAcceptableSourceUrl = 0;	// The number of IDs which failed to give an acceptable sourceUrl.
 
+	public static int loadingRetries = 0;
+
+
 	public LoaderAndChecker() throws RuntimeException
 	{
 		try {
@@ -207,24 +210,73 @@ public class LoaderAndChecker
 					continue;
 				}
 
-				if ( !isSingleIdUrlPair )	// Don't forget to write the valid but not-to-be-connected urls to the outputFile.
-					handleLogOfRemainingUrls(urlToCheck, retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId);
-
 				String sourceUrl = urlToCheck;	// Hold it here for the logging-messages.
 				if ( !sourceUrl.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
 					logger.warn("Could not canonicalize url: " + sourceUrl);
 					UrlUtils.logQuadruple(retrievedId, sourceUrl, null, "unreachable", "Discarded at loading time, due to canonicalization's problems.", null, true);
 					LoaderAndChecker.connProblematicUrls ++;
-					continue;
+
+					// If other urls exits, then go and check those.
+					if ( !isSingleIdUrlPair ) {    // Don't forget to write the valid but not-to-be-connected urls to the outputFile.
+						loggedUrlsOfCurrentId.add(sourceUrl);
+						checkRemainingUrls(retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId, isSingleIdUrlPair);	// Go check the other urls because they might not have a canonicalization problem.
+						handleLogOfRemainingUrls(null, retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId);
+					}
+					continue;	// To the next id.
 				}
 
 				try {	// Check if it's a docUrl, if not, it gets crawled.
 					HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);
+					if ( !isSingleIdUrlPair )
+						loggedUrlsOfCurrentId.add(urlToCheck);
 				} catch (Exception e) {
 					UrlUtils.logQuadruple(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true);
+					// This url had connectivity problems.. but the rest might not, go check them out.
+					if ( !isSingleIdUrlPair ) {
+						loggedUrlsOfCurrentId.add(urlToCheck);
+						checkRemainingUrls(retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId, isSingleIdUrlPair);	// Go check the other urls because they might not have a canonicalization problem.
+					}
 				}
+
+				if ( !isSingleIdUrlPair )	// Don't forget to write the valid but not-to-be-connected urls to the outputFile.
+					handleLogOfRemainingUrls(null, retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId);
+
 			}// end id-for-loop
 		}// end loading-while-loop
+	}
+
+
+	/**
+	 * This method is called after a "best-case" url was detected but either had canonicalization problems or the connection failed.
+	 * @param retrievedId
+	 * @param retrievedUrlsOfThisId
+	 * @param loggedUrlsOfThisId
+	 * @param isSingleIdUrlPair
+	 * @return
+	 */
+	private static boolean checkRemainingUrls(String retrievedId, Set<String> retrievedUrlsOfThisId, HashSet<String> loggedUrlsOfThisId, boolean isSingleIdUrlPair)
+	{
+		for ( String urlToCheck : retrievedUrlsOfThisId )
+		{
+			if ( !loggedUrlsOfThisId.contains(urlToCheck) )
+				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(urlToCheck, null, StandardCharsets.UTF_8)) == null
+					|| loggedUrlsOfThisId.contains(urlToCheck) )
+					continue;
+
+			loadingRetries ++;
+
+			try {	// Check if it's a docUrl, if not, it gets crawled.
+				HttpConnUtils.connectAndCheckMimeType(retrievedId, urlToCheck, urlToCheck, urlToCheck, null, true, false);
+				if ( !isSingleIdUrlPair )
+					loggedUrlsOfThisId.add(urlToCheck);
+				return true;	// A url was checked and didn't have any problems, return and log the remaining urls.
+			} catch (Exception e) {
+				UrlUtils.logQuadruple(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true);
+				if ( !isSingleIdUrlPair )
+					loggedUrlsOfThisId.add(urlToCheck);
+			}
+		}
+		return false;
 	}
 	
 	
@@ -331,9 +383,16 @@ public class LoaderAndChecker
 	{
 		for ( String retrievedUrl : retrievedUrlsOfThisId )
 		{
+			// Some of the "retrieved-urls" maybe were excluded before the canonicalization point (e.g. because their domains was blocked or were duplicate).
+			// We have to make sure the "equal()" and the "contains()" succeed on the same-started-urls.
+			String tempUrl = retrievedUrl;
+			if ( !retrievedUrl.contains("#/") )
+				if ( (retrievedUrl = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null )
+					retrievedUrl = tempUrl;	// Make sure we keep it on canonicalization-failure.
+
 			if ( !retrievedUrl.equals(urlToCheck) && !loggedUrlsOfThisId.contains(retrievedUrl) )
 				UrlUtils.logQuadruple(retrievedId, retrievedUrl, null, "unreachable",
-						"Skipped in LoaderAndChecker, as a better url was selected for id: " + retrievedId, null, true);
+					"Skipped in LoaderAndChecker, as a better url was selected for id: " + retrievedId, null, true);
 		}
 	}
 	
