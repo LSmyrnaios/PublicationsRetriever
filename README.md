@@ -1,21 +1,22 @@
 # DocUrlsRetriever    [![Build Status](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever.svg?branch=master)](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever)
 
-A Java-program which retrieves the Document Urls from the given Publication-Web-Pages and if wanted, it can also download the full-texts.<br/>
+A Java-program which retrieves the Document and Dataset Urls from the given Publication-Web-Pages and if wanted, it can also download the full-texts.<br/>
 It is being developed for the European organization: [**OpenAIRE**](https://www.openaire.eu/).<br/>
 Afterwards, these full-text documents are mined, in order to enrich a much more complete set of OpenAIRE publications with inference links.<br/>
 
-
 The **DocUrlsRetriever** takes as input the PubPages with their IDs -in JSON format- and gives an output -also in JSON format,
-which contains the IDs, the PubPages, the DocUrls and a comment.<br/>
+which contains the IDs, the PubPages, the Document or Dataset Urls and a comment.<br/>
 The "comment" can have the following values:
-- an empty string, if the docUrl is retrieved and the user specified that the docFiles will not be downloaded
+- an empty string, if the document url is retrieved, and the user specified that the document files will not be downloaded
+- the information if the resulted url is a dataset url
 - the DocFileFullPath, if we have chosen to download the DocFiles
 - the ErrorCause, if there was any error which prevented the discovery of the DocUrl (in that case, the DocUrl is set to "unreachable")
 <br/>
 
 PubPage: *the web page with the publication's information.*<br/> 
 DocUrl: *the url of the fulltext-document-file.*<br/>
-Full-text: *the document containing all the text of a publication..*<br/>
+DatasetUrl: *the url of the dataset-file.*<br/>
+Full-text: *the document containing all the text of a publication.*<br/>
 DocFileFullPath: *the full-storage-path of the fulltext-document-file.*<br/>
 ErrorCause: *the cause of the failure of retrieving the docUrl or the docFile.*<br/>
 

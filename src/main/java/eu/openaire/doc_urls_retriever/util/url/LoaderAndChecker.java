@@ -29,6 +29,11 @@ public class LoaderAndChecker
 	public static final Pattern DOC_URL_FILTER = Pattern.compile(".+(pdf|download|/doc|document|(?:/|[?]|&)file|/fulltext|attachment|/paper|viewfile|viewdoc|/get|cgi/viewcontent.cgi?).*");
 	// "DOC_URL_FILTER" works for lowerCase Strings (we make sure they are in lowerCase before we check).
 	// Note that we still need to check if it's an alive link and if it's actually a docUrl (though it's mimeType).
+
+	private static final String dataset_formats = "(?:xls[x]?|[ct]sv|tab|(?:geo)?json|xml|ods|ddi|rdf|[g]?zip|[rt]ar|[7x]z|tgz|[gb]z[\\d]*"
+			+ "|smi|por|ascii|dta|sav|dat|txt|ti[f]+|tfw|dwg|svg|sas7bdat|spss|sas|stata|(?:my|postgre)?sql(?:ite)?|bigquery|sh[px]|sb[xn]|prj|dbf|(?:m|acc)db|mif|mat|pcd|bt|n[sc]?[\\d]*|h[\\d]+|hdf[\\d]*|trs|opj|jcamp|fcs|fas(?:ta)?|keys|values)";
+	public static final Pattern DATASET_URL_FILTER = Pattern.compile(".+(?:dataset[s]?/.*|(?:\\.|format=)" + dataset_formats + "(?:\\?.+)?$)");
+
 	
 	public static int numOfIDs = 0;	// The number of IDs existing in the input.
 	public static int connProblematicUrls = 0;	// Urls known to have connectivity problems, such as long conn-times etc.
@@ -88,9 +93,9 @@ public class LoaderAndChecker
 				if ( (retrievedUrl = handleUrlChecks(null, retrievedUrl)) == null )
 					continue;
 				
-				boolean isPossibleDocUrl = false;
+				boolean isPossibleDocOrDatasetUrl = false;
 				if ( DOC_URL_FILTER.matcher(retrievedUrl.toLowerCase()).matches() )
-					isPossibleDocUrl = true;
+					isPossibleDocOrDatasetUrl = true;
 
 				String urlToCheck = retrievedUrl;
 				if ( !urlToCheck.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null ) {
@@ -101,7 +106,7 @@ public class LoaderAndChecker
 				}
 
 				try {
-					HttpConnUtils.connectAndCheckMimeType(null, retrievedUrl, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);
+					HttpConnUtils.connectAndCheckMimeType(null, retrievedUrl, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
 				} catch (Exception e) {
 					UrlUtils.logQuadruple(null, retrievedUrl, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true);
 				}
@@ -136,8 +141,8 @@ public class LoaderAndChecker
 			for ( String retrievedId : keys )
 			{
 				boolean goToNextId = false;
-				String possibleDocUrl = null;
-				String bestNonDocUrl = null;	// Best-case url
+				String possibleDocOrDatasetUrl = null;
+				String bestNonDocNonDatasetUrl = null;	// Best-case url
 				String nonDoiUrl = null;	// Url which is not a best case, but it's not a slow-doi url either.
 				String neutralUrl = null;	// Just a neutral url.
 				String urlToCheck = null;
@@ -169,18 +174,20 @@ public class LoaderAndChecker
 						goToNextId = true;    // Skip the best-url evaluation & connection after this loop.
 						break;
 					}
-					
+
+					String lowerCaseRetrievedUrl = retrievedUrl.toLowerCase();
 					// Check if it's a possible-DocUrl, if so, this is the only url which will be checked from this id-group, unless there's a canonicalization problem.
-					if ( DOC_URL_FILTER.matcher(retrievedUrl.toLowerCase()).matches() ) {
-						//logger.debug("Possible docUrl: " + retrievedUrl);
-						possibleDocUrl = retrievedUrl;
+					if ( DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()
+						|| DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches() ) {
+						//logger.debug("Possible docUrl or datasetUrl: " + retrievedUrl);
+						possibleDocOrDatasetUrl = retrievedUrl;
 						break;	// This is the absolute-best-case, we go and connect directly.
 					}
 					
 					// Use this rule, if we accept the slow "hdl.handle.net"
 					if ( retrievedUrl.contains("/handle/") )	// If this url contains "/handle/" we know that it's a bestCaseUrl among urls from the domain "handle.net", which after redirects reaches the bestCaseUrl (containing "/handle/").
-						bestNonDocUrl = retrievedUrl;	// We can't just connect here, as the next url might be a possibleDocUrl.
-					else if ( (bestNonDocUrl == null) && !retrievedUrl.contains("doi.org") )	// If no other preferable url is found, we should prefer the nonDOI-one, if present, as the DOI-urls have lots of redirections.
+						bestNonDocNonDatasetUrl = retrievedUrl;	// We can't just connect here, as the next url might be a possibleDocOrDatasetUrl.
+					else if ( (bestNonDocNonDatasetUrl == null) && !retrievedUrl.contains("doi.org") )	// If no other preferable url is found, we should prefer the nonDOI-one, if present, as the DOI-urls have lots of redirections.
 						nonDoiUrl = retrievedUrl;
 					else
 						neutralUrl = retrievedUrl;	// If no special-goodCase-url is found, this one will be used. Note that this will be null if no acceptable-url was found.
@@ -192,14 +199,14 @@ public class LoaderAndChecker
 					continue;
 				}
 
-				boolean isPossibleDocUrl = false;	// Used for specific connection settings.
+				boolean isPossibleDocOrDatasetUrl = false;	// Used for specific connection settings.
 				// Decide with which url from this id-group we should connect to.
-				if ( possibleDocUrl != null ) {
-					urlToCheck = possibleDocUrl;
-					isPossibleDocUrl = true;
+				if ( possibleDocOrDatasetUrl != null ) {
+					urlToCheck = possibleDocOrDatasetUrl;
+					isPossibleDocOrDatasetUrl = true;
 				}
-				else if ( bestNonDocUrl != null )
-					urlToCheck = bestNonDocUrl;
+				else if ( bestNonDocNonDatasetUrl != null )
+					urlToCheck = bestNonDocNonDatasetUrl;
 				else if ( nonDoiUrl != null )
 					urlToCheck = nonDoiUrl;
 				else if ( neutralUrl != null )
@@ -226,7 +233,7 @@ public class LoaderAndChecker
 				}
 
 				try {	// Check if it's a docUrl, if not, it gets crawled.
-					HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocUrl);
+					HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
 					if ( !isSingleIdUrlPair )
 						loggedUrlsOfCurrentId.add(urlToCheck);
 				} catch (Exception e) {
@@ -383,7 +390,7 @@ public class LoaderAndChecker
 	{
 		for ( String retrievedUrl : retrievedUrlsOfThisId )
 		{
-			// Some of the "retrieved-urls" maybe were excluded before the canonicalization point (e.g. because their domains was blocked or were duplicate).
+			// Some of the "retrieved-urls" maybe were excluded before the canonicalization point (e.g. because their domains were blocked or were duplicates).
 			// We have to make sure the "equal()" and the "contains()" succeed on the same-started-urls.
 			String tempUrl = retrievedUrl;
 			if ( !retrievedUrl.contains("#/") )

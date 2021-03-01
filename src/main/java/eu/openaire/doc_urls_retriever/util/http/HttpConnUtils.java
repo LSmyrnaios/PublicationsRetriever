@@ -69,14 +69,14 @@ public class HttpConnUtils
 	 * @param resourceURL	// May be the inputUrl or an internalLink of that inputUrl.
 	 * @param domainStr
 	 * @param calledForPageUrl
-	 * @param calledForPossibleDocUrl
+	 * @param calledForPossibleDocOrDatasetUrl
 	 * @return "true", if it's a docMimeType, otherwise, "false", if it has a different mimeType.
 	 * @throws RuntimeException (when there was a network error).
 	 * @throws ConnTimeoutException
 	 * @throws DomainBlockedException
 	 * @throws DomainWithUnsupportedHEADmethodException
 	 */
-	public static boolean connectAndCheckMimeType(String urlId, String sourceUrl, String pageUrl, String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
+	public static boolean connectAndCheckMimeType(String urlId, String sourceUrl, String pageUrl, String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocOrDatasetUrl)
 													throws RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
 	{
 		HttpURLConnection conn = null;
@@ -85,7 +85,7 @@ public class HttpConnUtils
 				if ( (domainStr = UrlUtils.getDomainStr(resourceURL, null)) == null )
 					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
 
-			conn = handleConnection(urlId, sourceUrl, pageUrl, resourceURL, domainStr, calledForPageUrl, calledForPossibleDocUrl);
+			conn = handleConnection(urlId, sourceUrl, pageUrl, resourceURL, domainStr, calledForPageUrl, calledForPossibleDocOrDatasetUrl);
 
 			// Check if we are able to find the mime type, if not then try "Content-Disposition".
 			String mimeType = conn.getContentType();
@@ -113,7 +113,7 @@ public class HttpConnUtils
 					foundDetectedContentType = (boolean)detectionList.get(1);
 					firstHtmlLine = (String)detectionList.get(2);
 					bufferedReader = (BufferedReader) detectionList.get(3);
-					calledForPossibleDocUrl = (boolean) detectionList.get(4);
+					calledForPossibleDocOrDatasetUrl = (boolean) detectionList.get(4);
 					//logger.debug(mimeType); logger.debug(String.valueOf(foundDetectedContentType)); logger.debug(firstHtmlLine); logger.debug(String.valueOf(bufferedReader)); logger.debug(String.valueOf(calledForPossibleDocUrl));	// DEBUG!
 				}
 			}
@@ -124,30 +124,40 @@ public class HttpConnUtils
 
 			//logger.debug("Url: " + finalUrlStr);	// DEBUG!
 			//logger.debug("MimeType: " + mimeType);	// DEBUG!
-
-			if ( ConnSupportUtils.hasDocMimeType(finalUrlStr, lowerCaseMimeType, contentDisposition, conn) ) {
-				logger.info("docUrl found: < " + finalUrlStr + " >");
-				String fullPathFileName = "";
-				if ( FileUtils.shouldDownloadDocFiles ) {
-					try {
-						if ( foundDetectedContentType ) {	// If we went and detected the pdf from the request-code, then reconnect and proceed with downloading (reasons explained elsewhere).
-							conn = handleConnection(urlId, sourceUrl, pageUrl, finalUrlStr, domainStr, calledForPageUrl, calledForPossibleDocUrl);	// No need to "conn.disconnect()" before, as we are re-connecting to the same domain.
+			String returnedType = ConnSupportUtils.hasDocOrDatasetMimeType(finalUrlStr, lowerCaseMimeType, contentDisposition, conn, calledForPageUrl, calledForPossibleDocOrDatasetUrl);
+			if ( returnedType != null )
+			{
+				if ( returnedType.equals("document") ) {
+					logger.info("docUrl found: < " + finalUrlStr + " >");
+					String fullPathFileName = "";
+					if ( FileUtils.shouldDownloadDocFiles ) {
+						try {
+							if ( foundDetectedContentType ) {	// If we went and detected the pdf from the request-code, then reconnect and proceed with downloading (reasons explained elsewhere).
+								conn = handleConnection(urlId, sourceUrl, pageUrl, finalUrlStr, domainStr, calledForPageUrl, calledForPossibleDocOrDatasetUrl);	// No need to "conn.disconnect()" before, as we are re-connecting to the same domain.
+							}
+							fullPathFileName = ConnSupportUtils.downloadAndStoreDocFile(conn, domainStr, finalUrlStr, calledForPageUrl);
+							logger.info("DocFile: \"" + fullPathFileName + "\" has been downloaded.");
+						} catch (DocFileNotRetrievedException dfnde) {
+							fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored.";
+							StackTraceElement[] stels = dfnde.getStackTrace();
+							StringBuilder sb = new StringBuilder(22).append(fullPathFileName).append(FileUtils.endOfLine);
+							for ( int i = 0; (i < stels.length) && (i < 10); ++i ) {
+								sb.append(stels[i]);
+								if (i < 9) sb.append(FileUtils.endOfLine);
+							}
+							logger.error(sb.toString());	// TODO - Instead of the stacktrace, provide the right message when first thrown, just like in "RuntimeException".
 						}
-						fullPathFileName = ConnSupportUtils.downloadAndStoreDocFile(conn, domainStr, finalUrlStr, calledForPageUrl);
-						logger.info("DocFile: \"" + fullPathFileName + "\" has been downloaded.");
-					} catch (DocFileNotRetrievedException dfnde) {
-						fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored.";
-						StackTraceElement[] stels = dfnde.getStackTrace();
-						StringBuilder sb = new StringBuilder(22).append(fullPathFileName).append(FileUtils.endOfLine);
-						for ( int i = 0; (i < stels.length) && (i < 10); ++i ) {
-							sb.append(stels[i]);
-							if (i < 9) sb.append(FileUtils.endOfLine);
-						}
-						logger.error(sb.toString());	// TODO - Instead of the stacktrace, provide the right message when first thrown, just like in "RuntimeException".
 					}
+					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true);	// we send the urls, before and after potential redirections.
+					return true;
 				}
-				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true);	// we send the urls, before and after potential redirections.
-				return true;
+				else if ( returnedType.equals("dataset") ) {
+					logger.info("datasetUrl found: < " + finalUrlStr + " >");
+					// TODO - handle possible download and improve logging...
+					String fullPathFileName = FileUtils.shouldDownloadDocFiles ? "It's a dataset-url. The download is not supported." : "It's a dataset-url.";
+					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true);	// we send the urls, before and after potential redirections.
+					return true;
+				}
 			}
 			else if ( calledForPageUrl ) {	// Visit this url only if this method was called for an inputUrl.
 				if ( finalUrlStr.contains("viewcontent.cgi") ) {	// If this "viewcontent.cgi" isn't a docUrl, then don't check its internalLinks. Check this: "https://docs.lib.purdue.edu/cgi/viewcontent.cgi?referer=&httpsredir=1&params=/context/physics_articles/article/1964/type/native/&path_info="
@@ -171,10 +181,12 @@ public class HttpConnUtils
 		} catch (AlreadyFoundDocUrlException afdue) {	// An already-found docUrl was discovered during redirections.
 			return true;	// It's already logged for the outputFile.
 		} catch (RuntimeException re) {
-			if ( calledForPageUrl ) {	// Log this error only for docPages, not internalLinks.
-				LoaderAndChecker.connProblematicUrls ++;
+			if ( calledForPageUrl ) {
+				LoaderAndChecker.connProblematicUrls++;
 				ConnSupportUtils.printEmbeddedExceptionMessage(re, resourceURL);
-			}
+			}	// Log this error only for docPages or possibleDocOrDatasetUrls, not other internalLinks.
+			else if ( calledForPossibleDocOrDatasetUrl )
+				ConnSupportUtils.printEmbeddedExceptionMessage(re, resourceURL);
 			throw re;
 		} catch (ConnTimeoutException cte) {
 			if ( calledForPageUrl )

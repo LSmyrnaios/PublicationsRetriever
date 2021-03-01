@@ -63,7 +63,9 @@ public class LinkExtraction {
 		//exampleUrl = "https://www.atlantis-press.com/journals/artres/125928993";
 		//exampleUrl = "https://pubmed.ncbi.nlm.nih.gov/1461747/";
 		//exampleUrl = "https://core.ac.uk/display/91816393";
-		exampleUrl = "https://escholarship.org/uc/item/97b0t7th";
+		//exampleUrl = "https://escholarship.org/uc/item/97b0t7th";
+		//exampleUrl = "https://datadryad.org/stash/dataset/doi:10.5061/dryad.v1c28";
+		exampleUrl = "https://zenodo.org/record/3483813";
 	}
 
 	

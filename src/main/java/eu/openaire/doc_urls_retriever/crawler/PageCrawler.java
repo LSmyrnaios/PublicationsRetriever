@@ -99,7 +99,8 @@ public class PageCrawler
 		for ( String currentLink : currentPageLinks )
 		{
 			// Produce fully functional internal links, NOT internal paths or non-canonicalized.
-			if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl, StandardCharsets.UTF_8)) == null ) {
+			urlToCheck = currentLink;
+			if ( !urlToCheck.contains("[") && (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl, StandardCharsets.UTF_8)) == null ) {
 				logger.warn("Could not canonicalize internal url: " + currentLink);
 				continue;
 			}
@@ -115,7 +116,8 @@ public class PageCrawler
             }
 
             lowerCaseLink = urlToCheck.toLowerCase();
-            if ( LoaderAndChecker.DOC_URL_FILTER.matcher(lowerCaseLink).matches() )
+            if ( LoaderAndChecker.DOC_URL_FILTER.matcher(lowerCaseLink).matches()
+				|| LoaderAndChecker.DATASET_URL_FILTER.matcher(lowerCaseLink).matches() )
 			{
 				// Some docUrls may be in different domain, so after filtering the urls based on the possible type.. then we can allow to check for links in different domains.
 

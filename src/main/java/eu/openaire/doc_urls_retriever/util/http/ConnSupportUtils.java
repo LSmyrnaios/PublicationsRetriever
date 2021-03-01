@@ -8,6 +8,7 @@ import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.doc_urls_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.doc_urls_retriever.exceptions.DomainBlockedException;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
+import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -34,7 +35,7 @@ public class ConnSupportUtils
 	
 	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("(?:\\((?:')?)?([\\w]+/[\\w+\\-.]+).*");
 
-	public static final Pattern POSSIBLE_DOC_MIME_TYPE = Pattern.compile("(?:(?:application|binary)/(?:(?:x-)?octet-stream|save|force-download))|unknown");	// We don't take it for granted.. if a match is found, then we check for the "pdf" keyword in the "contentDisposition" (if it exists) or in the url.
+	public static final Pattern POSSIBLE_DOC_OR_DATASET_MIME_TYPE = Pattern.compile("(?:(?:application|binary)/(?:(?:x-)?octet-stream|save|force-download))|unknown");	// We don't take it for granted.. if a match is found, then we check for the "pdf" keyword in the "contentDisposition" (if it exists) or in the url.
 	// There are special cases. (see: "https://kb.iu.edu/d/agtj" for "octet" info.
 	// and an example for "unknown" : "http://imagebank.osa.org/getExport.xqy?img=OG0kcC5vZS0yMy0xNy0yMjE0OS1nMDAy&xtype=pdf&article=oe-23-17-22149-g002")
 
@@ -63,11 +64,35 @@ public class ConnSupportUtils
 	private static final int timesToReturnNoTypeBeforeDomainBlocked = 10;
 
 	public static final HashSet<String> knownDocMimeTypes = new HashSet<String>();
+	public static final HashSet<String> knownDatasetMimeTypes = new HashSet<String>();
 	static {
 		logger.debug("Setting up the official document mime types. Currently there is support only for pdf documents.");
 		knownDocMimeTypes.add("application/pdf");
 		knownDocMimeTypes.add("application/x-pdf");
 		knownDocMimeTypes.add("image/pdf");
+
+		logger.debug("Setting up the official dataset mime types. Currently there is support for xls, xlsx, csv, tsv, tab, json, geojson, xml, ods, rdf, zip, gzip, rar, tar, 7z, tgz, gz[\\d]*, bz[\\d]*, xz, smi, por, ascii, dta, sav, dat, txt, ti[f]+, twf, svg, sas7bdat, spss, sas, stata, sql, mysql, postgresql, sqlite, bigquery, shp, shx, prj, sbx, sbn, dbf, mdb, accdb, dwg, mat, pcd, bt, n[sc]?[\\d]*, h4, h5, hdf, hdf4, hdf5, trs, opj, fcs, fas, fasta, values datasets.");
+		knownDatasetMimeTypes.add("application/vnd.ms-excel");
+		knownDatasetMimeTypes.add("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+		knownDatasetMimeTypes.add("text/csv");
+		knownDatasetMimeTypes.add("text/tab-separated-values");
+		knownDatasetMimeTypes.add("application/json");
+		knownDatasetMimeTypes.add("application/xml");	// There is also the "text/xml", but that is not a binary-dataset-file.
+		knownDatasetMimeTypes.add("application/rdf+xml");
+		knownDatasetMimeTypes.add("application/smil+xml");	// .smi
+		knownDatasetMimeTypes.add("application/smil");	// .smi
+		knownDatasetMimeTypes.add("text/rdf+n3");
+		knownDatasetMimeTypes.add("text/plain");	// Some csv and txt datasets
+		knownDatasetMimeTypes.add("application/zip");
+		knownDatasetMimeTypes.add("application/gzip");
+		knownDatasetMimeTypes.add("application/rar");
+		knownDatasetMimeTypes.add("application/vnd.rar");
+		knownDatasetMimeTypes.add("application/x-tar");
+		knownDatasetMimeTypes.add("application/x-7z-compressed");
+		knownDatasetMimeTypes.add("application/x-sas-data");	// ".sas7bdat" file
+		knownDatasetMimeTypes.add("application/x-netcdf");	// nc3, nc4, ns
+		knownDatasetMimeTypes.add("application/x-sql");
+		knownDatasetMimeTypes.add("image/tiff");
 	}
 	
 	
@@ -76,10 +101,15 @@ public class ConnSupportUtils
 	 * @param urlStr
 	 * @param mimeType in lowercase
 	 * @param contentDisposition
+	 * @param calledForPageUrl
+	 * @param calledForPossibleDocOrDatasetUrl)
 	 * @return boolean
 	 */
-	public static boolean hasDocMimeType(String urlStr, String mimeType, String contentDisposition, HttpURLConnection conn)
+	public static String hasDocOrDatasetMimeType(String urlStr, String mimeType, String contentDisposition, HttpURLConnection conn, boolean calledForPageUrl, boolean calledForPossibleDocOrDatasetUrl)
 	{
+		String typeToReturn = null;
+		String lowerCaseUrl = null;
+
 		if ( mimeType != null )
 		{	// The "mimeType" here is in lowercase
 			if ( mimeType.contains("system.io.fileinfo") ) {	// Check this out: "http://www.esocialsciences.org/Download/repecDownload.aspx?fname=Document110112009530.6423303.pdf&fcategory=Articles&AId=2279&fref=repec", ιt has: "System.IO.FileInfo".
@@ -89,9 +119,11 @@ public class ConnSupportUtils
 				// The "contentDisposition" will be definitely "null", since "mimeType != null" and so, the "contentDisposition" will not have been retrieved by the caller method.
 				
 				if ( (contentDisposition != null) && !contentDisposition.equals("attachment") )
-					return	contentDisposition.contains("pdf");	// TODO - add more types as needed. Check: "http://www.esocialsciences.org/Download/repecDownload.aspx?qs=Uqn/rN48N8UOPcbSXUd2VFI+dpOD3MDPRfIL8B3DH+6L18eo/yEvpYEkgi9upp2t8kGzrjsWQHUl44vSn/l7Uc1SILR5pVtxv8VYECXSc8pKLF6QJn6MioA5dafPj/8GshHBvLyCex2df4aviMvImCZpwMHvKoPiO+4B7yHRb97u1IHg45E+Z6ai0Z/0vacWHoCsNT9O4FNZKMsSzen2Cw=="
+					typeToReturn = contentDisposition.contains("pdf") ? "document" : null;	// TODO - add more types as needed. Check: "http://www.esocialsciences.org/Download/repecDownload.aspx?qs=Uqn/rN48N8UOPcbSXUd2VFI+dpOD3MDPRfIL8B3DH+6L18eo/yEvpYEkgi9upp2t8kGzrjsWQHUl44vSn/l7Uc1SILR5pVtxv8VYECXSc8pKLF6QJn6MioA5dafPj/8GshHBvLyCex2df4aviMvImCZpwMHvKoPiO+4B7yHRb97u1IHg45E+Z6ai0Z/0vacWHoCsNT9O4FNZKMsSzen2Cw=="
 				else
-					return	urlStr.toLowerCase().contains("pdf");
+					typeToReturn = urlStr.toLowerCase().contains("pdf") ? "document" : null;
+
+				return typeToReturn;
 			}
 
 			String plainMimeType = mimeType;	// Make sure we don't cause any NPE later on..
@@ -101,7 +133,13 @@ public class ConnSupportUtils
 				plainMimeType = getPlainMimeType(mimeType);
 				if ( plainMimeType == null ) {    // If there was any error removing the charset, still try to save any docMimeType (currently pdf-only).
 					logger.warn("Url with problematic mimeType (" + mimeType + ") was: " + urlStr);
-					return	urlStr.toLowerCase().contains("pdf");
+					lowerCaseUrl = urlStr.toLowerCase();
+					if ( lowerCaseUrl.contains("pdf") )
+						typeToReturn = "document";
+					else if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(lowerCaseUrl).matches() )
+						typeToReturn = "dataset";
+
+					return typeToReturn;	// Default is "null".
 				}
 			}
 
@@ -110,28 +148,50 @@ public class ConnSupportUtils
 			plainMimeType = StringUtils.replace(plainMimeType, "\"", "", -1);
 
 			if ( knownDocMimeTypes.contains(plainMimeType) )
-				return true;
-			else if ( POSSIBLE_DOC_MIME_TYPE.matcher(plainMimeType).matches() )
+				typeToReturn = "document";
+			else if ( knownDatasetMimeTypes.contains(plainMimeType) )
+				typeToReturn = "dataset";
+			else if ( POSSIBLE_DOC_OR_DATASET_MIME_TYPE.matcher(plainMimeType).matches() )
 			{
 				contentDisposition = conn.getHeaderField("Content-Disposition");
 				if ( (contentDisposition != null) && !contentDisposition.equals("attachment") )	// It may be "attachment" but also be a pdf.. but we have to check if the "pdf" exists inside the url-string.
-					return	contentDisposition.contains("pdf");
-				else
-					return	urlStr.toLowerCase().contains("pdf");
+				{
+					if ( contentDisposition.contains("pdf") )
+						typeToReturn = "document";
+					else {
+						String clearContentDisposition = StringUtils.replace(contentDisposition.toLowerCase(), "\"", "", -1);
+						if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
+							typeToReturn = "dataset";
+					}
+				}
+				else {
+					lowerCaseUrl = urlStr.toLowerCase();
+					if ( lowerCaseUrl.contains("pdf") )
+						typeToReturn = "document";
+					else if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(lowerCaseUrl).matches() )
+						typeToReturn = "dataset";
+				}
 			}	// TODO - When we will accept more docTypes, match it also against other docTypes, not just "pdf".
-			else
-				return false;
+			return typeToReturn;	// Default is "null".
 		}
 		else if ( (contentDisposition != null) && !contentDisposition.equals("attachment") ) {	// If the mimeType was not retrieved, then try the "Content Disposition".
-				// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
-			return	contentDisposition.contains("pdf");
+			// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
+			if ( contentDisposition.contains("pdf") )
+				typeToReturn = "document";
+			else {
+				String clearContentDisposition = StringUtils.replace(contentDisposition.toLowerCase(), "\"", "", -1);
+				if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
+					typeToReturn = "dataset";
+			}
+			return typeToReturn;
 		}
 		else {	// This is not expected to be reached. Keep it for method-reusability.
-			logger.warn("No mimeType, nor Content-Disposition, were able to be retrieved for url: " + urlStr);
-			return false;
+			if ( calledForPageUrl || calledForPossibleDocOrDatasetUrl )
+				logger.warn("No mimeType, nor Content-Disposition, were able to be retrieved for url: " + urlStr);
+			return null;
 		}
 	}
-	
+
 	
 	/**
 	 * This method receives the mimeType and returns it without the "parentheses" ot the "charset" part.
