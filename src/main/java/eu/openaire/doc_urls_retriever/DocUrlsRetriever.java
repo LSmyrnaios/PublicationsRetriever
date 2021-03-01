@@ -136,7 +136,7 @@ public class DocUrlsRetriever
 		if ( LoaderAndChecker.useIdUrlPairs ) {
 			logger.debug(LoaderAndChecker.numOfIDsWithoutAcceptableSourceUrl + " IDs (about " + df.format(LoaderAndChecker.numOfIDsWithoutAcceptableSourceUrl * 100.0 / LoaderAndChecker.numOfIDs) + "%) had no acceptable sourceUrl.");
 			notConnectedIDs = LoaderAndChecker.numOfIDsWithoutAcceptableSourceUrl + FileUtils.duplicateIdUrlEntries;
-			inputCheckedUrlNum = LoaderAndChecker.numOfIDs - notConnectedIDs;	// For each ID we check only one of its urls anyway.
+			inputCheckedUrlNum = LoaderAndChecker.numOfIDs - notConnectedIDs;	// For each ID we usually check only one of its urls, except if the chosen one fails to connect. But if we add here the retries, then we should add how many more codUrls were retrieved per Id, later...
 		} else {
 			inputCheckedUrlNum = currentlyLoadedUrls;
 			if ( (FileUtils.skipFirstRow && (inputCheckedUrlNum < 0)) || (!FileUtils.skipFirstRow && (inputCheckedUrlNum == 0)) ) {
@@ -149,10 +149,10 @@ public class DocUrlsRetriever
 		}
 
 		if ( LoaderAndChecker.useIdUrlPairs && (inputCheckedUrlNum < currentlyLoadedUrls) )
-			logger.info("Total num of urls checked (& connected) from the input was: " + inputCheckedUrlNum
+			logger.info("Total num of urls (IDs) checked (& connected) from the input was: " + inputCheckedUrlNum
 					+ ". The rest " + notConnectedIDs + " urls (about " + df.format(notConnectedIDs * 100.0 / LoaderAndChecker.numOfIDs) + "%) belonged to duplicate (" + FileUtils.duplicateIdUrlEntries +") or problematic (" + LoaderAndChecker.numOfIDsWithoutAcceptableSourceUrl + ") IDs.");
 		else
-			logger.info("Total num of urls checked from the input was: " + inputCheckedUrlNum);
+			logger.info("Total num of urls (IDs) checked from the input was: " + inputCheckedUrlNum);
 
 		if ( SignalUtils.receivedSIGINT )
 			logger.warn("A SIGINT signal was received, so some of the \"checked-urls\" may have not been actually checked, that's more of a number of the \"loaded-urls\".");

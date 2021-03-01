@@ -92,7 +92,7 @@ public class LoaderAndChecker
 				if ( DOC_URL_FILTER.matcher(retrievedUrl.toLowerCase()).matches() )
 					isPossibleDocUrl = true;
 
-				String urlToCheck= retrievedUrl;
+				String urlToCheck = retrievedUrl;
 				if ( !urlToCheck.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null ) {
 					logger.warn("Could not canonicalize url: " + retrievedUrl);
 					UrlUtils.logQuadruple(null, retrievedUrl, null, "unreachable", "Discarded at loading time, due to canonicalization's problems.", null, true);
@@ -258,9 +258,9 @@ public class LoaderAndChecker
 	{
 		for ( String urlToCheck : retrievedUrlsOfThisId )
 		{
-			if ( !loggedUrlsOfThisId.contains(urlToCheck) )
-				if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(urlToCheck, null, StandardCharsets.UTF_8)) == null
-					|| loggedUrlsOfThisId.contains(urlToCheck) )
+			if ( loggedUrlsOfThisId.contains(urlToCheck)
+				|| ( ((urlToCheck = URLCanonicalizer.getCanonicalURL(urlToCheck, null, StandardCharsets.UTF_8)) == null)
+					|| loggedUrlsOfThisId.contains(urlToCheck) ))
 					continue;
 
 			loadingRetries ++;
@@ -271,7 +271,7 @@ public class LoaderAndChecker
 					loggedUrlsOfThisId.add(urlToCheck);
 				return true;	// A url was checked and didn't have any problems, return and log the remaining urls.
 			} catch (Exception e) {
-				UrlUtils.logQuadruple(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true);
+				UrlUtils.logQuadruple(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, in checkRemainingUrls(), due to connectivity problems.", null, true);
 				if ( !isSingleIdUrlPair )
 					loggedUrlsOfThisId.add(urlToCheck);
 			}

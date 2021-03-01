@@ -320,7 +320,7 @@ public class ConnSupportUtils
 		
 		if ( countAndBlockPathAfterTimes(domainsMultimapWithPaths403BlackListed, timesPathsReturned403, pathStr, domainStr, timesToHave403errorCodeBeforePathBlocked, calledForPageUrl) )
 		{
-			logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code.");
+			logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code more than " + timesToHave403errorCodeBeforePathBlocked + " times.");
 			// Block the whole domain if it has more than a certain number of blocked paths.
 			if ( domainsMultimapWithPaths403BlackListed.get(domainStr).size() > numberOf403BlockedPathsBeforeDomainBlocked )
 			{

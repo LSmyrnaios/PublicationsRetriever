@@ -321,6 +321,7 @@ public class MachineLearning
 			// Check if it's a truly-alive docUrl.
 			// TODO - Before doing this we should check if it exists inside the list of the internal-links, thus avoiding connecting with non-existed urls..
 			// Todo this we will have to re-think where the MLA's code should be called for optimal usage.
+			// todo - then, remove the (<= 3) paths restriction some lines above.. as now the process will be 1000 times faster and we really want to find a match in the internal-links.
 			try {
 				logger.debug("Going to connect & check predictedDocUrl: \"" + predictedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");	// DEBUG!
 

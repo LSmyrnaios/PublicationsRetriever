@@ -383,7 +383,7 @@ public class PageCrawler
 			else if ( !lowerCaseInternalLink.contains("/#/") )
 				return null;	// Else if it has not a hashtag-directory we reject it (don't add it in the hashSet)..
 		}
-		else if ( lowerCaseInternalLink.contains("\"") )	// It cannot be canonicalized.
+		else if ( lowerCaseInternalLink.contains("\"") || lowerCaseInternalLink.contains("[error") )	// They cannot be canonicalized and especially the second one is not wanted.
 			return null;
 
 		//logger.debug("Filtered InternalLink: " + internalLink);	// DEBUG!
