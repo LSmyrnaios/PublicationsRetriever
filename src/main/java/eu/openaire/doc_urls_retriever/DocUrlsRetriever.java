@@ -203,6 +203,7 @@ public class DocUrlsRetriever
 
 		logger.debug("The number of offline-redirects to HTTPS (reducing the online-redirection-overhead) was: " + HttpConnUtils.timesDidOfflineHTTPSredirect);
 		logger.debug("The number of domains blocked due to an \"SSL Exception\" was: " + HttpConnUtils.numOfDomainsBlockedDueToSSLException);
+		logger.debug("The number of domains blocked in total was: " + HttpConnUtils.blacklistedDomains.size());
 
 		calculateAndPrintElapsedTime(startTime, Instant.now());
 

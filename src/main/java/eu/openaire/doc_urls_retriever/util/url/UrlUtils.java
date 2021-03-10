@@ -74,11 +74,19 @@ public class UrlUtils
 
 				if ( pageDomain != null )	// It may be null if "UrlUtils.getDomainStr()" failed.
 				{
-					ConnSupportUtils.countInsertAndGetTimes(domainsAndHits, pageDomain);
-
 					// Gather data for the MLA, if we decide to have it enabled.
 					if ( MachineLearning.useMLA )
 						MachineLearning.gatherMLData(pageUrl, finalDocUrl, pageDomain);
+
+					// Add the domains of the pageUrl and the finalDocUrl to the successful domains as both lead in some way to a docUrl.
+					ConnSupportUtils.countInsertAndGetTimes(domainsAndHits, pageDomain);
+
+					// Now if the "finalDocUrl" is different than the "pageUrl", get the domain of the "finalDocUrl" and if it's different, then add it to "domainsAndHits"-HashMap.
+					if ( !pageUrl.equals(finalDocUrl) ) {
+						String docUrlDomain = UrlUtils.getDomainStr(finalDocUrl, null);
+						if ( (docUrlDomain != null) && !pageDomain.equals(docUrlDomain) )
+							ConnSupportUtils.countInsertAndGetTimes(domainsAndHits, docUrlDomain);
+					}
 				}
 			}
 			else	// Else if this url is not a docUrl and has not been processed before..

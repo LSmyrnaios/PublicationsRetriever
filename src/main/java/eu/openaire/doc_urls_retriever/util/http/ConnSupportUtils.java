@@ -55,8 +55,8 @@ public class ConnSupportUtils
 	
 	public static final SetMultimap<String, String> domainsMultimapWithPaths403BlackListed = HashMultimap.create();	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
 	
-	private static final int timesToHave403errorCodeBeforePathBlocked = 5;	// If a path leads to 403 with different urls, more than 5 times, then this path gets blocked.
-	private static final int numberOf403BlockedPathsBeforeDomainBlocked = 5;	// If a domain has more than 5 different 403-blocked paths, then the whole domain gets blocked.
+	private static final int timesToHave403errorCodeBeforePathBlocked = 10;	// If a path leads to 403 with different urls, more than 5 times, then this path gets blocked.
+	private static final int numberOf403BlockedPathsBeforeDomainBlocked = 50;	// If a domain has more than 5 different 403-blocked paths, then the whole domain gets blocked.
 
 	private static final int timesToHave5XXerrorCodeBeforeDomainBlocked = 10;
 	private static final int timesToHaveTimeoutExBeforeDomainBlocked = 25;
@@ -356,7 +356,7 @@ public class ConnSupportUtils
 					logger.debug("Domain: \"" + domainStr + "\" was blocked, after giving a " + errorStatusCode + " HTTP-status-code.");
 				}
 				
-				throw new DomainBlockedException();	// Throw this even if there was an error preventing the domain from getting blocked.
+				throw new DomainBlockedException(domainStr);	// Throw this even if there was an error preventing the domain from getting blocked.
 			}
 		}
 		return errorLogMessage;
@@ -387,7 +387,7 @@ public class ConnSupportUtils
 				HttpConnUtils.blacklistedDomains.add(domainStr);	// Block the whole domain itself.
 				logger.debug("Domain: \"" + domainStr + "\" was blocked, after having more than " + numberOf403BlockedPathsBeforeDomainBlocked + " of its paths 403blackListed.");
 				domainsMultimapWithPaths403BlackListed.removeAll(domainStr);	// No need to keep its paths anymore.
-				throw new DomainBlockedException();
+				throw new DomainBlockedException(domainStr);
 			}
 		}
 	}
@@ -437,7 +437,7 @@ public class ConnSupportUtils
 	{
 		if ( countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsReturned5XX, domainStr, timesToHave5XXerrorCodeBeforeDomainBlocked, true) ) {
 			logger.debug("Domain: \"" + domainStr + "\" was blocked after returning 5XX Error Code " + timesToHave5XXerrorCodeBeforeDomainBlocked + " times.");
-			throw new DomainBlockedException();
+			throw new DomainBlockedException(domainStr);
 		}
 	}
 	
@@ -446,7 +446,7 @@ public class ConnSupportUtils
 	{
 		if ( countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsHadTimeoutEx, domainStr, timesToHaveTimeoutExBeforeDomainBlocked, true) ) {
 			logger.debug("Domain: \"" + domainStr + "\" was blocked after causing TimeoutException " + timesToHaveTimeoutExBeforeDomainBlocked + " times.");
-			throw new DomainBlockedException();
+			throw new DomainBlockedException(domainStr);
 		}
 	}
 	
@@ -493,16 +493,36 @@ public class ConnSupportUtils
 		
 		return curTimes;
 	}
-	
-	
-	public static void blockSharedSiteSessionDomain(String forbiddenUrl)
-	{
-		String urlDomain = null;
-		if ( (urlDomain = UrlUtils.getDomainStr(forbiddenUrl, null)) == null )
-			return;	// The problem is logged, but nothing more needs to bo done.
 
-		HttpConnUtils.blacklistedDomains.add(urlDomain);
-		logger.debug("Domain: \"" + urlDomain + "\" was blocked after trying to cause a \"sharedSiteSession-redirectionPack\" with url: \"" + forbiddenUrl + "\"!");
+
+	/**
+	 * This method blocks the domain of the targetLink which tried to cause the "sharedSiteSession-redirectionPack".
+	 * It also blocks the domain of the url which led to this redirection (if applicable and only for the right-previous url)
+	 * @param targetUrl
+	 * @param previousFromTargetUrl
+	 * @return
+	 */
+	public static List<String> blockSharedSiteSessionDomains(String targetUrl, String previousFromTargetUrl)
+	{
+		List<String> blockedDomainsToReturn = new ArrayList<>(2);
+		String targetUrlDomain, beforeTargetUrlDomain;
+
+		if ( (targetUrlDomain = UrlUtils.getDomainStr(targetUrl, null)) == null )
+			return null;	// The problem is logged, but nothing more needs to bo done.
+
+		blockedDomainsToReturn.add(targetUrlDomain);
+		if ( HttpConnUtils.blacklistedDomains.add(targetUrlDomain) )	// If it was added for the first time.
+			logger.debug("Domain: \"" + targetUrlDomain + "\" was blocked after trying to cause a \"sharedSiteSession-redirectionPack\" with url: \"" + targetUrl + "\"!");
+
+		if ( (previousFromTargetUrl != null) && !previousFromTargetUrl.equals(targetUrl) ) {
+			if ( (beforeTargetUrlDomain = UrlUtils.getDomainStr(previousFromTargetUrl, null)) != null ) {
+				blockedDomainsToReturn.add(beforeTargetUrlDomain);
+				if ( HttpConnUtils.blacklistedDomains.add(beforeTargetUrlDomain) )    // If it was added for the first time.
+					logger.debug("Domain: \"" + beforeTargetUrlDomain + "\" was blocked after its url : \"" + previousFromTargetUrl + "\" tried to redirect to targetUrl: \"" + targetUrl + "\" and cause a \"sharedSiteSession-redirectionPack\"!");
+			}
+		}
+
+		return blockedDomainsToReturn;
 	}
 
 
@@ -560,9 +580,10 @@ public class ConnSupportUtils
 		String firstHtmlLine = null;
 		BufferedReader bufferedReader = null;
 		boolean calledForPossibleDocUrl = false;
+		boolean wasConnectedWithHTTPGET = conn.getRequestMethod().equals("GET");
 
 		// Try to detect the content type.
-		if ( conn.getRequestMethod().equals("GET") ) {
+		if ( wasConnectedWithHTTPGET ) {
 			DetectedContentType detectedContentType = ConnSupportUtils.extractContentTypeFromResponseBody(conn);
 			if ( detectedContentType != null ) {
 				if ( calledForPageUrl && detectedContentType.detectedContentType.equals("html") ) {
@@ -587,11 +608,11 @@ public class ConnSupportUtils
 		else	// ( connection-method == "HEAD" )
 			warnMsg += "\nThe initial connection was made with the \"HTTP-HEAD\" method, so there is no response-body to use to detect the content-type.";
 
-		if ( !foundDetectedContentType ) {
+		if ( !foundDetectedContentType && wasConnectedWithHTTPGET ) {	// If it could be detected but was not, only then go and check if it should be blocked.
 			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, HttpConnUtils.timesDomainsReturnedNoType, domainStr, timesToReturnNoTypeBeforeDomainBlocked, true) ) {
 				logger.warn(warnMsg);
 				logger.warn("Domain: \"" + domainStr + "\" was blocked after returning no Type-info more than " + timesToReturnNoTypeBeforeDomainBlocked + " times.");
-				throw new DomainBlockedException();
+				throw new DomainBlockedException(domainStr);
 			} else
 				throw new RuntimeException(warnMsg);	// We can't retrieve any clue. This is not desired. The "warnMsg" will be printed by the caller method.
 		}

@@ -38,8 +38,8 @@ public class PageCrawler
 	public static final HashMap<String, Integer> timesDomainNotGivingInternalLinks = new HashMap<String, Integer>();
 	public static final HashMap<String, Integer> timesDomainNotGivingDocUrls = new HashMap<String, Integer>();
 
-	public static final int timesToGiveNoInternalLinksBeforeBlocked = 20;
-	public static final int timesToGiveNoDocUrlsBeforeBlocked = 10;
+	public static final int timesToGiveNoInternalLinksBeforeBlocked = 200;
+	public static final int timesToGiveNoDocUrlsBeforeBlocked = 100;
 
 	public static int contentProblematicUrls = 0;
 
@@ -141,7 +141,8 @@ public class PageCrawler
 					UrlUtils.duplicateUrls.add(urlToCheck);    // Don't check it ever again..
 					continue;
 				} catch (DomainBlockedException dbe) {
-					if ( urlToCheck.contains(pageDomain) ) {
+					String blockedDomain = dbe.getMessage();
+					if ( (blockedDomain != null) && blockedDomain.contains(pageDomain) ) {
 						logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
 						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was blocked during crawling.", null, true);
 						return;
@@ -195,7 +196,8 @@ public class PageCrawler
 				else
 					UrlUtils.duplicateUrls.add(currentLink);
 			} catch (DomainBlockedException dbe) {
-				if ( currentLink.contains(pageDomain) ) {
+				String blockedDomain = dbe.getMessage();
+				if ( (blockedDomain != null) && blockedDomain.contains(pageDomain) ) {
 					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
 					UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was blocked during crawling.", null, true);
 					return;

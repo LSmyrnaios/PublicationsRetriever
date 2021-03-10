@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 
 /**
@@ -352,7 +353,7 @@ public class HttpConnUtils
 			if ( conn != null )
 				conn.disconnect();
 			blacklistedDomains.add(domainStr);	//Log it to never try connecting with it again.
-			throw new DomainBlockedException();
+			throw new DomainBlockedException(domainStr);
 		} catch (SocketTimeoutException ste) {
 			logger.debug("Url: \"" + resourceURL + "\" failed to respond on time!");
 			if ( conn != null )
@@ -376,7 +377,7 @@ public class HttpConnUtils
 			blacklistedDomains.add(domainStr);
 			numOfDomainsBlockedDueToSSLException++;
 			logger.warn("No Secure connection was able to be negotiated with the domain: \"" + domainStr + "\", so it was blocked. Exception message: " + ssle.getMessage());
-			throw new DomainBlockedException();
+			throw new DomainBlockedException(domainStr);
 		} catch (SocketException se) {
 			if ( conn != null )
 				conn.disconnect();
@@ -434,6 +435,7 @@ public class HttpConnUtils
 			initialUrl = internalLink;
 			urlType = "internalLink";
 		}
+		URL currentUrlObject;
 		String currentUrl;
 
 		try {
@@ -442,7 +444,8 @@ public class HttpConnUtils
 				if ( curRedirectsNum > maxRedirects )
 					throw new RuntimeException("Redirects exceeded their limit (" + maxRedirects + ") for " + urlType + ": \"" + initialUrl + "\"");
 
-				currentUrl = conn.getURL().toString();
+				currentUrlObject = conn.getURL();
+				currentUrl = currentUrlObject.toString();
 
 				String location = conn.getHeaderField("Location");
 				if ( location == null )
@@ -456,7 +459,7 @@ public class HttpConnUtils
 						throw new RuntimeException("No \"Location\" field was found in the HTTP Header of \"" + currentUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code.");
 				}
 
-				String targetUrl = ConnSupportUtils.getFullyFormedUrl(null, location, conn.getURL());
+				String targetUrl = ConnSupportUtils.getFullyFormedUrl(null, location, currentUrlObject);
 				if ( targetUrl == null )
 					throw new RuntimeException("Could not create target url for resourceUrl: " + currentUrl + " having location: " + location);
 
@@ -465,11 +468,9 @@ public class HttpConnUtils
 						|| (!calledForPageUrl && UrlTypeChecker.shouldNotAcceptInternalLink(targetUrl, lowerCaseTargetUrl)) )	// Redirecting an internalPageLink.
 					throw new RuntimeException("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + targetUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code, in redirection-number: " + curRedirectsNum);
 				else if ( lowerCaseTargetUrl.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
-					ConnSupportUtils.blockSharedSiteSessionDomain(targetUrl);
-					throw new DomainBlockedException();
-				}
-				else if ( calledForPageUrl && (lowerCaseTargetUrl.contains("elsevier.com") && !lowerCaseTargetUrl.contains("linkinghub")) ) {	// Avoid pageUrls redirecting to plain "elsevier.com"  ("(www|journals).elsevier.com", coming mostly from "doi.org"-urls).
-					throw new RuntimeException("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted url: \"" + targetUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code, in redirection-number: " + curRedirectsNum);
+					logger.warn("Initial-url: \"" + initialUrl + "\" tried to cause a \"sharedSiteSession-redirectionPack\" by redirecting to \"" + targetUrl + "\"!");
+					List<String> blockedDomains = ConnSupportUtils.blockSharedSiteSessionDomains(targetUrl, currentUrl);
+					throw new DomainBlockedException(blockedDomains);
 				}
 
 				String tempTargetUrl = targetUrl;
@@ -506,7 +507,7 @@ public class HttpConnUtils
 				responseCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
 
 				if ( (responseCode >= 200) && (responseCode <= 299) ) {
-					//ConnSupportUtils.printFinalRedirectDataForWantedUrlType(initialUrl, conn.getURL().toString(), null, curRedirectsNum);	// DEBUG!
+					//ConnSupportUtils.printFinalRedirectDataForWantedUrlType(initialUrl, currentUrl, null, curRedirectsNum);	// DEBUG!
 					return conn;	// It's an "HTTP SUCCESS", return immediately.
 				}
 			} while ( (responseCode >= 300) && (responseCode <= 399) );
