@@ -477,7 +477,7 @@ public class HttpConnUtils
 				if ( !targetUrl.contains("#/") && (targetUrl = URLCanonicalizer.getCanonicalURL(targetUrl, null, StandardCharsets.UTF_8)) == null )
 					throw new RuntimeException("Could not canonicalize target url: " + tempTargetUrl);	// Don't let it continue.
 
-				//ConnSupportUtils.printRedirectDebugInfo(conn, location, targetUrl, curRedirectsNum);	// throws IOException
+				//ConnSupportUtils.printRedirectDebugInfo(currentUrl, location, targetUrl, responseCode, curRedirectsNum);
 
 				if ( UrlUtils.docUrlsWithIDs.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
 					logger.info("re-crossed docUrl found: < " + targetUrl + " >");

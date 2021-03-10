@@ -98,9 +98,12 @@ public class PageCrawler
 		// Check if urls inside this page, match to a docUrl regex, if they do, try connecting with them and see if they truly are docUrls. If they are, return.
 		for ( String currentLink : currentPageLinks )
 		{
-			// Produce fully functional internal links, NOT internal paths or non-canonicalized.
-			urlToCheck = currentLink;
-			if ( !urlToCheck.contains("[") && (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl, StandardCharsets.UTF_8)) == null ) {
+			// Produce fully functional internal links, NOT internal paths or non-canonicalized (if possible).
+			if ( currentLink.contains("[") ) { // This link cannot be canonicalized, go and make it a full-link, at least.
+				if ( (urlToCheck = ConnSupportUtils.getFullyFormedUrl(pageUrl, currentLink, null)) == null )
+					continue;
+			}
+			else if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl, StandardCharsets.UTF_8)) == null ) {
 				logger.warn("Could not canonicalize internal url: " + currentLink);
 				continue;
 			}

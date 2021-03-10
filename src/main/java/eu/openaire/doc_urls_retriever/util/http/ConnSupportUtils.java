@@ -831,16 +831,16 @@ public class ConnSupportUtils
 	}
 	
 	
-	public static void printRedirectDebugInfo(HttpURLConnection conn, String location, String targetUrl, int curRedirectsNum) throws IOException
+	public static void printRedirectDebugInfo(String currentUrl, String location, String targetUrl, int responseCode, int curRedirectsNum)
 	{
 		// FOR DEBUG -> Check to see what's happening with the redirect urls (location field types, as well as potential error redirects).
 		// Some domains use only the target-ending-path in their location field, while others use full target url.
 		
-		if ( conn.getURL().toString().contains("doi.org") ) {	// Debug a certain domain or url-path.
+		if ( currentUrl.contains("doi.org") ) {	// Debug a certain domain or url-path.
 			logger.debug("\n");
 			logger.debug("Redirect(s) num: " + curRedirectsNum);
-			logger.debug("Redirect code: " + conn.getResponseCode());
-			logger.debug("Base: " + conn.getURL());
+			logger.debug("Redirect code: " + responseCode);
+			logger.debug("Base: " + currentUrl);
 			logger.debug("Location: " + location);
 			logger.debug("Target: " + targetUrl + "\n");
 		}
