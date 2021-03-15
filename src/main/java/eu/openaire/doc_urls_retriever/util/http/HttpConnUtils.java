@@ -128,7 +128,7 @@ public class HttpConnUtils
 			String returnedType = ConnSupportUtils.hasDocOrDatasetMimeType(finalUrlStr, lowerCaseMimeType, contentDisposition, conn, calledForPageUrl, calledForPossibleDocOrDatasetUrl);
 			if ( returnedType != null )
 			{
-				if ( returnedType.equals("document") ) {
+				if ( LoaderAndChecker.retrieveDocuments && returnedType.equals("document") ) {
 					logger.info("docUrl found: < " + finalUrlStr + " >");
 					String fullPathFileName = "";
 					if ( FileUtils.shouldDownloadDocFiles ) {
@@ -152,12 +152,16 @@ public class HttpConnUtils
 					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true);	// we send the urls, before and after potential redirections.
 					return true;
 				}
-				else if ( returnedType.equals("dataset") ) {
+				else if ( LoaderAndChecker.retrieveDatasets && returnedType.equals("dataset") ) {
 					logger.info("datasetUrl found: < " + finalUrlStr + " >");
 					// TODO - handle possible download and improve logging...
 					String fullPathFileName = FileUtils.shouldDownloadDocFiles ? "It's a dataset-url. The download is not supported." : "It's a dataset-url.";
 					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true);	// we send the urls, before and after potential redirections.
 					return true;
+				}
+				else {
+					logger.debug("Type \"" + returnedType + "\", which was specified that it's unwanted in this run, was found for url: < " + finalUrlStr + " >");
+					return false;
 				}
 			}
 			else if ( calledForPageUrl ) {	// Visit this url only if this method was called for an inputUrl.
@@ -479,11 +483,11 @@ public class HttpConnUtils
 
 				//ConnSupportUtils.printRedirectDebugInfo(currentUrl, location, targetUrl, responseCode, curRedirectsNum);
 
-				if ( UrlUtils.docUrlsWithIDs.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
+				if ( UrlUtils.docUrlsOrDatasetsWithIDs.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
 					logger.info("re-crossed docUrl found: < " + targetUrl + " >");
 					LoaderAndChecker.reCrossedDocUrls ++;
 					if ( FileUtils.shouldDownloadDocFiles )
-						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(targetUrl), null, false);
+						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsOrDatasetsWithIDs.get(targetUrl), null, false);
 					else
 						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, "", null, false);
 					throw new AlreadyFoundDocUrlException();

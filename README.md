@@ -51,7 +51,7 @@ To run the application you should navigate to the ***target*** directory, which 
 while choosing the appropriate run-command.<br/> 
 
 **Run with standard input/output:**<br/>
-**``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg1:'-downloadDocFiles' arg2:'-firstDocFileNum' arg3:'NUM' arg4:'-docFilesStorage'
+**``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg1:'-retrieveDataType' arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-firstDocFileNum' arg5:'NUM' arg6:'-docFilesStorage'
 arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br/>
 
 **Run tests with custom input/output:**
@@ -63,9 +63,10 @@ arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br/>
     and change the ***appender-ref***, from ***File*** to ***Console***.<br/>
 - Run ``mvn install`` to create the new ***JAR*** file.<br/>
 - Execute the program with the following command:<br/>
-**``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg1:'-downloadDocFiles' arg2:'-firstDocFileNum' arg3:'NUM' arg4:'-docFilesStorage' arg5:'storageDir'``**
+**``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-firstDocFileNum' arg5:'NUM' arg6:'-docFilesStorage' arg7:'storageDir'``**
 
 **Arguments explanation:**
+- **-retrieveDataType** and **dataType** will tell the program to retrieve the urls of type "*document*", "*dataset*" or "*all*"-dataTypes.
 - **-downloadDocFiles** will tell the program to download the DocFiles.
     The absence of this argument will cause the program to NOT download the docFiles, but just to find the DocUrls instead.
     Either way, the DocUrls will be written to the JsonOutputFile.
@@ -83,11 +84,12 @@ The above script will run the following commands:
 - **`mvn clean install`**: Does a clean install.
 - **`rm -rf example/sample_output/*`**: Removes any previous example-results.
 - **``cd target &&
-    java -jar doc_urls_retriever-0.4-SNAPSHOT.jar -downloadDocFiles -firstDocFileNum 1 -docFilesStorage ../example/sample_output/DocFiles
+    java -jar doc_urls_retriever-0.4-SNAPSHOT.jar -retrieveDataType document -downloadDocFiles -firstDocFileNum 1 -docFilesStorage ../example/sample_output/DocFiles
     < ../example/sample_input/sample_input.json > ../example/sample_output/sample_output.json``**<br/>
     This command will run the program with "**../example/sample_input/sample_input.json**" as input
     and "**../example/sample_output/sample_output.json**" as the output.<br/>
     The arguments used are:
+    - **-retrieveDataType** and **document** will tell the program to retrieve the urls of type "*document*".
     - **-downloadDocFiles** which will tell the program to download the DocFiles.
     - **-firstDocFileNum 1** which will tell the program to use numbers as DocFileNames and the first DocFile will have the number <*1*>.
     - **-docFilesStorage ../example/sample_output/DocFiles** which will tell the program to use the custom

@@ -45,6 +45,10 @@ public class LoaderAndChecker
 
 	public static int loadingRetries = 0;
 
+	// The following are set from the user.
+	public static boolean retrieveDocuments = true;
+	public static boolean retrieveDatasets = false;
+
 
 	public LoaderAndChecker() throws RuntimeException
 	{
@@ -94,7 +98,9 @@ public class LoaderAndChecker
 					continue;
 				
 				boolean isPossibleDocOrDatasetUrl = false;
-				if ( DOC_URL_FILTER.matcher(retrievedUrl.toLowerCase()).matches() )
+				String lowerCaseRetrievedUrl = retrievedUrl.toLowerCase();
+				if ( (retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
+						|| (retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) )
 					isPossibleDocOrDatasetUrl = true;
 
 				String urlToCheck = retrievedUrl;
@@ -160,11 +166,11 @@ public class LoaderAndChecker
 						continue;
 					}	// The "retrievedUrl" might have changed (inside "handleUrlChecks()").
 
-					if ( UrlUtils.docUrlsWithIDs.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
+					if ( UrlUtils.docUrlsOrDatasetsWithIDs.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
 						logger.info("re-crossed docUrl found: < " + retrievedUrl + " >");
 						LoaderAndChecker.reCrossedDocUrls ++;
 						if ( FileUtils.shouldDownloadDocFiles )
-							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(retrievedUrl), null, false);
+							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsOrDatasetsWithIDs.get(retrievedUrl), null, false);
 						else
 							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, "", null, false);
 
@@ -177,8 +183,8 @@ public class LoaderAndChecker
 
 					String lowerCaseRetrievedUrl = retrievedUrl.toLowerCase();
 					// Check if it's a possible-DocUrl, if so, this is the only url which will be checked from this id-group, unless there's a canonicalization problem.
-					if ( DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()
-						|| DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches() ) {
+					if ( (retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
+						|| (retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) ) {
 						//logger.debug("Possible docUrl or datasetUrl: " + retrievedUrl);
 						possibleDocOrDatasetUrl = retrievedUrl;
 						break;	// This is the absolute-best-case, we go and connect directly.

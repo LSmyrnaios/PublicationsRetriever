@@ -34,7 +34,7 @@ public class UrlUtils
 
 	public static final HashSet<String> duplicateUrls = new HashSet<String>();
 
-	public static final HashMap<String, String> docUrlsWithIDs = new HashMap<String, String>();	// Null keys are allowed (in case they are not available in the input).
+	public static final HashMap<String, String> docUrlsOrDatasetsWithIDs = new HashMap<String, String>();	// Null keys are allowed (in case they are not available in the input).
 
 	public static final String alreadyDownloadedByIDMessage = "This file is probably already downloaded from ID=";
 
@@ -67,7 +67,7 @@ public class UrlUtils
 					finalDocUrl = UrlUtils.removeTemporalIdentifier(finalDocUrl);	// We send the non-lowerCase-url as we may want to continue with that docUrl in case of an error.
 
 				if ( isFirstCrossed )	// Add this id, only if this is a first-crossed docUrl.
-					docUrlsWithIDs.put(finalDocUrl, urlId);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
+					docUrlsOrDatasetsWithIDs.put(finalDocUrl, urlId);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
 
 				if ( pageDomain == null )
 					pageDomain = UrlUtils.getDomainStr(pageUrl, null);

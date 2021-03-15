@@ -73,11 +73,11 @@ public class DocUrlsRetriever
 
 	public static void parseArgs(String[] mainArgs)
 	{
-		if ( mainArgs.length > 5 ) {
-			String errMessage = "\"DocUrlsRetriever\" expected only up to 5 arguments, while you gave: " + mainArgs.length + "!";
+		if ( mainArgs.length > 7 ) {
+			String errMessage = "\"DocUrlsRetriever\" expected only up to 7 arguments, while you gave: " + mainArgs.length + "!";
 			logger.error(errMessage);
 			System.err.println(errMessage
-					+ "\nUsage: java -jar doc_urls_retriever-<VERSION>.jar -downloadDocFiles(OPTIONAL) -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' < 'input' > 'output'");
+					+ "\nUsage: java -jar doc_urls_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all>  -downloadDocFiles(OPTIONAL) -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' < 'input' > 'output'");
 			System.exit(-1);
 		}
 
@@ -87,6 +87,32 @@ public class DocUrlsRetriever
 		{
 			switch ( mainArgs[i] )
 			{
+				case "-retrieveDataType":
+					i ++;
+					String dataType = mainArgs[i];
+					switch (dataType) {
+						case "document":
+							logger.info("Going to retrieve only records of \"document\"-type.");
+							LoaderAndChecker.retrieveDocuments = true;
+							LoaderAndChecker.retrieveDatasets = false;
+							break;
+						case "dataset":
+							logger.info("Going to retrieve only records of \"dataset\"-type.");
+							LoaderAndChecker.retrieveDocuments = false;
+							LoaderAndChecker.retrieveDatasets = true;
+							break;
+						case "all":
+							logger.info("Going to retrieve records of all types (documents and datasets).");
+							LoaderAndChecker.retrieveDocuments = true;
+							LoaderAndChecker.retrieveDatasets = true;
+							break;
+						default:
+							String errMessage = "Argument: \"" + dataType + "\" was invalid!\nExpected one of the following: \"docFiles | datasets | all\"";
+							System.err.println(errMessage);
+							logger.error(errMessage);
+							System.exit(9);
+					}
+					break;
 				case "-downloadDocFiles":
 					FileUtils.shouldDownloadDocFiles = true;
 					break;
@@ -290,9 +316,7 @@ public class DocUrlsRetriever
 		});
 		logger.debug("The " + list.size() + " domains which gave docUrls and their number:");
 		for ( Map.Entry<String, Integer> entry : list )
-		{
 			logger.debug(entry.getKey() + " : " + entry.getValue());
-		}
 	}
 	
 }

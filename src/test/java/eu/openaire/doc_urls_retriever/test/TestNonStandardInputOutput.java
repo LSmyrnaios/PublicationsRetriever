@@ -48,12 +48,14 @@ public class TestNonStandardInputOutput  {
 	@Test
 	public void testCustomInputOutputWithNums()
 	{
-		String[] args = new String[5];
-		args[0] = "-downloadDocFiles";
-		args[1] = "-docFilesStorage";
-		args[2] = "/srv/docFiles";
-		args[3] = "-firstDocFileNum";
-		args[4] = "1";
+		String[] args = new String[7];
+		args[0] = "-retrieveDataType";
+		args[1] = "document";	// "document" OR "dataset" OR "all"
+		args[2] = "-downloadDocFiles";
+		args[3] = "-docFilesStorage";
+		args[4] = "/storage/docFiles";
+		args[5] = "-firstDocFileNum";
+		args[6] = "1";
 
 		logger.info("Calling main method with these args: ");
 		for ( String arg: args )
@@ -67,10 +69,12 @@ public class TestNonStandardInputOutput  {
 	@Test
 	public void testCustomInputOutputWithOriginalDocFileNames()
 	{
-		String[] args = new String[3];
-		args[0] = "-downloadDocFiles";
-		args[1] = "-docFilesStorage";
-		args[2] = "/srv/docFiles";
+		String[] args = new String[5];
+		args[0] = "-retrieveDataType";
+		args[1] = "document";	// "document" OR "dataset" OR "all"
+		args[2] = "-downloadDocFiles";
+		args[3] = "-docFilesStorage";
+		args[4] = "/storage/docFiles";
 
 		logger.info("Calling main method with these args: ");
 		for ( String arg: args )
@@ -84,10 +88,14 @@ public class TestNonStandardInputOutput  {
 	@Test
 	public void testCustomInputOutputWithoutDownloading()
 	{
-		String[] args = new String[0];
-		
-		logger.info("Calling main method without any args..");
-		
+		String[] args = new String[2];
+		args[0] = "-retrieveDataType";
+		args[1] = "document";	// "document" OR "dataset" OR "all"
+
+		logger.info("Calling main method with these args: ");
+		for ( String arg: args )
+			logger.info("'" + arg + "'");
+
 		main(args);
 	}
 	

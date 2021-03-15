@@ -214,11 +214,11 @@ public class SpecialUrlsHandler
 	{
 		//logger.debug("AcademicMicrosoft PossibleDocUrl: " + possibleDocUrl);	// DEBUG!
 
-		if ( UrlUtils.docUrlsWithIDs.containsKey(possibleDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
+		if ( UrlUtils.docUrlsOrDatasetsWithIDs.containsKey(possibleDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
 			logger.info("re-crossed docUrl found: < " + possibleDocUrl + " >");
 			LoaderAndChecker.reCrossedDocUrls ++;
 			if ( FileUtils.shouldDownloadDocFiles )
-				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, possibleDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(possibleDocUrl), null, false);
+				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, possibleDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsOrDatasetsWithIDs.get(possibleDocUrl), null, false);
 			else
 				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, possibleDocUrl, "", null, false);
 			return true;

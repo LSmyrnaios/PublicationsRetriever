@@ -90,11 +90,11 @@ public class MetaDocUrlsHandler {
             return true;
         }
 
-        if ( UrlUtils.docUrlsWithIDs.containsKey(metaDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
+        if ( UrlUtils.docUrlsOrDatasetsWithIDs.containsKey(metaDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
             logger.info("re-crossed docUrl found: < " + metaDocUrl + " >");
             LoaderAndChecker.reCrossedDocUrls ++;
             if ( FileUtils.shouldDownloadDocFiles )
-                UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, metaDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(metaDocUrl), pageDomain, false);
+                UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, metaDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsOrDatasetsWithIDs.get(metaDocUrl), pageDomain, false);
             else
                 UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, metaDocUrl, "", pageDomain, false);
             numOfMetaDocUrlsFound ++;
