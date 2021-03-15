@@ -306,12 +306,12 @@ public class MachineLearning
 
 			strB.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
 
-			if ( UrlUtils.docUrlsWithIDs.containsKey(predictedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
+			if ( UrlUtils.docUrlsOrDatasetsWithIDs.containsKey(predictedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
 				logger.info("MachineLearningAlgorithm got a hit for pageUrl: \""+ pageUrl + "\"! Resulted (already found before) docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
 				logger.info("re-crossed docUrl found: < " + predictedDocUrl + " >");
 				LoaderAndChecker.reCrossedDocUrls ++;
 				if ( FileUtils.shouldDownloadDocFiles )
-					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsWithIDs.get(predictedDocUrl), pageDomain, false);
+					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsOrDatasetsWithIDs.get(predictedDocUrl), pageDomain, false);
 				else
 					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, "", pageDomain, false);
 				MachineLearning.docUrlsFoundByMLA ++;
