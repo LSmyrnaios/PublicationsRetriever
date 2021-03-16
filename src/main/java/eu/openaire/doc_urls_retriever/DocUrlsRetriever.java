@@ -73,11 +73,12 @@ public class DocUrlsRetriever
 
 	public static void parseArgs(String[] mainArgs)
 	{
+		String usageMessage = "\nUsage: java -jar doc_urls_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all>  -downloadDocFiles(OPTIONAL) -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' < 'input' > 'output'";
+
 		if ( mainArgs.length > 7 ) {
-			String errMessage = "\"DocUrlsRetriever\" expected only up to 7 arguments, while you gave: " + mainArgs.length + "!";
+			String errMessage = "\"DocUrlsRetriever\" expected only up to 7 arguments, while you gave: " + mainArgs.length + "!" + usageMessage;
 			logger.error(errMessage);
-			System.err.println(errMessage
-					+ "\nUsage: java -jar doc_urls_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all>  -downloadDocFiles(OPTIONAL) -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' < 'input' > 'output'");
+			System.err.println(errMessage);
 			System.exit(-1);
 		}
 
@@ -85,62 +86,68 @@ public class DocUrlsRetriever
 
 		for ( short i = 0; i < mainArgs.length; i++ )
 		{
-			switch ( mainArgs[i] )
-			{
-				case "-retrieveDataType":
-					i ++;
-					String dataType = mainArgs[i];
-					switch (dataType) {
-						case "document":
-							logger.info("Going to retrieve only records of \"document\"-type.");
-							LoaderAndChecker.retrieveDocuments = true;
-							LoaderAndChecker.retrieveDatasets = false;
-							break;
-						case "dataset":
-							logger.info("Going to retrieve only records of \"dataset\"-type.");
-							LoaderAndChecker.retrieveDocuments = false;
-							LoaderAndChecker.retrieveDatasets = true;
-							break;
-						case "all":
-							logger.info("Going to retrieve records of all types (documents and datasets).");
-							LoaderAndChecker.retrieveDocuments = true;
-							LoaderAndChecker.retrieveDatasets = true;
-							break;
-						default:
-							String errMessage = "Argument: \"" + dataType + "\" was invalid!\nExpected one of the following: \"docFiles | datasets | all\"";
-							System.err.println(errMessage);
-							logger.error(errMessage);
-							System.exit(9);
-					}
-					break;
-				case "-downloadDocFiles":
-					FileUtils.shouldDownloadDocFiles = true;
-					break;
-				case "-firstDocFileNum":
-					try {
-						i ++;	// Go get the following first-Number-argument.
-						FileUtils.numOfDocFile = DocUrlsRetriever.initialNumOfDocFile = Integer.parseInt(mainArgs[i]);	// We use both variables in statistics.
-						if ( DocUrlsRetriever.initialNumOfDocFile <= 0 )
-							logger.warn("The given \"initialNumOfDocFile\" (" + DocUrlsRetriever.initialNumOfDocFile + ") was a number less or equal to zero! Continuing downloading nevertheless..");	// The statistics are not affected by a "negative" or "zero" value.
-						firstNumGiven = true;
+			try {
+				switch ( mainArgs[i] ) {
+					case "-retrieveDataType":
+						i ++;
+						String dataType = mainArgs[i];
+						switch (dataType) {
+							case "document":
+								logger.info("Going to retrieve only records of \"document\"-type.");
+								LoaderAndChecker.retrieveDocuments = true;
+								LoaderAndChecker.retrieveDatasets = false;
+								break;
+							case "dataset":
+								logger.info("Going to retrieve only records of \"dataset\"-type.");
+								LoaderAndChecker.retrieveDocuments = false;
+								LoaderAndChecker.retrieveDatasets = true;
+								break;
+							case "all":
+								logger.info("Going to retrieve records of all types (documents and datasets).");
+								LoaderAndChecker.retrieveDocuments = true;
+								LoaderAndChecker.retrieveDatasets = true;
+								break;
+							default:
+								String errMessage = "Argument: \"" + dataType + "\" was invalid!\nExpected one of the following: \"docFiles | datasets | all\"" + usageMessage;
+								System.err.println(errMessage);
+								logger.error(errMessage);
+								System.exit(9);
+						}
 						break;
-					} catch (NumberFormatException nfe) {
-						String errorMessage = "Argument \"-firstDocFileNum\" must be followed by an integer value! Given one was: \"" + mainArgs[i] + "\"";
-						System.err.println(errorMessage);
-						logger.error(errorMessage);
-						System.exit(-2);
-					}
-				case "-docFilesStorage":
-					i ++;
-					String dir = mainArgs[i];
-					FileUtils.storeDocFilesDir = dir + (!dir.endsWith(File.separator) ? File.separator : "");	// Pre-process it.. otherwise it may cause problems.
-					DocUrlsRetriever.docFilesStorageGivenByUser = true;
-					break;
-				default:	// log & ignore the argument
-					String errMessage = "Argument: \"" + mainArgs[i] + "\" was not expected!";
-					System.err.println(errMessage);
-					logger.error(errMessage);
-					break;
+					case "-downloadDocFiles":
+						FileUtils.shouldDownloadDocFiles = true;
+						break;
+					case "-firstDocFileNum":
+						try {
+							i ++;	// Go get the following first-Number-argument.
+							FileUtils.numOfDocFile = DocUrlsRetriever.initialNumOfDocFile = Integer.parseInt(mainArgs[i]);    // We use both variables in statistics.
+							if ( DocUrlsRetriever.initialNumOfDocFile <= 0 )
+								logger.warn("The given \"initialNumOfDocFile\" (" + DocUrlsRetriever.initialNumOfDocFile + ") was a number less or equal to zero! Continuing downloading nevertheless..");    // The statistics are not affected by a "negative" or "zero" value.
+							firstNumGiven = true;
+							break;
+						} catch (NumberFormatException nfe) {
+							String errorMessage = "Argument \"-firstDocFileNum\" must be followed by an integer value! Given one was: \"" + mainArgs[i] + "\"" + usageMessage;
+							System.err.println(errorMessage);
+							logger.error(errorMessage);
+							System.exit(-2);
+						}
+					case "-docFilesStorage":
+						i ++;
+						String dir = mainArgs[i];
+						FileUtils.storeDocFilesDir = dir + (!dir.endsWith(File.separator) ? File.separator : "");    // Pre-process it.. otherwise it may cause problems.
+						DocUrlsRetriever.docFilesStorageGivenByUser = true;
+						break;
+					default:	// log & ignore the argument
+						String errMessage = "Argument: \"" + mainArgs[i] + "\" was not expected!" + usageMessage;
+						System.err.println(errMessage);
+						logger.error(errMessage);
+						break;
+				}
+			} catch (ArrayIndexOutOfBoundsException aioobe) {
+				String errMessage = "The argument-set of \"" + mainArgs[i] + "\" was not complete!\nThe provided arguments are: " + Arrays.toString(mainArgs) + usageMessage;
+				System.err.println(errMessage);
+				logger.error(errMessage);
+				System.exit(90);
 			}
 		}
 
