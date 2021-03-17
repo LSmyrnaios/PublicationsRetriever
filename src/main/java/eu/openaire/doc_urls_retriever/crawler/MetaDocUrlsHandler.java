@@ -19,8 +19,8 @@ public class MetaDocUrlsHandler {
     private static final Logger logger = LoggerFactory.getLogger(MetaDocUrlsHandler.class);
 
     // Order-independent META_DOC_URL-regex.
-    // (?:<meta(?:(?:[^<]*name=\"(?:.*citation_pdf|eprints.document)_url\"[^<]*content=\"(http[^\"]+)(?:\"))|(?:[^<]*content=\"(http[^\"]+)(?:\")[^<]*name=\"(?:.*citation_pdf|eprints.document)_url\"))(?:[^>]*(?:/)?>)
-    private static final String metaName = "name=\"(?:.*citation_pdf|eprints.document)_url\"";
+    // (?:<meta(?:(?:[^<]*name=\"(?:[^<]*citation_pdf|eprints.document)_url\"[^<]*content=\"(http[^\"]+)\")|(?:[^<]*content=\"(http[^\"]+)\"[^<]*name=\"(?:[^<]*citation_pdf|eprints.document)_url\"))(?:[^>]*(?:/)?>))
+    private static final String metaName = "name=\"(?:[^<]*citation_pdf|eprints.document)_url\"";
     private static final String metaContent = "content=\"(http[^\"]+)\"";
     public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta(?:(?:[^<]*" + metaName + "[^<]*" + metaContent + ")|(?:[^<]*" + metaContent + "[^<]*" + metaName + "))(?:[^>]*(?:/)?>))");
 
