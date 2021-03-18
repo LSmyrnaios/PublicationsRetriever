@@ -4,6 +4,7 @@ import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
 import eu.openaire.doc_urls_retriever.crawler.MetaDocUrlsHandler;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
+import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
 import eu.openaire.doc_urls_retriever.util.signal.SignalUtils;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
@@ -33,6 +35,9 @@ public class DocUrlsRetriever
 
 	public static boolean docFilesStorageGivenByUser = false;
 
+	public static boolean inputFromUrl = false;
+	public static String inputDataUrl = null;
+
 	public static Instant startTime = null;
 
 	public static DecimalFormat df = new DecimalFormat("0.00");
@@ -48,8 +53,16 @@ public class DocUrlsRetriever
 
 		logger.info("Starting DocUrlsRetriever..");
 
+		InputStream inputStream = null;
+
+		// Check if the user gave the input file in the commandLineArgument
+		if ( inputFromUrl )
+			inputStream = ConnSupportUtils.getInputStreamFromInputDataUrl();
+		else
+			inputStream = System.in;
+
 		// Use standard input/output.
-		new FileUtils(System.in, System.out);
+		new FileUtils(inputStream, System.out);
 
 		if ( MachineLearning.useMLA )
 			new MachineLearning();
@@ -73,10 +86,10 @@ public class DocUrlsRetriever
 
 	public static void parseArgs(String[] mainArgs)
 	{
-		String usageMessage = "\nUsage: java -jar doc_urls_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all>  -downloadDocFiles(OPTIONAL) -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' < 'input' > 'output'";
+		String usageMessage = "\nUsage: java -jar doc_urls_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all>  -downloadDocFiles(OPTIONAL) -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' -inputDataUrl 'inputUrl' < 'input' > 'output'";
 
-		if ( mainArgs.length > 7 ) {
-			String errMessage = "\"DocUrlsRetriever\" expected only up to 7 arguments, while you gave: " + mainArgs.length + "!" + usageMessage;
+		if ( mainArgs.length > 9 ) {
+			String errMessage = "\"DocUrlsRetriever\" expected only up to 9 arguments, while you gave: " + mainArgs.length + "!" + usageMessage;
 			logger.error(errMessage);
 			System.err.println(errMessage);
 			System.exit(-1);
@@ -136,6 +149,12 @@ public class DocUrlsRetriever
 						String dir = mainArgs[i];
 						FileUtils.storeDocFilesDir = dir + (!dir.endsWith(File.separator) ? File.separator : "");    // Pre-process it.. otherwise it may cause problems.
 						DocUrlsRetriever.docFilesStorageGivenByUser = true;
+						break;
+					case "-inputDataUrl":
+						i++;
+						inputDataUrl = mainArgs[i];
+						inputFromUrl = true;
+						logger.info("Using the inputFile from the URL: " + inputDataUrl);
 						break;
 					default:	// log & ignore the argument
 						String errMessage = "Argument: \"" + mainArgs[i] + "\" was not expected!" + usageMessage;

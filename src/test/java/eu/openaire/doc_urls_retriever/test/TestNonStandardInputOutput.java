@@ -3,6 +3,7 @@ package eu.openaire.doc_urls_retriever.test;
 import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
 import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
+import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.signal.SignalUtils;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import org.junit.jupiter.api.BeforeAll;
@@ -11,10 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.time.Instant;
 
 
@@ -40,10 +38,14 @@ public class TestNonStandardInputOutput  {
 		LoaderAndChecker.useIdUrlPairs = testingSubDir.equals("idUrlPairs");
 		if ( !LoaderAndChecker.useIdUrlPairs )
 			FileUtils.skipFirstRow = false;	// Use "true", if we have a "column-name" in our csv file. Default: "false".
-		logger.info("Using the inputFile: \"" + inputFile.getName() + "\" and the outputFile: \"" + outputFile.getName() + "\".");
+
+		if (DocUrlsRetriever.inputFromUrl )
+			logger.info("Using the inputFile from URL: \"" + DocUrlsRetriever.inputDataUrl + "\" and the outputFile: \"" + outputFile.getName() + "\".");
+		else
+			logger.info("Using the inputFile: \"" + inputFile.getName() + "\" and the outputFile: \"" + outputFile.getName() + "\".");
 	}
-	
-	
+
+
 	@Disabled	// as we want to run it only on demand, since it's a huge test. Same for the following tests of this class.
 	@Test
 	public void testCustomInputOutputWithNums()
@@ -63,8 +65,8 @@ public class TestNonStandardInputOutput  {
 
 		main(args);
 	}
-	
-	
+
+
 	@Disabled
 	@Test
 	public void testCustomInputOutputWithOriginalDocFileNames()
@@ -82,8 +84,8 @@ public class TestNonStandardInputOutput  {
 
 		main(args);
 	}
-	
-	
+
+
 	@Disabled
 	@Test
 	public void testCustomInputOutputWithoutDownloading()
@@ -91,6 +93,25 @@ public class TestNonStandardInputOutput  {
 		String[] args = new String[2];
 		args[0] = "-retrieveDataType";
 		args[1] = "document";	// "document" OR "dataset" OR "all"
+
+		logger.info("Calling main method with these args: ");
+		for ( String arg: args )
+			logger.info("'" + arg + "'");
+
+		main(args);
+	}
+
+
+	@Disabled
+	@Test
+	public void testCustomInputOutputWithoutDownloadingWithInputUrl()
+	{
+		String[] args = new String[4];
+		args[0] = "-retrieveDataType";
+		args[1] = "document";	// "document" OR "dataset" OR "all"
+		args[2] = "-inputDataUrl";
+		args[3] = "https://drive.google.com/uc?export=download&id=1YIF6EkU-yqlOFnQ73hqy2Dj0GUKEKz-S";
+		//args[3] = "http://localhost:8080/api/urls";
 
 		logger.info("Calling main method with these args: ");
 		for ( String arg: args )
@@ -135,9 +156,17 @@ public class TestNonStandardInputOutput  {
 	
 	public static void setInputOutput()
 	{
-		setTypeOfInputData();
 		try {
-			new FileUtils(new FileInputStream(inputFile), new FileOutputStream(outputFile));
+			InputStream inputStream = null;
+			if ( DocUrlsRetriever.inputFromUrl )
+				inputStream = ConnSupportUtils.getInputStreamFromInputDataUrl();
+			else
+				inputStream = new FileInputStream(inputFile);
+
+			new FileUtils(inputStream, new FileOutputStream(outputFile));
+
+			setTypeOfInputData();
+
 		} catch (FileNotFoundException e) {
 			String errorMessage = "InputFile not found!";
 			System.err.println(errorMessage);

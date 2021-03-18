@@ -160,7 +160,6 @@ public class FileUtils
 			
 			printStream.flush();
 			printStream.close();
-			
 			inputScanner.close();
 			
 			// Assign the new input-file from which the data will be read for the rest of the program's execution.

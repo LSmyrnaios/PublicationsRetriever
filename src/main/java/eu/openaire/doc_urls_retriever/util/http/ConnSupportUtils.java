@@ -2,6 +2,7 @@ package eu.openaire.doc_urls_retriever.util.http;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
+import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
 import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
 import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -798,6 +800,44 @@ public class ConnSupportUtils
 		}
 
 		return ( non_protocol_url1.equals(non_protocol_url2Url) );
+	}
+
+
+	public static InputStream getInputStreamFromInputDataUrl()
+	{
+		InputStream inputStream = null;
+		if ( (DocUrlsRetriever.inputDataUrl == null) || DocUrlsRetriever.inputDataUrl.isEmpty() ) {
+			String errorMessage = "The \"inputDataUrl\" was not given, even though";
+			logger.error(errorMessage);
+			System.err.println(errorMessage);
+			System.exit(55);
+		}
+
+		try {
+			HttpURLConnection conn = HttpConnUtils.handleConnection(null, DocUrlsRetriever.inputDataUrl, DocUrlsRetriever.inputDataUrl, DocUrlsRetriever.inputDataUrl, null, true, true);
+			String mimeType = conn.getHeaderField("Content-Type");
+			if ( (mimeType == null) || !mimeType.toLowerCase().contains("json") ) {
+				String errorMessage = "The mimeType of the url was either null or a non-json: " + mimeType;
+				logger.error(errorMessage);
+				System.err.println(errorMessage);
+				System.exit(56);
+			}
+
+			inputStream = conn.getInputStream();
+
+		} catch (Exception e) {
+			String errorMessage = "Unexpected error when retrieving the input-stream from the inputDataUrl:\n" + e.getMessage();
+			logger.error(errorMessage);
+			System.err.println(errorMessage);
+			System.exit(57);
+		}
+
+		// If the user gave both the inputUrl and the inputFile, then make sure we close the SYS-IN stream.
+		try {
+			System.in.close();
+		} catch (Exception ignored) { }
+
+		return inputStream;
 	}
 
 

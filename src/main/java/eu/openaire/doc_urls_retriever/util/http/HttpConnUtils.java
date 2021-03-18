@@ -493,7 +493,7 @@ public class HttpConnUtils
 					throw new AlreadyFoundDocUrlException();
 				}
 
-				if ( !targetUrl.contains(HttpConnUtils.lastConnectedHost) ) {    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
+				if ( (HttpConnUtils.lastConnectedHost != null) && !targetUrl.contains(HttpConnUtils.lastConnectedHost) ) {    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
 					conn.disconnect();	// Close the socket with that server.
 					if ( (domainStr = UrlUtils.getDomainStr(targetUrl, null)) == null )
 						throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".

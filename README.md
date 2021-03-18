@@ -1,7 +1,7 @@
 # DocUrlsRetriever    [![Build Status](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever.svg?branch=master)](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever)
 
 A Java-program which retrieves the Document and Dataset Urls from the given Publication-Web-Pages and if wanted, it can also download the full-texts.<br/>
-It is being developed for the European organization: [**OpenAIRE**](https://www.openaire.eu/).<br/>
+It is being developed for the European organization: [**OpenAIRE**](https://www.openaire.eu/). <br/>
 Afterwards, these full-text documents are mined, in order to enrich a much more complete set of OpenAIRE publications with inference links.<br/>
 
 The **DocUrlsRetriever** takes as input the PubPages with their IDs -in JSON format- and gives an output -also in JSON format,
@@ -57,31 +57,36 @@ arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br/>
 **Run tests with custom input/output:**
 - Inside ***pom.xml***, change the **mainClass** of **maven-shade-plugin** from "**DocUrlsRetriever**" to "**TestNonStandardInputOutput**".
 - Inside ***src/test/.../TestNonStandardInputOutput.java***, give the wanted testInput and testOutput files.<br/>
-- If you want to provide a .tsv or a .csv file with a title in its column,
+- If you want to provide a *.tsv* or a *.csv* file with a title in its column,
     you can specify it in the **util.file.FileUtils.skipFirstRow**-variable, in order for the first-row (headers) to be ignored.
 - If you want to see the logging-messages in the *Console*, open the ***resources/logback.xml***
     and change the ***appender-ref***, from ***File*** to ***Console***.<br/>
 - Run ``mvn install`` to create the new ***JAR*** file.<br/>
 - Execute the program with the following command:<br/>
-**``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-firstDocFileNum' arg5:'NUM' arg6:'-docFilesStorage' arg7:'storageDir'``**
+**``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-firstDocFileNum' arg5:'NUM' arg6:'-docFilesStorage' arg7:'storageDir' arg8:'-inputDataUrl' arg9: 'inputUrl'``**
+<br/><br/>
 
 **Arguments explanation:**
 - **-retrieveDataType** and **dataType** will tell the program to retrieve the urls of type "*document*", "*dataset*" or "*all*"-dataTypes.
 - **-downloadDocFiles** will tell the program to download the DocFiles.
-    The absence of this argument will cause the program to NOT download the docFiles, but just to find the DocUrls instead.
+    The absence of this argument will cause the program to NOT download the docFiles, but just to find the *DocUrls* instead.
     Either way, the DocUrls will be written to the JsonOutputFile.
-- **-firstDocFileNum** and **NUM** will tell the program to use numbers as DocFileNames and the first DocFile will have the given number "*NUM*"
+- **-firstDocFileNum** and **NUM** will tell the program to use numbers as *DocFileNames* and the first *DocFile* will have the given number "*NUM*"
     The absence of this argument-group will cause the program to use the original-docFileNames.
 - **-docFilesStorage** and **storageDir** will tell the program to use the given DocFiles-*storageDir*.
     The absence of this argument will cause the program to use a pre-defined storageDir which is: "*./docFiles*".
-<br/>
+- **-inputDataUrl** and **inputUrl** will tell the program to use the given *URL* to retrieve the inputFile, instead of having it locally stored and redirect the *Standard Input Stream*.
+<br/><br/>
+  The order of the program's arguments matters only **per pair**. For example, the argument **'storageDir'**, has to be placed always after the **'-docFilesStorage''** argument.
+  <br/>
+
 
 ## Example
 You can check the functionality of **DocUrlsRetriever** by running an example.<br/>
 Type **`./runExample.sh`** in the terminal and hit `ENTER`.<br/>
 Then you can see the results in the ***example/sample_output*** directory.<br/>
 The above script will run the following commands:
-- **`mvn clean install`**: Does a clean install.
+- **`mvn clean install`**: Does a *clean install*.
 - **`rm -rf example/sample_output/*`**: Removes any previous example-results.
 - **``cd target &&
     java -jar doc_urls_retriever-0.4-SNAPSHOT.jar -retrieveDataType document -downloadDocFiles -firstDocFileNum 1 -docFilesStorage ../example/sample_output/DocFiles
