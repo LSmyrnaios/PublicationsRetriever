@@ -366,20 +366,20 @@ public class LoaderAndChecker
 	 * @return finished loading / not finished
 	 * @throws RuntimeException
 	 */
-	public static boolean isFinishedLoading(boolean isEmptyOfData, boolean isFirstRun) throws RuntimeException
+	public static boolean isFinishedLoading(boolean isEmptyOfData, boolean isFirstRun)
 	{
 		if ( isEmptyOfData ) {
 			if ( isFirstRun ) {
-				String errorMessage = "Could not retrieve any urls from the inputFile!";
+				String errorMessage = "Could not retrieve any urls from the inputFile! Exiting..";
 				System.err.println(errorMessage);
 				logger.error(errorMessage);
-				throw new RuntimeException();
+				System.exit(100);
 			} else {
 				logger.debug("Done processing " + FileUtils.getCurrentlyLoadedUrls() + " urls from the inputFile.");
 				return true;
 			}
-		} else
-			return false;
+		}
+		return false;
 	}
 	
 	
