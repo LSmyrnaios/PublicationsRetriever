@@ -110,7 +110,7 @@ public class TestNonStandardInputOutput  {
 		args[0] = "-retrieveDataType";
 		args[1] = "document";	// "document" OR "dataset" OR "all"
 		args[2] = "-inputDataUrl";
-		args[3] = "https://drive.google.com/uc?export=download&id=1YIF6EkU-yqlOFnQ73hqy2Dj0GUKEKz-S";
+		args[3] = "https://drive.google.com/uc?export=download&id=1YIF6EkU-yqlOFnQ73hqy2Dj0GUKEKz-S";	// "orderedList1000.json"
 		//args[3] = "http://localhost:8080/api/urls";
 
 		logger.info("Calling main method with these args: ");

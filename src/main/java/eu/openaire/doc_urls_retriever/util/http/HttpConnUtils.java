@@ -17,10 +17,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 
 /**
@@ -43,7 +40,7 @@ public class HttpConnUtils
 	public static int numOfDomainsBlockedDueToSSLException = 0;
 
 	public static String lastConnectedHost = "";
-	public static final int politenessDelay = 0;	// Time to wait before connecting to the same host again.
+	public static final boolean addPolitenessDelay = true;	// Add delay time to wait before connecting to the same host again.
 
 	public static final int maxConnGETWaitingTime = 15000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
 	public static final int maxConnHEADWaitingTime = 10000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
@@ -218,6 +215,9 @@ public class HttpConnUtils
 	public static HttpURLConnection handleConnection(String urlId, String sourceUrl, String pageUrl, String resourceURL, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
 										throws AlreadyFoundDocUrlException, RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException, IOException
 	{
+		if ( (domainStr == null) && (domainStr = UrlUtils.getDomainStr(resourceURL, null)) == null )
+			throw new RuntimeException();
+
 		HttpURLConnection conn = openHttpConnection(resourceURL, domainStr, calledForPageUrl, calledForPossibleDocUrl);
 		// The "resourceUrl" might have changed (due to special-handling of some pages), but it doesn't cause any problem. It's only used with "internalLinks" which are not affected by the special handling.
 
@@ -309,9 +309,9 @@ public class HttpConnUtils
 				conn.setReadTimeout(maxConnHEADWaitingTime);
 			}
 
-			if ( (politenessDelay > 0) && resourceURL.contains(lastConnectedHost) )	// If this is the last-visited domain, sleep a bit before re-connecting to it.
-				Thread.sleep(politenessDelay);	// Avoid server-overloading for the same host.
-			
+			if ( addPolitenessDelay && resourceURL.contains(lastConnectedHost) )	// If this is the last-visited domain, sleep a bit before re-connecting to it.
+				Thread.sleep(ConnSupportUtils.getRandomNumber(1000, 2000));	// Avoid server-overloading for the same host.
+
 			conn.connect();	// Else, first connect and if there is no error, log this domain as the last one.
 			lastConnectedHost = domainStr;
 			
@@ -337,8 +337,8 @@ public class HttpConnUtils
 				conn.setReadTimeout(maxConnGETWaitingTime);
 				conn.setInstanceFollowRedirects(false);
 
-				if ( politenessDelay > 0 )	// That's the only check here, since we know we will connect to the same host.
-					Thread.sleep(politenessDelay);	// Avoid server-overloading for the same host.
+				if ( addPolitenessDelay )	// That's the only check here, since we know we will connect to the same host.
+					Thread.sleep(ConnSupportUtils.getRandomNumber(1000, 2000));	// Avoid server-overloading for the same host.
 				
 				conn.connect();
 				//logger.debug("responseCode for \"" + resourceURL + "\", after setting conn-method to: \"" + conn.getRequestMethod() + "\" is: " + conn.getResponseCode());
@@ -493,7 +493,7 @@ public class HttpConnUtils
 					throw new AlreadyFoundDocUrlException();
 				}
 
-				if ( (HttpConnUtils.lastConnectedHost != null) && !targetUrl.contains(HttpConnUtils.lastConnectedHost) ) {    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
+				if ( !targetUrl.contains(HttpConnUtils.lastConnectedHost) ) {    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
 					conn.disconnect();	// Close the socket with that server.
 					if ( (domainStr = UrlUtils.getDomainStr(targetUrl, null)) == null )
 						throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".

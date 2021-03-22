@@ -121,7 +121,7 @@ public class ConnSupportUtils
 				// The "contentDisposition" will be definitely "null", since "mimeType != null" and so, the "contentDisposition" will not have been retrieved by the caller method.
 				
 				if ( (contentDisposition != null) && !contentDisposition.equals("attachment") )
-					typeToReturn = contentDisposition.contains("pdf") ? "document" : null;	// TODO - add more types as needed. Check: "http://www.esocialsciences.org/Download/repecDownload.aspx?qs=Uqn/rN48N8UOPcbSXUd2VFI+dpOD3MDPRfIL8B3DH+6L18eo/yEvpYEkgi9upp2t8kGzrjsWQHUl44vSn/l7Uc1SILR5pVtxv8VYECXSc8pKLF6QJn6MioA5dafPj/8GshHBvLyCex2df4aviMvImCZpwMHvKoPiO+4B7yHRb97u1IHg45E+Z6ai0Z/0vacWHoCsNT9O4FNZKMsSzen2Cw=="
+					typeToReturn = contentDisposition.toLowerCase().contains("pdf") ? "document" : null;	// TODO - add more types as needed. Check: "http://www.esocialsciences.org/Download/repecDownload.aspx?qs=Uqn/rN48N8UOPcbSXUd2VFI+dpOD3MDPRfIL8B3DH+6L18eo/yEvpYEkgi9upp2t8kGzrjsWQHUl44vSn/l7Uc1SILR5pVtxv8VYECXSc8pKLF6QJn6MioA5dafPj/8GshHBvLyCex2df4aviMvImCZpwMHvKoPiO+4B7yHRb97u1IHg45E+Z6ai0Z/0vacWHoCsNT9O4FNZKMsSzen2Cw=="
 				else
 					typeToReturn = urlStr.toLowerCase().contains("pdf") ? "document" : null;
 
@@ -158,10 +158,11 @@ public class ConnSupportUtils
 				contentDisposition = conn.getHeaderField("Content-Disposition");
 				if ( (contentDisposition != null) && !contentDisposition.equals("attachment") )	// It may be "attachment" but also be a pdf.. but we have to check if the "pdf" exists inside the url-string.
 				{
-					if ( contentDisposition.contains("pdf") )
+					String lowerCaseContentDisposition = contentDisposition.toLowerCase();
+					if ( lowerCaseContentDisposition.contains("pdf") )
 						typeToReturn = "document";
 					else {
-						String clearContentDisposition = StringUtils.replace(contentDisposition.toLowerCase(), "\"", "", -1);
+						String clearContentDisposition = StringUtils.replace(lowerCaseContentDisposition, "\"", "", -1);
 						if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
 							typeToReturn = "dataset";
 					}
@@ -178,10 +179,11 @@ public class ConnSupportUtils
 		}
 		else if ( (contentDisposition != null) && !contentDisposition.equals("attachment") ) {	// If the mimeType was not retrieved, then try the "Content Disposition".
 			// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
-			if ( contentDisposition.contains("pdf") )
+			String lowerCaseContentDisposition = contentDisposition.toLowerCase();
+			if ( lowerCaseContentDisposition.contains("pdf") )
 				typeToReturn = "document";
 			else {
-				String clearContentDisposition = StringUtils.replace(contentDisposition.toLowerCase(), "\"", "", -1);
+				String clearContentDisposition = StringUtils.replace(lowerCaseContentDisposition, "\"", "", -1);
 				if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
 					typeToReturn = "dataset";
 			}
@@ -838,6 +840,11 @@ public class ConnSupportUtils
 		} catch (Exception ignored) { }
 
 		return inputStream;
+	}
+
+
+	public static int getRandomNumber(int min, int max) {
+		return (int)(Math.random() * (max - min +1) + min);
 	}
 
 
