@@ -41,6 +41,8 @@ public class HttpConnUtils
 
 	public static String lastConnectedHost = "";
 	public static final boolean addPolitenessDelay = true;	// Add delay time to wait before connecting to the same host again.
+	public static final int minPolitenessDelay = 1000;	// 1 sec
+	public static final int maxPolitenessDelay = 2000;	// 2 sec
 
 	public static final int maxConnGETWaitingTime = 15000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
 	public static final int maxConnHEADWaitingTime = 10000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
@@ -309,8 +311,14 @@ public class HttpConnUtils
 				conn.setReadTimeout(maxConnHEADWaitingTime);
 			}
 
-			if ( addPolitenessDelay && resourceURL.contains(lastConnectedHost) )	// If this is the last-visited domain, sleep a bit before re-connecting to it.
-				Thread.sleep(ConnSupportUtils.getRandomNumber(1000, 2000));	// Avoid server-overloading for the same host.
+			if ( addPolitenessDelay && resourceURL.contains(lastConnectedHost) ) {	// If this is the last-visited domain, sleep a bit before re-connecting to it.
+				int randomSleepTime = ConnSupportUtils.getRandomNumber(minPolitenessDelay, maxPolitenessDelay);
+				try {
+					Thread.sleep(randomSleepTime);	// Avoid server-overloading for the same domain.
+				} catch (InterruptedException ie) {
+					try { Thread.sleep(randomSleepTime); } catch (InterruptedException ignored) {}
+				}	// At this point, if the both sleeps failed, some time has already passed, so it's ok to connect to the same domain.
+			}
 
 			conn.connect();	// Else, first connect and if there is no error, log this domain as the last one.
 			lastConnectedHost = domainStr;
@@ -337,8 +345,14 @@ public class HttpConnUtils
 				conn.setReadTimeout(maxConnGETWaitingTime);
 				conn.setInstanceFollowRedirects(false);
 
-				if ( addPolitenessDelay )	// That's the only check here, since we know we will connect to the same host.
-					Thread.sleep(ConnSupportUtils.getRandomNumber(1000, 2000));	// Avoid server-overloading for the same host.
+				if ( addPolitenessDelay ) {	// That's the only check here, since we know we will connect to the same host.
+					int randomSleepTime = ConnSupportUtils.getRandomNumber(minPolitenessDelay, maxPolitenessDelay);
+					try {
+						Thread.sleep(randomSleepTime);	// Avoid server-overloading for the same domain.
+					} catch (InterruptedException ie) {
+						try { Thread.sleep(randomSleepTime); } catch (InterruptedException ignored) {}
+					}	// At this point, if the both sleeps failed, some time has already passed, so it's ok to connect to the same domain.
+				}
 				
 				conn.connect();
 				//logger.debug("responseCode for \"" + resourceURL + "\", after setting conn-method to: \"" + conn.getRequestMethod() + "\" is: " + conn.getResponseCode());
