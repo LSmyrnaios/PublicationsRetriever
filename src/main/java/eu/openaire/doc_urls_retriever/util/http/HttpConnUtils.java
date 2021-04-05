@@ -159,7 +159,7 @@ public class HttpConnUtils
 					return true;
 				}
 				else {
-					logger.debug("Type \"" + returnedType + "\", which was specified that it's unwanted in this run, was found for url: < " + finalUrlStr + " >");
+					//logger.debug("Type \"" + returnedType + "\", which was specified that it's unwanted in this run, was found for url: < " + finalUrlStr + " >");	// DEBUG!
 					return false;
 				}
 			}
@@ -185,6 +185,9 @@ public class HttpConnUtils
 		} catch (AlreadyFoundDocUrlException afdue) {	// An already-found docUrl was discovered during redirections.
 			return true;	// It's already logged for the outputFile.
 		} catch (RuntimeException re) {
+			if ( re instanceof NullPointerException )
+				re.printStackTrace();
+
 			if ( calledForPageUrl ) {
 				LoaderAndChecker.connProblematicUrls++;
 				ConnSupportUtils.printEmbeddedExceptionMessage(re, resourceURL);
@@ -269,12 +272,10 @@ public class HttpConnUtils
 			if ( ConnSupportUtils.checkIfPathIs403BlackListed(resourceURL, domainStr) )
 				throw new RuntimeException("Avoid reaching 403ErrorCode with url: \"" + resourceURL + "\"!");
 
-
 			if ( !resourceURL.startsWith("https", 0) && domainsSupportingHTTPS.contains(domainStr) ) {
 				resourceURL = ConnSupportUtils.offlineRedirectToHTTPS(resourceURL);
 				timesDidOfflineHTTPSredirect++;
 			}
-
 
 			// For the urls which has reached this point, make sure no weird "ampersand"-anomaly blocks us...
 			boolean weirdMetaDocUrlWhichNeedsGET = false;

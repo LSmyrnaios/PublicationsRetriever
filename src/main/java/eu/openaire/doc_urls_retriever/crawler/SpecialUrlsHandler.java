@@ -42,33 +42,33 @@ public class SpecialUrlsHandler
 
 
 
-	public static String checkAndHandleSpecialUrls(String resourceUrl)
+	public static String checkAndHandleSpecialUrls(String resourceUrl) throws RuntimeException
 	{
-		String scienceDirectPageUrl = null;
-		String europepmcDocUrl = null;
-		String academicMicrosoftPageUrl = null;
-		String nasaDocUrl = null;
-		String frontiersinUrl = null;
-		if ( (scienceDirectPageUrl = SpecialUrlsHandler.checkAndGetScienceDirectUrl(resourceUrl)) != null ) {
-			//logger.debug("ScienceDirect-PageURL to try: " + scienceDirectPageUrl);	// DEBUG!
-			resourceUrl = scienceDirectPageUrl;
+		String updatedUrl = null;
+
+		if ( (updatedUrl = SpecialUrlsHandler.checkAndGetScienceDirectUrl(resourceUrl)) != null ) {
+			//logger.debug("ScienceDirect-PageURL to try: " + updatedUrl);	// DEBUG!
+			resourceUrl = updatedUrl;
 		}
-		else if ( (europepmcDocUrl = SpecialUrlsHandler.checkAndGetEuropepmcDocUrl(resourceUrl)) != null ) {
-			//logger.debug("Europepmc-PageURL: " + resourceURL + " to possible-docUrl: " + europepmcDocUrl);	// DEBUG!
-			resourceUrl = europepmcDocUrl;
+		else if ( (updatedUrl = SpecialUrlsHandler.checkAndGetEuropepmcDocUrl(resourceUrl)) != null ) {
+			//logger.debug("Europepmc-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+			resourceUrl = updatedUrl;
 		}
-		else if ( (academicMicrosoftPageUrl = SpecialUrlsHandler.checkAndGetAcademicMicrosoftPageUrl(resourceUrl)) != null ) {
-			//logger.debug("AcademicMicrosoft-PageURL: " + resourceURL + " to api-entity-pageUrl: " + academicMicrosoftPageUrl);	// DEBUG!
-			resourceUrl = academicMicrosoftPageUrl;
+		else if ( (updatedUrl = SpecialUrlsHandler.checkAndGetAcademicMicrosoftPageUrl(resourceUrl)) != null ) {
+			//logger.debug("AcademicMicrosoft-PageURL: " + resourceURL + " to api-entity-pageUrl: " + updatedUrl);	// DEBUG!
+			resourceUrl = updatedUrl;
 		}
-		else if ( (nasaDocUrl = SpecialUrlsHandler.checkAndGetNasaDocUrl(resourceUrl)) != null ) {
-			//logger.debug("Nasa-PageURL: " + resourceURL + " to possible-docUrl: " + nasaDocUrl);	// DEBUG!
-			resourceUrl = nasaDocUrl;
+		else if ( (updatedUrl = SpecialUrlsHandler.checkAndGetNasaDocUrl(resourceUrl)) != null ) {
+			//logger.debug("Nasa-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+			resourceUrl = updatedUrl;
 		}
-		else if ( (frontiersinUrl = SpecialUrlsHandler.checkAndGetFrontiersinDocUrl(resourceUrl)) != null ) {
-			//logger.debug("Frontiersin-PageURL: " + resourceURL + " to possible-docUrl: " + frontiersinUrl);	// DEBUG!
-			resourceUrl = frontiersinUrl;
+		else if ( (updatedUrl = SpecialUrlsHandler.checkAndGetFrontiersinDocUrl(resourceUrl)) != null ) {
+			//logger.debug("Frontiersin-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+			resourceUrl = updatedUrl;
 		}
+		else if ( (updatedUrl = SpecialUrlsHandler.checkAndHandlePsyarxiv(resourceUrl)) != null )
+			//logger.debug("Psyarxiv-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+			resourceUrl = updatedUrl;
 		else
 			resourceUrl = checkAndHandleDergipark(resourceUrl);	// It returns the same url if nothing was handled.
 
@@ -103,10 +103,13 @@ public class SpecialUrlsHandler
 			wasLinkinghubElsevier = true;
 		}
 
-		if ( wasLinkinghubElsevier || (pageUrl.contains("sciencedirect.com") && !pageUrl.endsWith("/pdf")) )
-			return (pageUrl + (pageUrl.endsWith("/") ? "pdf" : "/pdf"));	// Add a "/pdf" in the end. That will indicate we are asking for the docUrl.
-		else
-			return null;	// This indicates that the calling method will not replace the url.
+		if ( wasLinkinghubElsevier || pageUrl.contains("sciencedirect.com") ) {
+			if ( !pageUrl.endsWith("/pdf") )
+				return (pageUrl + (pageUrl.endsWith("/") ? "pdf" : "/pdf"));    // Add a "/pdf" in the end. That will indicate we are asking for the docUrl.
+			else
+				return pageUrl;	// It's already a docUrl..
+		} else
+			return null;	// It's from another domain..
 	}
 
 
@@ -119,8 +122,10 @@ public class SpecialUrlsHandler
 			String idStr = UrlUtils.getDocIdStr(europepmcUrl, null);
 			if ( idStr != null )
 				return (europepmcPageUrlBasePath + (!idStr.startsWith("PMC", 0) ? "PMC"+idStr : idStr) + "&blobtype=pdf");    // TODO - Investigate some 404-failures (THE DOCURLS belong to diff domain)
+			else
+				return europepmcUrl;
 		}
-		return null;
+		return null;	// It's from another domain, keep looking..
 	}
 
 
@@ -135,16 +140,18 @@ public class SpecialUrlsHandler
 		{
 			Matcher academicMicrosoftIdMatcher = ACADEMIC_MICROSOFT_ID.matcher(initialAcademicMicrosoftUrl);
 			if ( !academicMicrosoftIdMatcher.matches() )
-				return null;
+				return initialAcademicMicrosoftUrl;	// Return the url as it is..
 
 			String idStr = null;
 			try {
 				idStr = academicMicrosoftIdMatcher.group(1);
-			} catch (Exception e) { logger.error("", e); return null; }
+			} catch (Exception e) { logger.error("", e); return initialAcademicMicrosoftUrl; }	// TODO - Should we throw an exception here..?
 			if ( (idStr != null) && !idStr.isEmpty() )
 				return (academicMicrosoftFinalPageUrlBasePath + idStr + "?entityType=2");
+			else
+				return initialAcademicMicrosoftUrl;
 		}
-		return null;
+		return null;	// It's from another domain, keep looking..
 	}
 
 
@@ -243,14 +250,14 @@ public class SpecialUrlsHandler
 			// Offline-redirect to the docUrl.
 			String idStr = UrlUtils.getDocIdStr(nasaPageUrl, null);
 			if ( idStr == null )
-				return null;
+				return nasaPageUrl;
 
 			String citationPath = StringUtils.replace(nasaPageUrl, nasaBaseDomainPath, "", 1);
 			citationPath = (citationPath.endsWith("/") ? citationPath : citationPath+"/");	// Make sure the "citationPath" has an ending slash.
 
 			return (nasaBaseDomainPath + "api/" + citationPath + "downloads/" + idStr + ".pdf");
 		}
-		return null;
+		return null;	// It's from another domain, keep looking..
 	}
 
 
@@ -263,21 +270,38 @@ public class SpecialUrlsHandler
 		if ( frontiersinPageUrl.contains("www.frontiersin.org") )
 		{
 			if ( frontiersinPageUrl.endsWith("/pdf") )
-				return null;	// It's already a docUrl, go connect.
+				return frontiersinPageUrl;	// It's already a docUrl, go connect.
 			else if ( !frontiersinPageUrl.contains("/article") )
 				throw new RuntimeException("This \"frontiersin\"-url is known to not lead to a docUrl: " + frontiersinPageUrl);	// Avoid the connection.
 
 			// Offline-redirect to the docUrl.
 			String idStr = UrlUtils.getDocIdStr(frontiersinPageUrl, null);
 			if ( idStr == null )
-				return null;
+				return frontiersinPageUrl;
 
 			if ( frontiersinPageUrl.endsWith("/full") )
 				return StringUtils.replace(frontiersinPageUrl, "/full", "/pdf");
 			else
 				return frontiersinPageUrl + "/pdf";
 		}
-		return null;	// It may be already a frontiersin-docUrl or url from another domain.
+		return null;	// It's url from another domain.
+	}
+
+
+	///////// psyarxiv.com ///////////////////
+	// https://psyarxiv.com/e9uk7
+	/**
+	 * Thia is a dynamic javascript domain.
+	 * @return
+	 */
+	public static String checkAndHandlePsyarxiv(String pageUrl) {
+		if ( pageUrl.contains("psyarxiv.com") ) {
+			if ( !pageUrl.contains("/download") )
+				return (pageUrl + (pageUrl.endsWith("/") ? "download" : "/download"));	// Add a "/download" in the end. That will indicate we are asking for the docUrl.
+			else
+				return pageUrl;
+		}
+		return null;	// It's from another domain, keep looking..
 	}
 
 

@@ -107,14 +107,10 @@ public class MetaDocUrlsHandler {
                 numOfMetaDocUrlsFound ++;
                 return true;    // It should be the docUrl and it was handled.. so we don't continue checking the internalLink even if this wasn't an actual docUrl.
             }
-
             logger.warn("The retrieved metaDocUrl was not a docUrl (unexpected): " + metaDocUrl);
             return false;   // Continue crawling the page..
-
         } catch (Exception e) {
             logger.debug("The MetaDocUrl < " + metaDocUrl + " > had connectivity problems!");
-            if (e instanceof RuntimeException)
-                ConnSupportUtils.printEmbeddedExceptionMessage(e, metaDocUrl);
             return false;   // Continue crawling the page..
         }
     }

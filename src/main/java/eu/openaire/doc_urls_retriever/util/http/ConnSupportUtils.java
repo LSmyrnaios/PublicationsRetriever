@@ -133,7 +133,7 @@ public class ConnSupportUtils
 					|| mimeType.startsWith("(", 0) )	// See: "https://www.mamsie.bbk.ac.uk/articles/10.16995/sim.138/galley/134/download/" -> "Content-Type: ('application/pdf', none)"
 			{
 				plainMimeType = getPlainMimeType(mimeType);
-				if ( plainMimeType == null ) {    // If there was any error removing the charset, still try to save any docMimeType (currently pdf-only).
+				if ( plainMimeType == null ) {    // If there was any error removing the charset, still try to determine the data-type.
 					logger.warn("Url with problematic mimeType (" + mimeType + ") was: " + urlStr);
 					lowerCaseUrl = urlStr.toLowerCase();
 					if ( lowerCaseUrl.contains("pdf") )
@@ -187,7 +187,7 @@ public class ConnSupportUtils
 				if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
 					typeToReturn = "dataset";
 			}
-			return typeToReturn;
+			return typeToReturn;	// Default is "null".
 		}
 		else {	// This is not expected to be reached. Keep it for method-reusability.
 			if ( calledForPageUrl || calledForPossibleDocOrDatasetUrl )
