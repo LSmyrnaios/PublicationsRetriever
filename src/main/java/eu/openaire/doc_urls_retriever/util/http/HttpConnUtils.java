@@ -125,7 +125,7 @@ public class HttpConnUtils
 			//logger.debug("Url: " + finalUrlStr);	// DEBUG!
 			//logger.debug("MimeType: " + mimeType);	// DEBUG!
 			String returnedType = ConnSupportUtils.hasDocOrDatasetMimeType(finalUrlStr, lowerCaseMimeType, contentDisposition, conn, calledForPageUrl, calledForPossibleDocOrDatasetUrl);
-			if ( returnedType != null )
+			if ( (returnedType != null) && !finalUrlStr.contains("academic.microsoft.com/api") )	// The "academic.microsoft.com/api" is a json-page which provides the docUrls, so avoid identify it as a "dataset" here..
 			{
 				if ( LoaderAndChecker.retrieveDocuments && returnedType.equals("document") ) {
 					logger.info("docUrl found: < " + finalUrlStr + " >");
@@ -158,8 +158,10 @@ public class HttpConnUtils
 					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true);	// we send the urls, before and after potential redirections.
 					return true;
 				}
-				else {
+				else {	// Either "document" or "dataset", but the user specified that he doesn't want it.
 					//logger.debug("Type \"" + returnedType + "\", which was specified that it's unwanted in this run, was found for url: < " + finalUrlStr + " >");	// DEBUG!
+					if ( calledForPageUrl )
+						UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to an unwanted mimeType: " + returnedType, null, true);
 					return false;
 				}
 			}
@@ -326,17 +328,17 @@ public class HttpConnUtils
 			
 			if ( (responseCode = conn.getResponseCode()) == -1 )
 				throw new RuntimeException("Invalid HTTP response for \"" + resourceURL + "\"");
-			
+
 			if ( ((responseCode == 405) || (responseCode == 501)) && conn.getRequestMethod().equals("HEAD") )	// If this SERVER doesn't support "HEAD" method or doesn't allow us to use it..
 			{
 				//logger.debug("HTTP \"HEAD\" method is not supported for: \"" + resourceURL +"\". Server's responseCode was: " + responseCode);
-				
+
 				// This domain doesn't support "HEAD" method, log it and then check if we can retry with "GET" or not.
 				domainsWithUnsupportedHeadMethod.add(domainStr);
-				
+
 				if ( !calledForPageUrl && shouldNOTacceptGETmethodForUncategorizedInternalLinks && !calledForPossibleDocUrl )	// If we set not to retry with "GET" when we try uncategorizedInternalLinks, throw the related exception and stop the crawling of this page.
 					throw new DomainWithUnsupportedHEADmethodException();
-				
+
 				// If we accept connection's retrying, using "GET", move on reconnecting.
 				// No call of "conn.disconnect()" here, as we will connect to the same server.
 				conn = (HttpURLConnection) url.openConnection();
@@ -357,7 +359,7 @@ public class HttpConnUtils
 				
 				conn.connect();
 				//logger.debug("responseCode for \"" + resourceURL + "\", after setting conn-method to: \"" + conn.getRequestMethod() + "\" is: " + conn.getResponseCode());
-				
+
 				if ( conn.getResponseCode() == -1 )	// Make sure we throw a RunEx on invalidHTTP.
 					throw new RuntimeException("Invalid HTTP response for \"" + resourceURL + "\"");
 			}
