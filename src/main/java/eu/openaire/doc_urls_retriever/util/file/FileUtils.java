@@ -54,7 +54,7 @@ public class FileUtils
 	public static final boolean shouldDeleteOlderDocFiles = false;	// Should we delete any older stored docFiles? This is useful for testing.
 	public static boolean shouldUseOriginalDocFileNames = false;	// Use number-fileNames by default.
 	public static final boolean shouldLogFullPathName = true;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
-	public static int numOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremential system.
+	public static int numOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremental system.
 	public static final String workingDir = System.getProperty("user.dir") + File.separator;
 	public static String storeDocFilesDir = workingDir + "docFiles" + File.separator;
 	public static int unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
@@ -201,7 +201,7 @@ public class FileUtils
 		int expectedIDsPerBatch = jsonBatchSize / expectedPathsPerID;
 
 		HashMultimap<String, String> idAndUrlMappedInput = HashMultimap.create(expectedIDsPerBatch, expectedPathsPerID);
-		
+
 		int curBeginning = FileUtils.fileIndex;
 		
 		while ( inputScanner.hasNextLine() && (FileUtils.fileIndex < (curBeginning + jsonBatchSize)) )
@@ -303,14 +303,15 @@ public class FileUtils
 				docFile = getDocFileWithOriginalFileName(docUrl, contentDisposition);
 			else
 				docFile = new File(storeDocFilesDir + (numOfDocFile++) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
-			
+
 			try {
 				outStream = new FileOutputStream(docFile);
 			} catch (FileNotFoundException fnfe) {
 				logger.warn("", fnfe);
+				numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 				throw new DocFileNotRetrievedException();
 			}
-			
+
 			int bytesRead = -1;
 			byte[] buffer = new byte[3145728];	// 3Mb (average docFiles-size)
 			long startTime = System.nanoTime();
@@ -337,8 +338,10 @@ public class FileUtils
 		} catch (DocFileNotRetrievedException dfnre) {
 			throw dfnre;
 		} catch (IOException ioe) {
+			numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 			throw new DocFileNotRetrievedException(ioe.getMessage());
 		} catch (Exception e) {
+			numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 			logger.warn("", e);
 			throw new DocFileNotRetrievedException();
 		} finally {
@@ -391,8 +394,8 @@ public class FileUtils
 		if ( docFileName == null )
 			docFileName = UrlUtils.getDocIdStr(docUrl, null);	// Extract the docID as the fileName from docUrl.
 		
-		if ( (docFileName != null) && !docFileName.isEmpty() ) {
-
+		if ( (docFileName != null) && !docFileName.isEmpty() )	// Re-check as the value might have changed.
+		{
 			if ( !docFileName.endsWith(dotFileExtension) )
 				docFileName += dotFileExtension;
 			
@@ -413,7 +416,7 @@ public class FileUtils
 				docFileName = "unretrievableDocName" + dotFileExtension;
 			else
 				docFileName = "unretrievableDocName(" + unretrievableDocNamesNum + ")" + dotFileExtension;
-			
+
 			unretrievableDocNamesNum ++;
 		}
 		
@@ -423,8 +426,8 @@ public class FileUtils
 			String saveDocFileFullPath = storeDocFilesDir + docFileName;
 			File docFile = new File(saveDocFileFullPath);
 			
-			if ( !hasUnretrievableDocName ) {	// If we retrieved the fileName, go check if it's a duplicate.
-				
+			if ( !hasUnretrievableDocName )	// If we retrieved the fileName, go check if it's a duplicate.
+			{
 				boolean isDuplicate = false;
 				Integer curDuplicateNum = 1;
 
@@ -449,7 +452,7 @@ public class FileUtils
 				}
 			}
 			
-			FileUtils.numOfDocFile ++;
+			FileUtils.numOfDocFile ++;	// This is applied only if none exception is thrown, so in case of an exception, we don't have to revert the incremented value.
 			return docFile;
 			
 		} catch (DocFileNotRetrievedException dfnre) {

@@ -134,8 +134,10 @@ public class DocUrlsRetriever
 						try {
 							i ++;	// Go get the following first-Number-argument.
 							FileUtils.numOfDocFile = DocUrlsRetriever.initialNumOfDocFile = Integer.parseInt(mainArgs[i]);    // We use both variables in statistics.
-							if ( DocUrlsRetriever.initialNumOfDocFile <= 0 )
-								logger.warn("The given \"initialNumOfDocFile\" (" + DocUrlsRetriever.initialNumOfDocFile + ") was a number less or equal to zero! Continuing downloading nevertheless..");    // The statistics are not affected by a "negative" or "zero" value.
+							if ( DocUrlsRetriever.initialNumOfDocFile <= 0 ) {
+								logger.warn("The given \"initialNumOfDocFile\" (" + DocUrlsRetriever.initialNumOfDocFile + ") was a number less or equal to zero! Setting that number to <1> and continuing downloading..");
+								DocUrlsRetriever.initialNumOfDocFile = 1;
+							}
 							firstNumGiven = true;
 							break;
 						} catch (NumberFormatException nfe) {
