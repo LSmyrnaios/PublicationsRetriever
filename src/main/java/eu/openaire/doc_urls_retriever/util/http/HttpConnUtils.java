@@ -138,7 +138,7 @@ public class HttpConnUtils
 							fullPathFileName = ConnSupportUtils.downloadAndStoreDocFile(conn, domainStr, finalUrlStr, calledForPageUrl);
 							logger.info("DocFile: \"" + fullPathFileName + "\" has been downloaded.");
 						} catch (DocFileNotRetrievedException dfnde) {
-							fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored.";
+							fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored. Stacktrace:";
 							StackTraceElement[] stels = dfnde.getStackTrace();
 							StringBuilder sb = new StringBuilder(22).append(fullPathFileName).append(FileUtils.endOfLine);
 							for ( int i = 0; (i < stels.length) && (i < 10); ++i ) {
@@ -331,16 +331,20 @@ public class HttpConnUtils
 
 			if ( ((responseCode == 405) || (responseCode == 501)) && conn.getRequestMethod().equals("HEAD") )	// If this SERVER doesn't support "HEAD" method or doesn't allow us to use it..
 			{
+				resourceURL = conn.getURL().toString();	// Update as it might have changed after redirections.
+
 				//logger.debug("HTTP \"HEAD\" method is not supported for: \"" + resourceURL +"\". Server's responseCode was: " + responseCode);
 
-				// This domain doesn't support "HEAD" method, log it and then check if we can retry with "GET" or not.
-				domainsWithUnsupportedHeadMethod.add(domainStr);
+				// Take the new domain as we are not sure if the initial domain caused this issue or an another domains to which the initialUrl was redirected to..
+				if ( (domainStr = UrlUtils.getDomainStr(resourceURL, null)) != null )
+					domainsWithUnsupportedHeadMethod.add(domainStr);	// This domain doesn't support "HEAD" method, log it and then check if we can retry with "GET" or not.
 
 				if ( !calledForPageUrl && shouldNOTacceptGETmethodForUncategorizedInternalLinks && !calledForPossibleDocUrl )	// If we set not to retry with "GET" when we try uncategorizedInternalLinks, throw the related exception and stop the crawling of this page.
 					throw new DomainWithUnsupportedHEADmethodException();
 
 				// If we accept connection's retrying, using "GET", move on reconnecting.
 				// No call of "conn.disconnect()" here, as we will connect to the same server.
+				url = new URL(resourceURL);
 				conn = (HttpURLConnection) url.openConnection();
 				conn.setRequestMethod("GET");	// To reach here, it means that the HEAD method is unsupported.
 				conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:84.0) Gecko/20100101 Firefox/84.0");
@@ -358,6 +362,7 @@ public class HttpConnUtils
 				}
 				
 				conn.connect();
+				lastConnectedHost = domainStr;
 				//logger.debug("responseCode for \"" + resourceURL + "\", after setting conn-method to: \"" + conn.getRequestMethod() + "\" is: " + conn.getResponseCode());
 
 				if ( conn.getResponseCode() == -1 )	// Make sure we throw a RunEx on invalidHTTP.
