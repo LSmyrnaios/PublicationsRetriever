@@ -22,9 +22,6 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.regex.Matcher;
 
-import static eu.openaire.doc_urls_retriever.test.TestNonStandardInputOutput.setInputOutput;
-import static eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker.isFinishedLoading;
-
 
 /**
  * This class contains unit-testing for urls.
@@ -147,7 +144,7 @@ public class UrlChecker {
 				logger.debug("urlPath: " + urlPath);*/
 
 			try {
-				HttpConnUtils.connectAndCheckMimeType(null, urlToCheck, urlToCheck, urlToCheck, null, true, false);
+				HttpConnUtils.connectAndCheckMimeType("null", urlToCheck, urlToCheck, urlToCheck, null, true, false);	// Sent the < null > in quotes to avoid an NPE in the concurrent data-structures.
 			} catch (Exception e) {
 				UrlUtils.logQuadruple(null, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true);
 			}

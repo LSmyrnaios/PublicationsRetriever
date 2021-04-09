@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.time.Instant;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -136,7 +138,16 @@ public class TestNonStandardInputOutput  {
 		
 		if ( MachineLearning.useMLA )
 			new MachineLearning();
-		
+
+		int availableThreads = Runtime.getRuntime().availableProcessors();
+		availableThreads *= 2;	// Use *3 without downloading docFiles and when having the domains to appear in uniform distribution in the inputFile. Use *2 when downloading.
+
+		// If the domains of the urls in the inputFile, are in "uniform distribution" (each one of them to be equally likely to appear in any place), then the more threads the better (triple the computer's number)
+		// Else, if there are far lees domains or/and closely placed inside the inputFile.. then use only the number of threads provided by the computer, since the "politenessDelay" will block them more than the I/O would ever do..
+		DocUrlsRetriever.workerThreadsCount = availableThreads;	// Due to I/O, blocking the threads all the time, more threads handle the workload faster..
+		logger.info("Use " + DocUrlsRetriever.workerThreadsCount + " worker-threads.");
+		DocUrlsRetriever.executor = Executors.newFixedThreadPool(DocUrlsRetriever.workerThreadsCount);	//creating a pool of <processorsCount> threads.
+
 		try {
 			new LoaderAndChecker();
 		} catch (RuntimeException e) {  // In case there was no input, a RuntimeException will be thrown, after logging the cause.
@@ -144,9 +155,20 @@ public class TestNonStandardInputOutput  {
 			System.err.println(errorMessage);
 			logger.error(errorMessage);
 			FileUtils.closeIO();
+			DocUrlsRetriever.executor.shutdownNow();
 			System.exit(-7);
 		}
-		
+
+		DocUrlsRetriever.executor.shutdown();	// Define that no new tasks will be scheduled.
+		try {
+			if ( !DocUrlsRetriever.executor.awaitTermination(1, TimeUnit.MINUTES) ) {
+				logger.warn("The working threads did not finish on time! Stopping them immediately..");
+				DocUrlsRetriever.executor.shutdownNow();
+			}
+		} catch (InterruptedException e) {
+			DocUrlsRetriever.executor.shutdownNow();
+		}
+
 		DocUrlsRetriever.showStatistics(DocUrlsRetriever.startTime);
 		
 		// Close the open streams (imported and exported content).

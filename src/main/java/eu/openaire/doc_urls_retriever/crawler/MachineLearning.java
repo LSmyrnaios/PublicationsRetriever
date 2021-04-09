@@ -2,6 +2,7 @@ package eu.openaire.doc_urls_retriever.crawler;
 
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
@@ -14,6 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,8 +32,6 @@ public class MachineLearning
 
 	public static final boolean useMLA = false;	// Should we try the experimental-M.L.A.? This is intended to be like a "global switch", to use or not to use the MLA, throughout the program's execution.
 
-	private static final StringBuilder strB = new StringBuilder(200);
-
 	private static final float leastSuccessPercentageForMLA = 51;	// The percentage which we want, in order to continue running the MLA.
 	private static int latestMLADocUrlsFound = 0;
 
@@ -43,31 +44,31 @@ public class MachineLearning
 	private static int endOfSleepNumOfUrls = 0;
 	private static int latestSuccessBreakPoint = 0;
 	private static int latestUrlsMLAChecked = 0;
-	public static int timesGatheredData = 0;	// Used also for statistics.
-	private static int urlsCheckedWithMLA = 0;
+	public static AtomicInteger timesGatheredData = new AtomicInteger(0);	// Used also for statistics.
+	private static AtomicInteger urlsCheckedWithMLA = new AtomicInteger(0);
 	private static boolean isInSleepMode = false;
 
-	public static int totalPagesReachedMLAStage = 0;	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their internalLinks checked.
+	public static AtomicInteger totalPagesReachedMLAStage = new AtomicInteger(0);	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their internalLinks checked.
 
 	/**
 	 * From the Docs: The multimap does not store duplicate key-value pairs. Adding a new key-value pair equal to an existing key-value pair has no effect.
 	 */
-	public static final SetMultimap<String, String> successPathsHashMultiMap = HashMultimap.create();	// Holds multiple values for any key, if a docPagePath(key) has many different docUrlPaths(values) for doc links.
+	public static final SetMultimap<String, String> successPathsHashMultiMap = Multimaps.synchronizedSetMultimap(HashMultimap.create());	// Holds multiple values for any key, if a docPagePath(key) has many different docUrlPaths(values) for doc links.
 
-	public static final HashMap<String, String> successDocPathsExtensionHashMap = new HashMap<String, String>();
+	public static final Hashtable<String, String> successDocPathsExtensionHashMap = new Hashtable<String, String>();
 
-	public static int docUrlsFoundByMLA = 0;
+	public static AtomicInteger docUrlsFoundByMLA = new AtomicInteger(0);
 	// If we later want to show statistics, we should take into account only the number of the urls to which the MLA was tested against, not all of the urls in the inputFile.
 
-	private static final HashSet<String> domainsBlockedFromMLA = new HashSet<String>();
+	private static final Set<String> domainsBlockedFromMLA =Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());;
 	static {	// These domain is not compatible with the MLA.
 		domainsBlockedFromMLA.add("sciencedirect.com");
 	}
 
-	private static final HashMap<String, Integer> timesDomainsFailedInMLA = new HashMap<String, Integer>();
+	private static final Hashtable<String, Integer> timesDomainsFailedInMLA = new Hashtable<String, Integer>();
 	private static final int timesToFailBeforeBlockedFromMLA = 10;
 
-	private static final List<Double> successRateList = new ArrayList<>();
+	private static final List<Double> successRateList = Collections.synchronizedList(new ArrayList<>());
 
 	private static final Pattern EXTENSION_PATTERN = Pattern.compile("(\\.[^.]+)$");
 
@@ -164,7 +165,7 @@ public class MachineLearning
 
 		// Get the paths of the docPage and the docUrl and put them inside "successDomainPathsMultiMap".
 		MachineLearning.successPathsHashMultiMap.put(docPagePath, docUrlPath);	// Add this pair in "successPathsMultiMap", if the key already exists then it will just add one more value to that key.
-		MachineLearning.timesGatheredData ++;
+		MachineLearning.timesGatheredData.incrementAndGet();
 	}
 
 
@@ -173,7 +174,7 @@ public class MachineLearning
 	 */
 	public static double getCurrentSuccessRate()
 	{
-		return ((docUrlsFoundByMLA - latestMLADocUrlsFound) * 100.0 / (urlsCheckedWithMLA - latestUrlsMLAChecked));
+		return ((docUrlsFoundByMLA.get() - latestMLADocUrlsFound) * 100.0 / (urlsCheckedWithMLA.get() - latestUrlsMLAChecked));
 	}
 
 
@@ -184,15 +185,14 @@ public class MachineLearning
 	 * It returns "false", when it still hasn't gathered sufficient data, or when the MLA failed to have a specific success-rate (which leads to "sleep-mode"), or if the MLA is already in "sleep-mode".
 	 * @return true/false
 	 */
-	public static boolean shouldRunPrediction()
+	public static synchronized boolean shouldRunPrediction()
 	{
 		// Check if it's initial learning period, in which the MLA should not run until it reaches a good learning point.
 		if ( !mlaStarted ) {
-			if ( timesGatheredData <= urlsToGatherBeforeStarting) {	// If we are at the starting point.
+			if ( timesGatheredData.get() <= urlsToGatherBeforeStarting ) {	// If we are at the starting point.
 				latestSuccessBreakPoint = urlsToGatherBeforeStarting;
 				return false;
-			}
-			else {	// If we are at the point about to start..
+			} else {	// If we are at the point about to start..
 				mlaStarted = true;
 				logger.info("Starting the MLA..");
 			}
@@ -200,7 +200,7 @@ public class MachineLearning
 
 		// If it's currently in sleepMode, check if it should restart.
 		if ( isInSleepMode ) {
-			if ( totalPagesReachedMLAStage > endOfSleepNumOfUrls ) {
+			if ( totalPagesReachedMLAStage.get() > endOfSleepNumOfUrls ) {
 				logger.debug("MLA's \"sleepMode\" is finished, it will now restart.");
 				isInSleepMode = false;
 				return true;
@@ -216,7 +216,7 @@ public class MachineLearning
 		//logger.debug("nextBreakPointForSuccessRate = " + nextBreakPointForSuccessRate);	// DEBUG!
 
 		// Check if we should immediately continue running the MLA, or it's time to decide depending on the success-rate.
-		if ( totalPagesReachedMLAStage < nextBreakPointForSuccessRate )
+		if ( totalPagesReachedMLAStage.get() < nextBreakPointForSuccessRate )
 			return true;	// Always continue in this case, as we don't have enough success-rate-data to decide otherwise.
 
 		// Else decide depending on successPercentage for all of the urls which reached the "PageCrawler.visit()" in this round.
@@ -226,16 +226,16 @@ public class MachineLearning
 
 		if ( curSuccessRate >= leastSuccessPercentageForMLA ) {    // After the safe-period, continue as long as the success-rate is high.
 			endOfSleepNumOfUrls = 0;	// Stop keeping sleep-data.
-			latestSuccessBreakPoint = totalPagesReachedMLAStage;	// The latest number for which MLA was tested against.
+			latestSuccessBreakPoint = totalPagesReachedMLAStage.get();	// The latest number for which MLA was tested against.
 			return true;
 		}
 
 		// Else enter "sleep-mode" and update the variables.
 		logger.debug("MLA's success-rate is lower than the satisfying one (" + leastSuccessPercentageForMLA + "). Entering \"sleep-mode\", but continuing to gather ML-data...");
-		endOfSleepNumOfUrls = totalPagesReachedMLAStage + urlsToWaitUntilRestartMLA;	// Update num of urls to reach before the "sleep period" ends.
-		latestMLADocUrlsFound = docUrlsFoundByMLA;	// Keep latest num of docUrls found by the MLA, in order to calculate the success rate only for up-to-date data.
-		latestUrlsMLAChecked = urlsCheckedWithMLA;	// Keep latest num of urls checked by MLA...
-		latestSuccessBreakPoint = 0;	// Stop keeping successBreakPoint as we get in "sleepMode".
+		endOfSleepNumOfUrls = totalPagesReachedMLAStage.get() + urlsToWaitUntilRestartMLA;	// Update num of urls to reach before the "sleep period" ends.
+		latestMLADocUrlsFound = docUrlsFoundByMLA.get();	// Keep latest num of docUrls found by the MLA, in order to calculate the success rate only for up-to-date data.
+		latestUrlsMLAChecked = urlsCheckedWithMLA.get();	// Keep latest num of urls checked by MLA...
+		latestSuccessBreakPoint ++;	// Stop keeping successBreakPoint as we get in "sleepMode".
 		isInSleepMode = true;
 		return false;
 	}
@@ -288,10 +288,12 @@ public class MachineLearning
 			docIdStr = EXTENSION_PATTERN.matcher(docIdStr).replaceAll("");	// This version of "replaceAll" uses a pre-compiled regex-pattern for better performance.
 		}
 
-		MachineLearning.urlsCheckedWithMLA ++;
+		MachineLearning.urlsCheckedWithMLA.incrementAndGet();
 
 		String predictedDocUrl = null;
 		String extension = null;
+
+		StringBuilder strB = new StringBuilder(300);	// Initialize it here each time for thread-safety.
 
 		for ( String knownDocUrlPath : knownDocUrlPaths )
 		{
@@ -306,15 +308,15 @@ public class MachineLearning
 
 			strB.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
 
-			if ( UrlUtils.docUrlsOrDatasetsWithIDs.containsKey(predictedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
+			if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(predictedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
 				logger.info("MachineLearningAlgorithm got a hit for pageUrl: \""+ pageUrl + "\"! Resulted (already found before) docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
 				logger.info("re-crossed docUrl found: < " + predictedDocUrl + " >");
-				LoaderAndChecker.reCrossedDocUrls ++;
+				LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
 				if ( FileUtils.shouldDownloadDocFiles )
-					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsOrDatasetsWithIDs.get(predictedDocUrl), pageDomain, false);
+					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(predictedDocUrl), pageDomain, false);
 				else
 					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, "", pageDomain, false);
-				MachineLearning.docUrlsFoundByMLA ++;
+				MachineLearning.docUrlsFoundByMLA.incrementAndGet();
 				return true;
 			}
 
@@ -327,7 +329,7 @@ public class MachineLearning
 
 				if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, predictedDocUrl, null, false, true) ) {
 					logger.info("MachineLearningAlgorithm got a hit for pageUrl: \""+ pageUrl + "\"! Resulted docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
-					MachineLearning.docUrlsFoundByMLA ++;
+					MachineLearning.docUrlsFoundByMLA.incrementAndGet();
 					return true;	// Note that we have already add it in the output links inside "connectAndCheckMimeType()".
 				}
 				logger.debug("The predictedDocUrl was not a valid docUrl: \"" + predictedDocUrl + "\"");

@@ -5,6 +5,7 @@ import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 
@@ -49,17 +50,17 @@ public class UrlTypeChecker
 	public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile(".+://[\\w.:-]+(?:/[\\w]{2})?(?:/index.(?:" + htExtensionsPattern + "|" + phpExtensionsPattern + "))?(?:/)?(?:\\?(?:locale(?:-attribute)?|ln)=[\\w_-]+)?$");	// Exclude plain domains' urls. Use "ISO 639-1" for language-codes (2 letters directory).
 
 	// Counters for certain unwanted domains. We show statistics in the end.
-	public static int javascriptPageUrls = 0;
-	public static int elsevierUnwantedUrls = 0;
-	public static int crawlerSensitiveDomains = 0;
-	public static int doajResultPageUrls = 0;
-	public static int pagesWithHtmlDocUrls = 0;
-	public static int pagesRequireLoginToAccessDocFiles = 0;
-	public static int pagesWithLargerCrawlingDepth = 0;	// Pages with their docUrl behind an internal "view" page.
-	public static int longToRespondUrls = 0;	// Urls belonging to domains which take too long to respond.
-	public static int urlsWithUnwantedForm = 0;	// (plain domains, unwanted page-extensions ect.)
-	public static int pangaeaUrls = 0;	// These urls are in false form by default, but even if they weren't or we transform them, PANGAEA. only gives datasets, not fulltext.
-	public static int pagesNotProvidingDocUrls = 0;
+	public static AtomicInteger javascriptPageUrls = new AtomicInteger(0);
+	public static AtomicInteger elsevierUnwantedUrls = new AtomicInteger(0);
+	public static AtomicInteger crawlerSensitiveDomains = new AtomicInteger(0);
+	public static AtomicInteger doajResultPageUrls = new AtomicInteger(0);
+	public static AtomicInteger pagesWithHtmlDocUrls = new AtomicInteger(0);
+	public static AtomicInteger pagesRequireLoginToAccessDocFiles = new AtomicInteger(0);
+	public static AtomicInteger pagesWithLargerCrawlingDepth = new AtomicInteger(0);	// Pages with their docUrl behind an internal "view" page.
+	public static AtomicInteger longToRespondUrls = new AtomicInteger(0);	// Urls belonging to domains which take too long to respond.
+	public static AtomicInteger urlsWithUnwantedForm = new AtomicInteger(0);	// (plain domains, unwanted page-extensions ect.)
+	public static AtomicInteger pangaeaUrls = new AtomicInteger(0);	// These urls are in false form by default, but even if they weren't or we transform them, PANGAEA. only gives datasets, not fulltext.
+	public static AtomicInteger pagesNotProvidingDocUrls = new AtomicInteger(0);
 	
 	
 	/**
@@ -83,7 +84,7 @@ public class UrlTypeChecker
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true);
 			if ( !LoaderAndChecker.useIdUrlPairs )
-				javascriptPageUrls ++;
+				javascriptPageUrls.incrementAndGet();
 			return true;
 		}
 		// Avoid plain "www.elsevier.com" and the "journals.elsevier.com" don't give docUrls.
@@ -94,7 +95,7 @@ public class UrlTypeChecker
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true);
 			if ( !LoaderAndChecker.useIdUrlPairs )
-				elsevierUnwantedUrls ++;
+				elsevierUnwantedUrls.incrementAndGet();
 			return true;
 		}
 		// Avoid resultPages (containing multiple publication-results).
@@ -103,7 +104,7 @@ public class UrlTypeChecker
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true);
 			if ( !LoaderAndChecker.useIdUrlPairs )
-				doajResultPageUrls ++;
+				doajResultPageUrls.incrementAndGet();
 			return true;
 		}
 		// Avoid HTML docUrls. These are shown simply inside the html-text of the page. No binary to download.
@@ -112,7 +113,7 @@ public class UrlTypeChecker
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true);
 			if ( !LoaderAndChecker.useIdUrlPairs )
-				pagesWithHtmlDocUrls++;
+				pagesWithHtmlDocUrls.incrementAndGet();
 			return true;
 		}
 		// Avoid pages known to not provide docUrls (just metadata).
@@ -122,7 +123,7 @@ public class UrlTypeChecker
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true);
 			if ( !LoaderAndChecker.useIdUrlPairs )
-				pagesNotProvidingDocUrls ++;
+				pagesNotProvidingDocUrls.incrementAndGet();
 			return true;
 		}
 		// Avoid domains requiring login to access docUrls.
@@ -131,7 +132,7 @@ public class UrlTypeChecker
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true);
 			if ( !LoaderAndChecker.useIdUrlPairs )
-				pagesRequireLoginToAccessDocFiles++;
+				pagesRequireLoginToAccessDocFiles.incrementAndGet();
 			return true;
 		}
 		// Avoid crawling pages having their DocUrls in larger depth (internalPagesToDocUrls or PreviousOfDocUrls).
@@ -141,7 +142,7 @@ public class UrlTypeChecker
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true);
 			if ( !LoaderAndChecker.useIdUrlPairs )
-				pagesWithLargerCrawlingDepth ++;
+				pagesWithLargerCrawlingDepth.incrementAndGet();
 			return true;
 		}
 		// Avoid "PANGAEA."-urls with problematic form and non docUrl internal links (yes WITH the "DOT").
@@ -150,7 +151,7 @@ public class UrlTypeChecker
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true);
 			if ( !LoaderAndChecker.useIdUrlPairs )
-				pangaeaUrls ++;
+				pangaeaUrls.incrementAndGet();
 			return true;
 		}
 		// Avoid known domains with connectivity problems.
@@ -159,7 +160,7 @@ public class UrlTypeChecker
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true);
 			if ( !LoaderAndChecker.useIdUrlPairs )
-				LoaderAndChecker.connProblematicUrls ++;
+				LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			return true;
 		}
 		/*
@@ -179,7 +180,7 @@ public class UrlTypeChecker
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true);
 			if ( !LoaderAndChecker.useIdUrlPairs )
-				LoaderAndChecker.connProblematicUrls ++;
+				LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			return true;
 		}
 		// Avoid pages based on unwanted url-string-content.
@@ -188,7 +189,7 @@ public class UrlTypeChecker
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true);
 			if ( !LoaderAndChecker.useIdUrlPairs )
-				urlsWithUnwantedForm ++;
+				urlsWithUnwantedForm.incrementAndGet();
 			return true;
 		}
 		else

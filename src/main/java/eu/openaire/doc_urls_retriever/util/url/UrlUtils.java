@@ -7,8 +7,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.Hashtable;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,15 +33,15 @@ public class UrlUtils
 	public static final Pattern ANCHOR_FILTER = Pattern.compile("(.+)(#(?!/).+)");	// Remove the anchor at the end of the url to avoid duplicate versions. (anchors might exist even in docUrls themselves)
 	// Note that we may have this: https://academic.microsoft.com/#/detail/2945595536
 
-	public static int sumOfDocUrlsFound = 0;	// Change it back to simple int if finally in singleThread mode
+	public static AtomicInteger sumOfDocUrlsFound = new AtomicInteger(0);	// Change it back to simple int if finally in singleThread mode
 
-	public static final HashSet<String> duplicateUrls = new HashSet<String>();
+	public static final Set<String> duplicateUrls = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
-	public static final HashMap<String, String> docUrlsOrDatasetsWithIDs = new HashMap<String, String>();	// Null keys are allowed (in case they are not available in the input).
+	public static final Hashtable<String, String> docOrDatasetUrlsWithIDs = new Hashtable<String, String>();	// Null keys are allowed (in case they are not available in the input).
 
 	public static final String alreadyDownloadedByIDMessage = "This file is probably already downloaded from ID=";
 
-	public static final HashMap<String, Integer> domainsAndHits = new HashMap<>();
+	public static final Hashtable<String, Integer> domainsAndHits = new Hashtable<>();
 
 
 	/**
@@ -59,7 +62,7 @@ public class UrlUtils
         {
 			if ( !finalDocUrl.equals("unreachable") )
 			{
-				sumOfDocUrlsFound ++;
+				sumOfDocUrlsFound.incrementAndGet();
 
 				// Remove the "temporalId" from urls for "cleaner" output and "already found docUrl"-matching. These IDs will expire eventually anyway.
 				String lowerCaseUrl = finalDocUrl.toLowerCase();
@@ -67,7 +70,7 @@ public class UrlUtils
 					finalDocUrl = UrlUtils.removeTemporalIdentifier(finalDocUrl);	// We send the non-lowerCase-url as we may want to continue with that docUrl in case of an error.
 
 				if ( isFirstCrossed )	// Add this id, only if this is a first-crossed docUrl.
-					docUrlsOrDatasetsWithIDs.put(finalDocUrl, urlId);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
+					docOrDatasetUrlsWithIDs.put(finalDocUrl, urlId);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
 
 				if ( pageDomain == null )
 					pageDomain = UrlUtils.getDomainStr(pageUrl, null);
@@ -93,10 +96,7 @@ public class UrlUtils
 				duplicateUrls.add(sourceUrl);	// Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future. We don't add docUrls here, as we want them to be separate for checking purposes.
 		}
 
-		FileUtils.quadrupleToBeLoggedList.add(new QuadrupleToBeLogged(urlId, sourceUrl, finalDocUrl, comment));	// Log it to be written later in the outputFile.
-
-        if ( FileUtils.quadrupleToBeLoggedList.size() == FileUtils.jsonBatchSize )	// Write to file every time we have a batch of <jsonBatchSize> quadruples.
-            FileUtils.writeToFile();
+        FileUtils.quadrupleToBeLoggedList.add(new QuadrupleToBeLogged(urlId, sourceUrl, finalDocUrl, comment));    // Log it to be written later in the outputFile.
     }
 
 

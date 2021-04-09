@@ -21,6 +21,8 @@ public class SignalUtils {
 	{
 		Signal.handle(new Signal("INT"), sig -> {
 
+			DocUrlsRetriever.executor.shutdownNow();
+
 			SignalUtils.receivedSIGINT = true;
 			
 			// Print the related interrupted-state-message.
@@ -39,7 +41,6 @@ public class SignalUtils {
 				DocUrlsRetriever.showStatistics(DocUrlsRetriever.startTime);
 
 			FileUtils.closeIO();
-
 			System.exit(-12);
 		});
 	}

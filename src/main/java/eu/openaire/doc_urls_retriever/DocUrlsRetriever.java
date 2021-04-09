@@ -19,6 +19,9 @@ import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -41,6 +44,9 @@ public class DocUrlsRetriever
 	public static Instant startTime = null;
 
 	public static DecimalFormat df = new DecimalFormat("0.00");
+
+	public static ExecutorService executor;
+	public static int workerThreadsCount = 1;
 
 
 	public static void main( String[] args )
@@ -67,6 +73,15 @@ public class DocUrlsRetriever
 		if ( MachineLearning.useMLA )
 			new MachineLearning();
 
+		int availableThreads = Runtime.getRuntime().availableProcessors();
+		availableThreads *= 2;	// Use *3 without downloading docFiles and when having the domains to appear in uniform distribution in the inputFile. Use *2 when downloading.
+
+		// If the domains of the urls in the inputFile, are in "uniform distribution" (each one of them to be equally likely to appear in any place), then the more threads the better (triple the computer's number)
+		// Else, if there are far lees domains and/or closely placed inside the inputFile.. then use only the number of threads provided by the computer, since the "politenessDelay" will block them more than the I/O would ever do..
+		workerThreadsCount = availableThreads;	// Due to I/O, blocking the threads all the time, more threads handle the workload faster..
+		logger.info("Use " + workerThreadsCount + " worker-threads.");
+		executor = Executors.newFixedThreadPool(workerThreadsCount);	//creating a pool of <processorsCount> threads.
+
 		try {
 			new LoaderAndChecker();
 		} catch (RuntimeException e) {  // In case there was no input, a RuntimeException will be thrown, after logging the cause.
@@ -74,7 +89,18 @@ public class DocUrlsRetriever
 			System.err.println(errorMessage);
 			logger.error(errorMessage);
 			FileUtils.closeIO();
+			executor.shutdownNow();
 			System.exit(-4);
+		}
+
+		DocUrlsRetriever.executor.shutdown();	// Define that no new tasks will be scheduled.
+		try {
+			if ( !DocUrlsRetriever.executor.awaitTermination(1, TimeUnit.MINUTES) ) {
+				logger.warn("The working threads did not finish on time! Stopping them immediately..");
+				DocUrlsRetriever.executor.shutdownNow();
+			}
+		} catch (InterruptedException e) {
+			DocUrlsRetriever.executor.shutdownNow();
 		}
 
 		showStatistics(startTime);
@@ -188,8 +214,8 @@ public class DocUrlsRetriever
 		int currentlyLoadedUrls = FileUtils.getCurrentlyLoadedUrls();
 
 		if ( LoaderAndChecker.useIdUrlPairs ) {
-			logger.debug(LoaderAndChecker.numOfIDsWithoutAcceptableSourceUrl + " IDs (about " + df.format(LoaderAndChecker.numOfIDsWithoutAcceptableSourceUrl * 100.0 / LoaderAndChecker.numOfIDs) + "%) had no acceptable sourceUrl.");
-			notConnectedIDs = LoaderAndChecker.numOfIDsWithoutAcceptableSourceUrl + FileUtils.duplicateIdUrlEntries;
+			logger.debug(LoaderAndChecker.numOfIDsWithoutAcceptableSourceUrl.get() + " IDs (about " + df.format(LoaderAndChecker.numOfIDsWithoutAcceptableSourceUrl.get() * 100.0 / LoaderAndChecker.numOfIDs) + "%) had no acceptable sourceUrl.");
+			notConnectedIDs = LoaderAndChecker.numOfIDsWithoutAcceptableSourceUrl.get() + FileUtils.duplicateIdUrlEntries;
 			inputCheckedUrlNum = LoaderAndChecker.numOfIDs - notConnectedIDs;	// For each ID we usually check only one of its urls, except if the chosen one fails to connect. But if we add here the retries, then we should add how many more codUrls were retrieved per Id, later...
 		} else {
 			inputCheckedUrlNum = currentlyLoadedUrls;
@@ -198,6 +224,7 @@ public class DocUrlsRetriever
 				System.err.println(errorMessage);
 				logger.error(errorMessage);
 				FileUtils.closeIO();
+				DocUrlsRetriever.executor.shutdownNow();
 				System.exit(-5);
 			}
 		}
@@ -211,60 +238,60 @@ public class DocUrlsRetriever
 		if ( SignalUtils.receivedSIGINT )
 			logger.warn("A SIGINT signal was received, so some of the \"checked-urls\" may have not been actually checked, that's more of a number of the \"loaded-urls\".");
 
-		logger.info("Total docUrls found: " + UrlUtils.sumOfDocUrlsFound + ". That's about: " + df.format(UrlUtils.sumOfDocUrlsFound * 100.0 / inputCheckedUrlNum) + "% from the total numOfUrls checked. The rest were problematic or non-handleable url-cases.");
+		logger.info("Total docUrls found: " + UrlUtils.sumOfDocUrlsFound + ". That's about: " + df.format(UrlUtils.sumOfDocUrlsFound.get() * 100.0 / inputCheckedUrlNum) + "% from the total numOfUrls checked. The rest were problematic or non-handleable url-cases.");
 		if ( FileUtils.shouldDownloadDocFiles ) {
 			int numOfStoredDocFiles = 0;
 			if ( FileUtils.shouldUseOriginalDocFileNames )
 				numOfStoredDocFiles = FileUtils.numOfDocFile;
 			else
 				numOfStoredDocFiles = FileUtils.numOfDocFile - initialNumOfDocFile;
-			logger.info("From which docUrls, we were able to retrieve: " + numOfStoredDocFiles + " distinct docFiles. That's about: " + df.format(numOfStoredDocFiles * 100.0 / UrlUtils.sumOfDocUrlsFound) + "%."
-					+ " The un-retrieved docFiles were either belonging to already-found docUrls or they had content-issues.");
+			logger.info("From which docUrls, we were able to retrieve: " + numOfStoredDocFiles + " distinct docFiles. That's about: " + df.format(numOfStoredDocFiles * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "%."
+					+ " The un-retrieved docFiles were either belonging to already-found docUrls or they had connection-issues.");
 		}
-		logger.debug("The metaDocUrl-handler is responsible for the discovery of " + MetaDocUrlsHandler.numOfMetaDocUrlsFound + " of the docUrls (" + df.format(MetaDocUrlsHandler.numOfMetaDocUrlsFound* 100.0 / UrlUtils.sumOfDocUrlsFound) + "%).");
-		logger.debug("The re-crossed docUrls (from all handlers) were " + LoaderAndChecker.reCrossedDocUrls + ". That's about " + df.format(LoaderAndChecker.reCrossedDocUrls * 100.0 / UrlUtils.sumOfDocUrlsFound) + "% of the total docUrls found.");
+		logger.debug("The metaDocUrl-handler is responsible for the discovery of " + MetaDocUrlsHandler.numOfMetaDocUrlsFound + " of the docUrls (" + df.format(MetaDocUrlsHandler.numOfMetaDocUrlsFound.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "%).");
+		logger.debug("The re-crossed docUrls (from all handlers) were " + LoaderAndChecker.reCrossedDocUrls.get() + ". That's about " + df.format(LoaderAndChecker.reCrossedDocUrls.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "% of the total docUrls found.");
 		if ( MachineLearning.useMLA )
-			logger.debug("The M.L.A. is responsible for the discovery of " + MachineLearning.docUrlsFoundByMLA + " of the docUrls (" + df.format(MachineLearning.docUrlsFoundByMLA * 100.0 / UrlUtils.sumOfDocUrlsFound) + "%). The M.L.A.'s average success-rate was: " + df.format(MachineLearning.getAverageSuccessRate()) + "%. Gathered data for " + MachineLearning.timesGatheredData + " valid pageUrl-docUrl pairs.");
+			logger.debug("The M.L.A. is responsible for the discovery of " + MachineLearning.docUrlsFoundByMLA.get() + " of the docUrls (" + df.format(MachineLearning.docUrlsFoundByMLA.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "%). The M.L.A.'s average success-rate was: " + df.format(MachineLearning.getAverageSuccessRate()) + "%. Gathered data for " + MachineLearning.timesGatheredData + " valid pageUrl-docUrl pairs.");
 		else
 			logger.debug("The M.L.A. was not enabled.");
 
-		logger.debug("About " + df.format(LoaderAndChecker.connProblematicUrls * 100.0 / inputCheckedUrlNum) + "% (" + LoaderAndChecker.connProblematicUrls + " urls) were pages which had connectivity problems.");
-		logger.debug("About " + df.format(UrlTypeChecker.pagesNotProvidingDocUrls * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.pagesNotProvidingDocUrls + " urls) were pages which did not provide docUrls.");
-		logger.debug("About " + df.format(UrlTypeChecker.longToRespondUrls * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.longToRespondUrls + " urls) were urls which belong to domains which take too long to respond.");
-		logger.debug("About " + df.format(PageCrawler.contentProblematicUrls * 100.0 / inputCheckedUrlNum) + "% (" + PageCrawler.contentProblematicUrls + " urls) were urls which had problematic content.");
+		logger.debug("About " + df.format(LoaderAndChecker.connProblematicUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + LoaderAndChecker.connProblematicUrls.get() + " urls) were pages which had connectivity problems.");
+		logger.debug("About " + df.format(UrlTypeChecker.pagesNotProvidingDocUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.pagesNotProvidingDocUrls.get() + " urls) were pages which did not provide docUrls.");
+		logger.debug("About " + df.format(UrlTypeChecker.longToRespondUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.longToRespondUrls.get() + " urls) were urls which belong to domains which take too long to respond.");
+		logger.debug("About " + df.format(PageCrawler.contentProblematicUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + PageCrawler.contentProblematicUrls.get() + " urls) were urls which had problematic content.");
 
-		long problematicUrlsNum = LoaderAndChecker.connProblematicUrls + UrlTypeChecker.pagesNotProvidingDocUrls + UrlTypeChecker.longToRespondUrls + PageCrawler.contentProblematicUrls;
+		long problematicUrlsNum = LoaderAndChecker.connProblematicUrls.get() + UrlTypeChecker.pagesNotProvidingDocUrls.get() + UrlTypeChecker.longToRespondUrls.get() + PageCrawler.contentProblematicUrls.get();
 
 		if ( !LoaderAndChecker.useIdUrlPairs )
 		{
-			logger.debug("About " + df.format(UrlTypeChecker.crawlerSensitiveDomains * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.crawlerSensitiveDomains  + " urls) were from known crawler-sensitive domains.");
-			logger.debug("About " + df.format(UrlTypeChecker.javascriptPageUrls * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.javascriptPageUrls + " urls) were from a JavaScript-powered domain, other than the \"sciencedirect.com\", which has dynamic links.");
-			logger.debug("About " + df.format(UrlTypeChecker.elsevierUnwantedUrls * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.elsevierUnwantedUrls + " urls) were from, or reached after redirects, the unwanted domain: \"elsevier.com\", which either doesn't provide docUrls in its docPages, or it redirects to \"sciencedirect.com\", thus being avoided to be crawled.");
-			logger.debug("About " + df.format(UrlTypeChecker.doajResultPageUrls * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.doajResultPageUrls + " urls) were \"doaj.org/toc/\" urls, which are resultPages, thus being avoided to be crawled.");
-			logger.debug("About " + df.format(UrlTypeChecker.pagesWithHtmlDocUrls * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.pagesWithHtmlDocUrls + " urls) were docUrls, but, in HTML, thus being avoided to be crawled.");
-			logger.debug("About " + df.format(UrlTypeChecker.pagesRequireLoginToAccessDocFiles * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.pagesRequireLoginToAccessDocFiles + " urls) were of domains which are known to require login to access docFiles, thus, they were blocked before being connected.");
-			logger.debug("About " + df.format(UrlTypeChecker.pagesWithLargerCrawlingDepth * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.pagesWithLargerCrawlingDepth + " urls) were docPages which have their docUrl deeper inside their server, thus being currently avoided.");
-			logger.debug("About " + df.format(UrlTypeChecker.pangaeaUrls * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.pangaeaUrls + " urls) were \"PANGAEA.\" with invalid form and non-docUrls in their internal links.");
-			logger.debug("About " + df.format(UrlTypeChecker.urlsWithUnwantedForm * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.urlsWithUnwantedForm + " urls) were urls which are plain-domains, have unwanted url-extensions, ect...");
-			logger.debug("About " + df.format(LoaderAndChecker.inputDuplicatesNum * 100.0 / inputCheckedUrlNum) + "% (" + LoaderAndChecker.inputDuplicatesNum + " urls) were duplicates in the input file.");
+			logger.debug("About " + df.format(UrlTypeChecker.crawlerSensitiveDomains.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.crawlerSensitiveDomains.get()  + " urls) were from known crawler-sensitive domains.");
+			logger.debug("About " + df.format(UrlTypeChecker.javascriptPageUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.javascriptPageUrls.get() + " urls) were from a JavaScript-powered domain, other than the \"sciencedirect.com\", which has dynamic links.");
+			logger.debug("About " + df.format(UrlTypeChecker.elsevierUnwantedUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.elsevierUnwantedUrls.get() + " urls) were from, or reached after redirects, the unwanted domain: \"elsevier.com\", which either doesn't provide docUrls in its docPages, or it redirects to \"sciencedirect.com\", thus being avoided to be crawled.");
+			logger.debug("About " + df.format(UrlTypeChecker.doajResultPageUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.doajResultPageUrls.get() + " urls) were \"doaj.org/toc/\" urls, which are resultPages, thus being avoided to be crawled.");
+			logger.debug("About " + df.format(UrlTypeChecker.pagesWithHtmlDocUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.pagesWithHtmlDocUrls.get() + " urls) were docUrls, but, in HTML, thus being avoided to be crawled.");
+			logger.debug("About " + df.format(UrlTypeChecker.pagesRequireLoginToAccessDocFiles.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.pagesRequireLoginToAccessDocFiles.get() + " urls) were of domains which are known to require login to access docFiles, thus, they were blocked before being connected.");
+			logger.debug("About " + df.format(UrlTypeChecker.pagesWithLargerCrawlingDepth.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.pagesWithLargerCrawlingDepth.get() + " urls) were docPages which have their docUrl deeper inside their server, thus being currently avoided.");
+			logger.debug("About " + df.format(UrlTypeChecker.pangaeaUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.pangaeaUrls + " urls) were \"PANGAEA.\" with invalid form and non-docUrls in their internal links.");
+			logger.debug("About " + df.format(UrlTypeChecker.urlsWithUnwantedForm.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.urlsWithUnwantedForm.get() + " urls) were urls which are plain-domains, have unwanted url-extensions, ect...");
+			logger.debug("About " + df.format(LoaderAndChecker.inputDuplicatesNum.get() * 100.0 / inputCheckedUrlNum) + "% (" + LoaderAndChecker.inputDuplicatesNum.get() + " urls) were duplicates in the input file.");
 
-			problematicUrlsNum += UrlTypeChecker.crawlerSensitiveDomains + UrlTypeChecker.javascriptPageUrls + UrlTypeChecker.elsevierUnwantedUrls + UrlTypeChecker.doajResultPageUrls + UrlTypeChecker.pagesWithHtmlDocUrls + UrlTypeChecker.pagesRequireLoginToAccessDocFiles
-					+ UrlTypeChecker.pagesWithLargerCrawlingDepth + UrlTypeChecker.pangaeaUrls + UrlTypeChecker.urlsWithUnwantedForm + LoaderAndChecker.inputDuplicatesNum;
+			problematicUrlsNum += UrlTypeChecker.crawlerSensitiveDomains.get() + UrlTypeChecker.javascriptPageUrls.get() + UrlTypeChecker.elsevierUnwantedUrls.get() + UrlTypeChecker.doajResultPageUrls.get() + UrlTypeChecker.pagesWithHtmlDocUrls.get() + UrlTypeChecker.pagesRequireLoginToAccessDocFiles.get()
+					+ UrlTypeChecker.pagesWithLargerCrawlingDepth.get() + UrlTypeChecker.pangaeaUrls.get() + UrlTypeChecker.urlsWithUnwantedForm.get() + LoaderAndChecker.inputDuplicatesNum.get();
 		}
 
 		logger.info("From the " + inputCheckedUrlNum + " urls checked from the input, the " + problematicUrlsNum + " of them (about " + df.format(problematicUrlsNum * 100.0 / inputCheckedUrlNum) + "%) were problematic (sum of all of the cases that appear in debug-mode).");
-		logger.info("The rest " + (inputCheckedUrlNum + LoaderAndChecker.loadingRetries - UrlUtils.sumOfDocUrlsFound - problematicUrlsNum) + " urls were not docUrls.");
+		logger.info("The rest " + (inputCheckedUrlNum + LoaderAndChecker.loadingRetries.get() - UrlUtils.sumOfDocUrlsFound.get() - problematicUrlsNum) + " urls were not docUrls.");
 
-		logger.debug("The number of offline-redirects to HTTPS (reducing the online-redirection-overhead) was: " + HttpConnUtils.timesDidOfflineHTTPSredirect);
-		logger.debug("The number of domains blocked due to an \"SSL Exception\" was: " + HttpConnUtils.numOfDomainsBlockedDueToSSLException);
-		logger.debug("The number of domains blocked in total was: " + HttpConnUtils.blacklistedDomains.size());
+		logger.debug("The number of offline-redirects to HTTPS (reducing the online-redirection-overhead), was: " + HttpConnUtils.timesDidOfflineHTTPSredirect.get());
+		logger.debug("The number of domains blocked due to an \"SSL Exception\", was: " + HttpConnUtils.numOfDomainsBlockedDueToSSLException.get());
+		logger.debug("The number of domains blocked in total, was: " + HttpConnUtils.blacklistedDomains.size());
 
 		calculateAndPrintElapsedTime(startTime, Instant.now());
-
+		logger.debug("Used " + workerThreadsCount + " worker threads.");
 
 		if ( logger.isDebugEnabled() )
 		{
-			sortHashMapByValueAndPrint(UrlUtils.domainsAndHits, true);
+			sortHashTableByValueAndPrint(UrlUtils.domainsAndHits, true);
 
 			// DEBUG! comment-out the following in production (even in debug-mode).
 			/*if ( MachineLearning.useMLA )
@@ -333,9 +360,9 @@ public class DocUrlsRetriever
 	}
 
 
-	public static void sortHashMapByValueAndPrint(HashMap<String, Integer> map, boolean descendingOrder)
+	public static void sortHashTableByValueAndPrint(Hashtable<String, Integer> table, boolean descendingOrder)
 	{
-		List<Map.Entry<String, Integer>> list = new LinkedList<>(map.entrySet());
+		List<Map.Entry<String, Integer>> list = new LinkedList<>(table.entrySet());
 		list.sort((o1, o2) -> {
 			if ( descendingOrder )
 				return o2.getValue().compareTo(o1.getValue());
@@ -343,8 +370,8 @@ public class DocUrlsRetriever
 				return o1.getValue().compareTo(o2.getValue());
 		});
 		logger.debug("The " + list.size() + " domains which gave docUrls and their number:");
-		for ( Map.Entry<String, Integer> entry : list )
-			logger.debug(entry.getKey() + " : " + entry.getValue());
+/*		for ( Map.Entry<String, Integer> entry : list )
+			logger.debug(entry.getKey() + " : " + entry.getValue());*/
 	}
 	
 }

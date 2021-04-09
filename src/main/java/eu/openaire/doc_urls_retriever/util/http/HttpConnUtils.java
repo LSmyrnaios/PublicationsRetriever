@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
@@ -27,22 +29,23 @@ public class HttpConnUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(HttpConnUtils.class);
 
-	public static final HashSet<String> domainsWithUnsupportedHeadMethod = new HashSet<String>();
+	public static final Set<String> domainsWithUnsupportedHeadMethod = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 	static {	// Add domains which were manually observed to act strangely and cannot be detected automatically at run-time.
 		domainsWithUnsupportedHeadMethod.add("os.zhdk.cloud.switch.ch");	// This domain returns "HTTP-403-ERROR" when it does not support the "HEAD" method, at least when checking an actual file.
 	}
 
-	public static final HashSet<String> blacklistedDomains = new HashSet<String>();	// Domains with which we don't want to connect again.
+	public static final Set<String> domainsWithUnsupportedAcceptLanguageParameter = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
-	public static final HashMap<String, Integer> timesDomainsHadInputNotBeingDocNorPage = new HashMap<String, Integer>();
-	public static final HashMap<String, Integer> timesDomainsReturnedNoType = new HashMap<String, Integer>();	// Domain which returned no content-type not content disposition in their response and amount of times they did.
+	public static final Set<String> blacklistedDomains = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());	// Domains with which we don't want to connect again.
 
-	public static int numOfDomainsBlockedDueToSSLException = 0;
+	public static final Hashtable<String, Integer> timesDomainsHadInputNotBeingDocNorPage = new Hashtable<String, Integer>();
+	public static final Hashtable<String, Integer> timesDomainsReturnedNoType = new Hashtable<String, Integer>();	// Domain which returned no content-type not content disposition in their response and amount of times they did.
+
+	public static AtomicInteger numOfDomainsBlockedDueToSSLException = new AtomicInteger(0);
 
 	public static String lastConnectedHost = "";
-	public static final boolean addPolitenessDelay = true;	// Add delay time to wait before connecting to the same host again.
-	public static final int minPolitenessDelay = 1000;	// 1 sec
-	public static final int maxPolitenessDelay = 2000;	// 2 sec
+	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0";
+	public static String acceptLanguage = "en,en;q=0.5";
 
 	public static final int maxConnGETWaitingTime = 15000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
 	public static final int maxConnHEADWaitingTime = 10000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
@@ -56,8 +59,9 @@ public class HttpConnUtils
 	private static final boolean shouldNOTacceptGETmethodForUncategorizedInternalLinks = true;
 
 
-	public static final HashSet<String> domainsSupportingHTTPS = new HashSet<>();
-	public static int timesDidOfflineHTTPSredirect = 0;
+	public static final Set<String> domainsSupportingHTTPS = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+
+	public static AtomicInteger timesDidOfflineHTTPSredirect = new AtomicInteger(0);
 
 
 	/**
@@ -140,7 +144,7 @@ public class HttpConnUtils
 						} catch (DocFileNotRetrievedException dfnde) {
 							fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored. Stacktrace:";
 							StackTraceElement[] stels = dfnde.getStackTrace();
-							StringBuilder sb = new StringBuilder(22).append(fullPathFileName).append(FileUtils.endOfLine);
+							StringBuilder sb = new StringBuilder(22).append(fullPathFileName).append(FileUtils.endOfLine);	// This StringBuilder is thread-safe as a local-variable.
 							for ( int i = 0; (i < stels.length) && (i < 10); ++i ) {
 								sb.append(stels[i]);
 								if (i < 9) sb.append(FileUtils.endOfLine);
@@ -191,7 +195,7 @@ public class HttpConnUtils
 				re.printStackTrace();
 
 			if ( calledForPageUrl ) {
-				LoaderAndChecker.connProblematicUrls++;
+				LoaderAndChecker.connProblematicUrls.incrementAndGet();
 				ConnSupportUtils.printEmbeddedExceptionMessage(re, resourceURL);
 			}	// Log this error only for docPages or possibleDocOrDatasetUrls, not other internalLinks.
 			else if ( calledForPossibleDocOrDatasetUrl )
@@ -199,16 +203,16 @@ public class HttpConnUtils
 			throw re;
 		} catch (ConnTimeoutException cte) {
 			if ( calledForPageUrl )
-				UrlTypeChecker.longToRespondUrls ++;
+				UrlTypeChecker.longToRespondUrls.incrementAndGet();
 			throw cte;
 		} catch (DomainBlockedException | DomainWithUnsupportedHEADmethodException e) {
 			if ( calledForPageUrl )
-				LoaderAndChecker.connProblematicUrls ++;
+				LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			throw e;
 		} catch (Exception e) {
 			if ( calledForPageUrl ) {	// Log this error only for docPages.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\"!");
-				LoaderAndChecker.connProblematicUrls ++;
+				LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			}
 			throw new RuntimeException();
 		} finally {
@@ -276,7 +280,7 @@ public class HttpConnUtils
 
 			if ( !resourceURL.startsWith("https", 0) && domainsSupportingHTTPS.contains(domainStr) ) {
 				resourceURL = ConnSupportUtils.offlineRedirectToHTTPS(resourceURL);
-				timesDidOfflineHTTPSredirect++;
+				timesDidOfflineHTTPSredirect.incrementAndGet();
 			}
 
 			// For the urls which has reached this point, make sure no weird "ampersand"-anomaly blocks us...
@@ -296,8 +300,12 @@ public class HttpConnUtils
 
 			URL url = new URL(resourceURL);
 			conn = (HttpURLConnection) url.openConnection();
-			conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:84.0) Gecko/20100101 Firefox/84.0");
+			conn.setRequestProperty("User-Agent", userAgent);
+			if ( !domainsWithUnsupportedAcceptLanguageParameter.contains(domainStr) )
+				conn.setRequestProperty("Accept-Language", acceptLanguage);
 			conn.setInstanceFollowRedirects(false);	// We manage redirects on our own, in order to control redirectsNum, avoid redirecting to unwantedUrls and handling errors.
+
+			boolean useHttpGetMethod = false;
 
 			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// For just-webPages, we want to use "GET" in order to download the content.
 				|| (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles)	// For docUrls, if we should download them.
@@ -308,28 +316,52 @@ public class HttpConnUtils
 				conn.setRequestMethod("GET");	// Go directly with "GET".
 				conn.setConnectTimeout(maxConnGETWaitingTime);
 				conn.setReadTimeout(maxConnGETWaitingTime);
+				useHttpGetMethod = true;
 			} else {
 				conn.setRequestMethod("HEAD");	// Else, try "HEAD" (it may be either a domain that supports "HEAD", or a new domain, for which we have no info yet).
 				conn.setConnectTimeout(maxConnHEADWaitingTime);
 				conn.setReadTimeout(maxConnHEADWaitingTime);
 			}
 
-			if ( addPolitenessDelay && resourceURL.contains(lastConnectedHost) ) {	// If this is the last-visited domain, sleep a bit before re-connecting to it.
-				int randomSleepTime = ConnSupportUtils.getRandomNumber(minPolitenessDelay, maxPolitenessDelay);
-				try {
-					Thread.sleep(randomSleepTime);	// Avoid server-overloading for the same domain.
-				} catch (InterruptedException ie) {
-					try { Thread.sleep(randomSleepTime); } catch (InterruptedException ignored) {}
-				}	// At this point, if the both sleeps failed, some time has already passed, so it's ok to connect to the same domain.
-			}
+			ConnSupportUtils.applyPolitenessDelay(resourceURL, domainStr);	// This is synchronized.
 
 			conn.connect();	// Else, first connect and if there is no error, log this domain as the last one.
-			lastConnectedHost = domainStr;
-			
+
 			if ( (responseCode = conn.getResponseCode()) == -1 )
 				throw new RuntimeException("Invalid HTTP response for \"" + resourceURL + "\"");
 
-			if ( ((responseCode == 405) || (responseCode == 501)) && conn.getRequestMethod().equals("HEAD") )	// If this SERVER doesn't support "HEAD" method or doesn't allow us to use it..
+			if ( responseCode == 406 )	// It's possible that the server does not support the "Accept-Language" parameter.
+			{
+				resourceURL = conn.getURL().toString();
+
+				if ( (domainStr = UrlUtils.getDomainStr(resourceURL, null)) != null ) {
+					logger.warn("The server \"" + domainStr + "\" probably does not support the \"Accept-Language\" parameter. Going to reconnect without it");
+					domainsWithUnsupportedAcceptLanguageParameter.add(domainStr);	// Take note that this domain does not support it..
+				}
+
+				url = new URL(resourceURL);
+				conn = (HttpURLConnection) url.openConnection();
+				conn.setRequestProperty("User-Agent", userAgent);
+				conn.setInstanceFollowRedirects(false);
+
+				if ( useHttpGetMethod ) {
+					conn.setRequestMethod("GET");	// Go directly with "GET".
+					conn.setConnectTimeout(maxConnGETWaitingTime);
+					conn.setReadTimeout(maxConnGETWaitingTime);
+				} else {
+					conn.setRequestMethod("HEAD");	// Else, try "HEAD" (it may be either a domain that supports "HEAD", or a new domain, for which we have no info yet).
+					conn.setConnectTimeout(maxConnHEADWaitingTime);
+					conn.setReadTimeout(maxConnHEADWaitingTime);
+				}
+
+				ConnSupportUtils.applyPolitenessDelay(resourceURL, domainStr);	// This is synchronized.
+
+				conn.connect();	// Else, first connect and if there is no error, log this domain as the last one.
+
+				if ( conn.getResponseCode() == -1 )
+					throw new RuntimeException("Invalid HTTP response for \"" + resourceURL + "\"");
+			}
+			else if ( ((responseCode == 405) || (responseCode == 501)) && conn.getRequestMethod().equals("HEAD") )	// If this SERVER doesn't support "HEAD" method or doesn't allow us to use it..
 			{
 				resourceURL = conn.getURL().toString();	// Update as it might have changed after redirections.
 
@@ -347,77 +379,90 @@ public class HttpConnUtils
 				url = new URL(resourceURL);
 				conn = (HttpURLConnection) url.openConnection();
 				conn.setRequestMethod("GET");	// To reach here, it means that the HEAD method is unsupported.
-				conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:84.0) Gecko/20100101 Firefox/84.0");
+				conn.setRequestProperty("User-Agent", userAgent);
+				if ( !domainsWithUnsupportedAcceptLanguageParameter.contains(domainStr) )
+					conn.setRequestProperty("Accept-Language", acceptLanguage);
 				conn.setConnectTimeout(maxConnGETWaitingTime);
 				conn.setReadTimeout(maxConnGETWaitingTime);
 				conn.setInstanceFollowRedirects(false);
 
-				if ( addPolitenessDelay ) {	// That's the only check here, since we know we will connect to the same host.
-					int randomSleepTime = ConnSupportUtils.getRandomNumber(minPolitenessDelay, maxPolitenessDelay);
-					try {
-						Thread.sleep(randomSleepTime);	// Avoid server-overloading for the same domain.
-					} catch (InterruptedException ie) {
-						try { Thread.sleep(randomSleepTime); } catch (InterruptedException ignored) {}
-					}	// At this point, if the both sleeps failed, some time has already passed, so it's ok to connect to the same domain.
-				}
-				
+				ConnSupportUtils.applyPolitenessDelay(resourceURL, domainStr);	// This is synchronized.
+
 				conn.connect();
-				lastConnectedHost = domainStr;
 				//logger.debug("responseCode for \"" + resourceURL + "\", after setting conn-method to: \"" + conn.getRequestMethod() + "\" is: " + conn.getResponseCode());
 
-				if ( conn.getResponseCode() == -1 )	// Make sure we throw a RunEx on invalidHTTP.
+				responseCode = conn.getResponseCode();
+				if ( responseCode == -1 )	// Make sure we throw a RunEx on invalidHTTP.
 					throw new RuntimeException("Invalid HTTP response for \"" + resourceURL + "\"");
+
+				if ( responseCode == 406 )	// It's possible that the server does not support the "Accept-Language" parameter.
+				{
+					//logger.debug("The \"Accept-Language\" parameter is probably not supported for: \"" + resourceURL +"\". Server's responseCode was: " + responseCode);
+
+					if ( (domainStr = UrlUtils.getDomainStr(conn.getURL().toString(), null)) != null ) {
+						logger.warn("The server \"" + domainStr + "\" probably does not support the \"Accept-Language\" parameter. Going to reconnect without it");
+						domainsWithUnsupportedAcceptLanguageParameter.add(domainStr);	// Take note that this domain does not support it..
+					}
+
+					url = new URL(resourceURL);
+					conn = (HttpURLConnection) url.openConnection();
+					conn.setRequestMethod("GET");	// To reach here, it means that the HEAD method is unsupported.
+					conn.setRequestProperty("User-Agent", userAgent);
+					conn.setConnectTimeout(maxConnGETWaitingTime);
+					conn.setReadTimeout(maxConnGETWaitingTime);
+					conn.setInstanceFollowRedirects(false);
+
+					ConnSupportUtils.applyPolitenessDelay(resourceURL, domainStr);	// This is synchronized.
+
+					conn.connect();	// Else, first connect and if there is no error, log this domain as the last one.
+
+					if ( (conn.getResponseCode()) == -1 )
+						throw new RuntimeException("Invalid HTTP response for \"" + resourceURL + "\"");
+				}
 			}
-		} catch (RuntimeException re) {	// The cause it's already logged.
+		} catch (RuntimeException | DomainWithUnsupportedHEADmethodException redwuhme) {
 			if ( conn != null )
 				conn.disconnect();
-			throw re;
-		} catch (DomainWithUnsupportedHEADmethodException dwuhe) {
-			throw dwuhe;
-		} catch (UnknownHostException uhe) {
-			logger.debug("A new \"Unknown Network\" Host was found and blacklisted: \"" + domainStr + "\"");
+			throw redwuhme;	// We want to throw the same exception to keep the messages and the stacktrace in place.
+		} catch (Exception e) {
 			if ( conn != null )
 				conn.disconnect();
-			blacklistedDomains.add(domainStr);	//Log it to never try connecting with it again.
-			throw new DomainBlockedException(domainStr);
-		} catch (SocketTimeoutException ste) {
-			logger.debug("Url: \"" + resourceURL + "\" failed to respond on time!");
-			if ( conn != null )
-				conn.disconnect();
-			ConnSupportUtils.onTimeoutException(domainStr);	// May throw a "DomainBlockedException", which will be thrown before the "ConnTimeoutException".
-			throw new ConnTimeoutException();
-		} catch (ConnectException ce) {
-			if ( conn != null )
-				conn.disconnect();
-			String eMsg = ce.getMessage();
-			if ( (eMsg != null) && eMsg.toLowerCase().contains("timeout") ) {	// If it's a "connection timeout" type of exception, treat it like it.
-				ConnSupportUtils.onTimeoutException(domainStr);	// Can throw a "DomainBlockedException", which will be thrown before the "ConnTimeoutException".
+			if ( e instanceof UnknownHostException ) {
+				logger.debug("A new \"Unknown Network\" Host was found and blacklisted: \"" + domainStr + "\"");
+				blacklistedDomains.add(domainStr);	//Log it to never try connecting with it again.
+				throw new DomainBlockedException(domainStr);
+			}
+			else if ( e instanceof SocketTimeoutException ) {
+				logger.debug("Url: \"" + resourceURL + "\" failed to respond on time!");
+				ConnSupportUtils.onTimeoutException(domainStr);	// May throw a "DomainBlockedException", which will be thrown before the "ConnTimeoutException".
 				throw new ConnTimeoutException();
 			}
-			throw new RuntimeException(eMsg);
-		} catch (SSLException ssle) {
-			if ( conn != null )
-				conn.disconnect();
-			// TODO - For "SSLProtocolException", see more about it's possible handling here: https://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0/14884941#14884941
-			// TODO - Maybe we should make another list where only urls in https, from these domains, would be blocked.
-			blacklistedDomains.add(domainStr);
-			numOfDomainsBlockedDueToSSLException++;
-			logger.warn("No Secure connection was able to be negotiated with the domain: \"" + domainStr + "\", so it was blocked. Exception message: " + ssle.getMessage());
-			throw new DomainBlockedException(domainStr);
-		} catch (SocketException se) {
-			if ( conn != null )
-				conn.disconnect();
-			
-			String errorMsg = se.getMessage();
-			if ( errorMsg != null )
-				errorMsg = "\"" + errorMsg + "\". This SocketException was received after trying to connect with the domain: \"" + domainStr + "\"";
+			else if ( e instanceof ConnectException ) {
+				String eMsg = e.getMessage();
+				if ( (eMsg != null) && eMsg.toLowerCase().contains("timeout") ) {	// If it's a "connection timeout" type of exception, treat it like it.
+					ConnSupportUtils.onTimeoutException(domainStr);	// Can throw a "DomainBlockedException", which will be thrown before the "ConnTimeoutException".
+					throw new ConnTimeoutException();
+				}
+				throw new RuntimeException(eMsg);
+			}
+			else if ( e instanceof SSLException ) {
+				// TODO - For "SSLProtocolException", see more about it's possible handling here: https://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0/14884941#14884941
+				// TODO - Maybe we should make another list where only urls in https, from these domains, would be blocked.
+				blacklistedDomains.add(domainStr);
+				numOfDomainsBlockedDueToSSLException.incrementAndGet();
+				logger.warn("No Secure connection was able to be negotiated with the domain: \"" + domainStr + "\", so it was blocked. Exception message: " + e.getMessage());
+				throw new DomainBlockedException(domainStr);
+			}
+			else if ( e instanceof SocketException ) {
+				String errorMsg = e.getMessage();
+				if ( errorMsg != null )
+					errorMsg = "\"" + errorMsg + "\". This SocketException was received after trying to connect with the domain: \"" + domainStr + "\"";
 
-			// We don't block the domain, since this is temporary.
-			throw new RuntimeException(errorMsg);
-    	} catch (Exception e) {
+				// We don't block the domain, since this is temporary.
+				throw new RuntimeException(errorMsg);
+			}
+
 			logger.error("", e);
-			if ( conn != null )
-				conn.disconnect();
 			throw new RuntimeException();
 		}
 		
@@ -505,17 +550,17 @@ public class HttpConnUtils
 
 				//ConnSupportUtils.printRedirectDebugInfo(currentUrl, location, targetUrl, responseCode, curRedirectsNum);
 
-				if ( UrlUtils.docUrlsOrDatasetsWithIDs.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
+				if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
 					logger.info("re-crossed docUrl found: < " + targetUrl + " >");
-					LoaderAndChecker.reCrossedDocUrls ++;
+					LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
 					if ( FileUtils.shouldDownloadDocFiles )
-						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsOrDatasetsWithIDs.get(targetUrl), null, false);
+						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(targetUrl), null, false);
 					else
 						UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, targetUrl, "", null, false);
 					throw new AlreadyFoundDocUrlException();
 				}
 
-				if ( !targetUrl.contains(HttpConnUtils.lastConnectedHost) ) {    // If the next page is not in the same domain as the "lastConnectedHost", we have to find the domain again inside "openHttpConnection()" method.
+				if ( !targetUrl.contains(domainStr) ) {    // If the next page is not in the same domain as the current one, we have to find the domain again.
 					conn.disconnect();	// Close the socket with that server.
 					if ( (domainStr = UrlUtils.getDomainStr(targetUrl, null)) == null )
 						throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".

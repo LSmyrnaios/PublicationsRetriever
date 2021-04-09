@@ -1,6 +1,7 @@
 package eu.openaire.doc_urls_retriever.util.http;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
 import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
@@ -22,6 +23,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,8 +35,6 @@ public class ConnSupportUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(ConnSupportUtils.class);
 
-	private static final StringBuilder htmlStrB = new StringBuilder(300000);	// We give an initial size (maxExpectedHtmlLength) to optimize performance (avoid re-allocations at run-time).
-	
 	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("(?:\\((?:')?)?([\\w]+/[\\w+\\-.]+).*");
 
 	public static final Pattern POSSIBLE_DOC_OR_DATASET_MIME_TYPE = Pattern.compile("(?:(?:application|binary)/(?:(?:x-)?octet-stream|save|force-download))|unknown");	// We don't take it for granted.. if a match is found, then we check for the "pdf" keyword in the "contentDisposition" (if it exists) or in the url.
@@ -51,11 +51,14 @@ public class ConnSupportUtils
 	// Note: We cannot remove all the spaces from the HTML, as the JSOUP fails to extract the internal links. If a custom-approach will be followed, then we can take the space-removal into account.
 	//public static final Pattern REMOVE_SPACES = Pattern.compile("([\\s]+)");
 
-	public static final HashMap<String, Integer> timesDomainsReturned5XX = new HashMap<String, Integer>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
-	public static final HashMap<String, Integer> timesDomainsHadTimeoutEx = new HashMap<String, Integer>();
-	public static final HashMap<String, Integer> timesPathsReturned403 = new HashMap<String, Integer>();
+	public static final int minPolitenessDelay = 3000;	// 3 sec
+	public static final int maxPolitenessDelay = 7000;	// 7 sec
+
+	public static final Hashtable<String, Integer> timesDomainsReturned5XX = new Hashtable<String, Integer>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
+	public static final Hashtable<String, Integer> timesDomainsHadTimeoutEx = new Hashtable<String, Integer>();
+	public static final Hashtable<String, Integer> timesPathsReturned403 = new Hashtable<String, Integer>();
 	
-	public static final SetMultimap<String, String> domainsMultimapWithPaths403BlackListed = HashMultimap.create();	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
+	public static final SetMultimap<String, String> domainsMultimapWithPaths403BlackListed = Multimaps.synchronizedSetMultimap(HashMultimap.create());	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
 	
 	private static final int timesToHave403errorCodeBeforePathBlocked = 10;	// If a path leads to 403 with different urls, more than 5 times, then this path gets blocked.
 	private static final int numberOf403BlockedPathsBeforeDomainBlocked = 50;	// If a domain has more than 5 different 403-blocked paths, then the whole domain gets blocked.
@@ -65,8 +68,8 @@ public class ConnSupportUtils
 
 	private static final int timesToReturnNoTypeBeforeDomainBlocked = 10;
 
-	public static final HashSet<String> knownDocMimeTypes = new HashSet<String>();
-	public static final HashSet<String> knownDatasetMimeTypes = new HashSet<String>();
+	public static final Set<String> knownDocMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+	public static final Set<String> knownDatasetMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 	static {
 		logger.debug("Setting up the official document mime types. Currently there is support only for pdf documents.");
 		knownDocMimeTypes.add("application/pdf");
@@ -277,6 +280,23 @@ public class ConnSupportUtils
 	}
 
 
+	public static synchronized void applyPolitenessDelay(String resourceURL, String domainStr)
+	{
+		if ( !HttpConnUtils.lastConnectedHost.isEmpty() && resourceURL.contains(HttpConnUtils.lastConnectedHost) ) {	// If this is the last-visited domain, sleep a bit before re-connecting to it.
+			int randomPolitenessDelay = ConnSupportUtils.getRandomNumber(minPolitenessDelay, maxPolitenessDelay);
+			try {
+				Thread.sleep(randomPolitenessDelay);	// Avoid server-overloading for the same domain.
+			} catch (InterruptedException ie) {
+				try {
+					Thread.sleep(randomPolitenessDelay);
+				} catch (InterruptedException ignored) {
+				}
+			}	// At this point, if both sleeps failed, some time has already passed, so it's ok to connect to the same domain.
+		}
+		HttpConnUtils.lastConnectedHost = domainStr;
+	}
+
+
 	/**
 	 * This method does an offline-redirect to HTTPS. It is called when the url uses HTTP, but handles exceptions as well.
 	 * @param url
@@ -397,7 +417,7 @@ public class ConnSupportUtils
 	}
 	
 	
-	public static boolean countAndBlockPathAfterTimes(SetMultimap<String, String> domainsWithPaths, HashMap<String, Integer> pathsWithTimes, String pathStr, String domainStr, int timesBeforeBlocked, boolean calledForPageUrl)
+	public static boolean countAndBlockPathAfterTimes(SetMultimap<String, String> domainsWithPaths, Hashtable<String, Integer> pathsWithTimes, String pathStr, String domainStr, int timesBeforeBlocked, boolean calledForPageUrl)
 	{
 		if ( countInsertAndGetTimes(pathsWithTimes, pathStr) > timesBeforeBlocked ) {
 
@@ -467,7 +487,7 @@ public class ConnSupportUtils
 	 * @param checkAgainstDocUrlsHits
 	 * @return boolean
 	 */
-	public static boolean countAndBlockDomainAfterTimes(HashSet<String> blackList, HashMap<String, Integer> domainsWithTimes, String domainStr, int timesBeforeBlock, boolean checkAgainstDocUrlsHits)
+	public static boolean countAndBlockDomainAfterTimes(Set<String> blackList, Hashtable<String, Integer> domainsWithTimes, String domainStr, int timesBeforeBlock, boolean checkAgainstDocUrlsHits)
 	{
 		int badTimes = countInsertAndGetTimes(domainsWithTimes, domainStr);
 
@@ -487,7 +507,7 @@ public class ConnSupportUtils
 	}
 	
 	
-	public static int countInsertAndGetTimes(HashMap<String, Integer> itemWithTimes, String itemToCount)
+	public static int countInsertAndGetTimes(Hashtable<String, Integer> itemWithTimes, String itemToCount)
 	{
 		int curTimes = 1;
 		if ( itemWithTimes.containsKey(itemToCount) )
@@ -537,6 +557,8 @@ public class ConnSupportUtils
 			logger.warn("Aborting HTML-extraction for pageUrl: " + conn.getURL().toString());
 			return null;
 		}
+
+		StringBuilder htmlStrB = new StringBuilder(300000);	// Initialize it here each time for thread-safety (thread-locality).
 
 		try (BufferedReader br = (bufferedReader != null ? bufferedReader : new BufferedReader(new InputStreamReader(conn.getInputStream()))) )	// Try-with-resources
 		{
@@ -812,6 +834,7 @@ public class ConnSupportUtils
 			String errorMessage = "The \"inputDataUrl\" was not given, even though";
 			logger.error(errorMessage);
 			System.err.println(errorMessage);
+			DocUrlsRetriever.executor.shutdownNow();
 			System.exit(55);
 		}
 
@@ -822,6 +845,7 @@ public class ConnSupportUtils
 				String errorMessage = "The mimeType of the url was either null or a non-json: " + mimeType;
 				logger.error(errorMessage);
 				System.err.println(errorMessage);
+				DocUrlsRetriever.executor.shutdownNow();
 				System.exit(56);
 			}
 
@@ -831,6 +855,7 @@ public class ConnSupportUtils
 			String errorMessage = "Unexpected error when retrieving the input-stream from the inputDataUrl:\n" + e.getMessage();
 			logger.error(errorMessage);
 			System.err.println(errorMessage);
+			DocUrlsRetriever.executor.shutdownNow();
 			System.exit(57);
 		}
 
@@ -868,7 +893,7 @@ public class ConnSupportUtils
 		logger.debug("Connection debug info:\nURL: < {} >,\nContentType: \"{}\". ContentDisposition: \"{}\", HTTP-method: \"{}\"",
 				conn.getURL().toString(), conn.getContentType(), conn.getHeaderField("Content-Disposition"), conn.getRequestMethod());
 		if ( shouldShowFullHeaders ) {
-			StringBuilder sb = new StringBuilder(1000).append("Headers:\n");
+			StringBuilder sb = new StringBuilder(1000).append("Headers:\n");	// This StringBuilder is thread-safe as a local-variable.
 			Map<String, List<String>> headers = conn.getHeaderFields();
 			for ( String headerKey : headers.keySet() )
 				for ( String headerValue : headers.get(headerKey) )

@@ -2,6 +2,7 @@ package eu.openaire.doc_urls_retriever.util.url;
 
 import com.google.common.collect.HashMultimap;
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
+import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
@@ -10,9 +11,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 
@@ -36,14 +40,14 @@ public class LoaderAndChecker
 
 	
 	public static int numOfIDs = 0;	// The number of IDs existing in the input.
-	public static int connProblematicUrls = 0;	// Urls known to have connectivity problems, such as long conn-times etc.
-	public static int inputDuplicatesNum = 0;
+	public static AtomicInteger connProblematicUrls = new AtomicInteger(0);	// Urls known to have connectivity problems, such as long conn-times etc.
+	public static AtomicInteger inputDuplicatesNum = new AtomicInteger(0);
 
-	public static int reCrossedDocUrls = 0;
+	public static AtomicInteger reCrossedDocUrls = new AtomicInteger(0);
 	
-	public static int numOfIDsWithoutAcceptableSourceUrl = 0;	// The number of IDs which failed to give an acceptable sourceUrl.
+	public static AtomicInteger numOfIDsWithoutAcceptableSourceUrl = new AtomicInteger(0);	// The number of IDs which failed to give an acceptable sourceUrl.
 
-	public static int loadingRetries = 0;
+	public static AtomicInteger loadingRetries = new AtomicInteger(0);
 
 	// The following are set from the user.
 	public static boolean retrieveDocuments = true;
@@ -91,35 +95,48 @@ public class LoaderAndChecker
 				break;
 			else
 				isFirstRun = false;
-			
+
+			List<Callable<Boolean>> callableTasks = new ArrayList<>(loadedUrlGroup.size());
+
 			for ( String retrievedUrl : loadedUrlGroup )
 			{
-				if ( (retrievedUrl = handleUrlChecks(null, retrievedUrl)) == null )
-					continue;
-				
-				boolean isPossibleDocOrDatasetUrl = false;
-				String lowerCaseRetrievedUrl = retrievedUrl.toLowerCase();
-				if ( (retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
-						|| (retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) )
-					isPossibleDocOrDatasetUrl = true;
+				callableTasks.add(() -> {
 
-				String urlToCheck = retrievedUrl;
-				if ( !urlToCheck.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null ) {
-					logger.warn("Could not canonicalize url: " + retrievedUrl);
-					UrlUtils.logQuadruple(null, retrievedUrl, null, "unreachable", "Discarded at loading time, due to canonicalization's problems.", null, true);
-					LoaderAndChecker.connProblematicUrls ++;
-					continue;
-				}
+					String retrievedUrlToCheck = retrievedUrl;	// This is used because: "local variables referenced from a lambda expression must be final or effectively final".
 
-				try {
-					HttpConnUtils.connectAndCheckMimeType(null, retrievedUrl, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
-				} catch (Exception e) {
-					UrlUtils.logQuadruple(null, retrievedUrl, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true);
-				}
+					if ( (retrievedUrlToCheck = (handleUrlChecks("null", retrievedUrlToCheck))) == null )
+						return false;
+
+					boolean isPossibleDocOrDatasetUrl = false;
+					String lowerCaseRetrievedUrl = retrievedUrlToCheck.toLowerCase();
+					if ( (retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
+							|| (retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) )
+						isPossibleDocOrDatasetUrl = true;
+
+					String urlToCheck = retrievedUrlToCheck;
+					if ( !urlToCheck.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrlToCheck, null, StandardCharsets.UTF_8)) == null ) {
+						logger.warn("Could not canonicalize url: " + retrievedUrlToCheck);
+						UrlUtils.logQuadruple("null", retrievedUrlToCheck, null, "unreachable", "Discarded at loading time, due to canonicalization's problems.", null, true);
+						LoaderAndChecker.connProblematicUrls.incrementAndGet();
+						return false;
+					}
+
+					try {	// We sent the < null > into quotes to avoid causing NPEs in the thread-safe datastructures that do not support null input.
+						HttpConnUtils.connectAndCheckMimeType("null", retrievedUrlToCheck, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
+					} catch (Exception e) {
+						UrlUtils.logQuadruple("null", retrievedUrlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true);
+					}
+
+					return true;
+				});
+
 			}// end for-loop
+
+			invokeAllTasksAndWait(callableTasks);
+
 		}// end while-loop
 	}
-	
+
 	
 	/**
 	 * This method loads the id-url pairs from the input file in memory, in packs.
@@ -130,7 +147,9 @@ public class LoaderAndChecker
 	{
 		HashMultimap<String, String> loadedIdUrlPairs;
 		boolean isFirstRun = true;
-		
+
+		//AtomicInteger batchCount = new AtomicInteger(0);	// DEBUG!
+
 		// Start loading and checking urls.
 		while ( true )
 		{
@@ -143,119 +162,164 @@ public class LoaderAndChecker
 			
 			Set<String> keys = loadedIdUrlPairs.keySet();
 			numOfIDs += keys.size();
-			
+
+			//logger.debug("numOfIDs = " + numOfIDs);	// DEBUG!
+			//batchCount.incrementAndGet();	// DEBUG!
+
+			List<Callable<Boolean>> callableTasks = new ArrayList<>(numOfIDs);
+
 			for ( String retrievedId : keys )
 			{
-				boolean goToNextId = false;
-				String possibleDocOrDatasetUrl = null;
-				String bestNonDocNonDatasetUrl = null;	// Best-case url
-				String nonDoiUrl = null;	// Url which is not a best case, but it's not a slow-doi url either.
-				String neutralUrl = null;	// Just a neutral url.
-				String urlToCheck = null;
+				HashMultimap<String, String> finalLoadedIdUrlPairs = loadedIdUrlPairs;
 
-				Set<String> retrievedUrlsOfCurrentId = loadedIdUrlPairs.get(retrievedId);
-				boolean isSingleIdUrlPair = (retrievedUrlsOfCurrentId.size() == 1);
-				HashSet<String> loggedUrlsOfCurrentId = new HashSet<>();	// New for every ID.
+				callableTasks.add(() -> {
 
-				for ( String retrievedUrl : retrievedUrlsOfCurrentId )
-				{
-					String checkedUrl = retrievedUrl;
-					if ( (retrievedUrl = handleUrlChecks(retrievedId, retrievedUrl)) == null ) {
-						if ( !isSingleIdUrlPair )
-							loggedUrlsOfCurrentId.add(checkedUrl);
-						continue;
-					}	// The "retrievedUrl" might have changed (inside "handleUrlChecks()").
+					//logger.debug("Batch < " + batchCount.get() + " > ID < " + idCount.incrementAndGet() + " >");	// DEBUG!
 
-					if ( UrlUtils.docUrlsOrDatasetsWithIDs.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
-						logger.info("re-crossed docUrl found: < " + retrievedUrl + " >");
-						LoaderAndChecker.reCrossedDocUrls ++;
-						if ( FileUtils.shouldDownloadDocFiles )
-							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsOrDatasetsWithIDs.get(retrievedUrl), null, false);
+					boolean goToNextId = false;
+					String possibleDocOrDatasetUrl = null;
+					String bestNonDocNonDatasetUrl = null;	// Best-case url
+					String nonDoiUrl = null;	// Url which is not a best case, but it's not a slow-doi url either.
+					String neutralUrl = null;	// Just a neutral url.
+					String urlToCheck = null;
+
+					Set<String> retrievedUrlsOfCurrentId = finalLoadedIdUrlPairs.get(retrievedId);
+
+					boolean isSingleIdUrlPair = (retrievedUrlsOfCurrentId.size() == 1);
+					HashSet<String> loggedUrlsOfCurrentId = new HashSet<>();	// New for every ID. It does not need to be synchronized.
+
+					for ( String retrievedUrl : retrievedUrlsOfCurrentId )
+					{
+						String checkedUrl = retrievedUrl;
+						if ( (retrievedUrl = handleUrlChecks(retrievedId, retrievedUrl)) == null ) {
+							if ( !isSingleIdUrlPair )
+								loggedUrlsOfCurrentId.add(checkedUrl);
+							continue;
+						}	// The "retrievedUrl" might have changed (inside "handleUrlChecks()").
+
+						if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
+							logger.info("re-crossed docUrl found: < " + retrievedUrl + " >");
+							LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
+							if ( FileUtils.shouldDownloadDocFiles )
+								UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl), null, false);
+							else
+								UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, "", null, false);
+
+							if ( !isSingleIdUrlPair )
+								loggedUrlsOfCurrentId.add(retrievedUrl);
+
+							goToNextId = true;    // Skip the best-url evaluation & connection after this loop.
+							break;
+						}
+
+						String lowerCaseRetrievedUrl = retrievedUrl.toLowerCase();
+						// Check if it's a possible-DocUrl, if so, this is the only url which will be checked from this id-group, unless there's a canonicalization problem.
+						if ( (retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
+							|| (retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) ) {
+							//logger.debug("Possible docUrl or datasetUrl: " + retrievedUrl);
+							possibleDocOrDatasetUrl = retrievedUrl;
+							break;	// This is the absolute-best-case, we go and connect directly.
+						}
+
+						// Use this rule, if we accept the slow "hdl.handle.net"
+						if ( retrievedUrl.contains("/handle/") )	// If this url contains "/handle/" we know that it's a bestCaseUrl among urls from the domain "handle.net", which after redirects reaches the bestCaseUrl (containing "/handle/").
+							bestNonDocNonDatasetUrl = retrievedUrl;	// We can't just connect here, as the next url might be a possibleDocOrDatasetUrl.
+						else if ( (bestNonDocNonDatasetUrl == null) && !retrievedUrl.contains("doi.org") )	// If no other preferable url is found, we should prefer the nonDOI-one, if present, as the DOI-urls have lots of redirections.
+							nonDoiUrl = retrievedUrl;
 						else
-							UrlUtils.logQuadruple(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, "", null, false);
+							neutralUrl = retrievedUrl;	// If no special-goodCase-url is found, this one will be used. Note that this will be null if no acceptable-url was found.
+					}// end-url-for-loop
 
-						if ( !isSingleIdUrlPair )
-							loggedUrlsOfCurrentId.add(retrievedUrl);
-
-						goToNextId = true;    // Skip the best-url evaluation & connection after this loop.
-						break;
+					if ( goToNextId ) {	// If we found an already-retrieved docUrl.
+						if ( !isSingleIdUrlPair )	// Don't forget to write the valid but not-to-be-connected urls to the outputFile.
+							handleLogOfRemainingUrls(null, retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId);
+						return false;	// Exit this runnable to go to the next ID.
 					}
 
-					String lowerCaseRetrievedUrl = retrievedUrl.toLowerCase();
-					// Check if it's a possible-DocUrl, if so, this is the only url which will be checked from this id-group, unless there's a canonicalization problem.
-					if ( (retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
-						|| (retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) ) {
-						//logger.debug("Possible docUrl or datasetUrl: " + retrievedUrl);
-						possibleDocOrDatasetUrl = retrievedUrl;
-						break;	// This is the absolute-best-case, we go and connect directly.
+					boolean isPossibleDocOrDatasetUrl = false;	// Used for specific connection settings.
+					// Decide with which url from this id-group we should connect to.
+					if ( possibleDocOrDatasetUrl != null ) {
+						urlToCheck = possibleDocOrDatasetUrl;
+						isPossibleDocOrDatasetUrl = true;
 					}
-					
-					// Use this rule, if we accept the slow "hdl.handle.net"
-					if ( retrievedUrl.contains("/handle/") )	// If this url contains "/handle/" we know that it's a bestCaseUrl among urls from the domain "handle.net", which after redirects reaches the bestCaseUrl (containing "/handle/").
-						bestNonDocNonDatasetUrl = retrievedUrl;	// We can't just connect here, as the next url might be a possibleDocOrDatasetUrl.
-					else if ( (bestNonDocNonDatasetUrl == null) && !retrievedUrl.contains("doi.org") )	// If no other preferable url is found, we should prefer the nonDOI-one, if present, as the DOI-urls have lots of redirections.
-						nonDoiUrl = retrievedUrl;
-					else
-						neutralUrl = retrievedUrl;	// If no special-goodCase-url is found, this one will be used. Note that this will be null if no acceptable-url was found.
-				}// end-url-for-loop
-				
-				if ( goToNextId ) {	// If we found an already-retrieved docUrl.
+					else if ( bestNonDocNonDatasetUrl != null )
+						urlToCheck = bestNonDocNonDatasetUrl;
+					else if ( nonDoiUrl != null )
+						urlToCheck = nonDoiUrl;
+					else if ( neutralUrl != null )
+						urlToCheck = neutralUrl;
+					else {
+						logger.debug("No acceptable sourceUrl was found for ID: \"" + retrievedId + "\".");
+						numOfIDsWithoutAcceptableSourceUrl.incrementAndGet();
+						return false;	// Exit this runnable to go to the next ID.
+					}
+
+					String sourceUrl = urlToCheck;	// Hold it here for the logging-messages.
+					if ( !sourceUrl.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
+						logger.warn("Could not canonicalize url: " + sourceUrl);
+						UrlUtils.logQuadruple(retrievedId, sourceUrl, null, "unreachable", "Discarded at loading time, due to canonicalization's problems.", null, true);
+						LoaderAndChecker.connProblematicUrls.incrementAndGet();
+
+						// If other urls exits, then go and check those.
+						if ( !isSingleIdUrlPair ) {    // Don't forget to write the valid but not-to-be-connected urls to the outputFile.
+							loggedUrlsOfCurrentId.add(sourceUrl);
+							checkRemainingUrls(retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId, isSingleIdUrlPair);	// Go check the other urls because they might not have a canonicalization problem.
+							handleLogOfRemainingUrls(null, retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId);
+						}
+						return false;	// Exit this runnable to go to the next ID.
+					}
+
+					try {	// Check if it's a docUrl, if not, it gets crawled.
+						HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
+						if ( !isSingleIdUrlPair )	// Otherwise it's already logged.
+							loggedUrlsOfCurrentId.add(urlToCheck);
+					} catch (Exception e) {
+						UrlUtils.logQuadruple(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true);
+						// This url had connectivity problems.. but the rest might not, go check them out.
+						if ( !isSingleIdUrlPair ) {
+							loggedUrlsOfCurrentId.add(urlToCheck);
+							checkRemainingUrls(retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId, isSingleIdUrlPair);	// Go check the other urls because they might not have a canonicalization problem.
+						}
+					}
+
 					if ( !isSingleIdUrlPair )	// Don't forget to write the valid but not-to-be-connected urls to the outputFile.
 						handleLogOfRemainingUrls(null, retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId);
-					continue;
-				}
 
-				boolean isPossibleDocOrDatasetUrl = false;	// Used for specific connection settings.
-				// Decide with which url from this id-group we should connect to.
-				if ( possibleDocOrDatasetUrl != null ) {
-					urlToCheck = possibleDocOrDatasetUrl;
-					isPossibleDocOrDatasetUrl = true;
-				}
-				else if ( bestNonDocNonDatasetUrl != null )
-					urlToCheck = bestNonDocNonDatasetUrl;
-				else if ( nonDoiUrl != null )
-					urlToCheck = nonDoiUrl;
-				else if ( neutralUrl != null )
-					urlToCheck = neutralUrl;
-				else {
-					logger.debug("No acceptable sourceUrl was found for ID: \"" + retrievedId + "\".");
-					numOfIDsWithoutAcceptableSourceUrl ++;
-					continue;
-				}
-
-				String sourceUrl = urlToCheck;	// Hold it here for the logging-messages.
-				if ( !sourceUrl.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
-					logger.warn("Could not canonicalize url: " + sourceUrl);
-					UrlUtils.logQuadruple(retrievedId, sourceUrl, null, "unreachable", "Discarded at loading time, due to canonicalization's problems.", null, true);
-					LoaderAndChecker.connProblematicUrls ++;
-
-					// If other urls exits, then go and check those.
-					if ( !isSingleIdUrlPair ) {    // Don't forget to write the valid but not-to-be-connected urls to the outputFile.
-						loggedUrlsOfCurrentId.add(sourceUrl);
-						checkRemainingUrls(retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId, isSingleIdUrlPair);	// Go check the other urls because they might not have a canonicalization problem.
-						handleLogOfRemainingUrls(null, retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId);
-					}
-					continue;	// To the next id.
-				}
-
-				try {	// Check if it's a docUrl, if not, it gets crawled.
-					HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
-					if ( !isSingleIdUrlPair )
-						loggedUrlsOfCurrentId.add(urlToCheck);
-				} catch (Exception e) {
-					UrlUtils.logQuadruple(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true);
-					// This url had connectivity problems.. but the rest might not, go check them out.
-					if ( !isSingleIdUrlPair ) {
-						loggedUrlsOfCurrentId.add(urlToCheck);
-						checkRemainingUrls(retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId, isSingleIdUrlPair);	// Go check the other urls because they might not have a canonicalization problem.
-					}
-				}
-
-				if ( !isSingleIdUrlPair )	// Don't forget to write the valid but not-to-be-connected urls to the outputFile.
-					handleLogOfRemainingUrls(null, retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId);
+					return true;
+				});
 
 			}// end id-for-loop
+
+			invokeAllTasksAndWait(callableTasks);
+
 		}// end loading-while-loop
+	}
+
+
+	public static void invokeAllTasksAndWait(List<Callable<Boolean>> callableTasks)
+	{
+		try {	// Invoke all the tasks and wait for them to finish before moving to the next batch.
+			List<Future<Boolean>> futures = DocUrlsRetriever.executor.invokeAll(callableTasks);
+			int sizeOfFutures = futures.size();
+			//logger.debug("sizeOfFutures: " + sizeOfFutures);	// DEBUG!
+			for ( int i = 0; i < sizeOfFutures; ++i ) {
+				try {
+					Boolean value = futures.get(i).get();	// Get and see if an exception is thrown..
+					// Add check for the value, if wanted.. (we don't care at the moment)
+				} catch (ExecutionException ee) {
+					logger.error("Task_" + (i+1) + " failed with: " + ee.getMessage());
+					ee.printStackTrace();
+				}
+				catch (CancellationException ce) {
+					logger.error("Task_" + (i+1) + " was cancelled: " + ce.getMessage());
+				}
+			}
+		} catch (InterruptedException ie) {
+			logger.warn("The main thread was interrupted when waiting for the current batch's worker-tasks to finish: " + ie.getMessage());
+		}
+		finally {
+			FileUtils.writeToFile();	// Writes to the output file
+		}
 	}
 
 
@@ -276,7 +340,7 @@ public class LoaderAndChecker
 					|| loggedUrlsOfThisId.contains(urlToCheck) ))
 					continue;
 
-			loadingRetries ++;
+			loadingRetries.incrementAndGet();
 
 			try {	// Check if it's a docUrl, if not, it gets crawled.
 				HttpConnUtils.connectAndCheckMimeType(retrievedId, urlToCheck, urlToCheck, urlToCheck, null, true, false);
@@ -307,7 +371,7 @@ public class LoaderAndChecker
 			logger.warn("Problematic URL in \"UrlUtils.handleUrlChecks()\": \"" + retrievedUrl + "\"");
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' method, after the occurrence of a domain-retrieval error.", null, true);
 			if ( !useIdUrlPairs )
-				connProblematicUrls ++;
+				connProblematicUrls.incrementAndGet();
 			return null;
 		}
 		
@@ -315,7 +379,7 @@ public class LoaderAndChecker
 			logger.debug("Avoid connecting to blackListed domain: \"" + urlDomain + "\" with url: " + retrievedUrl);
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' method, as its domain was found blackListed.", null, true);
 			if ( !useIdUrlPairs )
-				connProblematicUrls ++;
+				connProblematicUrls.incrementAndGet();
 			return null;
 		}
 		
@@ -323,7 +387,7 @@ public class LoaderAndChecker
 			logger.debug("Preventing reaching 403ErrorCode with url: \"" + retrievedUrl + "\"!");
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' as it had a blackListed urlPath.", null, true);
 			if ( !useIdUrlPairs )
-				connProblematicUrls ++;
+				connProblematicUrls.incrementAndGet();
 			return null;
 		}
 		
@@ -341,7 +405,7 @@ public class LoaderAndChecker
 			logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already be seen!");
 			UrlUtils.logQuadruple(urlId, retrievedUrl, null, "duplicate", "Discarded in 'UrlUtils.handleUrlChecks()', as it's a duplicate.", null, false);
 			if ( !useIdUrlPairs )
-				inputDuplicatesNum ++;
+				inputDuplicatesNum.incrementAndGet();
 			return null;
 		}
 		
@@ -373,6 +437,7 @@ public class LoaderAndChecker
 				String errorMessage = "Could not retrieve any urls from the inputFile! Exiting..";
 				System.err.println(errorMessage);
 				logger.error(errorMessage);
+				DocUrlsRetriever.executor.shutdownNow();
 				System.exit(100);
 			} else {
 				logger.debug("Done processing " + FileUtils.getCurrentlyLoadedUrls() + " urls from the inputFile.");

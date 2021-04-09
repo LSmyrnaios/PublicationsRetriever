@@ -164,7 +164,7 @@ public class SpecialUrlsHandler
 		if ( (jsonData = ConnSupportUtils.getHtmlString(conn, null)) == null ) {
 			logger.warn("Could not retrieve the responseBody for pageUrl: " + pageUrl);
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + conn.getContentType() + "'.", null, true);
-			LoaderAndChecker.connProblematicUrls ++;
+			LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			return;
 		}
 
@@ -207,12 +207,12 @@ public class SpecialUrlsHandler
 			// If it has not "returned" already, then no DocUrl was found.
 			logger.warn("No docUrl was extracted from the academic.microsoft jsonData for pageUrl: " + pageUrl);
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson()' method, as no docUrl was extracted from the academic.microsoft jsonData.", null, true);
-			PageCrawler.contentProblematicUrls ++;
+			PageCrawler.contentProblematicUrls.incrementAndGet();
 
 		} catch ( JSONException je ) {	// In case any of the above "json-keys" was not found.
 			logger.warn("JSON Exception was thrown while trying to retrieve the microsoft.academic docUrl: " + je.getMessage());
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson()' method, as there was a JSON-problem while retrieving the microsoft.academic docUrl.", null, true);
-			PageCrawler.contentProblematicUrls ++;
+			PageCrawler.contentProblematicUrls.incrementAndGet();
 		}
 	}
 
@@ -221,11 +221,11 @@ public class SpecialUrlsHandler
 	{
 		//logger.debug("AcademicMicrosoft PossibleDocUrl: " + possibleDocUrl);	// DEBUG!
 
-		if ( UrlUtils.docUrlsOrDatasetsWithIDs.containsKey(possibleDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
+		if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(possibleDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
 			logger.info("re-crossed docUrl found: < " + possibleDocUrl + " >");
-			LoaderAndChecker.reCrossedDocUrls ++;
+			LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
 			if ( FileUtils.shouldDownloadDocFiles )
-				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, possibleDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsOrDatasetsWithIDs.get(possibleDocUrl), null, false);
+				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, possibleDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(possibleDocUrl), null, false);
 			else
 				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, possibleDocUrl, "", null, false);
 			return true;

@@ -18,8 +18,9 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,15 +36,19 @@ public class PageCrawler
 
 	public static final Pattern JAVASCRIPT_DOC_LINK = Pattern.compile("(?:javascript:pdflink.*')(http.+)(?:',.*)", Pattern.CASE_INSENSITIVE);
 
-	public static final HashMap<String, Integer> timesDomainNotGivingInternalLinks = new HashMap<String, Integer>();
-	public static final HashMap<String, Integer> timesDomainNotGivingDocUrls = new HashMap<String, Integer>();
+	public static final Pattern JAVASCRIPT_CODE_PDF_LINK = Pattern.compile(".*\"pdfUrl\":\"([^\"]+)(?:\").*");	// TODO - Check if this case is common, in order to handle it.
+
+	public static final Hashtable<String, Integer> timesDomainNotGivingInternalLinks = new Hashtable<String, Integer>();
+	public static final Hashtable<String, Integer> timesDomainNotGivingDocUrls = new Hashtable<String, Integer>();
 
 	public static final int timesToGiveNoInternalLinksBeforeBlocked = 200;
 	public static final int timesToGiveNoDocUrlsBeforeBlocked = 100;
 
-	public static int contentProblematicUrls = 0;
+	public static AtomicInteger contentProblematicUrls = new AtomicInteger(0);
 
 	private static final int MAX_REMAINING_INTERNAL_LINKS_TO_CHECK = 10;	// The < 10 > is the optimal value, figured out after tests.
+
+	private static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:manu[ae]l|guide).*");
 
 
 	public static void visit(String urlId, String sourceUrl, String pageUrl, String pageContentType, HttpURLConnection conn, String firstHTMLlineFromDetectedContentType, BufferedReader bufferedReader)
@@ -54,7 +59,7 @@ public class PageCrawler
 		if ( pageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"PageCrawler.visit()\": \"" + pageUrl + "\"");
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, after the occurrence of a domain-retrieval error.", null, true);
-			LoaderAndChecker.connProblematicUrls ++;
+			LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			ConnSupportUtils.closeBufferedReader(bufferedReader);	// This page's content-type was auto-detected, and the process fails before re-requesting the conn-inputStream, then make sure we close the last one.
 			return;
 		}
@@ -63,7 +68,7 @@ public class PageCrawler
 		if ( (pageHtml = ConnSupportUtils.getHtmlString(conn, bufferedReader)) == null ) {
 			logger.warn("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", null, true);
-			LoaderAndChecker.connProblematicUrls ++;
+			LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			return;
 		}
 		else if ( firstHTMLlineFromDetectedContentType != null ) {
@@ -79,7 +84,7 @@ public class PageCrawler
 
 			// Check if we want to use AND if so, if we should run, the MLA.
 			if ( MachineLearning.useMLA ) {
-				MachineLearning.totalPagesReachedMLAStage ++;	// Used for M.L.A.'s execution-manipulation.
+				MachineLearning.totalPagesReachedMLAStage.incrementAndGet();	// Used for M.L.A.'s execution-manipulation.
 				if ( MachineLearning.shouldRunPrediction() )
 					if ( MachineLearning.predictInternalDocUrl(urlId, sourceUrl, pageUrl, pageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
 						return;	// If we were able to find the right path.. and hit a docUrl successfully.. return. The Quadruple is already logged.
@@ -108,11 +113,11 @@ public class PageCrawler
 				continue;
 			}
 
-            if ( UrlUtils.docUrlsOrDatasetsWithIDs.containsKey(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
+            if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
 				logger.info("re-crossed docUrl found: < " + urlToCheck + " >");
-				LoaderAndChecker.reCrossedDocUrls ++;
+				LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
 				if ( FileUtils.shouldDownloadDocFiles )
-					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsOrDatasetsWithIDs.get(urlToCheck), pageDomain, false);
+					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(urlToCheck), pageDomain, false);
 				else
 					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, urlToCheck, "", pageDomain, false);
                 return;
@@ -238,7 +243,7 @@ public class PageCrawler
 	{
 		// If we get here it means that this pageUrl is not a docUrl itself, nor it contains a docUrl..
 		logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
-		UrlTypeChecker.pagesNotProvidingDocUrls ++;
+		UrlTypeChecker.pagesNotProvidingDocUrls.incrementAndGet();
 		if ( !isAlreadyLoggedToOutput )	// This check is used in error-cases, where we have already logged the Quadruple.
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as no docUrl was found inside.", null, true);
 		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingDocUrls, pageDomain, PageCrawler.timesToGiveNoDocUrlsBeforeBlocked, true) )
@@ -255,7 +260,7 @@ public class PageCrawler
 			HttpConnUtils.blacklistedDomains.add(pageDomain);
 			logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after found to have dynamic links. Its domain \"" + pageDomain + "\"  was blocked.");	// Refer "PageCrawler.visit()" here for consistency with other similar messages.
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.retrieveInternalLinks()', as it belongs to a domain with dynamic-links.", null, true);
-			PageCrawler.contentProblematicUrls ++;
+			PageCrawler.contentProblematicUrls.incrementAndGet();
 			return null;
 		} catch ( DocLinkFoundException dlfe) {
 			if ( !verifyDocLink(urlId, sourceUrl, pageUrl, pageDomain, pageContentType, dlfe) )	// url-logging is handled inside.
@@ -270,7 +275,7 @@ public class PageCrawler
 		} catch (Exception e) {
 			logger.warn("Could not retrieve the internalLinks for pageUrl: " + pageUrl);
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its internalLinks. Its contentType is: '" + pageContentType + "'", null, true);
-			PageCrawler.contentProblematicUrls ++;
+			PageCrawler.contentProblematicUrls.incrementAndGet();
 			return null;
 		}
 
@@ -282,7 +287,7 @@ public class PageCrawler
 
 		if ( isNull || isEmpty ) {	// If no links were retrieved (e.g. the pageUrl was some kind of non-page binary content)
 			logger.warn("No " + (isEmpty ? "valid " : "") + "links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
-			PageCrawler.contentProblematicUrls ++;
+			PageCrawler.contentProblematicUrls.incrementAndGet();
 			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, as no " + (isEmpty ? "valid " : "") + "links were able to be retrieved from it. Its contentType is: '" + pageContentType + "'", null, true);
 			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingInternalLinks, pageDomain, PageCrawler.timesToGiveNoInternalLinksBeforeBlocked, true) )
 				logger.warn("Domain: \"" + pageDomain + "\" was blocked after not providing internalLinks more than " + PageCrawler.timesToGiveNoInternalLinksBeforeBlocked + " times.");
@@ -323,13 +328,20 @@ public class PageCrawler
 			if ( LoaderAndChecker.retrieveDocuments)	// Currently, these smart-checks are only available for specific docFiles (not for datasets).
 			{
 				linkAttr = el.text();
-				if ( !linkAttr.isEmpty() && linkAttr.toLowerCase().contains("pdf") ) {
-					internalLink = el.attr("href");
-					if ( !internalLink.isEmpty() && !internalLink.startsWith("#", 0) ) {
-						logger.debug("Found the docLink < " + internalLink + " > from link-text: \"" + linkAttr + "\"");
-						throw new DocLinkFoundException(internalLink);
+				if ( !linkAttr.isEmpty() ) {
+					String lowerCaseLinkAttr = linkAttr.toLowerCase();
+					if ( NON_VALID_DOCUMENT.matcher(lowerCaseLinkAttr).matches() ) {	// If it's not a valid full-text..
+						//logger.debug("Avoiding invalid full-text with context: \"" + linkAttr + "\", internalLink: " + el.attr("href"));	// DEBUG!
+						continue;	// Avoid collecting it..
 					}
-					throw new DocLinkInvalidException(internalLink);
+					else if ( lowerCaseLinkAttr.contains("pdf") ) {
+						internalLink = el.attr("href");
+						if ( !internalLink.isEmpty() && !internalLink.startsWith("#", 0) ) {
+							logger.debug("Found the docLink < " + internalLink + " > from link-text: \"" + linkAttr + "\"");
+							throw new DocLinkFoundException(internalLink);
+						}
+						throw new DocLinkInvalidException(internalLink);
+					}
 				}
 
 				linkAttr = el.attr("title");
@@ -433,11 +445,11 @@ public class PageCrawler
 			return false;
 		}
 
-		if ( UrlUtils.docUrlsOrDatasetsWithIDs.containsKey(docLink) ) {    // If we got into an already-found docUrl, log it and return.
+		if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(docLink) ) {    // If we got into an already-found docUrl, log it and return.
 			logger.info("re-crossed docUrl found: < " + docLink + " >");
-			LoaderAndChecker.reCrossedDocUrls ++;
+			LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
 			if ( FileUtils.shouldDownloadDocFiles )
-				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, docLink, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsOrDatasetsWithIDs.get(docLink), pageDomain, false);
+				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, docLink, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(docLink), pageDomain, false);
 			else
 				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, docLink, "", pageDomain, false);
 			return true;

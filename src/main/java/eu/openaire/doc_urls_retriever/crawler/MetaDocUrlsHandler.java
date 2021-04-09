@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,7 +27,7 @@ public class MetaDocUrlsHandler {
 
     public static final Pattern COMMON_UNSUPPORTED_META_DOC_URL_EXTENSIONS = Pattern.compile("\".+\\.(?:zip|rar|apk|jpg)(?:\\?.+)?$");
 
-    public static int numOfMetaDocUrlsFound = 0;
+    public static AtomicInteger numOfMetaDocUrlsFound = new AtomicInteger(0);
 
     /**
      * This method takes in the "pageHtml" of an already-connected url and checks if there is a metaDocUrl inside.
@@ -66,7 +67,7 @@ public class MetaDocUrlsHandler {
             HttpConnUtils.blacklistedDomains.add(pageDomain);
             logger.debug("Domain: \"" + pageDomain + "\" was blocked, after giving a dynamic metaDocUrl: " + metaDocUrl);
             UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was a dynamic-link.", null, true);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
-            PageCrawler.contentProblematicUrls ++;
+            PageCrawler.contentProblematicUrls.incrementAndGet();
             return true;
         }
 
@@ -78,7 +79,8 @@ public class MetaDocUrlsHandler {
         {
             logger.debug("The retrieved metaDocUrl ( " + metaDocUrl + " ) is pointing to an unsupported file.");
             UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was unsupported.", null, true);  // We log the source-url, and that was discarded in "PageCrawler.visit()".
-            PageCrawler.contentProblematicUrls ++;
+            PageCrawler.contentProblematicUrls.incrementAndGet();
+            //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return true;    // It was found and handled. Do not continue crawling as we wont find any docUrl..
         }
 
@@ -86,28 +88,30 @@ public class MetaDocUrlsHandler {
         if ( (metaDocUrl = URLCanonicalizer.getCanonicalURL(metaDocUrl, null, StandardCharsets.UTF_8)) == null ) {
             logger.warn("Could not canonicalize metaDocUrl: " + tempMetaDocUrl);
             UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'checkIfAndHandleMetaDocUrl()', due to canonicalization's problems.", null, true);
-            PageCrawler.contentProblematicUrls ++;
+            PageCrawler.contentProblematicUrls.incrementAndGet();
+            //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return true;
         }
 
-        if ( UrlUtils.docUrlsOrDatasetsWithIDs.containsKey(metaDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
+        if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(metaDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
             logger.info("re-crossed docUrl found: < " + metaDocUrl + " >");
-            LoaderAndChecker.reCrossedDocUrls ++;
+            LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
             if ( FileUtils.shouldDownloadDocFiles )
-                UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, metaDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docUrlsOrDatasetsWithIDs.get(metaDocUrl), pageDomain, false);
+                UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, metaDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(metaDocUrl), pageDomain, false);
             else
                 UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, metaDocUrl, "", pageDomain, false);
-            numOfMetaDocUrlsFound ++;
+            numOfMetaDocUrlsFound.incrementAndGet();
             return true;
         }
 
         // Connect to it directly.
         try {
             if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, pageDomain, false, true) ) {    // On success, we log the docUrl inside this method.
-                numOfMetaDocUrlsFound ++;
+                numOfMetaDocUrlsFound.incrementAndGet();
                 return true;    // It should be the docUrl and it was handled.. so we don't continue checking the internalLink even if this wasn't an actual docUrl.
             }
             logger.warn("The retrieved metaDocUrl was not a docUrl (unexpected): " + metaDocUrl);
+            //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return false;   // Continue crawling the page..
         } catch (Exception e) {
             logger.debug("The MetaDocUrl < " + metaDocUrl + " > had connectivity problems!");

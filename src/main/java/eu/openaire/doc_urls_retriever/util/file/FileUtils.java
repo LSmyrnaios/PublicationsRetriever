@@ -33,12 +33,12 @@ public class FileUtils
 	private static Scanner inputScanner = null;
 	private static PrintStream printStream = null;
 	
-	public static long numOfLines;
+	public static long numOfLines;	// Only the main thread accesses it.
 	
 	public static final int jsonBatchSize = 300;
-	
+
 	private static final StringBuilder strB = new StringBuilder(jsonBatchSize * 500);  // 500: the usual-maximum-expected-length for an <id-sourceUrl-docUrl-comment> quadruple.
-	
+
 	private static int fileIndex = 0;	// Index in the input file
 	public static boolean skipFirstRow = false;	// Use this to skip the HeaderLine in a csv-kindOf-File.
 	public static final String endOfLine = System.lineSeparator();
@@ -46,9 +46,9 @@ public class FileUtils
     public static int unretrievableUrlsOnly = 0;
     public static final int maxStoringWaitingTime = 45000;	// 45sec (some files can take several minutes or even half an hour)
 	
-	public static final List<QuadrupleToBeLogged> quadrupleToBeLoggedList = new ArrayList<>(jsonBatchSize);
+	public static final List<QuadrupleToBeLogged> quadrupleToBeLoggedList = Collections.synchronizedList(new ArrayList<>(jsonBatchSize));
 	
-	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<String, Integer>();	// Holds docFileNa,es with their duplicatesNum.
+	public static final Hashtable<String, Integer> numbersOfDuplicateDocFileNames = new Hashtable<>();	// Holds docFileNa,es with their duplicatesNum.
 	
 	public static boolean shouldDownloadDocFiles = false;	// It will be set to "true" if the related command-line-argument is given.
 	public static final boolean shouldDeleteOlderDocFiles = false;	// Should we delete any older stored docFiles? This is useful for testing.
@@ -294,7 +294,7 @@ public class FileUtils
 	 * @param contentDisposition
 	 * @throws DocFileNotRetrievedException
 	 */
-	public static String storeDocFile(InputStream inStream, String docUrl, String contentDisposition) throws DocFileNotRetrievedException
+	public static synchronized String storeDocFile(InputStream inStream, String docUrl, String contentDisposition) throws DocFileNotRetrievedException
 	{
 		File docFile;
 		FileOutputStream outStream = null;
@@ -359,8 +359,16 @@ public class FileUtils
 			}
 		}
 	}
-	
-	
+
+
+	/**
+	 * This method Returns the Document-"File" object which has the original file name as the final fileName.
+	 * It is effectively synchronized, since it's always called from a synchronized method.
+	 * @param docUrl
+	 * @param contentDisposition
+	 * @return
+	 * @throws DocFileNotRetrievedException
+	 */
 	public static File getDocFileWithOriginalFileName(String docUrl, String contentDisposition) throws  DocFileNotRetrievedException
 	{
 		String docFileName = null;
@@ -409,8 +417,8 @@ public class FileUtils
 			}
 		} else
 			hasUnretrievableDocName = true;
-		
-		
+
+		// If this ever is called from a code block without synchronization, then it should be a synchronized block.
 		if ( hasUnretrievableDocName ) {
 			if ( unretrievableDocNamesNum == 0 )
 				docFileName = "unretrievableDocName" + dotFileExtension;
@@ -484,6 +492,7 @@ public class FileUtils
 			} catch (Exception e) {
 				logger.error("", e);
 				closeLogger();
+				DocUrlsRetriever.executor.shutdownNow();
 				System.exit(-11);
 			}
 		}

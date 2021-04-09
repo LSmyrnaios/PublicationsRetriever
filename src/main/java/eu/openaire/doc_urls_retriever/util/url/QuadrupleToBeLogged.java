@@ -53,7 +53,7 @@ public class QuadrupleToBeLogged
     
     
     /**
-     * This method returns this object in a jsonString.
+     * This method returns this object in a jsonString. It does not need to be synchronized.
      * @return jsonString
      */
     public String toJsonString()

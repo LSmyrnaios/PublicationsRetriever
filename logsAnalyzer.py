@@ -1,14 +1,22 @@
 """
 This program analyzes the logfiles and extracts useful info :-)
+It does not work since the main program moved to multi-thread mode.
+
+TODO - Update this program to handle the multithread-logs..
+    Some thoughts:
+    Loop through the logs and detect the thread that each log is referring to and write it to a different file.
+    Keep the names of those files in a list and go through the files and analyze each one of them (each thread-file separately).
+    It's more appropriate to create multiple files, each one for each threadm than keepping the logs for each thread in-memory in a multimap.
+    There is more storage than memory...
 @author Lampros Smyrnaios
 """
 
-import sys
-import os
-import zipfile
-import re
-from datetime import datetime
 import datetime
+import os
+import re
+import sys
+import zipfile
+from datetime import datetime
 
 log_files_directory = None
 file_no = 0
