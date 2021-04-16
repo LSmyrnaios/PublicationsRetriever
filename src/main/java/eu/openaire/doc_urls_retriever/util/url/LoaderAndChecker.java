@@ -378,8 +378,8 @@ public class LoaderAndChecker
 	{
 		String urlDomain = UrlUtils.getDomainStr(retrievedUrl, null);
 		if ( urlDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
-			logger.warn("Problematic URL in \"UrlUtils.handleUrlChecks()\": \"" + retrievedUrl + "\"");
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' method, after the occurrence of a domain-retrieval error.", null, true, "true", "true", "false");
+			logger.warn("Problematic URL in \"LoaderAndChecker.handleUrlChecks()\": \"" + retrievedUrl + "\"");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", "Discarded in 'UrlUtils.handleUrlChecks()' method, after the occurrence of a domain-retrieval error.", null, true, "true", "false", "false");
 			if ( !useIdUrlPairs )
 				connProblematicUrls.incrementAndGet();
 			return null;

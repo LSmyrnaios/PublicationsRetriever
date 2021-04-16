@@ -57,7 +57,7 @@ public class PageCrawler
 		String pageDomain = UrlUtils.getDomainStr(pageUrl, null);
 		if ( pageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"PageCrawler.visit()\": \"" + pageUrl + "\"");
-			UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, after the occurrence of a domain-retrieval error.", null, true, "true", "true", "false");
+			UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in PageCrawler.visit() method, after the occurrence of a domain-retrieval error.", null, true, "true", "false", "false");
 			LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			ConnSupportUtils.closeBufferedReader(bufferedReader);	// This page's content-type was auto-detected, and the process fails before re-requesting the conn-inputStream, then make sure we close the last one.
 			return;

@@ -43,7 +43,6 @@ public class FileUtils
 	public static boolean skipFirstRow = false;	// Use this to skip the HeaderLine in a csv-kindOf-File.
 	public static final String endOfLine = System.lineSeparator();
 	public static int unretrievableInputLines = 0;	// For better statistics in the end.
-    public static int unretrievableUrlsOnly = 0;
     public static final int maxStoringWaitingTime = 45000;	// 45sec (some files can take several minutes or even half an hour)
 	
 	public static final List<DataToBeLogged> dataToBeLoggedList = Collections.synchronizedList(new ArrayList<>(jsonBatchSize));
@@ -184,9 +183,9 @@ public class FileUtils
 	public static int getCurrentlyLoadedUrls()	// In the end, it gives the total number of urls we have processed.
 	{
 		if ( FileUtils.skipFirstRow )
-			return FileUtils.fileIndex - FileUtils.unretrievableInputLines - FileUtils.unretrievableUrlsOnly -1; // -1 to exclude the first line
+			return FileUtils.fileIndex - FileUtils.unretrievableInputLines -1; // -1 to exclude the first line
 		else
-			return FileUtils.fileIndex - FileUtils.unretrievableInputLines - FileUtils.unretrievableUrlsOnly;
+			return FileUtils.fileIndex - FileUtils.unretrievableInputLines;
 	}
 
 
@@ -254,12 +253,11 @@ public class FileUtils
 			logger.warn("JSONException caught when tried to parse and extract values from jsonLine: \t" + jsonLine, je);
 			return null;
 		}
-		
-        if ( urlStr.isEmpty() ) {
-			if ( idStr.isEmpty() )	// Allow one of them to be empty but not both. If ID is empty, then we still don't lose the URL.
-				return null;
-			else	// If url is empty but not the id, then we will still see the ID in the output and possible find its missing URL later.
-				FileUtils.unretrievableUrlsOnly ++;	// Keep track of lines with an id, but, with no url.
+
+		if ( urlStr.isEmpty() ) {
+			if ( !idStr.isEmpty() )	// If we only have the id, then go and log it.
+				UrlUtils.logOutputData(idStr, urlStr, null, "unreachable", "Discarded in FileUtils.jsonDecoder(), as the url was not found.", null, false, "true", "false", "false");
+			return null;
 		}
 
 		return new IdUrlTuple(idStr, urlStr);
