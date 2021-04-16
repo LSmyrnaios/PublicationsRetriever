@@ -12,12 +12,12 @@ public class DataToBeLogged
     private String urlId;
     private String sourceUrl;
     private String docUrl;
-	String wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible;
+	String wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, didDocOrDatasetUrlCameFromSourceUrlDirectly;
     private String comment;   // This will be an emptyString, unless there is an error causing the docUrl to be unreachable.
 	
-	private static final StringBuilder strB = new StringBuilder(550);
+	private static final StringBuilder strB = new StringBuilder(1000);
 	
-	public DataToBeLogged(String urlId, String sourceUrl, String docUrl, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String comment)
+	public DataToBeLogged(String urlId, String sourceUrl, String docUrl, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String didDocOrDatasetUrlCameFromSourceUrlDirectly, String comment)
     {
         if ( urlId == null )
             urlId = "unretrievable";
@@ -28,6 +28,7 @@ public class DataToBeLogged
 		this.wasUrlChecked = wasUrlChecked;
 		this.wasUrlValid = wasUrlValid;
 		this.wasDocumentOrDatasetAccessible = wasDocumentOrDatasetAccessible;
+		this.didDocOrDatasetUrlCameFromSourceUrlDirectly = didDocOrDatasetUrlCameFromSourceUrlDirectly;
 		this.comment = comment;
 	}
 	
@@ -73,6 +74,7 @@ public class DataToBeLogged
 		strB.append("\",\"wasUrlChecked\":\"").append(this.wasUrlChecked);
 		strB.append("\",\"wasUrlValid\":\"").append(this.wasUrlValid);
 		strB.append("\",\"wasDocumentOrDatasetAccessible\":\"").append(this.wasDocumentOrDatasetAccessible);
+		strB.append("\",\"didDocOrDatasetUrlCameFromSourceUrlDirectly\":\"").append(this.didDocOrDatasetUrlCameFromSourceUrlDirectly);
 		strB.append("\",\"comment\":\"").append(this.comment).append("\"}");
 		
         String jsonString = strB.toString();

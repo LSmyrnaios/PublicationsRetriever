@@ -113,7 +113,7 @@ public class LoaderAndChecker
 					String urlToCheck = retrievedUrlToCheck;
 					if ( !urlToCheck.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrlToCheck, null, StandardCharsets.UTF_8)) == null ) {
 						logger.warn("Could not canonicalize url: " + retrievedUrlToCheck);
-						UrlUtils.logOutputData("null", retrievedUrlToCheck, null, "unreachable", "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false");
+						UrlUtils.logOutputData("null", retrievedUrlToCheck, null, "unreachable", "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "N/A");
 						LoaderAndChecker.connProblematicUrls.incrementAndGet();
 						return false;
 					}
@@ -127,7 +127,7 @@ public class LoaderAndChecker
 							if ( (message != null) && message.contains("HTTP 404 Client Error") )
 								wasUrlValid = "false";
 						}
-						UrlUtils.logOutputData("null", retrievedUrlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false");
+						UrlUtils.logOutputData("null", retrievedUrlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "N/A");
 					}
 
 					return true;
@@ -201,7 +201,7 @@ public class LoaderAndChecker
 						}	// The "retrievedUrl" might have changed (inside "handleUrlChecks()").
 
 						if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
-							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, logger);
+							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, logger, true);
 							if ( !isSingleIdUrlPair )
 								loggedUrlsOfCurrentId.add(retrievedUrl);
 							goToNextId = true;    // Skip the best-url evaluation & connection after this loop.
@@ -253,7 +253,7 @@ public class LoaderAndChecker
 					String sourceUrl = urlToCheck;	// Hold it here for the logging-messages.
 					if ( !sourceUrl.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
 						logger.warn("Could not canonicalize url: " + sourceUrl);
-						UrlUtils.logOutputData(retrievedId, sourceUrl, null, "unreachable", "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false");
+						UrlUtils.logOutputData(retrievedId, sourceUrl, null, "unreachable", "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "N/A");
 						LoaderAndChecker.connProblematicUrls.incrementAndGet();
 
 						// If other urls exits, then go and check those.
@@ -276,7 +276,7 @@ public class LoaderAndChecker
 							if ( (message != null) && message.contains("HTTP 404 Client Error") )
 								wasUrlValid = "false";
 						}
-						UrlUtils.logOutputData(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false");
+						UrlUtils.logOutputData(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "N/A");
 						// This url had connectivity problems.. but the rest might not, go check them out.
 						if ( !isSingleIdUrlPair ) {
 							loggedUrlsOfCurrentId.add(urlToCheck);
@@ -356,7 +356,7 @@ public class LoaderAndChecker
 					if ( (message != null) && message.contains("HTTP 404 Client Error") )
 						wasUrlValid = "false";
 				}
-				UrlUtils.logOutputData(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, in checkRemainingUrls(), due to connectivity problems.", null, true, "true", wasUrlValid, "false");
+				UrlUtils.logOutputData(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, in checkRemainingUrls(), due to connectivity problems.", null, true, "true", wasUrlValid, "false", "N/A");
 				if ( !isSingleIdUrlPair )
 					loggedUrlsOfThisId.add(urlToCheck);
 			}
@@ -377,7 +377,7 @@ public class LoaderAndChecker
 		String urlDomain = UrlUtils.getDomainStr(retrievedUrl, null);
 		if ( urlDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"LoaderAndChecker.handleUrlChecks()\": \"" + retrievedUrl + "\"");
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", "Discarded in 'LoaderAndChecker.handleUrlChecks()' method, after the occurrence of a domain-retrieval error.", null, true, "true", "false", "false");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", "Discarded in 'LoaderAndChecker.handleUrlChecks()' method, after the occurrence of a domain-retrieval error.", null, true, "true", "false", "false", "N/A");
 			if ( !useIdUrlPairs )
 				connProblematicUrls.incrementAndGet();
 			return null;
@@ -385,7 +385,7 @@ public class LoaderAndChecker
 		
 		if ( HttpConnUtils.blacklistedDomains.contains(urlDomain) ) {	// Check if it has been blackListed after running internal links' checks.
 			logger.debug("Avoid connecting to blackListed domain: \"" + urlDomain + "\" with url: " + retrievedUrl);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", "Discarded in 'LoaderAndChecker.handleUrlChecks()' method, as its domain was found blackListed.", null, true, "true", "true", "false");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", "Discarded in 'LoaderAndChecker.handleUrlChecks()' method, as its domain was found blackListed.", null, true, "true", "true", "false", "N/A");
 			if ( !useIdUrlPairs )
 				connProblematicUrls.incrementAndGet();
 			return null;
@@ -393,7 +393,7 @@ public class LoaderAndChecker
 		
 		if ( ConnSupportUtils.checkIfPathIs403BlackListed(retrievedUrl, urlDomain) ) {	// The path-extraction is independent of the jsessionid-removal, so this gets executed before.
 			logger.debug("Preventing reaching 403ErrorCode with url: \"" + retrievedUrl + "\"!");
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", "Discarded in 'LoaderAndChecker.handleUrlChecks()' as it had a blackListed urlPath.", null, true, "true", "true", "false");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", "Discarded in 'LoaderAndChecker.handleUrlChecks()' as it had a blackListed urlPath.", null, true, "true", "true", "false", "N/A");
 			if ( !useIdUrlPairs )
 				connProblematicUrls.incrementAndGet();
 			return null;
@@ -411,7 +411,7 @@ public class LoaderAndChecker
 		// Check if it's a duplicate.
 		if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
 			logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already be seen!");
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "duplicate", "Discarded in 'LoaderAndChecker.handleUrlChecks()', as it's a duplicate.", null, false, "true", "true", "false");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "duplicate", "Discarded in 'LoaderAndChecker.handleUrlChecks()', as it's a duplicate.", null, false, "true", "true", "false", "N/A");
 			if ( !useIdUrlPairs )
 				inputDuplicatesNum.incrementAndGet();
 			return null;
@@ -477,7 +477,7 @@ public class LoaderAndChecker
 
 			if ( !loggedUrlsOfThisId.contains(retrievedUrl) )
 				UrlUtils.logOutputData(retrievedId, retrievedUrl, null, "unreachable",
-					"Skipped in LoaderAndChecker, as a better url was selected for id: " + retrievedId, null, true, "false", "N/A", "N/A");
+					"Skipped in LoaderAndChecker, as a better url was selected for id: " + retrievedId, null, true, "false", "N/A", "N/A", "N/A");
 		}
 	}
 	

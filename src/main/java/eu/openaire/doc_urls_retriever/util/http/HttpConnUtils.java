@@ -63,6 +63,8 @@ public class HttpConnUtils
 
 	public static AtomicInteger timesDidOfflineHTTPSredirect = new AtomicInteger(0);
 
+	public static ThreadLocal<Boolean> isSpecialUrl = new ThreadLocal<Boolean>();	// Every Thread has its own variable.
+
 
 	/**
 	 * This method checks if a certain url can give us its mimeType, as well as if this mimeType is a docMimeType.
@@ -152,27 +154,29 @@ public class HttpConnUtils
 							logger.error(sb.toString());	// TODO - Instead of the stacktrace, provide the right message when first thrown, just like in "RuntimeException".
 						}
 					}
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true");	// we send the urls, before and after potential redirections.
+					String didDocOrDatasetUrlCameFromSourceUrlDirectly = ConnSupportUtils.getDidDocOrDatasetUrlCameFromSourceUrlDirectly(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", didDocOrDatasetUrlCameFromSourceUrlDirectly);	// we send the urls, before and after potential redirections.
 					return true;
 				}
 				else if ( LoaderAndChecker.retrieveDatasets && returnedType.equals("dataset") ) {
 					logger.info("datasetUrl found: < " + finalUrlStr + " >");
 					// TODO - handle possible download and improve logging...
 					String fullPathFileName = FileUtils.shouldDownloadDocFiles ? "It's a dataset-url. The download is not supported." : "It's a dataset-url.";
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true");	// we send the urls, before and after potential redirections.
+					String didDocOrDatasetUrlCameFromSourceUrlDirectly = ConnSupportUtils.getDidDocOrDatasetUrlCameFromSourceUrlDirectly(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", didDocOrDatasetUrlCameFromSourceUrlDirectly);	// we send the urls, before and after potential redirections.
 					return true;
 				}
 				else {	// Either "document" or "dataset", but the user specified that he doesn't want it.
 					//logger.debug("Type \"" + returnedType + "\", which was specified that it's unwanted in this run, was found for url: < " + finalUrlStr + " >");	// DEBUG!
 					if ( calledForPageUrl )
-						UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to an unwanted mimeType: " + returnedType, null, true, "true", "true", "false");
+						UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to an unwanted mimeType: " + returnedType, null, true, "true", "true", "false", "N/A");
 					return false;
 				}
 			}
 			else if ( calledForPageUrl ) {	// Visit this url only if this method was called for an inputUrl.
 				if ( finalUrlStr.contains("viewcontent.cgi") ) {	// If this "viewcontent.cgi" isn't a docUrl, then don't check its internalLinks. Check this: "https://docs.lib.purdue.edu/cgi/viewcontent.cgi?referer=&httpsredir=1&params=/context/physics_articles/article/1964/type/native/&path_info="
 					logger.warn("Unwanted pageUrl: \"" + finalUrlStr + "\" will not be visited!");
-					UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to a non-docUrl with 'viewcontent.cgi'.", null, true, "true", "true", "false");
+					UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to a non-docUrl with 'viewcontent.cgi'.", null, true, "true", "true", "false", "N/A");
 					return false;
 				}
 				else if ( (lowerCaseMimeType != null) && ((lowerCaseMimeType.contains("htm") || (lowerCaseMimeType.contains("text") && !lowerCaseMimeType.contains("xml") && !lowerCaseMimeType.contains("csv") && !lowerCaseMimeType.contains("tsv")))) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
@@ -182,7 +186,7 @@ public class HttpConnUtils
 					SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson(urlId, sourceUrl, finalUrlStr, conn);
 				else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" with mimeType: \"" + mimeType + "\" will not be visited!");
-					UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after not matching to a docUrl nor to an htm/text-like page.", null, true, "true", "true", "false");
+					UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after not matching to a docUrl nor to an htm/text-like page.", null, true, "true", "true", "false", "N/A");
 					if ( ConnSupportUtils.countAndBlockDomainAfterTimes(blacklistedDomains, timesDomainsHadInputNotBeingDocNorPage, domainStr, HttpConnUtils.timesToHaveNoDocNorPageInputBeforeBlocked, true) )
 						logger.warn("Domain: \"" + domainStr + "\" was blocked after having no Doc nor Pages in the input more than " + HttpConnUtils.timesToHaveNoDocNorPageInputBeforeBlocked + " times.");
 				}	// We log the quadruple here, as there is connection-kind-of problem here.. it's just us considering it an unwanted case. We don't throw "DomainBlockedException()", as we don't handle it for inputUrls (it would also log the quadruple twice with diff comments).
@@ -292,10 +296,14 @@ public class HttpConnUtils
 			}
 
 			boolean havingScienceDirectPDF = false;
+			isSpecialUrl.set(false);	// It will be falsem until proven to not pass through the "SpecialUrls"
 			if ( "pdf.sciencedirectassets.com".equals(domainStr) )	// Avoiding NPE.
 				havingScienceDirectPDF = true;
-			else if ( calledForPageUrl && !calledForPossibleDocUrl )
-				resourceURL = SpecialUrlsHandler.checkAndHandleSpecialUrls(resourceURL);	// May throw a "RuntimeException".
+			else if ( calledForPageUrl && !calledForPossibleDocUrl ) {
+				String tempURL = SpecialUrlsHandler.checkAndHandleSpecialUrls(resourceURL);	// May throw a "RuntimeException".
+				isSpecialUrl.set(tempURL.equals(resourceURL));
+				resourceURL = tempURL;
+			}
 
 			URL url = new URL(resourceURL);
 			conn = (HttpURLConnection) url.openConnection();
@@ -535,7 +543,7 @@ public class HttpConnUtils
 				//ConnSupportUtils.printRedirectDebugInfo(currentUrl, location, targetUrl, responseCode, curRedirectsNum);
 
 				if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
-					ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, targetUrl, logger);
+					ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, targetUrl, logger, calledForPageUrl);
 					throw new AlreadyFoundDocUrlException();
 				}
 
