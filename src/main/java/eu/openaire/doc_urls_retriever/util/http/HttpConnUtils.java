@@ -331,14 +331,9 @@ public class HttpConnUtils
 
 			if ( responseCode == 406 )	// It's possible that the server does not support the "Accept-Language" parameter.
 			{
-				resourceURL = conn.getURL().toString();
+				logger.warn("The server \"" + domainStr + "\" probably does not support the \"Accept-Language\" parameter. Going to reconnect without it");
+				domainsWithUnsupportedAcceptLanguageParameter.add(domainStr);	// Take note that this domain does not support it..
 
-				if ( (domainStr = UrlUtils.getDomainStr(resourceURL, null)) != null ) {
-					logger.warn("The server \"" + domainStr + "\" probably does not support the \"Accept-Language\" parameter. Going to reconnect without it");
-					domainsWithUnsupportedAcceptLanguageParameter.add(domainStr);	// Take note that this domain does not support it..
-				}
-
-				url = new URL(resourceURL);
 				conn = (HttpURLConnection) url.openConnection();
 				conn.setRequestProperty("User-Agent", userAgent);
 				conn.setInstanceFollowRedirects(false);
@@ -362,20 +357,14 @@ public class HttpConnUtils
 			}
 			else if ( ((responseCode == 405) || (responseCode == 501)) && conn.getRequestMethod().equals("HEAD") )	// If this SERVER doesn't support "HEAD" method or doesn't allow us to use it..
 			{
-				resourceURL = conn.getURL().toString();	// Update as it might have changed after redirections.
-
 				//logger.debug("HTTP \"HEAD\" method is not supported for: \"" + resourceURL +"\". Server's responseCode was: " + responseCode);
-
-				// Take the new domain as we are not sure if the initial domain caused this issue or an another domains to which the initialUrl was redirected to..
-				if ( (domainStr = UrlUtils.getDomainStr(resourceURL, null)) != null )
-					domainsWithUnsupportedHeadMethod.add(domainStr);	// This domain doesn't support "HEAD" method, log it and then check if we can retry with "GET" or not.
+				domainsWithUnsupportedHeadMethod.add(domainStr);	// This domain doesn't support "HEAD" method, log it and then check if we can retry with "GET" or not.
 
 				if ( !calledForPageUrl && shouldNOTacceptGETmethodForUncategorizedInternalLinks && !calledForPossibleDocUrl )	// If we set not to retry with "GET" when we try uncategorizedInternalLinks, throw the related exception and stop the crawling of this page.
 					throw new DomainWithUnsupportedHEADmethodException();
 
 				// If we accept connection's retrying, using "GET", move on reconnecting.
 				// No call of "conn.disconnect()" here, as we will connect to the same server.
-				url = new URL(resourceURL);
 				conn = (HttpURLConnection) url.openConnection();
 				conn.setRequestMethod("GET");	// To reach here, it means that the HEAD method is unsupported.
 				conn.setRequestProperty("User-Agent", userAgent);
@@ -397,13 +386,9 @@ public class HttpConnUtils
 				if ( responseCode == 406 )	// It's possible that the server does not support the "Accept-Language" parameter.
 				{
 					//logger.debug("The \"Accept-Language\" parameter is probably not supported for: \"" + resourceURL +"\". Server's responseCode was: " + responseCode);
+					logger.warn("The server \"" + domainStr + "\" probably does not support the \"Accept-Language\" parameter. Going to reconnect without it");
+					domainsWithUnsupportedAcceptLanguageParameter.add(domainStr);	// Take note that this domain does not support it..
 
-					if ( (domainStr = UrlUtils.getDomainStr(conn.getURL().toString(), null)) != null ) {
-						logger.warn("The server \"" + domainStr + "\" probably does not support the \"Accept-Language\" parameter. Going to reconnect without it");
-						domainsWithUnsupportedAcceptLanguageParameter.add(domainStr);	// Take note that this domain does not support it..
-					}
-
-					url = new URL(resourceURL);
 					conn = (HttpURLConnection) url.openConnection();
 					conn.setRequestMethod("GET");	// To reach here, it means that the HEAD method is unsupported.
 					conn.setRequestProperty("User-Agent", userAgent);
