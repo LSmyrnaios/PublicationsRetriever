@@ -289,8 +289,7 @@ public class ConnSupportUtils
 			} catch (InterruptedException ie) {
 				try {
 					Thread.sleep(randomPolitenessDelay);
-				} catch (InterruptedException ignored) {
-				}
+				} catch (InterruptedException ignored) { }
 			}	// At this point, if both sleeps failed, some time has already passed, so it's ok to connect to the same domain.
 		}
 		HttpConnUtils.lastConnectedHost = domainStr;

@@ -6,7 +6,7 @@ import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
 import eu.openaire.doc_urls_retriever.crawler.MachineLearning;
 import eu.openaire.doc_urls_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
-import eu.openaire.doc_urls_retriever.util.url.QuadrupleToBeLogged;
+import eu.openaire.doc_urls_retriever.util.url.DataToBeLogged;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
@@ -46,7 +46,7 @@ public class FileUtils
     public static int unretrievableUrlsOnly = 0;
     public static final int maxStoringWaitingTime = 45000;	// 45sec (some files can take several minutes or even half an hour)
 	
-	public static final List<QuadrupleToBeLogged> quadrupleToBeLoggedList = Collections.synchronizedList(new ArrayList<>(jsonBatchSize));
+	public static final List<DataToBeLogged> dataToBeLoggedList = Collections.synchronizedList(new ArrayList<>(jsonBatchSize));
 	
 	public static final Hashtable<String, Integer> numbersOfDuplicateDocFileNames = new Hashtable<>();	// Holds docFileNa,es with their duplicatesNum.
 	
@@ -228,7 +228,7 @@ public class FileUtils
 
 			if ( !idAndUrlMappedInput.put(inputIdUrlTuple.id, inputIdUrlTuple.url) ) {    // We have a duplicate url in the input.. log it here as we cannot pass it through the HashMultimap. It's possible that this as well as the original might be/give a docUrl.
 				duplicateIdUrlEntries ++;
-				UrlUtils.logQuadruple(inputIdUrlTuple.id, inputIdUrlTuple.url, null, "duplicate", "Discarded in FileUtils.getNextIdUrlPairBatchFromJson(), as it is a duplicate.", null, false);
+				UrlUtils.logOutputData(inputIdUrlTuple.id, inputIdUrlTuple.url, null, "duplicate", "Discarded in FileUtils.getNextIdUrlPairBatchFromJson(), as it is a duplicate.", null, false, "true", "true", "false");
 			}
 		}
 
@@ -272,7 +272,7 @@ public class FileUtils
 	 */
 	public static void writeToFile()
 	{
-		for ( QuadrupleToBeLogged quadruple : FileUtils.quadrupleToBeLoggedList)
+		for ( DataToBeLogged quadruple : FileUtils.dataToBeLoggedList )
 		{
 			strB.append(quadruple.toJsonString()).append(endOfLine);
 		}
@@ -281,9 +281,9 @@ public class FileUtils
 		printStream.flush();
 		
 		strB.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
-		logger.debug("Finished writing " + FileUtils.quadrupleToBeLoggedList.size() + " quadruples to the outputFile.");
+		logger.debug("Finished writing " + FileUtils.dataToBeLoggedList.size() + " quadruples to the outputFile.");
 		
-		FileUtils.quadrupleToBeLoggedList.clear();	// Clear the list to put the new <jsonBatchSize> values. The backing array used by List is not de-allocated. Only the String-references contained get GC-ed.
+		FileUtils.dataToBeLoggedList.clear();	// Clear the list to put the new <jsonBatchSize> values. The backing array used by List is not de-allocated. Only the String-references contained get GC-ed.
 	}
 	
 	
@@ -542,7 +542,7 @@ public class FileUtils
 			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
 
 			if ( !urlGroup.add(retrievedLineStr) )    // We have a duplicate in the input.. log it here as we cannot pass it through the HashSet. It's possible that this as well as the original might be/give a docUrl.
-				UrlUtils.logQuadruple(null, retrievedLineStr, null, "duplicate", "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null, false);
+				UrlUtils.logOutputData(null, retrievedLineStr, null, "duplicate", "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null, false, "true", "true", "false");
 		}
 		//logger.debug("FileUtils.fileIndex's value after taking urls after " + FileUtils.fileIndex / jsonBatchSize + " time(s), from input file: " + FileUtils.fileIndex);	// DEBUG!
 		

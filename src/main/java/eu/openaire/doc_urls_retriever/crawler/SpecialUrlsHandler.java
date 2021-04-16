@@ -163,7 +163,7 @@ public class SpecialUrlsHandler
 		String jsonData = null;
 		if ( (jsonData = ConnSupportUtils.getHtmlString(conn, null)) == null ) {
 			logger.warn("Could not retrieve the responseBody for pageUrl: " + pageUrl);
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + conn.getContentType() + "'.", null, true);
+			UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + conn.getContentType() + "'.", null, true, "true", "true", "false");
 			LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			return;
 		}
@@ -206,12 +206,12 @@ public class SpecialUrlsHandler
 
 			// If it has not "returned" already, then no DocUrl was found.
 			logger.warn("No docUrl was extracted from the academic.microsoft jsonData for pageUrl: " + pageUrl);
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson()' method, as no docUrl was extracted from the academic.microsoft jsonData.", null, true);
+			UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson()' method, as no docUrl was extracted from the academic.microsoft jsonData.", null, true, "true", "true", "false");
 			PageCrawler.contentProblematicUrls.incrementAndGet();
 
 		} catch ( JSONException je ) {	// In case any of the above "json-keys" was not found.
 			logger.warn("JSON Exception was thrown while trying to retrieve the microsoft.academic docUrl: " + je.getMessage());
-			UrlUtils.logQuadruple(urlId, sourceUrl, null, "unreachable", "Discarded in 'SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson()' method, as there was a JSON-problem while retrieving the microsoft.academic docUrl.", null, true);
+			UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson()' method, as there was a JSON-problem while retrieving the microsoft.academic docUrl.", null, true, "true", "true", "false");
 			PageCrawler.contentProblematicUrls.incrementAndGet();
 		}
 	}
@@ -225,14 +225,14 @@ public class SpecialUrlsHandler
 			logger.info("re-crossed docUrl found: < " + possibleDocUrl + " >");
 			LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
 			if ( FileUtils.shouldDownloadDocFiles )
-				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, possibleDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(possibleDocUrl), null, false);
+				UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, possibleDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(possibleDocUrl), null, false, "true", "true", "true");
 			else
-				UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, possibleDocUrl, "", null, false);
+				UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, possibleDocUrl, "", null, false, "true", "true", "true");
 			return true;
 		}
 
 		try {    // Check if it's a docUrl, if not, check for other possible ones.
-			if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, possibleDocUrl, possibleDocUrl, null, false, true) )
+			if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, possibleDocUrl, null, false, true) )
 				return true;
 			// Else continue as there might be more than one possible docUrls.
 		} catch ( Exception e ) {

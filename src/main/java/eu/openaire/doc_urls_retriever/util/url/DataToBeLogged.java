@@ -7,16 +7,17 @@ import org.apache.commons.lang3.StringUtils;
  * This class is responsible to store the quadruple <urlId, sourceUrl, docUrl, errorCause> for it to be written in the outputFile.
  * @author Lampros Smyrnaios
  */
-public class QuadrupleToBeLogged
+public class DataToBeLogged
 {
     private String urlId;
     private String sourceUrl;
     private String docUrl;
+	String wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible;
     private String comment;   // This will be an emptyString, unless there is an error causing the docUrl to be unreachable.
 	
 	private static final StringBuilder strB = new StringBuilder(550);
 	
-	public QuadrupleToBeLogged(String urlId, String sourceUrl, String docUrl, String comment)
+	public DataToBeLogged(String urlId, String sourceUrl, String docUrl, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String comment)
     {
         if ( urlId == null )
             urlId = "unretrievable";
@@ -24,8 +25,11 @@ public class QuadrupleToBeLogged
         this.urlId = urlId;
         this.sourceUrl = escapeSourceUrl(sourceUrl);	// The input may have non-expected '\"', '\\' or even '\\\"' which will be unescaped by JsonObject and we have to re-escape them in the output.
         this.docUrl = docUrl;
-        this.comment = comment;
-    }
+		this.wasUrlChecked = wasUrlChecked;
+		this.wasUrlValid = wasUrlValid;
+		this.wasDocumentOrDatasetAccessible = wasDocumentOrDatasetAccessible;
+		this.comment = comment;
+	}
 	
 	
 	/**
@@ -66,6 +70,9 @@ public class QuadrupleToBeLogged
 			strB.append("{\"sourceUrl\":\"").append(this.sourceUrl);
 		}
 		strB.append("\",\"docUrl\":\"").append(this.docUrl);
+		strB.append("\",\"wasUrlChecked\":\"").append(this.wasUrlChecked);
+		strB.append("\",\"wasUrlValid\":\"").append(this.wasUrlValid);
+		strB.append("\",\"wasDocumentOrDatasetAccessible\":\"").append(this.wasDocumentOrDatasetAccessible);
 		strB.append("\",\"comment\":\"").append(this.comment).append("\"}");
 		
         String jsonString = strB.toString();

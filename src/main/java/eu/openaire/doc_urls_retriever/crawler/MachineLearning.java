@@ -313,9 +313,9 @@ public class MachineLearning
 				logger.info("re-crossed docUrl found: < " + predictedDocUrl + " >");
 				LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
 				if ( FileUtils.shouldDownloadDocFiles )
-					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(predictedDocUrl), pageDomain, false);
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, predictedDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(predictedDocUrl), pageDomain, false, "true", "true", "true");
 				else
-					UrlUtils.logQuadruple(urlId, sourceUrl, pageUrl, predictedDocUrl, "", pageDomain, false);
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, predictedDocUrl, "", pageDomain, false, "true", "true", "true");
 				MachineLearning.docUrlsFoundByMLA.incrementAndGet();
 				return true;
 			}

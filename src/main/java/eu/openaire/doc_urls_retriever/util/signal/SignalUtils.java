@@ -31,7 +31,7 @@ public class SignalUtils {
 			System.err.println(stopMessage);
 			
 			// Write whatever remaining quadruples exist in memory.
-			if ( !FileUtils.quadrupleToBeLoggedList.isEmpty() ) {
+			if ( !FileUtils.dataToBeLoggedList.isEmpty() ) {
 				logger.debug("Writing the remaining quadruples to the outputFile.");
 				FileUtils.writeToFile();
 			}
