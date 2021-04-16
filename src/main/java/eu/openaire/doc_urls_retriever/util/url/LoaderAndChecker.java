@@ -201,12 +201,7 @@ public class LoaderAndChecker
 						}	// The "retrievedUrl" might have changed (inside "handleUrlChecks()").
 
 						if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
-							logger.info("re-crossed docUrl found: < " + retrievedUrl + " >");
-							LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
-							if ( FileUtils.shouldDownloadDocFiles )
-								UrlUtils.logOutputData(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl), null, false, "true", "true", "true");
-							else
-								UrlUtils.logOutputData(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, "", null, false, "true", "true", "true");
+							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, logger);
 
 							if ( !isSingleIdUrlPair )
 								loggedUrlsOfCurrentId.add(retrievedUrl);

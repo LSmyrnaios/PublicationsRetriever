@@ -1,7 +1,6 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
 
-import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
@@ -222,12 +221,7 @@ public class SpecialUrlsHandler
 		//logger.debug("AcademicMicrosoft PossibleDocUrl: " + possibleDocUrl);	// DEBUG!
 
 		if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(possibleDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
-			logger.info("re-crossed docUrl found: < " + possibleDocUrl + " >");
-			LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
-			if ( FileUtils.shouldDownloadDocFiles )
-				UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, possibleDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(possibleDocUrl), null, false, "true", "true", "true");
-			else
-				UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, possibleDocUrl, "", null, false, "true", "true", "true");
+			ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, possibleDocUrl, logger);
 			return true;
 		}
 

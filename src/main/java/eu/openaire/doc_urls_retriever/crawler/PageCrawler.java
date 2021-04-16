@@ -2,7 +2,6 @@ package eu.openaire.doc_urls_retriever.crawler;
 
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.exceptions.*;
-import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
@@ -114,13 +113,8 @@ public class PageCrawler
 			}
 
             if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
-				logger.info("re-crossed docUrl found: < " + urlToCheck + " >");
-				LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
-				if ( FileUtils.shouldDownloadDocFiles )
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, urlToCheck, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(urlToCheck), pageDomain, false, "true", "true", "true");
-				else
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, urlToCheck, "", pageDomain, false, "true", "true", "true");
-                return;
+				ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, urlToCheck, logger);
+				return;
             }
 
             lowerCaseLink = urlToCheck.toLowerCase();
@@ -446,12 +440,7 @@ public class PageCrawler
 		}
 
 		if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(docLink) ) {    // If we got into an already-found docUrl, log it and return.
-			logger.info("re-crossed docUrl found: < " + docLink + " >");
-			LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
-			if ( FileUtils.shouldDownloadDocFiles )
-				UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docLink, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(docLink), pageDomain, false, "true", "true", "true");
-			else
-				UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docLink, "", pageDomain, false, "true", "true", "true");
+			ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, docLink, logger);
 			return true;
 		}
 

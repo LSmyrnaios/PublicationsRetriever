@@ -535,12 +535,7 @@ public class HttpConnUtils
 				//ConnSupportUtils.printRedirectDebugInfo(currentUrl, location, targetUrl, responseCode, curRedirectsNum);
 
 				if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
-					logger.info("re-crossed docUrl found: < " + targetUrl + " >");
-					LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
-					if ( FileUtils.shouldDownloadDocFiles )
-						UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, targetUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(targetUrl), null, false, "true", "true", "true");
-					else
-						UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, targetUrl, "", null, false, "true", "true", "true");
+					ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, targetUrl, logger);
 					throw new AlreadyFoundDocUrlException();
 				}
 

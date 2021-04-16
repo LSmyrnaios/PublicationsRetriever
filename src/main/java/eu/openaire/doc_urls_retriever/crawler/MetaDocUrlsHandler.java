@@ -1,10 +1,8 @@
 package eu.openaire.doc_urls_retriever.crawler;
 
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
-import eu.openaire.doc_urls_retriever.util.file.FileUtils;
 import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
-import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
@@ -94,12 +92,7 @@ public class MetaDocUrlsHandler {
         }
 
         if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(metaDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
-            logger.info("re-crossed docUrl found: < " + metaDocUrl + " >");
-            LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
-            if ( FileUtils.shouldDownloadDocFiles )
-                UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, metaDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(metaDocUrl), pageDomain, false, "true", "true", "true");
-            else
-                UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, metaDocUrl, "", pageDomain, false, "true", "true", "true");
+            ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, metaDocUrl, logger);
             numOfMetaDocUrlsFound.incrementAndGet();
             return true;
         }

@@ -310,12 +310,7 @@ public class MachineLearning
 
 			if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(predictedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
 				logger.info("MachineLearningAlgorithm got a hit for pageUrl: \""+ pageUrl + "\"! Resulted (already found before) docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
-				logger.info("re-crossed docUrl found: < " + predictedDocUrl + " >");
-				LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
-				if ( FileUtils.shouldDownloadDocFiles )
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, predictedDocUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(predictedDocUrl), pageDomain, false, "true", "true", "true");
-				else
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, predictedDocUrl, "", pageDomain, false, "true", "true", "true");
+				ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, predictedDocUrl, logger);
 				MachineLearning.docUrlsFoundByMLA.incrementAndGet();
 				return true;
 			}

@@ -199,6 +199,16 @@ public class ConnSupportUtils
 		}
 	}
 
+
+	public static void handleReCrossedDocUrl(String urlId, String sourceUrl, String pageUrl, String docUrl, Logger logger) {
+		logger.info("re-crossed docUrl found: < " + docUrl + " >");
+		LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
+		if ( FileUtils.shouldDownloadDocFiles )
+			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(docUrl), null, false, "true", "true", "true");
+		else
+			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, "", null, false, "true", "true", "true");
+	}
+
 	
 	/**
 	 * This method receives the mimeType and returns it without the "parentheses" ot the "charset" part.
