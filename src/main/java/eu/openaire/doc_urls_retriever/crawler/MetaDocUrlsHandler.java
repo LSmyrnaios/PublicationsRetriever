@@ -85,7 +85,7 @@ public class MetaDocUrlsHandler {
         String tempMetaDocUrl = metaDocUrl;
         if ( (metaDocUrl = URLCanonicalizer.getCanonicalURL(metaDocUrl, null, StandardCharsets.UTF_8)) == null ) {
             logger.warn("Could not canonicalize metaDocUrl: " + tempMetaDocUrl);
-            UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'checkIfAndHandleMetaDocUrl()', due to canonicalization's problems.", null, true, "true", "true", "false");
+            UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'checkIfAndHandleMetaDocUrl()', due to canonicalization's problems.", null, true, "true", "false", "false");
             PageCrawler.contentProblematicUrls.incrementAndGet();
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return true;

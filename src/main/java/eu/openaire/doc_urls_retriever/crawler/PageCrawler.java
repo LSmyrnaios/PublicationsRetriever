@@ -435,7 +435,7 @@ public class PageCrawler
 		String tempLink = docLink;
 		if ( (docLink = URLCanonicalizer.getCanonicalURL(docLink, pageUrl, StandardCharsets.UTF_8)) == null ) {
 			logger.warn("Could not canonicalize internal url: " + tempLink);
-			UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there were canonicalization problems with the 'possibleDocUrl' found inside: " + tempLink, null, true, "true", "true", "false");
+			UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there were canonicalization problems with the 'possibleDocUrl' found inside: " + tempLink, null, true, "true", "false", "false");
 			return false;
 		}
 
