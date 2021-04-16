@@ -296,7 +296,7 @@ public class HttpConnUtils
 			}
 
 			boolean havingScienceDirectPDF = false;
-			isSpecialUrl.set(false);	// It will be falsem until proven to not pass through the "SpecialUrls"
+			isSpecialUrl.set(false);	// It will be false until proven to not pass through the "SpecialUrls"
 			if ( "pdf.sciencedirectassets.com".equals(domainStr) )	// Avoiding NPE.
 				havingScienceDirectPDF = true;
 			else if ( calledForPageUrl && !calledForPossibleDocUrl ) {

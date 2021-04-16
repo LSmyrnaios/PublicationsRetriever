@@ -104,12 +104,6 @@ public class LoaderAndChecker
 					if ( (retrievedUrlToCheck = (handleUrlChecks("null", retrievedUrlToCheck))) == null )
 						return false;
 
-					boolean isPossibleDocOrDatasetUrl = false;
-					String lowerCaseRetrievedUrl = retrievedUrlToCheck.toLowerCase();
-					if ( (retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
-							|| (retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) )
-						isPossibleDocOrDatasetUrl = true;
-
 					String urlToCheck = retrievedUrlToCheck;
 					if ( !urlToCheck.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrlToCheck, null, StandardCharsets.UTF_8)) == null ) {
 						logger.warn("Could not canonicalize url: " + retrievedUrlToCheck);
@@ -117,6 +111,18 @@ public class LoaderAndChecker
 						LoaderAndChecker.connProblematicUrls.incrementAndGet();
 						return false;
 					}
+
+					if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
+						ConnSupportUtils.handleReCrossedDocUrl("null", retrievedUrl, retrievedUrl, retrievedUrl, logger, true);
+						return true;
+					}
+
+					boolean isPossibleDocOrDatasetUrl = false;
+					String lowerCaseRetrievedUrl = retrievedUrlToCheck.toLowerCase();
+					if ( (retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
+							|| (retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) )
+						isPossibleDocOrDatasetUrl = true;
+
 
 					try {	// We sent the < null > into quotes to avoid causing NPEs in the thread-safe datastructures that do not support null input.
 						HttpConnUtils.connectAndCheckMimeType("null", retrievedUrlToCheck, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
