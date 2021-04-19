@@ -56,10 +56,10 @@ public class UrlUtils
 	 * @param wasUrlChecked
 	 * @param wasUrlValid
 	 * @param wasDocumentOrDatasetAccessible
-	 * @param didDocOrDatasetUrlCameFromSourceUrlDirectly
+	 * @param wasDirectLink
 	 */
     public static void logOutputData(String urlId, String sourceUrl, String pageUrl, String docUrl, String comment, String pageDomain,
-									 boolean isFirstCrossed, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String didDocOrDatasetUrlCameFromSourceUrlDirectly)
+									 boolean isFirstCrossed, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink)
     {
         String finalDocUrl = docUrl;
 
@@ -101,7 +101,7 @@ public class UrlUtils
 				duplicateUrls.add(sourceUrl);	// Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future. We don't add docUrls here, as we want them to be separate for checking purposes.
 		}
 
-        FileUtils.dataToBeLoggedList.add(new DataToBeLogged(urlId, sourceUrl, finalDocUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, didDocOrDatasetUrlCameFromSourceUrlDirectly, comment));    // Log it to be written later in the outputFile.
+        FileUtils.dataToBeLoggedList.add(new DataToBeLogged(urlId, sourceUrl, finalDocUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, comment));    // Log it to be written later in the outputFile.
     }
 
 

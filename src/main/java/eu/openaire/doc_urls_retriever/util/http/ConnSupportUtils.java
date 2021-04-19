@@ -203,11 +203,11 @@ public class ConnSupportUtils
 	public static void handleReCrossedDocUrl(String urlId, String sourceUrl, String pageUrl, String docUrl, Logger logger, boolean calledForPageUrl) {
 		logger.info("re-crossed docUrl found: < " + docUrl + " >");
 		LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
-		String didDocOrDatasetUrlCameFromSourceUrlDirectly = ConnSupportUtils.getDidDocOrDatasetUrlCameFromSourceUrlDirectly(sourceUrl, pageUrl, calledForPageUrl, docUrl);
+		String wasDirectLink = ConnSupportUtils.getwasDirectLink(sourceUrl, pageUrl, calledForPageUrl, docUrl);
 		if ( FileUtils.shouldDownloadDocFiles )
-			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(docUrl), null, false, "true", "true", "true", didDocOrDatasetUrlCameFromSourceUrlDirectly);
+			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(docUrl), null, false, "true", "true", "true", wasDirectLink);
 		else
-			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, "", null, false, "true", "true", "true", didDocOrDatasetUrlCameFromSourceUrlDirectly);
+			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, "", null, false, "true", "true", "true", wasDirectLink);
 	}
 
 	
@@ -883,21 +883,21 @@ public class ConnSupportUtils
 	}
 
 
-	public static String getDidDocOrDatasetUrlCameFromSourceUrlDirectly(String sourceUrl, String pageUrl, boolean calledForPageUrl, String finalUrlStr) {
-		String didDocOrDatasetUrlCameFromSourceUrlDirectly;
+	public static String getwasDirectLink(String sourceUrl, String pageUrl, boolean calledForPageUrl, String finalUrlStr) {
+		String wasDirectLink;
 		if ( calledForPageUrl ) {
-			// So if the datasetUrl is the pageUrl then it came directly from the original Url? No, as the url might was transformed if ti was a "specialUrl".
-			// BUT, if the datasetUrl is exactly the sourceUrl, then it surely came from that ;-)
-			if ( finalUrlStr.equals(sourceUrl)
-					|| (!HttpConnUtils.isSpecialUrl.get() && finalUrlStr.equals(pageUrl)) )	// Or if it was not a "specialUrl" and the pageUrl is the same as the dcoUrl.
-				didDocOrDatasetUrlCameFromSourceUrlDirectly = "true";
+			boolean isSpecialUrl = HttpConnUtils.isSpecialUrl.get();	// It's more efficient to save it once in a temp-variable.
+			if ( (!isSpecialUrl && pageUrl.equals(finalUrlStr)) || sourceUrl.equals(finalUrlStr) )	// Or if it was not a "specialUrl" and the pageUrl is the same as the dcoUrl.
+				wasDirectLink = "true";
+			else if ( isSpecialUrl )
+				wasDirectLink = "false";
 			else
-				didDocOrDatasetUrlCameFromSourceUrlDirectly = "N/A";
+				wasDirectLink = "N/A";
 		} else {
 			// This datasetUrl came from crawling the pageUrl, so we know that it surely did not come directly from the sourceUrl.
-			didDocOrDatasetUrlCameFromSourceUrlDirectly = "false";
+			wasDirectLink = "false";
 		}
-		return didDocOrDatasetUrlCameFromSourceUrlDirectly;
+		return wasDirectLink;
 	}
 
 

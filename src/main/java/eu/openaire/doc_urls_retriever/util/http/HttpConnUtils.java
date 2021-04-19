@@ -154,16 +154,16 @@ public class HttpConnUtils
 							logger.error(sb.toString());	// TODO - Instead of the stacktrace, provide the right message when first thrown, just like in "RuntimeException".
 						}
 					}
-					String didDocOrDatasetUrlCameFromSourceUrlDirectly = ConnSupportUtils.getDidDocOrDatasetUrlCameFromSourceUrlDirectly(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", didDocOrDatasetUrlCameFromSourceUrlDirectly);	// we send the urls, before and after potential redirections.
+					String wasDirectLink = ConnSupportUtils.getwasDirectLink(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", wasDirectLink);	// we send the urls, before and after potential redirections.
 					return true;
 				}
 				else if ( LoaderAndChecker.retrieveDatasets && returnedType.equals("dataset") ) {
 					logger.info("datasetUrl found: < " + finalUrlStr + " >");
 					// TODO - handle possible download and improve logging...
 					String fullPathFileName = FileUtils.shouldDownloadDocFiles ? "It's a dataset-url. The download is not supported." : "It's a dataset-url.";
-					String didDocOrDatasetUrlCameFromSourceUrlDirectly = ConnSupportUtils.getDidDocOrDatasetUrlCameFromSourceUrlDirectly(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", didDocOrDatasetUrlCameFromSourceUrlDirectly);	// we send the urls, before and after potential redirections.
+					String wasDirectLink = ConnSupportUtils.getwasDirectLink(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", wasDirectLink);	// we send the urls, before and after potential redirections.
 					return true;
 				}
 				else {	// Either "document" or "dataset", but the user specified that he doesn't want it.
@@ -301,7 +301,7 @@ public class HttpConnUtils
 				havingScienceDirectPDF = true;
 			else if ( calledForPageUrl && !calledForPossibleDocUrl ) {
 				String tempURL = SpecialUrlsHandler.checkAndHandleSpecialUrls(resourceURL);	// May throw a "RuntimeException".
-				isSpecialUrl.set(tempURL.equals(resourceURL));
+				isSpecialUrl.set( !tempURL.equals(resourceURL) );
 				resourceURL = tempURL;
 			}
 
