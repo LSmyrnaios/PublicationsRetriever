@@ -146,7 +146,7 @@ public class UrlChecker {
 			try {
 				HttpConnUtils.connectAndCheckMimeType("null", urlToCheck, urlToCheck, urlToCheck, null, true, false);	// Sent the < null > in quotes to avoid an NPE in the concurrent data-structures.
 			} catch (Exception e) {
-				UrlUtils.logOutputData(null, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true, "true", "true", "false", "N/A");
+				UrlUtils.logOutputData(null, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true, "true", "true", "false", "false");
 			}
 		}
 

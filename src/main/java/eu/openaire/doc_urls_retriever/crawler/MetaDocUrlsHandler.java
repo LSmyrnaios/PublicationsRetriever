@@ -64,7 +64,7 @@ public class MetaDocUrlsHandler {
             // Block the domain and return "true" to indicate handled-state.
             HttpConnUtils.blacklistedDomains.add(pageDomain);
             logger.debug("Domain: \"" + pageDomain + "\" was blocked, after giving a dynamic metaDocUrl: " + metaDocUrl);
-            UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was a dynamic-link.", null, true, "true", "true", "false", "N/A");  // We log the source-url, and that was discarded in "PageCrawler.visit()".
+            UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was a dynamic-link.", null, true, "true", "true", "false", "false");  // We log the source-url, and that was discarded in "PageCrawler.visit()".
             PageCrawler.contentProblematicUrls.incrementAndGet();
             return true;
         }
@@ -76,7 +76,7 @@ public class MetaDocUrlsHandler {
             || COMMON_UNSUPPORTED_META_DOC_URL_EXTENSIONS.matcher(lowerCaseMetaDocUrl).matches() )
         {
             logger.debug("The retrieved metaDocUrl ( " + metaDocUrl + " ) is pointing to an unsupported file.");
-            UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was unsupported.", null, true, "true", "true", "false", "N/A");  // We log the source-url, and that was discarded in "PageCrawler.visit()".
+            UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was unsupported.", null, true, "true", "true", "false", "false");  // We log the source-url, and that was discarded in "PageCrawler.visit()".
             PageCrawler.contentProblematicUrls.incrementAndGet();
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return true;    // It was found and handled. Do not continue crawling as we wont find any docUrl..
@@ -85,7 +85,7 @@ public class MetaDocUrlsHandler {
         String tempMetaDocUrl = metaDocUrl;
         if ( (metaDocUrl = URLCanonicalizer.getCanonicalURL(metaDocUrl, null, StandardCharsets.UTF_8)) == null ) {
             logger.warn("Could not canonicalize metaDocUrl: " + tempMetaDocUrl);
-            UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'checkIfAndHandleMetaDocUrl()', due to canonicalization's problems.", null, true, "true", "false", "false", "N/A");
+            UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'checkIfAndHandleMetaDocUrl()', due to canonicalization's problems.", null, true, "true", "false", "false", "false");
             PageCrawler.contentProblematicUrls.incrementAndGet();
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return true;
