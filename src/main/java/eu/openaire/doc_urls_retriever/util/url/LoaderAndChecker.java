@@ -82,6 +82,7 @@ public class LoaderAndChecker
 	{
 		Collection<String> loadedUrlGroup;
 		boolean isFirstRun = true;
+		int batchCount = 0;
 		
 		// Start loading and checking urls.
 		while ( true )
@@ -93,12 +94,13 @@ public class LoaderAndChecker
 			else
 				isFirstRun = false;
 
+			logger.info("Batch counter: " + (++batchCount) + " | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
+
 			List<Callable<Boolean>> callableTasks = new ArrayList<>(loadedUrlGroup.size());
 
 			for ( String retrievedUrl : loadedUrlGroup )
 			{
 				callableTasks.add(() -> {
-
 					String retrievedUrlToCheck = retrievedUrl;	// This is used because: "local variables referenced from a lambda expression must be final or effectively final".
 
 					if ( (retrievedUrlToCheck = (handleUrlChecks("null", retrievedUrlToCheck))) == null )
@@ -123,7 +125,6 @@ public class LoaderAndChecker
 							|| (retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) )
 						isPossibleDocOrDatasetUrl = true;
 
-
 					try {	// We sent the < null > into quotes to avoid causing NPEs in the thread-safe datastructures that do not support null input.
 						HttpConnUtils.connectAndCheckMimeType("null", retrievedUrlToCheck, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
 					} catch (Exception e) {
@@ -135,7 +136,6 @@ public class LoaderAndChecker
 						}
 						UrlUtils.logOutputData("null", retrievedUrlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false");
 					}
-
 					return true;
 				});
 
@@ -156,8 +156,7 @@ public class LoaderAndChecker
 	{
 		HashMultimap<String, String> loadedIdUrlPairs;
 		boolean isFirstRun = true;
-
-		//AtomicInteger batchCount = new AtomicInteger(0);	// DEBUG!
+		int batchCount = 0;
 
 		// Start loading and checking urls.
 		while ( true )
@@ -168,12 +167,12 @@ public class LoaderAndChecker
 				break;
 			else
 				isFirstRun = false;
+
+			logger.info("Batch counter: " + (++batchCount) + " | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
 			
 			Set<String> keys = loadedIdUrlPairs.keySet();
 			numOfIDs += keys.size();
-
 			//logger.debug("numOfIDs = " + numOfIDs);	// DEBUG!
-			//batchCount.incrementAndGet();	// DEBUG!
 
 			List<Callable<Boolean>> callableTasks = new ArrayList<>(numOfIDs);
 
@@ -182,9 +181,6 @@ public class LoaderAndChecker
 				HashMultimap<String, String> finalLoadedIdUrlPairs = loadedIdUrlPairs;
 
 				callableTasks.add(() -> {
-
-					//logger.debug("Batch < " + batchCount.get() + " > ID < " + idCount.incrementAndGet() + " >");	// DEBUG!
-
 					boolean goToNextId = false;
 					String possibleDocOrDatasetUrl = null;
 					String bestNonDocNonDatasetUrl = null;	// Best-case url
