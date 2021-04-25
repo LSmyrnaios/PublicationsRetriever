@@ -45,7 +45,9 @@ public class PageCrawler
 
 	public static AtomicInteger contentProblematicUrls = new AtomicInteger(0);
 
-	private static final int MAX_REMAINING_INTERNAL_LINKS_TO_CHECK = 10;	// The < 10 > is the optimal value, figured out after tests.
+	private static final int MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE = 500;	// If a page has more than 500 internal links, then discard it.
+	private static final int MAX_POSSIBLE_DOC_OR_DATASET_LINKS_TO_CONNECT = 5;	// The < 5 > is the optimal value, figured out after experimentation.
+	private static final int MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT = 10;	// The < 10 > is the optimal value, figured out after experimentation.
 
 	private static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:manu[ae]l|guide|preview).*");
 
@@ -94,9 +96,16 @@ public class PageCrawler
 		if ( (currentPageLinks = retrieveInternalLinks(urlId, sourceUrl, pageUrl, pageDomain, pageHtml, pageContentType)) == null )
 			return;	// The necessary logging is handled inside.
 
-		HashSet<String> remainingLinks = new HashSet<>(currentPageLinks.size());	// Used later. Initialize with the total num of links (less will actually get stored there, but their num is unknown).
+		int numOfInternalLinks = currentPageLinks.size();
+		if ( numOfInternalLinks > MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE ) {
+			logger.warn("Avoid checking more than " + MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE + " internal links (" + numOfInternalLinks + ") which were found in pageUrl \"" + pageUrl + "\". This page was discarded.");
+			UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as it has more than " + MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE + " internal links.", null, true, "true", "true", "false", "false");
+			return;
+		}
+		HashSet<String> remainingLinks = new HashSet<>(numOfInternalLinks);	// Used later. Initialize with the total num of links (less will actually get stored there, but their num is unknown).
 		String urlToCheck = null;
 		String lowerCaseLink = null;
+		int possibleDocOrDatasetUrlsCounter = 0;
 
 		// Do a fast-loop, try connecting only to a handful of promising links first.
 		// Check if urls inside this page, match to a docUrl regex, if they do, try connecting with them and see if they truly are docUrls. If they are, return.
@@ -129,6 +138,12 @@ public class PageCrawler
 				if ( UrlTypeChecker.shouldNotAcceptInternalLink(urlToCheck, lowerCaseLink) ) {    // Avoid false-positives, such as images (a common one: ".../pdf.png").
 					UrlUtils.duplicateUrls.add(urlToCheck);
 					continue;	// Disclaimer: This way we might lose some docUrls like this: "http://repositorio.ipen.br:8080/xmlui/themes/Mirage/images/Portaria-387.pdf".
+				}	// Example of problematic url: "http://thredds.d4science.org/thredds/catalog/public/netcdf/AquamapsNative/catalog.html"
+
+				if ( (++possibleDocOrDatasetUrlsCounter) > MAX_POSSIBLE_DOC_OR_DATASET_LINKS_TO_CONNECT ) {
+					logger.warn("The maximum limit (" + MAX_POSSIBLE_DOC_OR_DATASET_LINKS_TO_CONNECT + ") of possible doc or dataset links to be connected was reached for pageUrl: \"" + pageUrl + "\". The page was discarded.");
+					UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as it tried to connect with more than " + MAX_POSSIBLE_DOC_OR_DATASET_LINKS_TO_CONNECT + " possible doc or dataset links.", null, true, "true", "true", "false", "false");
+					return;
 				}
 
 				//logger.debug("InternalPossibleDocLink to connect with: " + urlToCheck);	// DEBUG!
@@ -186,8 +201,8 @@ public class PageCrawler
 				continue;
 			}
 
-			if ( (++remainingUrlsCounter) > MAX_REMAINING_INTERNAL_LINKS_TO_CHECK ) {	// The counter is incremented only on "wanted" links, so no need to pre-clean the "remainingLinks"-set.
-				logger.warn("The maximum limit (" + MAX_REMAINING_INTERNAL_LINKS_TO_CHECK + ") of remaining links to be checked was reached for pageUrl: \"" + pageUrl + "\"");
+			if ( (++remainingUrlsCounter) > MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT ) {	// The counter is incremented only on "aboutToConnect" links, so no need to pre-clean the "remainingLinks"-set.
+				logger.warn("The maximum limit (" + MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT + ") of remaining links to be connected was reached for pageUrl: \"" + pageUrl + "\"");
 				break;	// It will reach the end of this function, will call "handlePageWithNoDocUrls()" and then return.
 			}
 
