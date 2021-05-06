@@ -42,6 +42,7 @@ public class DocUrlsRetriever
 	public static String inputDataUrl = null;
 
 	public static Instant startTime = null;
+	public static String targetUrlType = null;
 
 	public static DecimalFormat df = new DecimalFormat("0.00");
 
@@ -135,16 +136,19 @@ public class DocUrlsRetriever
 								logger.info("Going to retrieve only records of \"document\"-type.");
 								LoaderAndChecker.retrieveDocuments = true;
 								LoaderAndChecker.retrieveDatasets = false;
+								targetUrlType = "docUrl";
 								break;
 							case "dataset":
 								logger.info("Going to retrieve only records of \"dataset\"-type.");
 								LoaderAndChecker.retrieveDocuments = false;
 								LoaderAndChecker.retrieveDatasets = true;
+								targetUrlType = "datasetUrl";
 								break;
 							case "all":
 								logger.info("Going to retrieve records of all types (documents and datasets).");
 								LoaderAndChecker.retrieveDocuments = true;
 								LoaderAndChecker.retrieveDatasets = true;
+								targetUrlType = "docOrDatasetUrl";
 								break;
 							default:
 								String errMessage = "Argument: \"" + dataType + "\" was invalid!\nExpected one of the following: \"docFiles | datasets | all\"" + usageMessage;
@@ -238,7 +242,7 @@ public class DocUrlsRetriever
 		if ( SignalUtils.receivedSIGINT )
 			logger.warn("A SIGINT signal was received, so some of the \"checked-urls\" may have not been actually checked, that's more of a number of the \"loaded-urls\".");
 
-		logger.info("Total docUrls found: " + UrlUtils.sumOfDocUrlsFound + ". That's about: " + df.format(UrlUtils.sumOfDocUrlsFound.get() * 100.0 / inputCheckedUrlNum) + "% from the total numOfUrls checked. The rest were problematic or non-handleable url-cases.");
+		logger.info("Total " + targetUrlType + "s found: " + UrlUtils.sumOfDocUrlsFound + ". That's about: " + df.format(UrlUtils.sumOfDocUrlsFound.get() * 100.0 / inputCheckedUrlNum) + "% from the total numOfUrls checked. The rest were problematic or non-handleable url-cases.");
 		if ( FileUtils.shouldDownloadDocFiles ) {
 			int numOfStoredDocFiles = 0;
 			if ( FileUtils.shouldUseOriginalDocFileNames )

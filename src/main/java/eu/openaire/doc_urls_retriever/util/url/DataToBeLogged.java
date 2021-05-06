@@ -1,6 +1,11 @@
 package eu.openaire.doc_urls_retriever.util.url;
 
+import eu.openaire.doc_urls_retriever.DocUrlsRetriever;
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -15,8 +20,8 @@ public class DataToBeLogged
 	String wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink;
     private String comment;   // This will be an emptyString, unless there is an error causing the docUrl to be unreachable.
 	
-	private static final StringBuilder strB = new StringBuilder(1000);
-	
+	private static final Logger logger = LoggerFactory.getLogger(DataToBeLogged.class);
+
 	public DataToBeLogged(String urlId, String sourceUrl, String docUrl, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String comment)
     {
         if ( urlId == null )
@@ -58,28 +63,30 @@ public class DataToBeLogged
     
     
     /**
-     * This method returns this object in a jsonString. It does not need to be synchronized.
+     * This method returns this object in a valid jsonString. It does not need to be synchronized.
      * @return jsonString
      */
     public String toJsonString()
     {
-    	if ( LoaderAndChecker.useIdUrlPairs ) {
-			strB.append("{\"id\":\"").append(this.urlId);
-			strB.append("\",\"sourceUrl\":\"").append(this.sourceUrl);
+		JSONObject jsonObject = new JSONObject();
+		try {
+			if ( LoaderAndChecker.useIdUrlPairs ) {
+				jsonObject.put("id", this.urlId);
+			}
+			jsonObject.put("sourceUrl", this.sourceUrl);
+			jsonObject.put(DocUrlsRetriever.targetUrlType, this.docUrl);
+			jsonObject.put("wasUrlChecked", this.wasUrlChecked);
+			jsonObject.put("wasUrlValid", this.wasUrlValid);
+			jsonObject.put("wasDocumentOrDatasetAccessible", this.wasDocumentOrDatasetAccessible);
+			jsonObject.put("wasDirectLink", this.wasDirectLink);
+			jsonObject.put("comment", this.comment);
+		} catch (JSONException je) {
+			// Keep the jsonObject with what it has till now.. plus a "special" comment.
+			jsonObject.put("comment", "There was a problem creating this JSON with the right values.");
+			logger.warn("Invalid JsonOutput will be written as: " + jsonObject);	// Depending on which json-key is the pre-last one, we will know what caused the error.
 		}
-    	else {	//When there are no IDs in the input file and there's no point in writing that they are "unretrieved" in the outputFile.
-			strB.append("{\"sourceUrl\":\"").append(this.sourceUrl);
-		}
-		strB.append("\",\"docUrl\":\"").append(this.docUrl);
-		strB.append("\",\"wasUrlChecked\":\"").append(this.wasUrlChecked);
-		strB.append("\",\"wasUrlValid\":\"").append(this.wasUrlValid);
-		strB.append("\",\"wasDocumentOrDatasetAccessible\":\"").append(this.wasDocumentOrDatasetAccessible);
-		strB.append("\",\"wasDirectLink\":\"").append(this.wasDirectLink);
-		strB.append("\",\"comment\":\"").append(this.comment).append("\"}");
-		
-        String jsonString = strB.toString();
-        strB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating, thus allocation happens only once for the whole execution.
-        return jsonString;
+
+        return jsonObject.toString();
     }
     
 }

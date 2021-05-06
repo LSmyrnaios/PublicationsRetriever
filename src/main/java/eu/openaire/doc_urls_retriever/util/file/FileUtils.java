@@ -270,12 +270,12 @@ public class FileUtils
 	 */
 	public static void writeToFile()
 	{
-		for ( DataToBeLogged quadruple : FileUtils.dataToBeLoggedList )
+		for ( DataToBeLogged data : FileUtils.dataToBeLoggedList )
 		{
-			strB.append(quadruple.toJsonString()).append(endOfLine);
+			strB.append(data.toJsonString()).append(endOfLine);
 		}
 		
-		printStream.print(strB.toString());
+		printStream.print(strB);
 		printStream.flush();
 		
 		strB.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
