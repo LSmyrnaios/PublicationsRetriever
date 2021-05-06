@@ -33,7 +33,7 @@ public class FileUtils
 	private static Scanner inputScanner = null;
 	private static PrintStream printStream = null;
 	
-	public static long numOfLines;	// Only the main thread accesses it.
+	public static long numOfLines = 0;	// Only the main thread accesses it.
 	
 	public static final int jsonBatchSize = 3000;
 
@@ -73,8 +73,10 @@ public class FileUtils
 		FileUtils.inputScanner = new Scanner(input, utf8Charset);
 		
 		if ( MachineLearning.useMLA ) {	// In case we are using the MLA, go get the numOfLines to be used.
-			numOfLines = getInputNumOfLines();
-			logger.debug("Num of lines in the inputFile: " + numOfLines);
+			if ( numOfLines == 0 ) {	// If the inputFile was not given as an argument, but as the stdin, instead.
+				numOfLines = getInputNumOfLines();
+				logger.debug("Num of lines in the inputFile: " + numOfLines);
+			}
 		}
 
 		try {

@@ -10,11 +10,16 @@ import eu.openaire.doc_urls_retriever.util.signal.SignalUtils;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
@@ -41,6 +46,9 @@ public class DocUrlsRetriever
 	public static boolean inputFromUrl = false;
 	public static String inputDataUrl = null;
 
+	public static InputStream inputStream = null;
+	public static String inputFileFullPath = null;
+
 	public static Instant startTime = null;
 	public static String targetUrlType = null;
 
@@ -60,13 +68,20 @@ public class DocUrlsRetriever
 
 		logger.info("Starting DocUrlsRetriever..");
 
-		InputStream inputStream = null;
-
-		// Check if the user gave the input file in the commandLineArgument
-		if ( inputFromUrl )
-			inputStream = ConnSupportUtils.getInputStreamFromInputDataUrl();
-		else
-			inputStream = System.in;
+		// Check if the user gave the input file in the commandLineArgument, if not, then check for other options.
+		if ( DocUrlsRetriever.inputStream == null ) {
+			if ( DocUrlsRetriever.inputFromUrl )
+				DocUrlsRetriever.inputStream = ConnSupportUtils.getInputStreamFromInputDataUrl();
+			else
+				DocUrlsRetriever.inputStream = System.in;
+		} else {
+			try {
+				FileUtils.numOfLines = Files.lines(Paths.get(DocUrlsRetriever.inputFileFullPath)).count();
+				logger.info("The numOfLines in the inputFile is " + FileUtils.numOfLines);
+			} catch (Exception e) {
+				logger.error("Could not retrieve the numOfLines. " + e);
+			}
+		}
 
 		// Use standard input/output.
 		new FileUtils(inputStream, System.out);
@@ -113,10 +128,10 @@ public class DocUrlsRetriever
 
 	public static void parseArgs(String[] mainArgs)
 	{
-		String usageMessage = "\nUsage: java -jar doc_urls_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all>  -downloadDocFiles(OPTIONAL) -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' -inputDataUrl 'inputUrl' < 'input' > 'output'";
+		String usageMessage = "\nUsage: java -jar doc_urls_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all> -inputFileFullPath inputFile -downloadDocFiles(OPTIONAL) -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' -inputDataUrl 'inputUrl' < 'input' > 'output'";
 
-		if ( mainArgs.length > 9 ) {
-			String errMessage = "\"DocUrlsRetriever\" expected only up to 9 arguments, while you gave: " + mainArgs.length + "!" + usageMessage;
+		if ( mainArgs.length > 11 ) {
+			String errMessage = "\"DocUrlsRetriever\" expected only up to 11 arguments, while you gave: " + mainArgs.length + "!" + usageMessage;
 			logger.error(errMessage);
 			System.err.println(errMessage);
 			System.exit(-1);
@@ -128,6 +143,30 @@ public class DocUrlsRetriever
 		{
 			try {
 				switch ( mainArgs[i] ) {
+					case "-inputFileFullPath":
+						i ++;
+						inputFileFullPath = mainArgs[i];
+						if ( !(inputFileFullPath.startsWith(File.separator) && inputFileFullPath.startsWith("~")) )
+						{
+							if ( inputFileFullPath.startsWith(".") )	// Remove the starting "dot", if exists.
+								inputFileFullPath = StringUtils.replace(inputFileFullPath, ".", "", 1);
+
+							inputFileFullPath = System.getProperty("user.dir") + inputFileFullPath;
+						}
+						try {
+							inputStream = new FileInputStream(inputFileFullPath);
+						} catch (FileNotFoundException fnfe) {
+							String errMessage = "No inputFile was found in \"" + inputFileFullPath + "\"";
+							logger.error(errMessage);
+							System.err.println(errMessage);
+							System.exit(-144);
+						} catch (Exception e) {
+							String errMessage = e.toString();
+							logger.error(errMessage);
+							System.err.println(errMessage);
+							System.exit(-145);
+						}
+						break;
 					case "-retrieveDataType":
 						i ++;
 						String dataType = mainArgs[i];

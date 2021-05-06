@@ -48,7 +48,7 @@ public class LoaderAndChecker
 
 	// The following are set from the user.
 	public static boolean retrieveDocuments = true;
-	public static boolean retrieveDatasets = false;
+	public static boolean retrieveDatasets = true;
 
 
 	public LoaderAndChecker() throws RuntimeException
@@ -94,7 +94,7 @@ public class LoaderAndChecker
 			else
 				isFirstRun = false;
 
-			logger.info("Batch counter: " + (++batchCount) + " | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
+			logger.info("Batch counter: " + (++batchCount) + ((DocUrlsRetriever.inputFileFullPath != null)? " | progress: " + DocUrlsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) : "") + "% | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
 
 			List<Callable<Boolean>> callableTasks = new ArrayList<>(loadedUrlGroup.size());
 
@@ -168,7 +168,7 @@ public class LoaderAndChecker
 			else
 				isFirstRun = false;
 
-			logger.info("Batch counter: " + (++batchCount) + " | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
+			logger.info("Batch counter: " + (++batchCount) + ((DocUrlsRetriever.inputFileFullPath != null)? " | progress: " + DocUrlsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) : "") + "% | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
 			
 			Set<String> keys = loadedIdUrlPairs.keySet();
 			numOfIDs += keys.size();

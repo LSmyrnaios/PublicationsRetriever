@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -28,10 +30,10 @@ public class TestNonStandardInputOutput  {
 
 	private static final String testingSubDir = "idUrlPairs";	// "idUrlPairs" or "justUrls".
 	private static final String testingDirectory = System.getProperty("user.dir") + File.separator + "testData" + File.separator + testingSubDir + File.separator;
-	private static final String testInputFile = "orderedList1000.json";	// "sampleCleanUrls3000.json", "orderedList1000.json", "orderedList5000.json", "testRandomNewList100.csv", "test.json"
+	private static final String testInputFile = "orderedList1000.json";	//"test_only_ids.json";	//"id_to_url_rand10000_20201015.json";	//"test_non_utf_output.json"; //"around_200k_IDs.json";	// "sampleCleanUrls3000.json", "orderedList1000.json", "orderedList5000.json", "testRandomNewList100.csv", "test.json", "id_to_url_rand10000_20201015.json"
 
 	private static final File inputFile = new File(testingDirectory + testInputFile);
-	private static final File outputFile = new File(testingDirectory + "testOutputFile.json");
+	private static final File outputFile = new File(testingDirectory + "results_" + testInputFile);
 
 
 	@BeforeAll
@@ -41,7 +43,7 @@ public class TestNonStandardInputOutput  {
 		if ( !LoaderAndChecker.useIdUrlPairs )
 			FileUtils.skipFirstRow = false;	// Use "true", if we have a "column-name" in our csv file. Default: "false".
 
-		if (DocUrlsRetriever.inputFromUrl )
+		if ( DocUrlsRetriever.inputFromUrl )
 			logger.info("Using the inputFile from URL: \"" + DocUrlsRetriever.inputDataUrl + "\" and the outputFile: \"" + outputFile.getName() + "\".");
 		else
 			logger.info("Using the inputFile: \"" + inputFile.getName() + "\" and the outputFile: \"" + outputFile.getName() + "\".");
@@ -92,9 +94,29 @@ public class TestNonStandardInputOutput  {
 	@Test
 	public void testCustomInputOutputWithoutDownloading()
 	{
-		String[] args = new String[2];
+		String[] args = new String[4];
 		args[0] = "-retrieveDataType";
 		args[1] = "document";	// "document" OR "dataset" OR "all"
+		args[2] = "-inputFileFullPath";
+		args[3] = "./testData/idUrlPairs/orderedList1000.json";
+
+		logger.info("Calling main method with these args: ");
+		for ( String arg: args )
+			logger.info("'" + arg + "'");
+
+		main(args);
+	}
+
+
+	@Disabled
+	@Test
+	public void testCustomInputOutputWithoutDownloadingWithInputFile()
+	{
+		String[] args = new String[4];
+		args[0] = "-retrieveDataType";
+		args[1] = "document";	// "document" OR "dataset" OR "all"
+		args[2] = "-inputFileFullPath";
+		args[3] = "./testData/idUrlPairs/orderedList1000.json";
 
 		logger.info("Calling main method with these args: ");
 		for ( String arg: args )
@@ -179,13 +201,18 @@ public class TestNonStandardInputOutput  {
 	public static void setInputOutput()
 	{
 		try {
-			InputStream inputStream = null;
-			if ( DocUrlsRetriever.inputFromUrl )
-				inputStream = ConnSupportUtils.getInputStreamFromInputDataUrl();
-			else
-				inputStream = new FileInputStream(inputFile);
+			// Check if the user gave the input file in the commandLineArgument, if not, then check for other options.
+			if ( DocUrlsRetriever.inputStream == null ) {
+				if ( DocUrlsRetriever.inputFromUrl )
+					DocUrlsRetriever.inputStream = ConnSupportUtils.getInputStreamFromInputDataUrl();
+				else
+					DocUrlsRetriever.inputStream = new FileInputStream(inputFile);
+			} else {
+				FileUtils.numOfLines = Files.lines(Paths.get(DocUrlsRetriever.inputFileFullPath)).count();
+				logger.info("The numOfLines in the inputFile is " + FileUtils.numOfLines);
+			}
 
-			new FileUtils(inputStream, new FileOutputStream(outputFile));
+			new FileUtils(DocUrlsRetriever.inputStream, new FileOutputStream(outputFile));
 
 			setTypeOfInputData();
 

@@ -53,8 +53,8 @@ To run the application you should navigate to the ***target*** directory, which 
 while choosing the appropriate run-command.<br> 
 
 **Run with standard input/output:**<br>
-**``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg1:'-retrieveDataType' arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-firstDocFileNum' arg5:'NUM' arg6:'-docFilesStorage'
-arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
+**``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg1:'-inputFileFullPath' arg2:<inputFile> arg3:'-retrieveDataType' arg4:'<dataType: document | dataset | all>' arg5:'-downloadDocFiles' arg6:'-firstDocFileNum' arg7:'NUM' arg8:'-docFilesStorage'
+arg9:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
 
 **Run tests with custom input/output:**
 - Inside ***pom.xml***, change the **mainClass** of **maven-shade-plugin** from "**DocUrlsRetriever**" to "**TestNonStandardInputOutput**".
@@ -66,6 +66,8 @@ arg5:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
 - Run ``mvn install`` to create the new ***JAR*** file.<br>
 - Execute the program with the following command:<br>
 **``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-firstDocFileNum' arg5:'NUM' arg6:'-docFilesStorage' arg7:'storageDir' arg8:'-inputDataUrl' arg9: 'inputUrl'``**
+<br><br>
+*You can use the argument '-inputFileFullPath' to define the inputFile, instead of the stdin-redirection. That way, the progress percentage will appear in the logging file.*
 <br><br>
 
 **Arguments explanation:**
