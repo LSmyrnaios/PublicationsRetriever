@@ -112,11 +112,13 @@ public class TestNonStandardInputOutput  {
 	@Test
 	public void testCustomInputOutputWithoutDownloadingWithInputFile()
 	{
-		String[] args = new String[4];
+		String[] args = new String[6];
 		args[0] = "-retrieveDataType";
 		args[1] = "document";	// "document" OR "dataset" OR "all"
 		args[2] = "-inputFileFullPath";
 		args[3] = "./testData/idUrlPairs/orderedList1000.json";
+		args[4] = "-numOfThreads";
+		args[5] = "10";
 
 		logger.info("Calling main method with these args: ");
 		for ( String arg: args )
@@ -161,12 +163,14 @@ public class TestNonStandardInputOutput  {
 		if ( MachineLearning.useMLA )
 			new MachineLearning();
 
-		int availableThreads = Runtime.getRuntime().availableProcessors();
-		availableThreads *= 2;	// Use *3 without downloading docFiles and when having the domains to appear in uniform distribution in the inputFile. Use *2 when downloading.
+		if ( DocUrlsRetriever.workerThreadsCount == 0 ) {	// If the user did not provide the "workerThreadsCount", then get the available number from the system.
+			int availableThreads = Runtime.getRuntime().availableProcessors();
+			availableThreads *= DocUrlsRetriever.threadsMultiplier;
 
-		// If the domains of the urls in the inputFile, are in "uniform distribution" (each one of them to be equally likely to appear in any place), then the more threads the better (triple the computer's number)
-		// Else, if there are far lees domains or/and closely placed inside the inputFile.. then use only the number of threads provided by the computer, since the "politenessDelay" will block them more than the I/O would ever do..
-		DocUrlsRetriever.workerThreadsCount = availableThreads;	// Due to I/O, blocking the threads all the time, more threads handle the workload faster..
+			// If the domains of the urls in the inputFile, are in "uniform distribution" (each one of them to be equally likely to appear in any place), then the more threads the better (triple the computer's number)
+			// Else, if there are far lees domains or/and closely placed inside the inputFile.. then use only the number of threads provided by the computer, since the "politenessDelay" will block them more than the I/O would ever do..
+			DocUrlsRetriever.workerThreadsCount = availableThreads;	// Due to I/O, blocking the threads all the time, more threads handle the workload faster..
+		}
 		logger.info("Use " + DocUrlsRetriever.workerThreadsCount + " worker-threads.");
 		DocUrlsRetriever.executor = Executors.newFixedThreadPool(DocUrlsRetriever.workerThreadsCount);	//creating a pool of <processorsCount> threads.
 

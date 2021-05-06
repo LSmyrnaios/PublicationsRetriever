@@ -55,7 +55,8 @@ public class DocUrlsRetriever
 	public static DecimalFormat df = new DecimalFormat("0.00");
 
 	public static ExecutorService executor;
-	public static int workerThreadsCount = 1;
+	public static int workerThreadsCount = 0;
+	public static int threadsMultiplier = 2;	// Use *3 without downloading docFiles and when having the domains to appear in uniform distribution in the inputFile. Use *2 when downloading.
 
 
 	public static void main( String[] args )
@@ -89,12 +90,14 @@ public class DocUrlsRetriever
 		if ( MachineLearning.useMLA )
 			new MachineLearning();
 
-		int availableThreads = Runtime.getRuntime().availableProcessors();
-		availableThreads *= 2;	// Use *3 without downloading docFiles and when having the domains to appear in uniform distribution in the inputFile. Use *2 when downloading.
+		if ( workerThreadsCount == 0 ) {	// If the user did not provide the "workerThreadsCount", then get the available number from the system.
+			int availableThreads = Runtime.getRuntime().availableProcessors();
+			availableThreads *= threadsMultiplier;
 
-		// If the domains of the urls in the inputFile, are in "uniform distribution" (each one of them to be equally likely to appear in any place), then the more threads the better (triple the computer's number)
-		// Else, if there are far lees domains and/or closely placed inside the inputFile.. then use only the number of threads provided by the computer, since the "politenessDelay" will block them more than the I/O would ever do..
-		workerThreadsCount = availableThreads;	// Due to I/O, blocking the threads all the time, more threads handle the workload faster..
+			// If the domains of the urls in the inputFile, are in "uniform distribution" (each one of them to be equally likely to appear in any place), then the more threads the better (triple the computer's number)
+			// Else, if there are far lees domains and/or closely placed inside the inputFile.. then use only the number of threads provided by the computer, since the "politenessDelay" will block them more than the I/O would ever do..
+			workerThreadsCount = availableThreads;	// Due to I/O, blocking the threads all the time, more threads handle the workload faster..
+		}
 		logger.info("Use " + workerThreadsCount + " worker-threads.");
 		executor = Executors.newFixedThreadPool(workerThreadsCount);	//creating a pool of <processorsCount> threads.
 
@@ -130,8 +133,8 @@ public class DocUrlsRetriever
 	{
 		String usageMessage = "\nUsage: java -jar doc_urls_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all> -inputFileFullPath inputFile -downloadDocFiles(OPTIONAL) -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' -inputDataUrl 'inputUrl' < 'input' > 'output'";
 
-		if ( mainArgs.length > 11 ) {
-			String errMessage = "\"DocUrlsRetriever\" expected only up to 11 arguments, while you gave: " + mainArgs.length + "!" + usageMessage;
+		if ( mainArgs.length > 13 ) {
+			String errMessage = "\"DocUrlsRetriever\" expected only up to 13 arguments, while you gave: " + mainArgs.length + "!" + usageMessage;
 			logger.error(errMessage);
 			System.err.println(errMessage);
 			System.exit(-1);
@@ -226,6 +229,19 @@ public class DocUrlsRetriever
 						inputDataUrl = mainArgs[i];
 						inputFromUrl = true;
 						logger.info("Using the inputFile from the URL: " + inputDataUrl);
+						break;
+					case "-numOfThreads":
+						i++;
+						String workerCountString = mainArgs[i];
+						try {
+							workerThreadsCount = DocUrlsRetriever.initialNumOfDocFile = Integer.parseInt(workerCountString);    // We use both variables in statistics.
+							if ( workerThreadsCount < 1 ) {
+								logger.warn("The \"workerThreadsCount\" given was less than < 1 > (" + workerThreadsCount + "), continuing with < 1 > instead..");
+								workerThreadsCount = 1;
+							}
+						} catch (NumberFormatException nfe) {
+							logger.error("Invalid \"workerThreadsCount\" was given: \"" + workerCountString + "\".\tContinue by using the system's available threads multiplied by " + threadsMultiplier);
+						}
 						break;
 					default:	// log & ignore the argument
 						String errMessage = "Argument: \"" + mainArgs[i] + "\" was not expected!" + usageMessage;

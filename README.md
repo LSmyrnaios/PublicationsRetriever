@@ -65,7 +65,7 @@ arg9:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
     and change the ***appender-ref***, from ***File*** to ***Console***.<br>
 - Run ``mvn install`` to create the new ***JAR*** file.<br>
 - Execute the program with the following command:<br>
-**``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-firstDocFileNum' arg5:'NUM' arg6:'-docFilesStorage' arg7:'storageDir' arg8:'-inputDataUrl' arg9: 'inputUrl'``**
+**``java -jar doc_urls_retriever-0.4-SNAPSHOT.jar arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-firstDocFileNum' arg5:'NUM' arg6:'-docFilesStorage' arg7:'storageDir' arg8:'-inputDataUrl' arg9: 'inputUrl' arg10: '-numOfThreads' arg11: <NUM>``**
 <br><br>
 *You can use the argument '-inputFileFullPath' to define the inputFile, instead of the stdin-redirection. That way, the progress percentage will appear in the logging file.*
 <br><br>
@@ -80,6 +80,7 @@ arg9:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
 - **-docFilesStorage** and **storageDir** will tell the program to use the given DocFiles-*storageDir*.
     The absence of this argument will cause the program to use a pre-defined storageDir which is: "*./docFiles*".
 - **-inputDataUrl** and **inputUrl** will tell the program to use the given *URL* to retrieve the inputFile, instead of having it locally stored and redirect the *Standard Input Stream*.
+- **-numOfThreads** and **NUM** will tell the program to use *NUM* number of worker-threads.
 <br><br>
   The order of the program's arguments matters only **per pair**. For example, the argument **'storageDir'**, has to be placed always after the **'-docFilesStorage''** argument.
   <br>
