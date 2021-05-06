@@ -35,7 +35,7 @@ public class FileUtils
 	
 	public static long numOfLines;	// Only the main thread accesses it.
 	
-	public static final int jsonBatchSize = 300;
+	public static final int jsonBatchSize = 3000;
 
 	private static final StringBuilder strB = new StringBuilder(jsonBatchSize * 500);  // 500: the usual-maximum-expected-length for an <id-sourceUrl-docUrl-comment> quadruple.
 

@@ -346,7 +346,7 @@ public class PageCrawler
 					else if ( lowerCaseLinkAttr.contains("pdf") ) {
 						internalLink = el.attr("href");
 						if ( !internalLink.isEmpty() && !internalLink.startsWith("#", 0) ) {
-							logger.debug("Found the docLink < " + internalLink + " > from link-text: \"" + linkAttr + "\"");
+							//logger.debug("Found the docLink < " + internalLink + " > from link-text: \"" + linkAttr + "\"");	// DEBUG
 							throw new DocLinkFoundException(internalLink);
 						}
 						throw new DocLinkInvalidException(internalLink);
@@ -357,7 +357,7 @@ public class PageCrawler
 				if ( !linkAttr.isEmpty() && linkAttr.toLowerCase().contains("pdf") ) {
 					internalLink = el.attr("href");
 					if ( !internalLink.isEmpty() && !internalLink.startsWith("#", 0) ) {
-						logger.debug("Found the docLink < " + internalLink + " > from link-title: \"" + linkAttr + "\"");
+						//logger.debug("Found the docLink < " + internalLink + " > from link-title: \"" + linkAttr + "\"");	// DEBUG
 						throw new DocLinkFoundException(internalLink);
 					}
 					throw new DocLinkInvalidException(internalLink);
@@ -368,7 +368,7 @@ public class PageCrawler
 				if ( !linkAttr.isEmpty() && ConnSupportUtils.knownDocMimeTypes.contains(linkAttr) ) {
 					internalLink = el.attr("href");
 					if ( !internalLink.isEmpty() && !internalLink.startsWith("#", 0) ) {
-						logger.debug("Found the docLink < " + internalLink + " > from link-type: \"" + linkAttr + "\"");
+						//logger.debug("Found the docLink < " + internalLink + " > from link-type: \"" + linkAttr + "\"");	// DEBUG
 						throw new DocLinkFoundException(internalLink);
 					}
 					throw new DocLinkInvalidException(internalLink);
