@@ -311,8 +311,9 @@ public class LoaderAndChecker
 					Boolean value = futures.get(i).get();	// Get and see if an exception is thrown..
 					// Add check for the value, if wanted.. (we don't care at the moment)
 				} catch (ExecutionException ee) {
-					logger.error("Task_" + (i+1) + " failed with: " + ee.getMessage());
-					ee.printStackTrace();
+					String stackTraceMessage = GenericUtils.getSelectiveStackTrace(ee, null, 15);	// These can be serious errors like an "out of memory exception" (Java HEAP).
+					logger.error("Task_" + (i+1) + " failed with: " + ee.getMessage() + "\n" + stackTraceMessage);
+					System.err.println(stackTraceMessage);
 				}
 				catch (CancellationException ce) {
 					logger.error("Task_" + (i+1) + " was cancelled: " + ce.getMessage());

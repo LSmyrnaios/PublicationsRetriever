@@ -5,6 +5,7 @@ import eu.openaire.doc_urls_retriever.crawler.PageCrawler;
 import eu.openaire.doc_urls_retriever.crawler.SpecialUrlsHandler;
 import eu.openaire.doc_urls_retriever.exceptions.*;
 import eu.openaire.doc_urls_retriever.util.file.FileUtils;
+import eu.openaire.doc_urls_retriever.util.url.GenericUtils;
 import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
@@ -145,13 +146,7 @@ public class HttpConnUtils
 							logger.info("DocFile: \"" + fullPathFileName + "\" has been downloaded.");
 						} catch (DocFileNotRetrievedException dfnde) {
 							fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored. Stacktrace:";
-							StackTraceElement[] stels = dfnde.getStackTrace();
-							StringBuilder sb = new StringBuilder(22).append(fullPathFileName).append(FileUtils.endOfLine);	// This StringBuilder is thread-safe as a local-variable.
-							for ( int i = 0; (i < stels.length) && (i < 10); ++i ) {
-								sb.append(stels[i]);
-								if (i < 9) sb.append(FileUtils.endOfLine);
-							}
-							logger.error(sb.toString());	// TODO - Instead of the stacktrace, provide the right message when first thrown, just like in "RuntimeException".
+							logger.error(GenericUtils.getSelectiveStackTrace(dfnde, fullPathFileName, 9));	// TODO - Instead of the stacktrace, provide the right message when first thrown, just like in "RuntimeException".
 						}
 					}
 					String wasDirectLink = ConnSupportUtils.getwasDirectLink(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
