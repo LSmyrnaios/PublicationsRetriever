@@ -149,9 +149,11 @@ public class DocUrlsRetriever
 					case "-inputFileFullPath":
 						i ++;
 						inputFileFullPath = mainArgs[i];
-						if ( !(inputFileFullPath.startsWith(File.separator) && inputFileFullPath.startsWith("~")) )
+						if ( !(inputFileFullPath.startsWith(File.separator) || inputFileFullPath.startsWith("~")) )
 						{
-							if ( inputFileFullPath.startsWith(".") )	// Remove the starting "dot", if exists.
+							if ( inputFileFullPath.startsWith("..") )
+								inputFileFullPath = File.separator + inputFileFullPath;	// Add the separator to not break the path.
+							else if ( inputFileFullPath.startsWith(".") )	// Remove the starting "dot", if exists.
 								inputFileFullPath = StringUtils.replace(inputFileFullPath, ".", "", 1);
 
 							inputFileFullPath = System.getProperty("user.dir") + inputFileFullPath;
