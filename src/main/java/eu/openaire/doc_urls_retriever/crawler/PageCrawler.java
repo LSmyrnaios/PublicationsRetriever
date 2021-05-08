@@ -45,8 +45,9 @@ public class PageCrawler
 
 	public static AtomicInteger contentProblematicUrls = new AtomicInteger(0);
 
-	private static final int MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE = 500;	// If a page has more than 500 internal links, then discard it.
-	private static final int MAX_POSSIBLE_DOC_OR_DATASET_LINKS_TO_CONNECT = 5;	// The < 5 > is the optimal value, figured out after experimentation.
+	private static final int MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE = 500;	// If a page has more than 500 internal links, then discard it. Example: "https://dblp.uni-trier.de/db/journals/corr/corr1805.html"
+	private static final int MAX_POSSIBLE_DOC_OR_DATASET_LINKS_TO_CONNECT = 5;	// The < 5 > is the optimal value, figured out after experimentation. Example: "https://doaj.org/article/acf5f095dc0f49a59d98a6c3abca7ab6".
+
 	private static final int MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT = 10;	// The < 10 > is the optimal value, figured out after experimentation.
 
 	private static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:manu[ae]l|guide|preview).*");
@@ -100,6 +101,7 @@ public class PageCrawler
 		if ( numOfInternalLinks > MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE ) {
 			logger.warn("Avoid checking more than " + MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE + " internal links (" + numOfInternalLinks + ") which were found in pageUrl \"" + pageUrl + "\". This page was discarded.");
 			UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as it has more than " + MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE + " internal links.", null, true, "true", "true", "false", "false");
+			contentProblematicUrls.incrementAndGet();
 			return;
 		}
 		HashSet<String> remainingLinks = new HashSet<>(numOfInternalLinks);	// Used later. Initialize with the total num of links (less will actually get stored there, but their num is unknown).
@@ -142,7 +144,7 @@ public class PageCrawler
 
 				if ( (++possibleDocOrDatasetUrlsCounter) > MAX_POSSIBLE_DOC_OR_DATASET_LINKS_TO_CONNECT ) {
 					logger.warn("The maximum limit (" + MAX_POSSIBLE_DOC_OR_DATASET_LINKS_TO_CONNECT + ") of possible doc or dataset links to be connected was reached for pageUrl: \"" + pageUrl + "\". The page was discarded.");
-					UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as it tried to connect with more than " + MAX_POSSIBLE_DOC_OR_DATASET_LINKS_TO_CONNECT + " possible doc or dataset links.", null, true, "true", "true", "false", "false");
+					handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, true, false);
 					return;
 				}
 
@@ -162,6 +164,7 @@ public class PageCrawler
 					if ( (blockedDomain != null) && blockedDomain.contains(pageDomain) ) {
 						logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
 						UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was blocked during crawling.", null, true, "true", "true", "false", "false");
+						LoaderAndChecker.connProblematicUrls.incrementAndGet();
 						return;
 					}
 					continue;
@@ -169,10 +172,11 @@ public class PageCrawler
 					if ( urlToCheck.contains(pageDomain) ) {	// In this case, it's unworthy to stay and check other internalLinks here.
 						logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after a potentialDocUrl caused a ConnTimeoutException.");
 						UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as an internalLink of this page caused 'ConnTimeoutException'.", null, true, "true", "true", "false", "false");
+						LoaderAndChecker.connProblematicUrls.incrementAndGet();
 						return;
 					}
 					continue;
-				} catch (Exception e) {	// The exception: "DomainWithUnsupportedHEADmethodException" should never be caught here, as we use "GET" for possibleDocUrls.
+				} catch (Exception e) {	// The exception: "DomainWithUnsupportedHEADmethodException" should never be caught here, as we use "GET" for possibleDocOrDatasetUrls.
 					logger.error("" + e);
 					continue;
 				}
@@ -202,8 +206,9 @@ public class PageCrawler
 			}
 
 			if ( (++remainingUrlsCounter) > MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT ) {	// The counter is incremented only on "aboutToConnect" links, so no need to pre-clean the "remainingLinks"-set.
-				logger.warn("The maximum limit (" + MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT + ") of remaining links to be connected was reached for pageUrl: \"" + pageUrl + "\"");
-				break;	// It will reach the end of this function, will call "handlePageWithNoDocUrls()" and then return.
+				logger.warn("The maximum limit (" + MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT + ") of remaining links to be connected was reached for pageUrl: \"" + pageUrl + "\". The page was discarded.");
+				handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, true, false);
+				return;	// It could reach the end of this function, will call "handlePageWithNoDocUrls()" and then return, but we don't want to show double-logs..
 			}
 
 			//logger.debug("InternalLink to connect with: " + currentLink);	// DEBUG!
@@ -217,18 +222,21 @@ public class PageCrawler
 				if ( (blockedDomain != null) && blockedDomain.contains(pageDomain) ) {
 					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
 					UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was blocked during crawling.", null, true, "true", "true", "false", "false");
+					LoaderAndChecker.connProblematicUrls.incrementAndGet();
 					return;
 				}
 			} catch (DomainWithUnsupportedHEADmethodException dwuhe) {
 				if ( currentLink.contains(pageDomain) ) {
 					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was caught to not support the HTTP HEAD method, as a result, the internal-links will stop being checked.");
 					UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was caught to not support the HTTP HEAD method.", null, true, "true", "true", "false", "false");
+					LoaderAndChecker.connProblematicUrls.incrementAndGet();
 					return;
 				}
 			} catch (ConnTimeoutException cte) {	// In this case, it's unworthy to stay and check other internalLinks here.
 				if ( currentLink.contains(pageDomain) ) {
 					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after an internalLink caused a ConnTimeoutException.");
 					UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as an internalLink of this page caused 'ConnTimeoutException'.", null, true, "true", "true", "false", "false");
+					LoaderAndChecker.connProblematicUrls.incrementAndGet();
 					return;
 				}
 			} catch (RuntimeException e) {
@@ -236,7 +244,7 @@ public class PageCrawler
 			}
 		}	// end for-loop
 
-		handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false);
+		handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false, false);
 	}
 
 
@@ -246,12 +254,15 @@ public class PageCrawler
 	 * @param sourceUrl
 	 * @param pageUrl
 	 * @param pageDomain
+	 * @param hasWarningLogBeenShown
 	 * @param isAlreadyLoggedToOutput
 	 */
-	private static void handlePageWithNoDocUrls(String urlId, String sourceUrl, String pageUrl, String pageDomain, boolean isAlreadyLoggedToOutput)
+	private static void handlePageWithNoDocUrls(String urlId, String sourceUrl, String pageUrl, String pageDomain, boolean hasWarningLogBeenShown, boolean isAlreadyLoggedToOutput)
 	{
 		// If we get here it means that this pageUrl is not a docUrl itself, nor it contains a docUrl..
-		logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
+		if ( !hasWarningLogBeenShown )
+			logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
+
 		UrlTypeChecker.pagesNotProvidingDocUrls.incrementAndGet();
 		if ( !isAlreadyLoggedToOutput )	// This check is used in error-cases, where we have already logged the Quadruple.
 			UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as no docUrl was found inside.", null, true, "true", "true", "false", "false");
@@ -273,13 +284,13 @@ public class PageCrawler
 			return null;
 		} catch ( DocLinkFoundException dlfe) {
 			if ( !verifyDocLink(urlId, sourceUrl, pageUrl, pageDomain, pageContentType, dlfe) )	// url-logging is handled inside.
-				handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, true);
+				handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false, true);
 			return null;	// This DocLink is the only docLink we will ever gonna get from this page. The sourceUrl is logged inside the called method.
 			// If this "DocLink" is a DocUrl, then returning "null" here, will trigger the 'PageCrawler.visit()' method to exit immediately (and normally).
 		} catch ( DocLinkInvalidException dlie ) {
 			//logger.warn("An invalid docLink < " + dlie.getMessage() + " > was found for pageUrl: \"" + pageUrl + "\". Search was stopped.");	// DEBUG!
 			UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as there was an invalid docLink. Its contentType is: '" + pageContentType + "'", null, true, "true", "true", "false", "false");
-			handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, true);
+			handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false, true);
 			return null;
 		} catch (Exception e) {
 			logger.warn("Could not retrieve the internalLinks for pageUrl: " + pageUrl);
