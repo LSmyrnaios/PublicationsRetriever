@@ -341,7 +341,10 @@ public class DocUrlsRetriever
 		}
 
 		logger.info("From the " + inputCheckedUrlNum + " urls checked from the input, the " + problematicUrlsNum + " of them (about " + df.format(problematicUrlsNum * 100.0 / inputCheckedUrlNum) + "%) were problematic (sum of all of the cases that appear in debug-mode).");
-		logger.info("The rest " + (inputCheckedUrlNum + LoaderAndChecker.loadingRetries.get() - UrlUtils.sumOfDocUrlsFound.get() - problematicUrlsNum) + " urls were not docUrls.");
+
+		long remainingNonProblematicUrls = inputCheckedUrlNum + LoaderAndChecker.loadingRetries.get() - UrlUtils.sumOfDocUrlsFound.get() - problematicUrlsNum;
+		if ( remainingNonProblematicUrls > 0 )
+			logger.info("The rest " + remainingNonProblematicUrls + " urls were not docUrls.");
 
 		logger.debug("The number of offline-redirects to HTTPS (reducing the online-redirection-overhead), was: " + HttpConnUtils.timesDidOfflineHTTPSredirect.get());
 		logger.debug("The number of domains blocked due to an \"SSL Exception\", was: " + HttpConnUtils.numOfDomainsBlockedDueToSSLException.get());

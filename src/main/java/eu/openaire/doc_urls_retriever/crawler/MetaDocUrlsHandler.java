@@ -3,6 +3,7 @@ package eu.openaire.doc_urls_retriever.crawler;
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.doc_urls_retriever.util.http.ConnSupportUtils;
 import eu.openaire.doc_urls_retriever.util.http.HttpConnUtils;
+import eu.openaire.doc_urls_retriever.util.url.LoaderAndChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlTypeChecker;
 import eu.openaire.doc_urls_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
@@ -18,14 +19,29 @@ public class MetaDocUrlsHandler {
     private static final Logger logger = LoggerFactory.getLogger(MetaDocUrlsHandler.class);
 
     // Order-independent META_DOC_URL-regex.
-    // (?:<meta(?:(?:[^<]*name=\"(?:[^<]*citation_pdf|eprints.document)_url\"[^<]*content=\"(http[^\"]+)\")|(?:[^<]*content=\"(http[^\"]+)\"[^<]*name=\"(?:[^<]*citation_pdf|eprints.document)_url\"))(?:[^>]*(?:/)?>))
+    // <meta(?:[^<]*name=\"(?:[^<]*citation_pdf|eprints.document)_url\"[^<]*content=\"(http[^\"]+)\"|[^<]*content=\"(http[^\"]+)\"[^<]*name=\"(?:[^<]*citation_pdf|eprints.document)_url\")[^>]*[/]?>
     private static final String metaName = "name=\"(?:[^<]*citation_pdf|eprints.document)_url\"";
     private static final String metaContent = "content=\"(http[^\"]+)\"";
-    public static final Pattern META_DOC_URL = Pattern.compile("(?:<meta(?:(?:[^<]*" + metaName + "[^<]*" + metaContent + ")|(?:[^<]*" + metaContent + "[^<]*" + metaName + "))(?:[^>]*(?:/)?>))");
+    public static final Pattern META_DOC_URL = Pattern.compile("<meta(?:[^<]*" + metaName + "[^<]*" + metaContent + "|[^<]*" + metaContent + "[^<]*" + metaName + ")[^>]*[/]?>");
 
-    public static final Pattern COMMON_UNSUPPORTED_META_DOC_URL_EXTENSIONS = Pattern.compile("\".+\\.(?:zip|rar|apk|jpg)(?:\\?.+)?$");
+    public static Pattern COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS;    // Its pattern gets compiled at runtime, only one time, depending on the Datatype.
+    static {
+        // Depending on the datatype, the pattern is formed differently.
+        String pattern = "\".+\\.(?:";
+
+        if ( !LoaderAndChecker.retrieveDatasets )
+            pattern += "zip|rar|";  // If no datasets retrieved, block these types.
+        else if ( !LoaderAndChecker.retrieveDocuments )
+            pattern += "pdf|doc[x]?|";  // If no documents retrieved, block these types.
+        //else -> no more datatype-dependent additions
+
+        pattern += "apk|jpg)(?:\\?.+)?$";
+        logger.debug("MetaDocUrlsHandler -> Pattern: " + pattern);
+        COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS = Pattern.compile(pattern);
+    }
 
     public static AtomicInteger numOfMetaDocUrlsFound = new AtomicInteger(0);
+
 
     /**
      * This method takes in the "pageHtml" of an already-connected url and checks if there is a metaDocUrl inside.
@@ -73,7 +89,7 @@ public class MetaDocUrlsHandler {
 
         if ( UrlTypeChecker.CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseMetaDocUrl).matches()
             || UrlTypeChecker.PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseMetaDocUrl).matches()
-            || COMMON_UNSUPPORTED_META_DOC_URL_EXTENSIONS.matcher(lowerCaseMetaDocUrl).matches() )
+            || COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS.matcher(lowerCaseMetaDocUrl).matches() )
         {
             logger.debug("The retrieved metaDocUrl ( " + metaDocUrl + " ) is pointing to an unsupported file.");
             UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was unsupported.", null, true, "true", "true", "false", "false");  // We log the source-url, and that was discarded in "PageCrawler.visit()".
