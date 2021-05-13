@@ -56,6 +56,8 @@ public class LoaderAndChecker
 		try {
 			if ( useIdUrlPairs )
 				loadAndCheckIdUrlPairs();
+				//loadAndCheckEachIdUrlPair();
+				//loadAndCheckEachIdUrlPairInEntries();
 			else
 				loadAndCheckUrls();
 		} catch (Exception e) {
@@ -138,11 +140,8 @@ public class LoaderAndChecker
 					}
 					return true;
 				});
-
 			}// end for-loop
-
 			invokeAllTasksAndWait(callableTasks);
-
 		}// end while-loop
 	}
 
@@ -291,11 +290,172 @@ public class LoaderAndChecker
 
 					return true;
 				});
-
 			}// end id-for-loop
-
 			invokeAllTasksAndWait(callableTasks);
+		}// end loading-while-loop
+	}
 
+
+
+
+	/**
+	 * This method loads the id-url pairs from the input file in memory, in packs.
+	 * Then, it iterates through the id-url paris and checks them.
+	 * @throws RuntimeException if no input-urls were retrieved.
+	 */
+	public static void loadAndCheckEachIdUrlPairInEntries() throws RuntimeException
+	{
+		HashMultimap<String, String> loadedIdUrlPairs;
+		boolean isFirstRun = true;
+		int batchCount = 0;
+
+		// Start loading and checking urls.
+		while ( true )
+		{
+			loadedIdUrlPairs = FileUtils.getNextIdUrlPairBatchFromJson(); // Take urls from jsonFile.
+
+			if ( isFinishedLoading(loadedIdUrlPairs.isEmpty(), isFirstRun) )	// Throws RuntimeException which is automatically passed on.
+				break;
+			else
+				isFirstRun = false;
+
+			Set<Map.Entry<String, String>> pairs = loadedIdUrlPairs.entries();
+			numOfIDs += pairs.size();
+
+			logger.info("Batch counter: " + (++batchCount) + ((DocUrlsRetriever.inputFileFullPath != null)? " | progress: " + DocUrlsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) : "") + "% | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
+
+			List<Callable<Boolean>> callableTasks = new ArrayList<>(numOfIDs);
+
+			for ( Map.Entry<String,String> pair : pairs )
+			{
+				callableTasks.add(() -> {
+
+					String retrievedId = pair.getKey();
+					String retrievedUrl = pair.getValue();
+
+					if ( (retrievedUrl = handleUrlChecks(retrievedId, retrievedUrl)) == null ) {
+						return false;
+					}    // The "retrievedUrl" might have changed (inside "handleUrlChecks()").
+
+					String urlToCheck = retrievedUrl;
+					String sourceUrl = urlToCheck;    // Hold it here for the logging-messages.
+					if ( !sourceUrl.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
+						logger.warn("Could not canonicalize url: " + sourceUrl);
+						UrlUtils.logOutputData(retrievedId, sourceUrl, null, "unreachable", "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false");
+						LoaderAndChecker.connProblematicUrls.incrementAndGet();
+						return false;
+					}
+
+					if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {    // If we got into an already-found docUrl, log it and return.
+						ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, logger, true);
+						return true;
+					}
+
+					boolean isPossibleDocOrDatasetUrl = false;    // Used for specific connection settings.
+					String lowerCaseRetrievedUrl = retrievedUrl.toLowerCase();
+					// Check if it's a possible-DocUrl, if so, this info will be used for optimal web-connection later.
+					if ( (retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
+							|| (retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) ) {
+						//logger.debug("Possible docUrl or datasetUrl: " + retrievedUrl);
+						isPossibleDocOrDatasetUrl = true;
+					}
+
+					try {    // Check if it's a docUrl, if not, it gets crawled.
+						HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
+					} catch (Exception e) {
+						String wasUrlValid = "true";
+						if ( e instanceof RuntimeException ) {
+							String message = e.getMessage();
+							if ( (message != null) && message.contains("HTTP 404 Client Error") )
+								wasUrlValid = "false";
+						}
+						UrlUtils.logOutputData(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false");
+					}
+					return true;
+				});
+			}// end pairs-for-loop
+			invokeAllTasksAndWait(callableTasks);
+		}// end loading-while-loop
+	}
+
+
+	/**
+	 * This method loads the id-url pairs from the input file in memory, in packs.
+	 * Then, it groups them per ID and checks all the urls.
+	 * @throws RuntimeException if no input-urls were retrieved.
+	 */
+	public static void loadAndCheckEachIdUrlPair() throws RuntimeException
+	{
+		HashMultimap<String, String> loadedIdUrlPairs;
+		boolean isFirstRun = true;
+		int batchCount = 0;
+
+		// Start loading and checking urls.
+		while ( true )
+		{
+			loadedIdUrlPairs = FileUtils.getNextIdUrlPairBatchFromJson(); // Take urls from jsonFile.
+
+			if ( isFinishedLoading(loadedIdUrlPairs.isEmpty(), isFirstRun) )	// Throws RuntimeException which is automatically passed on.
+				break;
+			else
+				isFirstRun = false;
+
+			logger.info("Batch counter: " + (++batchCount) + ((DocUrlsRetriever.inputFileFullPath != null)? " | progress: " + DocUrlsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) : "") + "% | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
+
+			List<Callable<Boolean>> callableTasks = new ArrayList<>(numOfIDs);
+
+			for ( String retrievedId : loadedIdUrlPairs.keySet() ) {
+
+				Set<String> retrievedUrlsOfCurrentId = loadedIdUrlPairs.get(retrievedId);
+				numOfIDs += retrievedUrlsOfCurrentId.size();
+
+				// Each task is handling a different ID, so that the threads will be less blocked due to connecting to the same domain.
+				callableTasks.add(() -> {
+					for ( String retrievedUrl : retrievedUrlsOfCurrentId )
+					{
+						if ( (retrievedUrl = handleUrlChecks(retrievedId, retrievedUrl)) == null ) {
+							continue;
+						}    // The "retrievedUrl" might have changed (inside "handleUrlChecks()").
+
+						String urlToCheck = retrievedUrl;
+						String sourceUrl = urlToCheck;    // Hold it here for the logging-messages.
+						if ( !sourceUrl.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
+							logger.warn("Could not canonicalize url: " + sourceUrl);
+							UrlUtils.logOutputData(retrievedId, sourceUrl, null, "unreachable", "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false");
+							LoaderAndChecker.connProblematicUrls.incrementAndGet();
+							continue;
+						}
+
+						if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {    // If we got into an already-found docUrl, log it and return.
+							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, logger, true);
+							continue;
+						}
+
+						boolean isPossibleDocOrDatasetUrl = false;    // Used for specific connection settings.
+						String lowerCaseRetrievedUrl = retrievedUrl.toLowerCase();
+						// Check if it's a possible-DocUrl, if so, this info will be used for optimal web-connection later.
+						if ( (retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
+								|| (retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) ) {
+							//logger.debug("Possible docUrl or datasetUrl: " + retrievedUrl);
+							isPossibleDocOrDatasetUrl = true;
+						}
+
+						try {    // Check if it's a docUrl, if not, it gets crawled.
+							HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
+						} catch (Exception e) {
+							String wasUrlValid = "true";
+							if ( e instanceof RuntimeException ) {
+								String message = e.getMessage();
+								if ( (message != null) && message.contains("HTTP 404 Client Error") )
+									wasUrlValid = "false";
+							}
+							UrlUtils.logOutputData(retrievedId, urlToCheck, null, "unreachable", "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false");
+						}
+					}
+					return true;
+				});
+			}// end for-id-loop
+			invokeAllTasksAndWait(callableTasks);
 		}// end loading-while-loop
 	}
 
