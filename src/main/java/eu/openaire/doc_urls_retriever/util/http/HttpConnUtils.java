@@ -149,7 +149,7 @@ public class HttpConnUtils
 							logger.error(GenericUtils.getSelectiveStackTrace(dfnde, fullPathFileName, 9));	// TODO - Instead of the stacktrace, provide the right message when first thrown, just like in "RuntimeException".
 						}
 					}
-					String wasDirectLink = ConnSupportUtils.getwasDirectLink(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
+					String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
 					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", wasDirectLink);	// we send the urls, before and after potential redirections.
 					return true;
 				}
@@ -157,7 +157,7 @@ public class HttpConnUtils
 					logger.info("datasetUrl found: < " + finalUrlStr + " >");
 					// TODO - handle possible download and improve logging...
 					String fullPathFileName = FileUtils.shouldDownloadDocFiles ? "It's a dataset-url. The download is not supported." : "It's a dataset-url.";
-					String wasDirectLink = ConnSupportUtils.getwasDirectLink(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
+					String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
 					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", wasDirectLink);	// we send the urls, before and after potential redirections.
 					return true;
 				}

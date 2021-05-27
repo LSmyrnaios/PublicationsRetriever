@@ -310,7 +310,7 @@ public class DocUrlsRetriever
 					+ " The un-retrieved docFiles were either belonging to already-found docUrls or they had connection-issues.");
 		}
 		logger.debug("The metaDocUrl-handler is responsible for the discovery of " + MetaDocUrlsHandler.numOfMetaDocUrlsFound + " of the docUrls (" + df.format(MetaDocUrlsHandler.numOfMetaDocUrlsFound.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "%).");
-		logger.debug("The re-crossed docUrls (from all handlers) were " + LoaderAndChecker.reCrossedDocUrls.get() + ". That's about " + df.format(LoaderAndChecker.reCrossedDocUrls.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "% of the total docUrls found.");
+		logger.debug("The re-crossed docUrls (from all handlers) were " + ConnSupportUtils.reCrossedDocUrls.get() + ". That's about " + df.format(ConnSupportUtils.reCrossedDocUrls.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "% of the total docUrls found.");
 		if ( MachineLearning.useMLA )
 			logger.debug("The M.L.A. is responsible for the discovery of " + MachineLearning.docUrlsFoundByMLA.get() + " of the docUrls (" + df.format(MachineLearning.docUrlsFoundByMLA.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "%). The M.L.A.'s average success-rate was: " + df.format(MachineLearning.getAverageSuccessRate()) + "%. Gathered data for " + MachineLearning.timesGatheredData + " valid pageUrl-docUrl pairs.");
 		else

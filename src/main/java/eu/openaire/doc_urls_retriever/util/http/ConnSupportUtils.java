@@ -67,6 +67,7 @@ public class ConnSupportUtils
 	private static final int timesToHaveTimeoutExBeforeDomainBlocked = 25;
 
 	private static final int timesToReturnNoTypeBeforeDomainBlocked = 10;
+	public static AtomicInteger reCrossedDocUrls = new AtomicInteger(0);
 
 	public static final Set<String> knownDocMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 	public static final Set<String> knownDatasetMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
@@ -202,8 +203,8 @@ public class ConnSupportUtils
 
 	public static void handleReCrossedDocUrl(String urlId, String sourceUrl, String pageUrl, String docUrl, Logger logger, boolean calledForPageUrl) {
 		logger.info("re-crossed docUrl found: < " + docUrl + " >");
-		LoaderAndChecker.reCrossedDocUrls.incrementAndGet();
-		String wasDirectLink = ConnSupportUtils.getwasDirectLink(sourceUrl, pageUrl, calledForPageUrl, docUrl);
+		reCrossedDocUrls.incrementAndGet();
+		String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, docUrl);
 		if ( FileUtils.shouldDownloadDocFiles )
 			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(docUrl), null, false, "true", "true", "true", wasDirectLink);
 		else
@@ -883,7 +884,7 @@ public class ConnSupportUtils
 	}
 
 
-	public static String getwasDirectLink(String sourceUrl, String pageUrl, boolean calledForPageUrl, String finalUrlStr) {
+	public static String getWasDirectLink(String sourceUrl, String pageUrl, boolean calledForPageUrl, String finalUrlStr) {
 		String wasDirectLink;
 		if ( calledForPageUrl ) {
 			boolean isSpecialUrl = HttpConnUtils.isSpecialUrl.get();	// It's more efficient to save it once in a temp-variable.

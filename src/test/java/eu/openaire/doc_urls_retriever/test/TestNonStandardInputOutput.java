@@ -33,7 +33,7 @@ public class TestNonStandardInputOutput  {
 	private static final String testInputFile = "orderedList1000.json";	//"test_only_ids.json";	//"id_to_url_rand10000_20201015.json";	//"test_non_utf_output.json"; //"around_200k_IDs.json";	// "sampleCleanUrls3000.json", "orderedList1000.json", "orderedList5000.json", "testRandomNewList100.csv", "test.json", "id_to_url_rand10000_20201015.json"
 
 	private static final File inputFile = new File(testingDirectory + testInputFile);
-	private static final File outputFile = new File(testingDirectory + "results_" + testInputFile);
+	private static File outputFile = new File(testingDirectory + "results_" + testInputFile);
 
 
 	@BeforeAll
@@ -214,6 +214,23 @@ public class TestNonStandardInputOutput  {
 			} else {
 				FileUtils.numOfLines = Files.lines(Paths.get(DocUrlsRetriever.inputFileFullPath)).count();
 				logger.info("The numOfLines in the inputFile is " + FileUtils.numOfLines);
+			}
+
+			if ( DocUrlsRetriever.inputFileFullPath != null ) {	// If the user gave the inputFile as a cmd-arg..
+				// Extract the path and the file-name. Do a split in reverse order.
+				String path = null;
+				String inputFileName = null;
+				char separatorChar = File.separator.charAt(0);
+				for ( int i = DocUrlsRetriever.inputFileFullPath.length() -1; i >= 0 ; --i ) {
+					if ( DocUrlsRetriever.inputFileFullPath.charAt(i) == separatorChar ) {
+						i++;	// The following methods need the increased < i >
+						path = DocUrlsRetriever.inputFileFullPath.substring(0, i);
+						inputFileName = DocUrlsRetriever.inputFileFullPath.substring(i);
+						break;
+					}
+				}
+				if ( path != null )
+					outputFile = new File(path + "results_" + inputFileName);
 			}
 
 			new FileUtils(DocUrlsRetriever.inputStream, new FileOutputStream(outputFile));

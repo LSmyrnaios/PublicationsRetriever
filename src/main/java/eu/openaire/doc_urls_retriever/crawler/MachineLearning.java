@@ -60,7 +60,7 @@ public class MachineLearning
 	public static AtomicInteger docUrlsFoundByMLA = new AtomicInteger(0);
 	// If we later want to show statistics, we should take into account only the number of the urls to which the MLA was tested against, not all of the urls in the inputFile.
 
-	private static final Set<String> domainsBlockedFromMLA =Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());;
+	private static final Set<String> domainsBlockedFromMLA = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());;
 	static {	// These domain is not compatible with the MLA.
 		domainsBlockedFromMLA.add("sciencedirect.com");
 	}

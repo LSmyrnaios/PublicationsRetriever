@@ -42,7 +42,6 @@ public class LoaderAndChecker
 	public static int numOfIDs = 0;	// The number of IDs existing in the input.
 	public static AtomicInteger connProblematicUrls = new AtomicInteger(0);	// Urls known to have connectivity problems, such as long conn-times etc.
 	public static AtomicInteger inputDuplicatesNum = new AtomicInteger(0);
-	public static AtomicInteger reCrossedDocUrls = new AtomicInteger(0);
 	public static AtomicInteger numOfIDsWithoutAcceptableSourceUrl = new AtomicInteger(0);	// The number of IDs which failed to give an acceptable sourceUrl.
 	public static AtomicInteger loadingRetries = new AtomicInteger(0);
 
