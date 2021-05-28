@@ -44,7 +44,6 @@ public class HttpConnUtils
 
 	public static AtomicInteger numOfDomainsBlockedDueToSSLException = new AtomicInteger(0);
 
-	public static String lastConnectedHost = "";
 	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:87.0) Gecko/20100101 Firefox/87.0";
 	public static String acceptLanguage = "en,en;q=0.5";
 
@@ -326,7 +325,7 @@ public class HttpConnUtils
 				conn.setReadTimeout(maxConnHEADWaitingTime);
 			}
 
-			ConnSupportUtils.applyPolitenessDelay(resourceURL, domainStr);	// This is synchronized.
+			ConnSupportUtils.applyPolitenessDelay(domainStr);
 
 			conn.connect();	// Else, first connect and if there is no error, log this domain as the last one.
 
@@ -352,7 +351,7 @@ public class HttpConnUtils
 					conn.setReadTimeout(maxConnHEADWaitingTime);
 				}
 
-				ConnSupportUtils.applyPolitenessDelay(resourceURL, domainStr);	// This is synchronized.
+				ConnSupportUtils.applyPolitenessDelay(domainStr);
 
 				conn.connect();	// Else, first connect and if there is no error, log this domain as the last one.
 
@@ -378,7 +377,7 @@ public class HttpConnUtils
 				conn.setReadTimeout(maxConnGETWaitingTime);
 				conn.setInstanceFollowRedirects(false);
 
-				ConnSupportUtils.applyPolitenessDelay(resourceURL, domainStr);	// This is synchronized.
+				ConnSupportUtils.applyPolitenessDelay(domainStr);
 
 				conn.connect();
 				//logger.debug("responseCode for \"" + resourceURL + "\", after setting conn-method to: \"" + conn.getRequestMethod() + "\" is: " + conn.getResponseCode());
@@ -400,7 +399,7 @@ public class HttpConnUtils
 					conn.setReadTimeout(maxConnGETWaitingTime);
 					conn.setInstanceFollowRedirects(false);
 
-					ConnSupportUtils.applyPolitenessDelay(resourceURL, domainStr);	// This is synchronized.
+					ConnSupportUtils.applyPolitenessDelay(domainStr);
 
 					conn.connect();	// Else, first connect and if there is no error, log this domain as the last one.
 

@@ -22,8 +22,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -292,19 +296,66 @@ public class ConnSupportUtils
 	}
 
 
-	public static synchronized void applyPolitenessDelay(String resourceURL, String domainStr)
+	public static final Hashtable<String, DomainConnectionData> domainsWithLocks = new Hashtable<>();
+
+	/**
+	 * This method receives the domain and manages the sleep-time, if needed.
+	 * It first extracts the last 3 parts of the domain. Then it checks if the domain is faced for the first time.
+	 * If it is the first time, then the domain is added in the Hashtable along with a new DomainConnectionData.
+	 * Else the thread will lock that domain and check if it was connected before at most "minPolitenessDelay" secs, if so, then the thread will sleep for a random number of milliseconds.
+	 * Different threads lock on different domains, so each thread is not dependent on another thread which works on a different domain.
+	 * @param domainStr
+	 */
+	public static void applyPolitenessDelay(String domainStr)
 	{
-		if ( !HttpConnUtils.lastConnectedHost.isEmpty() && resourceURL.contains(HttpConnUtils.lastConnectedHost) ) {	// If this is the last-visited domain, sleep a bit before re-connecting to it.
-			int randomPolitenessDelay = ConnSupportUtils.getRandomNumber(minPolitenessDelay, maxPolitenessDelay);
-			try {
-				Thread.sleep(randomPolitenessDelay);	// Avoid server-overloading for the same domain.
-			} catch (InterruptedException ie) {
-				try {
-					Thread.sleep(randomPolitenessDelay);
-				} catch (InterruptedException ignored) { }
-			}	// At this point, if both sleeps failed, some time has already passed, so it's ok to connect to the same domain.
+		// Consider only the last three parts of a domain, not all, otherwise, a sub-sub-domain might connect simultaneously with a another sub-sub-domain.
+		domainStr = UrlUtils.getTopThreeLevelDomain(domainStr);
+
+		DomainConnectionData domainConnectionData = domainsWithLocks.get(domainStr);
+		if ( domainConnectionData == null ) {	// If it is the 1st time connecting.
+			domainsWithLocks.put(domainStr, new DomainConnectionData());
+			return;
 		}
-		HttpConnUtils.lastConnectedHost = domainStr;
+
+		domainConnectionData.lock.lock();// Threads trying to connect with the same domain, should sleep one AFTER the other, to avoid coming back after sleep at the same time, in the end..
+		long elapsedTimeMillis;
+		Instant currentTime = Instant.now();
+		try {
+			elapsedTimeMillis = Duration.between(domainConnectionData.lastTimeConnected, currentTime).toMillis();
+		} catch (Exception e) {
+			logger.warn("An exception was thrown when tried to obtain the time elapsed from the last time the domain connected: " + e.getMessage());
+			domainConnectionData.updateAndUnlock(currentTime);
+			return;
+		}
+
+		if ( elapsedTimeMillis < minPolitenessDelay ) {
+			long randomPolitenessDelay = getRandomNumber(minPolitenessDelay, maxPolitenessDelay);
+			long finalPolitenessDelay = randomPolitenessDelay - elapsedTimeMillis;
+			//logger.debug("WILL SLEEP for " + finalPolitenessDelay + " | randomNumber was " + randomPolitenessDelay + ", elapsedTime was: " + elapsedTimeMillis + " | domain: " + domainStr);	// DEBUG!
+			try {
+				Thread.sleep(finalPolitenessDelay);    // Avoid server-overloading for the same domain.
+			} catch (InterruptedException ie) {
+				Instant newCurrentTime = Instant.now();
+				try {
+					elapsedTimeMillis = Duration.between(currentTime, newCurrentTime).toMillis();
+				} catch (Exception e) {
+					logger.warn("An exception was thrown when tried to obtain the time elapsed from the last time the \"currentTime\" was updated: " + e.getMessage());
+					domainConnectionData.updateAndUnlock(newCurrentTime);
+					return;
+				}
+				if ( elapsedTimeMillis < minPolitenessDelay ) {
+					finalPolitenessDelay -= elapsedTimeMillis;
+					try {
+						Thread.sleep(finalPolitenessDelay);
+					} catch (InterruptedException ignored) {
+					}
+				}
+			}	// At this point, if both sleeps failed, some time has already passed, so it's ok to connect to the same domain.
+			currentTime = Instant.now();	// Update, after the sleep.
+		} //else
+			//logger.debug("NO SLEEP NEEDED, elapsedTime: " + elapsedTimeMillis + " > " + minPolitenessDelay + " | domain: " + domainStr);	// DEBUG!
+
+		domainConnectionData.updateAndUnlock(currentTime);
 	}
 
 
@@ -879,8 +930,10 @@ public class ConnSupportUtils
 	}
 
 
-	public static int getRandomNumber(int min, int max) {
-		return (int)(Math.random() * (max - min +1) + min);
+	private static final ThreadLocalRandom threadLocalRandom = ThreadLocalRandom.current();
+
+	public static long getRandomNumber(int min, int max) {
+		return threadLocalRandom.nextLong(min, max+1);	// It's (max+1) because the max upper bound is exclusive.
 	}
 
 

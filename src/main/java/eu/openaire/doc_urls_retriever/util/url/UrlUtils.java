@@ -200,6 +200,31 @@ public class UrlUtils
 	}
 
 
+	public static final Pattern TOP_THREE_LEVEL_DOMAIN_FILTER = Pattern.compile("[\\w-.]*?((?:[\\w-]+.)?[\\w-]+.[\\w-]+)$");
+
+	/**
+	 * This method received the domain as a parameter and tries to return only the top-three-level domain part.
+	 * If the retrieval process fails, it returns the domain as it was given.
+	 * @param domainStr
+	 * @return the top-three-level-domain
+	 */
+	public static String getTopThreeLevelDomain(String domainStr)
+	{
+		Matcher matcher = TOP_THREE_LEVEL_DOMAIN_FILTER.matcher(domainStr);
+		if ( matcher.matches() ) {
+			try {
+				domainStr = matcher.group(1);
+			} catch (Exception e) {
+				logger.warn("Could not find the group < 1 > when retrieving the top-three-level-domain from \"" + domainStr + "\"");
+				return domainStr;	// It's the domain that was given as parameter.
+			}
+		} else
+			logger.warn("Could not retrieve the top-three-level-domain from \"" + domainStr + "\"");
+
+		return domainStr;
+	}
+
+
 	/**
 	 * This method is responsible for removing the "temporalId" part of a url.
 	 * If no temporalId is found, then it returns the string it received.
