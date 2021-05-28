@@ -220,7 +220,7 @@ public class TestNonStandardInputOutput  {
 				// Extract the path and the file-name. Do a split in reverse order.
 				String path = null;
 				String inputFileName = null;
-				char separatorChar = File.separator.charAt(0);
+				char separatorChar = File.separator.charAt(0);	// The "inputFileFullPath" is guaranteed to have at least one "separator".
 				for ( int i = DocUrlsRetriever.inputFileFullPath.length() -1; i >= 0 ; --i ) {
 					if ( DocUrlsRetriever.inputFileFullPath.charAt(i) == separatorChar ) {
 						i++;	// The following methods need the increased < i >

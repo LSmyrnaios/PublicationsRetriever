@@ -7,6 +7,9 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Field;
+import java.util.LinkedHashMap;
+
 
 /**
  * This class is responsible to store the quadruple <urlId, sourceUrl, docUrl, errorCause> for it to be written in the outputFile.
@@ -69,6 +72,16 @@ public class DataToBeLogged
     public String toJsonString()
     {
 		JSONObject jsonObject = new JSONObject();
+		try {	//	Change the underlying structure to a "LinkedHashMap", in order to avoid unordered-representation.
+			Field changeMap = jsonObject.getClass().getDeclaredField("map");
+			changeMap.setAccessible(true);
+			changeMap.set(jsonObject, new LinkedHashMap<>());
+			changeMap.setAccessible(false);
+		} catch (IllegalAccessException | NoSuchFieldException e) {
+			logger.warn("Could not create an ordered JSONObject, so continuing with an unordered one. Exception msg: " + e.getMessage());
+			jsonObject = new JSONObject();	// In this case, just create a new "normal" JSONObject.
+		}
+
 		try {
 			if ( LoaderAndChecker.useIdUrlPairs ) {
 				jsonObject.put("id", this.urlId);
