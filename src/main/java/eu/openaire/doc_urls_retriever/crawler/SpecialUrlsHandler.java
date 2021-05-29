@@ -45,27 +45,27 @@ public class SpecialUrlsHandler
 	{
 		String updatedUrl = null;
 
-		if ( (updatedUrl = SpecialUrlsHandler.checkAndGetScienceDirectUrl(resourceUrl)) != null ) {
+		if ( (updatedUrl = checkAndGetScienceDirectUrl(resourceUrl)) != null ) {
 			//logger.debug("ScienceDirect-PageURL to try: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		}
-		else if ( (updatedUrl = SpecialUrlsHandler.checkAndGetEuropepmcDocUrl(resourceUrl)) != null ) {
+		else if ( (updatedUrl = checkAndGetEuropepmcDocUrl(resourceUrl)) != null ) {
 			//logger.debug("Europepmc-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		}
-		else if ( (updatedUrl = SpecialUrlsHandler.checkAndGetAcademicMicrosoftPageUrl(resourceUrl)) != null ) {
+		else if ( (updatedUrl = checkAndGetAcademicMicrosoftPageUrl(resourceUrl)) != null ) {
 			//logger.debug("AcademicMicrosoft-PageURL: " + resourceURL + " to api-entity-pageUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		}
-		else if ( (updatedUrl = SpecialUrlsHandler.checkAndGetNasaDocUrl(resourceUrl)) != null ) {
+		else if ( (updatedUrl = checkAndGetNasaDocUrl(resourceUrl)) != null ) {
 			//logger.debug("Nasa-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		}
-		else if ( (updatedUrl = SpecialUrlsHandler.checkAndGetFrontiersinDocUrl(resourceUrl)) != null ) {
+		else if ( (updatedUrl = checkAndGetFrontiersinDocUrl(resourceUrl)) != null ) {
 			//logger.debug("Frontiersin-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		}
-		else if ( (updatedUrl = SpecialUrlsHandler.checkAndHandlePsyarxiv(resourceUrl)) != null )
+		else if ( (updatedUrl = checkAndHandlePsyarxiv(resourceUrl)) != null )
 			//logger.debug("Psyarxiv-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		else

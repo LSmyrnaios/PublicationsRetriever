@@ -33,9 +33,9 @@ public class PageCrawler
 
 	private static final Pattern INTERNAL_LINKS_STARTING_FROM_FILTER = Pattern.compile("^(?:(?:mailto|tel|fax|file|data):|\\{openurl}|[/]*\\?(?:locale(?:-attribute)?|ln)=).*");
 
-	public static final Pattern JAVASCRIPT_DOC_LINK = Pattern.compile("(?:javascript:pdflink.*')(http.+)(?:',.*)", Pattern.CASE_INSENSITIVE);
+	public static final Pattern JAVASCRIPT_DOC_LINK = Pattern.compile("javascript:pdflink.*'(http.+)'[\\s]*,.*", Pattern.CASE_INSENSITIVE);
 
-	public static final Pattern JAVASCRIPT_CODE_PDF_LINK = Pattern.compile(".*\"pdfUrl\":\"([^\"]+)(?:\").*");	// TODO - Check if this case is common, in order to handle it.
+	public static final Pattern JAVASCRIPT_CODE_PDF_LINK = Pattern.compile(".*\"pdfUrl\":\"([^\"]+)\".*");	// TODO - Check if this case is common, in order to handle it.
 
 	public static final Hashtable<String, Integer> timesDomainNotGivingInternalLinks = new Hashtable<String, Integer>();
 	public static final Hashtable<String, Integer> timesDomainNotGivingDocUrls = new Hashtable<String, Integer>();

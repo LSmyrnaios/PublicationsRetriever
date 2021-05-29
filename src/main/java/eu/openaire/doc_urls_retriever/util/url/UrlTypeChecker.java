@@ -17,22 +17,22 @@ public class UrlTypeChecker
 {
 	private static final Logger logger = LoggerFactory.getLogger(UrlTypeChecker.class);
 
-	private static final String htExtensionsPattern = "(?:[\\w])?ht(?:[\\w]{1,2})?";
-	private static final String phpExtensionsPattern = "php(?:[\\d])?";
+	private static final String htExtensionsPattern = "[\\w]?ht(?:[\\w]{1,2})?";
+	private static final String phpExtensionsPattern = "php[\\d]?";
 	private static final String mediaExtensionsPattern = "ico|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov";
 
 	public static final Pattern URL_DIRECTORY_FILTER =
-			Pattern.compile(".+://.*/(?:(discover|profile|user|survey)(?!.+(?:file|pdf|document|dataset))|(?:(?:ldap|password)-)?login|auth(?:entication)?\\.|ac(?:c)?ess(?!\\.)|sign(?:in|out|up)|session|join|subscr|register|submi(?:t|ssion)|search[/]*$|(?:post|send|shop|view|export|(?:wp-)?admin|home)/|watch|browse|import|bookmark|announcement|rss|feed|share|about|faq|wiki|news|events|cart|support|(?:site|html)map|documentation|help|contact|license|disclaimer|copyright|polic(?:y|ies)|privacy|terms|law|principles"
-					+ "|(?:my|your|create)?account|settings|fund|aut(?:h)?or|editor|author:|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic(s)?/.*/view/|conta(?:c)?t|wallet|contribute|deposit|donate|our[_-][\\w]+|template|logo|image|photo|video|media|theme|advertiser|product|people|(?:the)?press|forum|blog|column|row|for-authors|css|js|captcha|clipboard"
+			Pattern.compile(".+://.*/(?:(discover|profile|user|survey)(?!.+(?:file|pdf|document|dataset))|(?:(?:ldap|password)-)?login|auth(?:entication)?\\.|ac[c]?ess(?!\\.)|sign(?:in|out|up)|session|join|subscr|register|submi(?:t|ssion)|search[/]*$|(?:post|send|shop|view|export|(?:wp-)?admin|home)/|watch|browse|import|bookmark|announcement|rss|feed|share|about|faq|wiki|news|events|cart|support|(?:site|html)map|documentation|help|contact|license|disclaimer|copyright|polic(?:y|ies)|privacy|terms|law|principles"
+					+ "|(?:my|your|create)?account|settings|fund|aut[h]?or|editor|author:|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic(s)?/.*/view/|conta[c]?t|wallet|contribute|deposit|donate|our[_-][\\w]+|template|logo|image|photo|video|media|theme|advertiser|product|people|(?:the)?press|forum|blog|column|row|for-authors|css|js|captcha|clipboard"
 					+ "|restricted|noaccess|crawlprevention|error|(?:mis|ab)use|\\?denied|gateway|defaultwebpage|sorryserver|cookie|notfound|(?:404|accessibility|catalog(?:ue|ar|o)?)\\." + htExtensionsPattern + ").*");
 	// We check them as a directory to avoid discarding publications' urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
 	
-	public static final Pattern CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER = Pattern.compile(".+\\.(?:(?:doc|ppt)(?:x)?|ps|epub|od[tp]|djvu|rtf)(?:\\?.+)?$");	// Doc-extensions which are currently unsupported. Some pageUrls give also .zip files, but that's another story.
+	public static final Pattern CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER = Pattern.compile(".+\\.(?:(?:doc|ppt)[x]?|ps|epub|od[tp]|djvu|rtf)(?:\\?.+)?$");	// Doc-extensions which are currently unsupported. Some pageUrls give also .zip files, but that's another story.
 
 	public static final Pattern URL_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:css|js(?:\\?y)?|" + mediaExtensionsPattern + "|pt|bib|nt|refer|enw|ris|mso|dtl|do|asc|c|cc|cxx|cpp|java|py)(?:\\?.+)?$");
 	// In the above, don't include .php and relative extensions, since even this can be a docUrl. For example: https://www.dovepress.com/getfile.php?fileID=5337
 
-	public static final Pattern INTERNAL_LINKS_KEYWORDS_FILTER = Pattern.compile(".*(?:doi.org|\\?l(?:a)?n(?:g)?=|isallowed=n|site=|linkout|login|linklistener).*");	// Plain key-words inside internalLinks-String. We avoid "doi.org" in internal links, as, after many redirects, they will reach the same pageUrl.
+	public static final Pattern INTERNAL_LINKS_KEYWORDS_FILTER = Pattern.compile(".*(?:doi.org|\\?l[a]?n[g]?=|isallowed=n|site=|linkout|login|linklistener).*");	// Plain key-words inside internalLinks-String. We avoid "doi.org" in internal links, as, after many redirects, they will reach the same pageUrl.
 	// The diff with the "login" being here, in compare with being in "URL_DIRECTORY_FILTER"-regex, is that it can be found in a random place inside a url.. not just as a directory..
 
 	// So, we make a new REGEX for these extensions, this time, without a potential argument in the end (e.g. ?id=XXX..), except for the potential "lang".
@@ -49,7 +49,7 @@ public class UrlTypeChecker
 			+ "|services.bepress.com"	// Avoid potential malicious domain (Avast had some urls of this domain in the Blacklist).
 			+ ").*/.*");
 
-	public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile(".+://[\\w.:-]+(?:/[\\w]{2})?(?:/index.(?:" + htExtensionsPattern + "|" + phpExtensionsPattern + "))?(?:/)?(?:\\?(?:locale(?:-attribute)?|ln)=[\\w_-]+)?$");	// Exclude plain domains' urls. Use "ISO 639-1" for language-codes (2 letters directory).
+	public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile(".+://[\\w.:-]+(?:/[\\w]{2})?(?:/index.(?:" + htExtensionsPattern + "|" + phpExtensionsPattern + "))?[/]?(?:\\?(?:locale(?:-attribute)?|ln)=[\\w_-]+)?$");	// Exclude plain domains' urls. Use "ISO 639-1" for language-codes (2 letters directory).
 
 	// Counters for certain unwanted domains. We show statistics in the end.
 	public static AtomicInteger javascriptPageUrls = new AtomicInteger(0);

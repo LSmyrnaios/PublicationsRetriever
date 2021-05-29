@@ -437,16 +437,17 @@ public class FileUtils
 			if ( !hasUnretrievableDocName )	// If we retrieved the fileName, go check if it's a duplicate.
 			{
 				boolean isDuplicate = false;
-				Integer curDuplicateNum = 1;
+				Integer curDuplicateNum;
 
 				if ( (curDuplicateNum = numbersOfDuplicateDocFileNames.get(docFileName)) != null ) {
 					curDuplicateNum += 1;
 					isDuplicate = true;
-				} else if ( docFile.exists() )	// If it's not an already-known duplicate (this is the first duplicate-case for this file), go check if it exists in the fileSystem.
+				} else if ( docFile.exists() ) {	// If it's not an already-known duplicate (this is the first duplicate-case for this file), go check if it exists in the fileSystem.
+					curDuplicateNum = 1;	// It was "null", after the "Hashtable.get()" check.
 					isDuplicate = true;
-				
-				if ( isDuplicate ) {
-					// Construct final-DocFileName by renaming.
+				}
+
+				if ( isDuplicate ) {	// Construct final-DocFileName by renaming.
 					String preExtensionFileName = docFileName.substring(0, docFileName.lastIndexOf("."));
 					String newDocFileName = preExtensionFileName + "(" + curDuplicateNum + ")" + dotFileExtension;
 					saveDocFileFullPath = storeDocFilesDir + File.separator + newDocFileName;
