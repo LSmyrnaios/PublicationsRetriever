@@ -33,7 +33,7 @@ public class TestNonStandardInputOutput  {
 	private static final String testInputFile = "orderedList1000.json";	//"test_only_ids.json";	//"id_to_url_rand10000_20201015.json";	//"test_non_utf_output.json"; //"around_200k_IDs.json";	// "sampleCleanUrls3000.json", "orderedList1000.json", "orderedList5000.json", "testRandomNewList100.csv", "test.json", "id_to_url_rand10000_20201015.json"
 
 	private static final File inputFile = new File(testingDirectory + testInputFile);
-	private static File outputFile = new File(testingDirectory + "results_" + testInputFile);
+	private static File outputFile = new File(testingDirectory + "results_" + testInputFile);	// This can change if the user gives the inputFile as a cmd-arg.
 
 
 	@BeforeAll

@@ -48,6 +48,7 @@ public class PageCrawler
 	private static final int MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE = 500;	// If a page has more than 500 internal links, then discard it. Example: "https://dblp.uni-trier.de/db/journals/corr/corr1805.html"
 	private static final int MAX_POSSIBLE_DOC_OR_DATASET_LINKS_TO_CONNECT = 5;	// The < 5 > is the optimal value, figured out after experimentation. Example: "https://doaj.org/article/acf5f095dc0f49a59d98a6c3abca7ab6".
 
+	private static boolean should_check_remaining_links = true;	// The remaining links very rarely give docUrls.. so, for time-performance, we can disable them.
 	private static final int MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT = 10;	// The < 10 > is the optimal value, figured out after experimentation.
 
 	private static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:manu[ae]l|guide|preview).*");
@@ -79,18 +80,16 @@ public class PageCrawler
 
 		//logger.debug(pageHtml);	// DEBUG!
 
-		if ( !pageUrl.contains("sciencedirect.com") ) {	// The scienceDirect-pageUrl do not benefit from the method below, so we skip them..
-			// Check if the docLink is provided in a metaTag and connect to it directly.
-			if ( MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl(urlId, sourceUrl, pageUrl, pageDomain, pageHtml) )
-				return;	// The sourceUrl is already logged inside the called method.
+		// Check if the docLink is provided in a metaTag and connect to it directly.
+		if ( MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl(urlId, sourceUrl, pageUrl, pageDomain, pageHtml) )
+			return;	// The sourceUrl is already logged inside the called method.
 
-			// Check if we want to use AND if so, if we should run, the MLA.
-			if ( MachineLearning.useMLA ) {
-				MachineLearning.totalPagesReachedMLAStage.incrementAndGet();	// Used for M.L.A.'s execution-manipulation.
-				if ( MachineLearning.shouldRunPrediction() )
-					if ( MachineLearning.predictInternalDocUrl(urlId, sourceUrl, pageUrl, pageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
-						return;	// If we were able to find the right path.. and hit a docUrl successfully.. return. The Quadruple is already logged.
-			}
+		// Check if we want to use AND if so, if we should run, the MLA.
+		if ( MachineLearning.useMLA ) {
+			MachineLearning.totalPagesReachedMLAStage.incrementAndGet();	// Used for M.L.A.'s execution-manipulation.
+			if ( MachineLearning.shouldRunPrediction() )
+				if ( MachineLearning.predictInternalDocUrl(urlId, sourceUrl, pageUrl, pageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
+					return;	// If we were able to find the right path.. and hit a docUrl successfully.. return. The Quadruple is already logged.
 		}
 
 		HashSet<String> currentPageLinks = null;	// We use "HashSet" to avoid duplicates.
@@ -187,62 +186,8 @@ public class PageCrawler
 
 		// If we reached here, it means that we couldn't find a docUrl the quick way.. so we have to check some (we exclude lots of them) of the internal links one by one.
 
-		int remainingUrlsCounter = 0;
-
-		for ( String currentLink : remainingLinks )	// Here we don't re-check already-checked links, as this is a new list. All the links here are full-canonicalized-urls.
-		{
-			// Make sure we avoid connecting to different domains to save time. We allow to check different domains only after matching to possible-urls in the previous fast-loop.
-			if ( !currentLink.contains(pageDomain) )
-				continue;
-
-			if ( UrlUtils.duplicateUrls.contains(currentLink) )
-				continue;
-
-			// We re-check here, as, in the fast-loop not all of the links are checked against this.
-			if ( UrlTypeChecker.shouldNotAcceptInternalLink(currentLink, null) ) {	// If this link matches certain blackListed criteria, move on..
-				//logger.debug("Avoided link: " + currentLink );
-				UrlUtils.duplicateUrls.add(currentLink);
-				continue;
-			}
-
-			if ( (++remainingUrlsCounter) > MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT ) {	// The counter is incremented only on "aboutToConnect" links, so no need to pre-clean the "remainingLinks"-set.
-				logger.warn("The maximum limit (" + MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT + ") of remaining links to be connected was reached for pageUrl: \"" + pageUrl + "\". The page was discarded.");
-				handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, true, false);
-				return;	// It could reach the end of this function, will call "handlePageWithNoDocUrls()" and then return, but we don't want to show double-logs..
-			}
-
-			//logger.debug("InternalLink to connect with: " + currentLink);	// DEBUG!
-			try {
-				if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, currentLink, null, false, false) )	// We log the docUrl inside this method.
-					return;
-				else
-					UrlUtils.duplicateUrls.add(currentLink);
-			} catch (DomainBlockedException dbe) {
-				String blockedDomain = dbe.getMessage();
-				if ( (blockedDomain != null) && blockedDomain.contains(pageDomain) ) {
-					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
-					UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was blocked during crawling.", null, true, "true", "true", "false", "false");
-					LoaderAndChecker.connProblematicUrls.incrementAndGet();
-					return;
-				}
-			} catch (DomainWithUnsupportedHEADmethodException dwuhe) {
-				if ( currentLink.contains(pageDomain) ) {
-					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was caught to not support the HTTP HEAD method, as a result, the internal-links will stop being checked.");
-					UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was caught to not support the HTTP HEAD method.", null, true, "true", "true", "false", "false");
-					LoaderAndChecker.connProblematicUrls.incrementAndGet();
-					return;
-				}
-			} catch (ConnTimeoutException cte) {	// In this case, it's unworthy to stay and check other internalLinks here.
-				if ( currentLink.contains(pageDomain) ) {
-					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after an internalLink caused a ConnTimeoutException.");
-					UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as an internalLink of this page caused 'ConnTimeoutException'.", null, true, "true", "true", "false", "false");
-					LoaderAndChecker.connProblematicUrls.incrementAndGet();
-					return;
-				}
-			} catch (RuntimeException e) {
-				// No special handling here.. nor logging..
-			}
-		}	// end for-loop
+		if ( should_check_remaining_links && checkRemainingInternalLinks(urlId, sourceUrl, pageUrl, pageDomain, remainingLinks) )
+			return;	// This happens when the docUrl is found in the remaining links.
 
 		handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false, false);
 	}
@@ -485,6 +430,88 @@ public class PageCrawler
 			UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Discarded in 'PageCrawler.visit()' method, as the retrieved DocLink: < " + docLink + " > had connectivity problems.", null, true, "true", "true", "false", "false");
 			return false;
 		}
+	}
+
+
+	public static final int timesToCheckInternalLinksBeforeEvaluate = 20;
+	private static final AtomicInteger timesCheckedRemainingLinks = new AtomicInteger(0);
+	private static final AtomicInteger timesFoundDocOrDatasetUrlFromRemainingLinks = new AtomicInteger(0);
+	private static final double leastPercentageOfHitsFromRemainingLinks = 0.20;
+
+	public static boolean checkRemainingInternalLinks(String urlId, String sourceUrl, String pageUrl, String pageDomain, HashSet<String> remainingLinks)
+	{
+		if ( remainingLinks.isEmpty() )
+			return false;	// We reached here, after no DocUrl is found, and now we surely won't find it.
+
+		int temp_timesCheckedRemainingLinks = timesCheckedRemainingLinks.incrementAndGet();
+		if ( temp_timesCheckedRemainingLinks >= timesToCheckInternalLinksBeforeEvaluate ) {
+			// After this threshold, evaluate the percentage of found docUrls, if it's too low, then stop handling the remaining-links for any pageUrl.
+			double percentage = (timesFoundDocOrDatasetUrlFromRemainingLinks.get() * 100.0 / temp_timesCheckedRemainingLinks);
+			if ( percentage < leastPercentageOfHitsFromRemainingLinks ) {
+				logger.warn("The percentage of found docUrls from the remaining links is too low ( " + percentage + "% ). Stop checking the internalLinks..");
+				should_check_remaining_links = false;
+				return false;
+			}
+		}
+
+		int remainingUrlsCounter = 0;
+
+		for ( String currentLink : remainingLinks )    // Here we don't re-check already-checked links, as this is a new list. All the links here are full-canonicalized-urls.
+		{
+			// Make sure we avoid connecting to different domains to save time. We allow to check different domains only after matching to possible-urls in the previous fast-loop.
+			if ( !currentLink.contains(pageDomain)
+				|| UrlUtils.duplicateUrls.contains(currentLink) )
+				continue;
+
+			// We re-check here, as, in the fast-loop not all of the links are checked against this.
+			if ( UrlTypeChecker.shouldNotAcceptInternalLink(currentLink, null) ) {    // If this link matches certain blackListed criteria, move on..
+				//logger.debug("Avoided link: " + currentLink );
+				UrlUtils.duplicateUrls.add(currentLink);
+				continue;
+			}
+
+			if ( (++remainingUrlsCounter) > MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT ) {    // The counter is incremented only on "aboutToConnect" links, so no need to pre-clean the "remainingLinks"-set.
+				logger.warn("The maximum limit (" + MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT + ") of remaining links to be connected was reached for pageUrl: \"" + pageUrl + "\". The page was discarded.");
+				handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, true, false);
+				return false;    // It could reach the end of this function, will call "handlePageWithNoDocUrls()" and then return, but we don't want to show double-logs..
+			}
+
+			//logger.debug("InternalLink to connect with: " + currentLink);	// DEBUG!
+			try {
+				if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, currentLink, null, false, false) )    // We log the docUrl inside this method.
+				{    // Log this in order to find ways to make these docUrls get found sooner..!
+					logger.debug("Page \"" + pageUrl + "\", gave the \"remaining\" docUrl \"" + currentLink + "\"");    // DEBUG!!
+					timesFoundDocOrDatasetUrlFromRemainingLinks.incrementAndGet();
+					return true;
+				} else
+					UrlUtils.duplicateUrls.add(currentLink);
+			} catch (DomainBlockedException dbe) {
+				String blockedDomain = dbe.getMessage();
+				if ( (blockedDomain != null) && blockedDomain.contains(pageDomain) ) {
+					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
+					UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was blocked during crawling.", null, true, "true", "true", "false", "false");
+					LoaderAndChecker.connProblematicUrls.incrementAndGet();
+					return false;
+				}
+			} catch (DomainWithUnsupportedHEADmethodException dwuhe) {
+				if ( currentLink.contains(pageDomain) ) {
+					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was caught to not support the HTTP HEAD method, as a result, the internal-links will stop being checked.");
+					UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as its domain was caught to not support the HTTP HEAD method.", null, true, "true", "true", "false", "false");
+					LoaderAndChecker.connProblematicUrls.incrementAndGet();
+					return false;
+				}
+			} catch (ConnTimeoutException cte) {    // In this case, it's unworthy to stay and check other internalLinks here.
+				if ( currentLink.contains(pageDomain) ) {
+					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after an internalLink caused a ConnTimeoutException.");
+					UrlUtils.logOutputData(urlId, sourceUrl, null, "unreachable", "Logged in 'PageCrawler.visit()' method, as an internalLink of this page caused 'ConnTimeoutException'.", null, true, "true", "true", "false", "false");
+					LoaderAndChecker.connProblematicUrls.incrementAndGet();
+					return false;
+				}
+			} catch (RuntimeException e) {
+				// No special handling here.. nor logging..
+			}
+		}// end for-loop
+		return false;
 	}
 
 	

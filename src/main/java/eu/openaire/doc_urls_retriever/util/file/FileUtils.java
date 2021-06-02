@@ -57,7 +57,7 @@ public class FileUtils
 	public static final String workingDir = System.getProperty("user.dir") + File.separator;
 	public static String storeDocFilesDir = workingDir + "docFiles" + File.separator;
 	public static int unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
-	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*(?:filename(?:\\*)?=(?:.*[\"'])?)([^\"^;]+)[\";]*.*");
+	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*filename[\\*]?=(?:.*[\"'])?([^\"^;]+)[\";]*.*");
 	
 	public static final int MAX_FILENAME_LENGTH = 250;	// TODO - Find a way to get the current-system's MAX-value.
 	
