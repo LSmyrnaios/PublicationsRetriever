@@ -68,6 +68,7 @@ public class DocUrlsRetriever
 		parseArgs(args);
 
 		logger.info("Starting DocUrlsRetriever..");
+		new ConnSupportUtils();
 
 		// Check if the user gave the input file in the commandLineArgument, if not, then check for other options.
 		if ( DocUrlsRetriever.inputStream == null ) {

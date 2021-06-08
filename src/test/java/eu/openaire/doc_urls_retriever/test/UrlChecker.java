@@ -41,6 +41,8 @@ public class UrlChecker {
 
 		ArrayList<String> urlList = new ArrayList<>();
 
+		new ConnSupportUtils();
+
 		//urlList.add("http://repositorio.ipen.br:8080/xmlui/bitstream/handle/123456789/11176/09808.pdf?sequence=1&isAllowed=y");
 		//urlList.add("https://ris.utwente.nl/ws/portalfiles/portal/5118887");
 		//urlList.add("http://biblioteca.ucm.es/tesis/19972000/X/0/X0040301.pdf");

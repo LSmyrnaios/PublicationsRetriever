@@ -31,6 +31,7 @@ public class LinkExtraction {
 	
 	@BeforeAll
 	static void setExampleHtml() {
+		new ConnSupportUtils();
 		exampleHtml = "<head><head>" +
 				"<body>" +
 					"<p>Select a link from below!</p>" +

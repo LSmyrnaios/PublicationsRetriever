@@ -75,12 +75,30 @@ public class ConnSupportUtils
 
 	public static final Set<String> knownDocMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 	public static final Set<String> knownDatasetMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-	static {
+
+
+	public ConnSupportUtils()
+	{
+		if ( LoaderAndChecker.retrieveDocuments ) {
+			setKnownDocMimeTypes();
+			if ( LoaderAndChecker.retrieveDatasets )
+				setKnownDatasetMimeTypes();
+		} else
+			setKnownDatasetMimeTypes();
+	}
+
+
+	public static void setKnownDocMimeTypes()
+	{
 		logger.debug("Setting up the official document mime types. Currently there is support only for pdf documents.");
 		knownDocMimeTypes.add("application/pdf");
 		knownDocMimeTypes.add("application/x-pdf");
 		knownDocMimeTypes.add("image/pdf");
+	}
 
+
+	public static void setKnownDatasetMimeTypes()
+	{
 		logger.debug("Setting up the official dataset mime types. Currently there is support for xls, xlsx, csv, tsv, tab, json, geojson, xml, ods, rdf, zip, gzip, rar, tar, 7z, tgz, gz[\\d]*, bz[\\d]*, xz, smi, por, ascii, dta, sav, dat, txt, ti[f]+, twf, svg, sas7bdat, spss, sas, stata, sql, mysql, postgresql, sqlite, bigquery, shp, shx, prj, sbx, sbn, dbf, mdb, accdb, dwg, mat, pcd, bt, n[sc]?[\\d]*, h4, h5, hdf, hdf4, hdf5, trs, opj, fcs, fas, fasta, values datasets.");
 		knownDatasetMimeTypes.add("application/vnd.ms-excel");
 		knownDatasetMimeTypes.add("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -104,7 +122,7 @@ public class ConnSupportUtils
 		knownDatasetMimeTypes.add("application/x-sql");
 		knownDatasetMimeTypes.add("image/tiff");
 	}
-	
+
 	
 	/**
 	 * This method takes a url and its mimeType and checks if it's a document mimeType or not.
