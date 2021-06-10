@@ -108,21 +108,19 @@ public class FileUtils
 
 			// If the directory doesn't exist, try to (re)create it.
 			try {
-				if ( !dir.exists() ) {
-					if ( !dir.mkdir() ) {   // Create the directory.
-						String errorMessage;
-						if ( DocUrlsRetriever.docFilesStorageGivenByUser )
-							errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
-									+ "\nPlease give a valid Directory-path.";
-						else	// User leaves the storageDir to be the default one.
-							errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
-									+ "\nThe docFiles will NOT be stored, but the docUrls will be retrieved and kept in the outputFile."
-									+ "\nIf this is not desired, please terminate the program and re-define the \"storeDocFilesDir\"!";
-						System.err.println(errorMessage);
-						logger.error(errorMessage);
-						FileUtils.closeIO();
-						System.exit(-3);
-					}
+				if ( !dir.exists() && !dir.mkdirs() ) {	// Try to create the directory(-ies) if they don't exist.
+					String errorMessage;
+					if ( DocUrlsRetriever.docFilesStorageGivenByUser )
+						errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
+								+ "\nPlease give a valid Directory-path.";
+					else	// User leaves the storageDir to be the default one.
+						errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
+								+ "\nThe docFiles will NOT be stored, but the docUrls will be retrieved and kept in the outputFile."
+								+ "\nIf this is not desired, please terminate the program and re-define the \"storeDocFilesDir\"!";
+					System.err.println(errorMessage);
+					logger.error(errorMessage);
+					FileUtils.closeIO();
+					System.exit(-3);
 				}
 			} catch (SecurityException se) {
 				logger.error(se.getMessage(), se);

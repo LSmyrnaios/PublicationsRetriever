@@ -80,7 +80,7 @@ public class TestNonStandardInputOutput  {
 		args[1] = "document";	// "document" OR "dataset" OR "all"
 		args[2] = "-downloadDocFiles";
 		args[3] = "-docFilesStorage";
-		args[4] = "/storage/docFiles";
+		args[4] = "/storage/runs/run1/docFiles";
 
 		logger.info("Calling main method with these args: ");
 		for ( String arg: args )
