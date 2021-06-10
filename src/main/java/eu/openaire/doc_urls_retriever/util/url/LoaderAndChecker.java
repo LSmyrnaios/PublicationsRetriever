@@ -572,8 +572,8 @@ public class LoaderAndChecker
 
 		// Check if it's a duplicate.
 		if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
-			logger.debug("Skipping url: \"" + retrievedUrl + "\", at loading, as it has already be seen!");
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "duplicate", "Discarded in 'LoaderAndChecker.handleUrlChecks()', as it's a duplicate.", null, false, "true", "true", "false", "false");
+			logger.debug("Skipping non-DocOrDataset-url: \"" + retrievedUrl + "\", at loading, as it has already been checked.");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "duplicate", "Discarded in 'LoaderAndChecker.handleUrlChecks()', as it's a duplicate.", null, false, "true", "N/A", "false", "false");
 			if ( !useIdUrlPairs )
 				inputDuplicatesNum.incrementAndGet();
 			return null;

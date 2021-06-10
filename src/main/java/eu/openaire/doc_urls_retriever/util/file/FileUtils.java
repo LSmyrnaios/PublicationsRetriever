@@ -79,6 +79,12 @@ public class FileUtils
 			}
 		}
 
+		setOutput(output);
+	}
+
+
+	public static void setOutput(OutputStream output)
+	{
 		try {
 			FileUtils.printStream = new PrintStream(output, false, utf8Charset);
 		}
@@ -99,7 +105,7 @@ public class FileUtils
 					return;
 				}
 			}
-			
+
 			// If the directory doesn't exist, try to (re)create it.
 			try {
 				if ( !dir.exists() ) {

@@ -50,7 +50,7 @@ public class DocUrlsRetriever
 	public static String inputFileFullPath = null;
 
 	public static Instant startTime = null;
-	public static String targetUrlType = null;
+	public static String targetUrlType = "docOrDatasetUrl";	// docUrl, documentUrl, docOrDatasetUrl ; this is set by the args-parser and it's used when outputting data.
 
 	public static DecimalFormat df = new DecimalFormat("0.00");
 
@@ -68,7 +68,7 @@ public class DocUrlsRetriever
 		parseArgs(args);
 
 		logger.info("Starting DocUrlsRetriever..");
-		new ConnSupportUtils();
+		ConnSupportUtils.setKnownMimeTypes();
 
 		// Check if the user gave the input file in the commandLineArgument, if not, then check for other options.
 		if ( DocUrlsRetriever.inputStream == null ) {
@@ -100,7 +100,7 @@ public class DocUrlsRetriever
 			workerThreadsCount = availableThreads;	// Due to I/O, blocking the threads all the time, more threads handle the workload faster..
 		}
 		logger.info("Use " + workerThreadsCount + " worker-threads.");
-		executor = Executors.newFixedThreadPool(workerThreadsCount);	//creating a pool of <processorsCount> threads.
+		executor = Executors.newFixedThreadPool(workerThreadsCount);
 
 		try {
 			new LoaderAndChecker();

@@ -156,7 +156,7 @@ public class TestNonStandardInputOutput  {
 		DocUrlsRetriever.parseArgs(args);
 
 		logger.info("Starting DocUrlsRetriever..");
-		new ConnSupportUtils();
+		ConnSupportUtils.setKnownMimeTypes();
 
 		// Use testing input/output files.
 		setInputOutput();
@@ -173,7 +173,7 @@ public class TestNonStandardInputOutput  {
 			DocUrlsRetriever.workerThreadsCount = availableThreads;	// Due to I/O, blocking the threads all the time, more threads handle the workload faster..
 		}
 		logger.info("Use " + DocUrlsRetriever.workerThreadsCount + " worker-threads.");
-		DocUrlsRetriever.executor = Executors.newFixedThreadPool(DocUrlsRetriever.workerThreadsCount);	//creating a pool of <processorsCount> threads.
+		DocUrlsRetriever.executor = Executors.newFixedThreadPool(DocUrlsRetriever.workerThreadsCount);
 
 		try {
 			new LoaderAndChecker();

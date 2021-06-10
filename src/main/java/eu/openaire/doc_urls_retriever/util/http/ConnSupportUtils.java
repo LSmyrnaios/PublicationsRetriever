@@ -46,7 +46,7 @@ public class ConnSupportUtils
 	// and an example for "unknown" : "http://imagebank.osa.org/getExport.xqy?img=OG0kcC5vZS0yMy0xNy0yMjE0OS1nMDAy&xtype=pdf&article=oe-23-17-22149-g002")
 
 	public static final Pattern HTML_STRING_MATCH = Pattern.compile("^(?:[\\s]*<(?:!doctype\\s)?html).*");
-	public static final Pattern RESPONSE_BODY_UNWANTED_MATCH = Pattern.compile("^(?:[\\s]+|(?:[\\s]*<(?:\\?xml|!--)).*)");	// TODO - Avoid matching to "  <?xml>sddfs<html" (as some times the whole page-code is a single line)
+	public static final Pattern RESPONSE_BODY_UNWANTED_MATCH = Pattern.compile("^(?:[\\s]+|[\\s]*<(?:\\?xml|!--).*)");	// TODO - Avoid matching to "  <?xml>sddfs<html[...]" (as some times the whole page-code is a single line)
 
 	public static final Pattern SPACE_ONLY_LINE = Pattern.compile("^[\\s]+$");	// For full-HTML-extraction.
 
@@ -77,7 +77,7 @@ public class ConnSupportUtils
 	public static final Set<String> knownDatasetMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
 
-	public ConnSupportUtils()
+	public static void setKnownMimeTypes()
 	{
 		if ( LoaderAndChecker.retrieveDocuments ) {
 			setKnownDocMimeTypes();
@@ -258,7 +258,7 @@ public class ConnSupportUtils
 				return null;
 			}
 		} else {
-			logger.warn("Unexpected MIME_TYPE_FILTER's (" + mimeMatcher.toString() + ") mismatch for mimeType: \"" + mimeType + "\"");
+			logger.warn("Unexpected MIME_TYPE_FILTER's (" + mimeMatcher + ") mismatch for mimeType: \"" + mimeType + "\"");
 			return null;
 		}
 		return plainMimeType;
@@ -875,7 +875,7 @@ public class ConnSupportUtils
 	{
 		Matcher url1NonProtocolMatcher = NON_PROTOCOL_URL.matcher(url1);
 		if ( !url1NonProtocolMatcher.matches() ) {
-			logger.warn("URL < " + url1 + " > failed to match with \"NON_PROTOCOL_URL\"-regex: " + NON_PROTOCOL_URL.toString());
+			logger.warn("URL < " + url1 + " > failed to match with \"NON_PROTOCOL_URL\"-regex: " + NON_PROTOCOL_URL);
 			return false;
 		}
 
@@ -890,7 +890,7 @@ public class ConnSupportUtils
 
 		Matcher url2UrlNonProtocolMatcher = NON_PROTOCOL_URL.matcher(url2);
 		if ( !url2UrlNonProtocolMatcher.matches() ) {
-			logger.warn("URL < " + url2 + " > failed to match with \"NON_PROTOCOL_URL\"-regex: " + NON_PROTOCOL_URL.toString());
+			logger.warn("URL < " + url2 + " > failed to match with \"NON_PROTOCOL_URL\"-regex: " + NON_PROTOCOL_URL);
 			return false;
 		}
 
