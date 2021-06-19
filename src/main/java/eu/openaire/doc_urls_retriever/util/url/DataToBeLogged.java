@@ -12,27 +12,27 @@ import java.util.LinkedHashMap;
 
 
 /**
- * This class is responsible to store the quadruple <urlId, sourceUrl, docUrl, errorCause> for it to be written in the outputFile.
+ * This class is responsible to store the quadruple <urlId, sourceUrl, docUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, errorCause / comment> for it to be written in the outputFile.
  * @author Lampros Smyrnaios
  */
 public class DataToBeLogged
 {
     private String urlId;
     private String sourceUrl;
-    private String docUrl;
-	String wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink;
+    private String docOrDatasetUrl;
+	private String wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink;
     private String comment;   // This will be an emptyString, unless there is an error causing the docUrl to be unreachable.
 	
 	private static final Logger logger = LoggerFactory.getLogger(DataToBeLogged.class);
 
-	public DataToBeLogged(String urlId, String sourceUrl, String docUrl, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String comment)
+	public DataToBeLogged(String urlId, String sourceUrl, String docOrDatasetUrl, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String comment)
     {
         if ( urlId == null )
             urlId = "unretrievable";
         
         this.urlId = urlId;
         this.sourceUrl = escapeSourceUrl(sourceUrl);	// The input may have non-expected '\"', '\\' or even '\\\"' which will be unescaped by JsonObject and we have to re-escape them in the output.
-        this.docUrl = docUrl;
+        this.docOrDatasetUrl = docOrDatasetUrl;
 		this.wasUrlChecked = wasUrlChecked;
 		this.wasUrlValid = wasUrlValid;
 		this.wasDocumentOrDatasetAccessible = wasDocumentOrDatasetAccessible;
@@ -87,7 +87,7 @@ public class DataToBeLogged
 				jsonObject.put("id", this.urlId);
 			}
 			jsonObject.put("sourceUrl", this.sourceUrl);
-			jsonObject.put(DocUrlsRetriever.targetUrlType, this.docUrl);
+			jsonObject.put(DocUrlsRetriever.targetUrlType, this.docOrDatasetUrl);
 			jsonObject.put("wasUrlChecked", this.wasUrlChecked);
 			jsonObject.put("wasUrlValid", this.wasUrlValid);
 			jsonObject.put("wasDocumentOrDatasetAccessible", this.wasDocumentOrDatasetAccessible);
@@ -101,5 +101,68 @@ public class DataToBeLogged
 
         return jsonObject.toString();
     }
-    
+
+	public String getUrlId() {
+		return urlId;
+	}
+
+	public void setUrlId(String urlId) {
+		this.urlId = urlId;
+	}
+
+	public String getSourceUrl() {
+		return sourceUrl;
+	}
+
+	public void setSourceUrl(String sourceUrl) {
+		this.sourceUrl = sourceUrl;
+	}
+
+	public String getDocOrDatasetUrl() {
+		return docOrDatasetUrl;
+	}
+
+	public void setDocOrDatasetUrl(String docOrDatasetUrl) {
+		this.docOrDatasetUrl = docOrDatasetUrl;
+	}
+
+	public String getWasUrlChecked() {
+		return wasUrlChecked;
+	}
+
+	public void setWasUrlChecked(String wasUrlChecked) {
+		this.wasUrlChecked = wasUrlChecked;
+	}
+
+	public String getWasUrlValid() {
+		return wasUrlValid;
+	}
+
+	public void setWasUrlValid(String wasUrlValid) {
+		this.wasUrlValid = wasUrlValid;
+	}
+
+	public String getWasDocumentOrDatasetAccessible() {
+		return wasDocumentOrDatasetAccessible;
+	}
+
+	public void setWasDocumentOrDatasetAccessible(String wasDocumentOrDatasetAccessible) {
+		this.wasDocumentOrDatasetAccessible = wasDocumentOrDatasetAccessible;
+	}
+
+	public String getWasDirectLink() {
+		return wasDirectLink;
+	}
+
+	public void setWasDirectLink(String wasDirectLink) {
+		this.wasDirectLink = wasDirectLink;
+	}
+
+	public String getComment() {
+		return comment;
+	}
+
+	public void setComment(String comment) {
+		this.comment = comment;
+	}
 }

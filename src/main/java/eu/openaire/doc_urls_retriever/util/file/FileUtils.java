@@ -57,7 +57,7 @@ public class FileUtils
 	public static final String workingDir = System.getProperty("user.dir") + File.separator;
 	public static String storeDocFilesDir = workingDir + "docFiles" + File.separator;
 	public static int unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
-	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*filename[\\*]?=(?:.*[\"'])?([^\"^;]+)[\";]*.*");
+	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*filename[*]?=(?:.*[\"'])?([^\"^;]+)[\";]*.*");
 	
 	public static final int MAX_FILENAME_LENGTH = 250;	// TODO - Find a way to get the current-system's MAX-value.
 	
@@ -113,10 +113,10 @@ public class FileUtils
 					if ( DocUrlsRetriever.docFilesStorageGivenByUser )
 						errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
 								+ "\nPlease give a valid Directory-path.";
-					else	// User leaves the storageDir to be the default one.
-						errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
-								+ "\nThe docFiles will NOT be stored, but the docUrls will be retrieved and kept in the outputFile."
-								+ "\nIf this is not desired, please terminate the program and re-define the \"storeDocFilesDir\"!";
+					else	// User has left the storageDir to be the default one.
+						errorMessage = "Problem when creating the default \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
+								+ "\nPlease verify you have the necessary privileges in the directory you are running the program from or specify the directory you want to save the files to."
+								+ "\nIf the above is not an option, then you can set to retrieve just the " + DocUrlsRetriever.targetUrlType + "s and download the full-texts later (on your own).";
 					System.err.println(errorMessage);
 					logger.error(errorMessage);
 					FileUtils.closeIO();
@@ -274,7 +274,7 @@ public class FileUtils
 	 * This function writes new "quadruplesToBeLogged"(id-sourceUrl-docUrl-comment) in the output file.
 	 * Each time it's finished writing, it flushes the write-stream and clears the "quadrupleToBeLoggedList".
 	 */
-	public static void writeToFile()
+	public static void writeResultsToFile()
 	{
 		for ( DataToBeLogged data : FileUtils.dataToBeLoggedList )
 		{
@@ -293,6 +293,7 @@ public class FileUtils
 	
 	/**
 	 * This method is responsible for storing the docFiles and store them in permanent storage.
+	 * It is synchronized, in order to avoid files' numbering inconsistency.
 	 * @param inStream
 	 * @param docUrl
 	 * @param contentDisposition

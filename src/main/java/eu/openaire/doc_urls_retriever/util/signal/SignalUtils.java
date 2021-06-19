@@ -33,7 +33,7 @@ public class SignalUtils {
 				// Write whatever remaining quadruples exist in memory.
 				if ( !FileUtils.dataToBeLoggedList.isEmpty() ) {
 					logger.debug("Writing the remaining quadruples to the outputFile.");
-					FileUtils.writeToFile();
+					FileUtils.writeResultsToFile();
 				}
 
 				// If the program managed to set the "startTime" before the signal was received, then show the statistics and the elapsed-time.

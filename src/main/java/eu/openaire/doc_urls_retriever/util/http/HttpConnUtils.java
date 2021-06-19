@@ -137,10 +137,10 @@ public class HttpConnUtils
 					logger.info("docUrl found: < " + finalUrlStr + " >");
 					String fullPathFileName = "";
 					if ( FileUtils.shouldDownloadDocFiles ) {
+						if ( foundDetectedContentType ) {	// If we went and detected the pdf from the request-code, then reconnect and proceed with downloading (reasons explained elsewhere).
+							conn = handleConnection(urlId, sourceUrl, pageUrl, finalUrlStr, domainStr, calledForPageUrl, calledForPossibleDocOrDatasetUrl);	// No need to "conn.disconnect()" before, as we are re-connecting to the same domain.
+						}
 						try {
-							if ( foundDetectedContentType ) {	// If we went and detected the pdf from the request-code, then reconnect and proceed with downloading (reasons explained elsewhere).
-								conn = handleConnection(urlId, sourceUrl, pageUrl, finalUrlStr, domainStr, calledForPageUrl, calledForPossibleDocOrDatasetUrl);	// No need to "conn.disconnect()" before, as we are re-connecting to the same domain.
-							}
 							fullPathFileName = ConnSupportUtils.downloadAndStoreDocFile(conn, domainStr, finalUrlStr, calledForPageUrl);
 							logger.info("DocFile: \"" + fullPathFileName + "\" has been downloaded.");
 						} catch (DocFileNotRetrievedException dfnde) {

@@ -67,7 +67,7 @@ public class LoaderAndChecker
 			// Write any remaining quadruples from memory to disk (we normally write every "FileUtils.jasonGroupSize" quadruples, so a few last quadruples might have not be written yet).
 			if ( !FileUtils.dataToBeLoggedList.isEmpty() ) {
 				logger.debug("Writing last quadruples to the outputFile.");
-				FileUtils.writeToFile();
+				FileUtils.writeResultsToFile();
 			}
 		}
 	}
@@ -141,6 +141,7 @@ public class LoaderAndChecker
 				});
 			}// end for-loop
 			invokeAllTasksAndWait(callableTasks);
+			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end while-loop
 	}
 
@@ -291,10 +292,9 @@ public class LoaderAndChecker
 				});
 			}// end id-for-loop
 			invokeAllTasksAndWait(callableTasks);
+			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end loading-while-loop
 	}
-
-
 
 
 	/**
@@ -374,6 +374,7 @@ public class LoaderAndChecker
 				});
 			}// end pairs-for-loop
 			invokeAllTasksAndWait(callableTasks);
+			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end loading-while-loop
 	}
 
@@ -455,6 +456,7 @@ public class LoaderAndChecker
 				});
 			}// end for-id-loop
 			invokeAllTasksAndWait(callableTasks);
+			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end loading-while-loop
 	}
 
@@ -480,9 +482,6 @@ public class LoaderAndChecker
 			}
 		} catch (InterruptedException ie) {
 			logger.warn("The main thread was interrupted when waiting for the current batch's worker-tasks to finish: " + ie.getMessage());
-		}
-		finally {
-			FileUtils.writeToFile();	// Writes to the output file
 		}
 	}
 
