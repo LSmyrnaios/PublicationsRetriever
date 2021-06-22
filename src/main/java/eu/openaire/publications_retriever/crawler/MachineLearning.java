@@ -335,8 +335,7 @@ public class MachineLearning
 
 		// If we reach here, it means that all of the predictions have failed.
 		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, pageDomain, timesToFailBeforeBlockedFromMLA, false) ) {
-			logger.debug("Domain: \"" + pageDomain + "\" was blocked from being accessed again by the MLA, after proved to be incompatible "
-					+ timesToFailBeforeBlockedFromMLA + " times.");
+			logger.debug("Domain: \"" + pageDomain + "\" was blocked from being accessed again by the MLA, after proved to be incompatible " + timesToFailBeforeBlockedFromMLA + " times.");
 
 			// This domain was blocked, remove current non-needed paths-data. Note that we can't remove all of this domain's paths, since there is no mapping between a domain and its paths.
 			for ( String docPath : successPathsHashMultiMap.get(pagePath) )

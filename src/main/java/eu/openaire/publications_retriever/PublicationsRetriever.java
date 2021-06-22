@@ -75,7 +75,7 @@ public class PublicationsRetriever
 			if ( PublicationsRetriever.inputFromUrl )
 				PublicationsRetriever.inputStream = ConnSupportUtils.getInputStreamFromInputDataUrl();
 			else
-				DocUrlsRetriever.inputStream = System.in;
+				PublicationsRetriever.inputStream = System.in;
 		} else {
 			try {
 				FileUtils.numOfLines = Files.lines(Paths.get(PublicationsRetriever.inputFileFullPath)).count();
