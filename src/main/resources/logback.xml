@@ -3,10 +3,10 @@
     <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>   <!-- Default delay: 0ms (zero) -->
 
     <appender name="File" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/DocUrlsRetriever.log</file>
+        <file>logs/PublicationsRetriever.log</file>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>logs/DocUrlsRetriever.%i.log.zip</fileNamePattern>
+            <fileNamePattern>logs/PublicationsRetriever.%i.log.zip</fileNamePattern>
         </rollingPolicy>
 
         <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
