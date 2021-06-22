@@ -1,4 +1,4 @@
-# PublicationsRetriever    [![Build Status](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever.svg?branch=master)](https://travis-ci.com/LSmyrnaios/DocUrlsRetriever)
+# PublicationsRetriever    [![Build Status](https://travis-ci.com/LSmyrnaios/PublicationsRetriever.svg?branch=master)](https://travis-ci.com/LSmyrnaios/PublicationsRetriever)
 
 A Java-program which retrieves the Document and Dataset Urls from the given Publication-Web-Pages and if wanted, it can also download the full-texts.<br>
 It is being developed for the European organization: [**OpenAIRE**](https://www.openaire.eu/). <br>
