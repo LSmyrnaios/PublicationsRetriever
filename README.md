@@ -1,4 +1,4 @@
-# PublicationsRetriever    [![Build Status](https://travis-ci.com/LSmyrnaios/PublicationsRetriever.svg?branch=master)](https://travis-ci.com/LSmyrnaios/PublicationsRetriever)
+# PublicationsRetriever    ![Build Status](https://github.com/LSmyrnaios/PublicationsRetriever/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
 
 A Java-program which retrieves the Document and Dataset Urls from the given Publication-Web-Pages and if wanted, it can also download the full-texts.<br>
 It is being developed for the European organization: [**OpenAIRE**](https://www.openaire.eu/). <br>
