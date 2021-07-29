@@ -37,9 +37,15 @@ public class S3ObjectStoreMinIO {
         Scanner myReader = null;
         try {
             File credentialsFile = new File(credentialsFilePath);
+            if ( !credentialsFile.exists() ) {
+                throw new RuntimeException("credentialsFile \"" + credentialsFilePath + "\" does not exists!");
+            }
             myReader = new Scanner(credentialsFile);
             if ( myReader.hasNextLine() ) {
                 String[] credentials = myReader.nextLine().split(",");
+                if ( credentials.length < 5 ) {
+                    throw new RuntimeException("Not all credentials were retrieved from file \"" + credentialsFilePath + "\"!");
+                }
                 endpoint = credentials[0];
                 accessKey = credentials[1];
                 secretKey = credentials[2];
