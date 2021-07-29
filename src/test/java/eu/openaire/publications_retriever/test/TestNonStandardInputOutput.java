@@ -54,14 +54,16 @@ public class TestNonStandardInputOutput  {
 	@Test
 	public void testCustomInputOutputWithNums()
 	{
-		String[] args = new String[7];
+		String[] args = new String[9];
 		args[0] = "-retrieveDataType";
 		args[1] = "document";	// "document" OR "dataset" OR "all"
 		args[2] = "-downloadDocFiles";
-		args[3] = "-docFilesStorage";
-		args[4] = "/storage/docFiles";
+		args[3] = "-docFileNameType";
+		args[4] = "numberName";
 		args[5] = "-firstDocFileNum";
 		args[6] = "1";
+		args[7] = "-docFilesStorage";
+		args[8] = "/storage/docFiles";
 
 		logger.info("Calling main method with these args: ");
 		for ( String arg: args )
@@ -75,12 +77,35 @@ public class TestNonStandardInputOutput  {
 	@Test
 	public void testCustomInputOutputWithOriginalDocFileNames()
 	{
-		String[] args = new String[5];
+		String[] args = new String[7];
 		args[0] = "-retrieveDataType";
 		args[1] = "document";	// "document" OR "dataset" OR "all"
 		args[2] = "-downloadDocFiles";
-		args[3] = "-docFilesStorage";
-		args[4] = "/storage/runs/run1/docFiles";
+		args[3] = "-docFileNameType";
+		args[4] = "originalName";
+		args[5] = "-docFilesStorage";
+		args[6] = "/storage/runs/run1/docFiles";
+
+		logger.info("Calling main method with these args: ");
+		for ( String arg: args )
+			logger.info("'" + arg + "'");
+
+		main(args);
+	}
+
+
+	@Disabled
+	@Test
+	public void testCustomInputOutputWithIdDocFileNamesToS3()
+	{
+		String[] args = new String[7];
+		args[0] = "-retrieveDataType";
+		args[1] = "document";	// "document" OR "dataset" OR "all"
+		args[2] = "-downloadDocFiles";
+		args[3] = "-docFileNameType";
+		args[4] = "idName";
+		args[5] = "-docFilesStorage";
+		args[6] = "S3ObjectStore";
 
 		logger.info("Calling main method with these args: ");
 		for ( String arg: args )
@@ -98,7 +123,7 @@ public class TestNonStandardInputOutput  {
 		args[0] = "-retrieveDataType";
 		args[1] = "document";	// "document" OR "dataset" OR "all"
 		args[2] = "-inputFileFullPath";
-		args[3] = "./testData/idUrlPairs/orderedList1000.json";
+		args[3] = "./testData/idUrlPairs/orderedList5000.json";
 
 		logger.info("Calling main method with these args: ");
 		for ( String arg: args )

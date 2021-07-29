@@ -5,6 +5,7 @@ import eu.openaire.publications_retriever.crawler.MetaDocUrlsHandler;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
+import eu.openaire.publications_retriever.util.http.DomainConnectionData;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import eu.openaire.publications_retriever.util.signal.SignalUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
@@ -132,10 +133,10 @@ public class PublicationsRetriever
 
 	public static void parseArgs(String[] mainArgs)
 	{
-		String usageMessage = "\nUsage: java -jar publications_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all> -inputFileFullPath inputFile -downloadDocFiles(OPTIONAL) -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' -inputDataUrl 'inputUrl' < 'input' > 'output'";
+		String usageMessage = "\nUsage: java -jar publications_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all> -inputFileFullPath inputFile -downloadDocFiles(OPTIONAL) -docFileNameType(OPTIONAL) <nameType: originalName | idName | numberName> -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' -inputDataUrl 'inputUrl' < 'input' > 'output'";
 
-		if ( mainArgs.length > 13 ) {
-			String errMessage = "\"PublicationsRetriever\" expected only up to 13 arguments, while you gave: " + mainArgs.length + "!" + usageMessage;
+		if ( mainArgs.length > 15 ) {
+			String errMessage = "\"PublicationsRetriever\" expected only up to 15 arguments, while you gave: " + mainArgs.length + "!" + usageMessage;
 			logger.error(errMessage);
 			System.err.println(errMessage);
 			System.exit(-1);
@@ -205,6 +206,29 @@ public class PublicationsRetriever
 					case "-downloadDocFiles":
 						FileUtils.shouldDownloadDocFiles = true;
 						break;
+					case "-docFileNameType":
+						i ++;
+						String nameType = mainArgs[i];
+						if ( nameType.equals("originalName") )
+							FileUtils.docFileNameType = FileUtils.DocFileNameType.originalName;
+						else if ( nameType.equals("idName") ) {
+							if ( !LoaderAndChecker.useIdUrlPairs ) {
+								String errMessage = "You provided the \"DocFileNameType.idName\", but the program's reader is not set to retrieve IDs from the inputFile! Set the program to retrieve IDs by setting the \"utils.url.LoaderAndChecker.useIdUrlPairs\"-variable to \"true\".";
+								System.err.println(errMessage);
+								logger.error(errMessage);
+								System.exit(10);
+							} else
+								FileUtils.docFileNameType = FileUtils.DocFileNameType.idName;
+						}
+						else if ( nameType.equals("numberName") )
+							FileUtils.docFileNameType = FileUtils.DocFileNameType.numberName;
+						else {
+							String errMessage = "Invalid \"docFileNameType\" given (\"" + nameType + "\")\nExpected one of the following: \"originalName | idName | numberName\"" + usageMessage;
+							System.err.println(errMessage);
+							logger.error(errMessage);
+							System.exit(11);
+						}
+						break;
 					case "-firstDocFileNum":
 						try {
 							i ++;	// Go get the following first-Number-argument.
@@ -223,8 +247,11 @@ public class PublicationsRetriever
 						}
 					case "-docFilesStorage":
 						i ++;
-						String dir = mainArgs[i];
-						FileUtils.storeDocFilesDir = dir + (!dir.endsWith(File.separator) ? File.separator : "");    // Pre-process it.. otherwise it may cause problems.
+						String storageDir = mainArgs[i];
+						if ( storageDir.equals("S3ObjectStore") )
+							FileUtils.shouldUploadFilesToS3 = true;
+						else
+							FileUtils.storeDocFilesDir = storageDir + (!storageDir.endsWith(File.separator) ? File.separator : "");    // Pre-process it.. otherwise, it may cause problems.
 						PublicationsRetriever.docFilesStorageGivenByUser = true;
 						break;
 					case "-inputDataUrl":
@@ -260,11 +287,21 @@ public class PublicationsRetriever
 			}
 		}
 
-		if ( FileUtils.shouldDownloadDocFiles ) {
-			if ( !firstNumGiven ) {
-				logger.warn("No \"-firstDocFileNum\" argument was given. The original-docFilesNames will be used.");
-				FileUtils.shouldUseOriginalDocFileNames = true;
+		if ( FileUtils.shouldDownloadDocFiles )
+		{
+			if ( FileUtils.docFileNameType == null ) {
+				logger.warn("You did not specified the docNameType!" + usageMessage);
+				if ( LoaderAndChecker.useIdUrlPairs ) {
+					FileUtils.docFileNameType = FileUtils.DocFileNameType.idName;
+					logger.warn("The program will use the \"idName\"-type!");
+				} else {
+					FileUtils.docFileNameType = FileUtils.DocFileNameType.numberName;
+					logger.warn("The program will use the \"numberName\"-type!");
+				}
 			}
+
+			if ( firstNumGiven && !FileUtils.docFileNameType.equals(FileUtils.DocFileNameType.numberName) )
+				logger.warn("You provided the \"-firstDocFileNum\" a, but you also specified a \"docFileNameType\" of non numeric-type. The \"-firstDocFileNum\" will be ignored!" + usageMessage);
 		}
 	}
 
@@ -303,7 +340,7 @@ public class PublicationsRetriever
 		logger.info("Total " + targetUrlType + "s found: " + UrlUtils.sumOfDocUrlsFound + ". That's about: " + df.format(UrlUtils.sumOfDocUrlsFound.get() * 100.0 / inputCheckedUrlNum) + "% from the total numOfUrls checked. The rest were problematic or non-handleable url-cases.");
 		if ( FileUtils.shouldDownloadDocFiles ) {
 			int numOfStoredDocFiles = 0;
-			if ( FileUtils.shouldUseOriginalDocFileNames )
+			if ( !FileUtils.docFileNameType.equals(FileUtils.DocFileNameType.numberName) )	// If we have anything than the numberName-type..
 				numOfStoredDocFiles = FileUtils.numOfDocFile;
 			else
 				numOfStoredDocFiles = FileUtils.numOfDocFile - initialNumOfDocFile;

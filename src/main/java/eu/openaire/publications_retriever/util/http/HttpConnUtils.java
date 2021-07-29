@@ -141,7 +141,7 @@ public class HttpConnUtils
 							conn = handleConnection(urlId, sourceUrl, pageUrl, finalUrlStr, domainStr, calledForPageUrl, calledForPossibleDocOrDatasetUrl);	// No need to "conn.disconnect()" before, as we are re-connecting to the same domain.
 						}
 						try {
-							fullPathFileName = ConnSupportUtils.downloadAndStoreDocFile(conn, domainStr, finalUrlStr, calledForPageUrl);
+							fullPathFileName = ConnSupportUtils.downloadAndStoreDocFile(conn, urlId, domainStr, finalUrlStr, calledForPageUrl);
 							logger.info("DocFile: \"" + fullPathFileName + "\" has been downloaded.");
 						} catch (DocFileNotRetrievedException dfnde) {
 							fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored. Stacktrace:";

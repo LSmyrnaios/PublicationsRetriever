@@ -35,7 +35,6 @@ public class UrlChecker {
 	public void checkUrlConnectivity()
 	{
 		FileUtils.shouldDownloadDocFiles = false;	// Default is: "true".
-		//FileUtils.shouldUseOriginalDocFileNames = true;	// Default is: "false".
 
 		// Here test individual urls.
 
@@ -466,7 +465,9 @@ public class UrlChecker {
 		//urlList.add("https://zenodo.org/record/1145726");
 
 		//urlList.add("https://orbi.uliege.be/bitstream/2268/218222/1/hal-02830219.pdf");
-		urlList.add("https://www.sciencedirect.com/science/article/pii/S1687850718300177/pdf");
+		//urlList.add("https://www.sciencedirect.com/science/article/pii/S1687850718300177/pdf");
+
+		urlList.add("https://zenodo.org/record/1145726");
 
 		logger.info("Urls to check:");
 		for ( String url: urlList )

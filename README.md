@@ -53,8 +53,8 @@ To run the application you should navigate to the ***target*** directory, which 
 while choosing the appropriate run-command.<br> 
 
 **Run with standard input/output:**<br>
-**``java -jar publications_retriever-0.4-SNAPSHOT.jar arg1:'-inputFileFullPath' arg2:<inputFile> arg3:'-retrieveDataType' arg4:'<dataType: document | dataset | all>' arg5:'-downloadDocFiles' arg6:'-firstDocFileNum' arg7:'NUM' arg8:'-docFilesStorage'
-arg9:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
+**``java -jar publications_retriever-0.4-SNAPSHOT.jar arg1:'-inputFileFullPath' arg2:<inputFile> arg3:'-retrieveDataType' arg4:'<dataType: document | dataset | all>' arg5:'-downloadDocFiles' arg6:'-docFileNameType' arg7:'idName' arg8:'-firstDocFileNum' arg9:'NUM' arg10:'-docFilesStorage'
+arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
 
 **Run tests with custom input/output:**
 - Inside ***pom.xml***, change the **mainClass** of **maven-shade-plugin** from "**PublicationsRetriever**" to "**TestNonStandardInputOutput**".
@@ -65,7 +65,7 @@ arg9:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
     and change the ***appender-ref***, from ***File*** to ***Console***.<br>
 - Run ``mvn install`` to create the new ***JAR*** file.<br>
 - Execute the program with the following command:<br>
-**``java -jar publications_retriever-0.4-SNAPSHOT.jar arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-firstDocFileNum' arg5:'NUM' arg6:'-docFilesStorage' arg7:'storageDir' arg8:'-inputDataUrl' arg9: 'inputUrl' arg10: '-numOfThreads' arg11: <NUM>``**
+**``java -jar publications_retriever-0.4-SNAPSHOT.jar arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-docFileNameType' arg5:'numberName' arg6:'-firstDocFileNum' arg7:'NUM' arg8:'-docFilesStorage' arg9:'storageDir' arg10:'-inputDataUrl' arg11: 'inputUrl' arg12: '-numOfThreads' arg13: <NUM>``**
 <br><br>
 *You can use the argument '-inputFileFullPath' to define the inputFile, instead of the stdin-redirection. That way, the progress percentage will appear in the logging file.*
 <br><br>
@@ -74,16 +74,23 @@ arg9:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
 - **-retrieveDataType** and **dataType** will tell the program to retrieve the urls of type "*document*", "*dataset*" or "*all*"-dataTypes.
 - **-downloadDocFiles** will tell the program to download the DocFiles.
     The absence of this argument will cause the program to NOT download the docFiles, but just to find the *DocUrls* instead.
-    Either way, the DocUrls will be written to the JsonOutputFile.
-- **-firstDocFileNum** and **NUM** will tell the program to use numbers as *DocFileNames* and the first *DocFile* will have the given number "*NUM*"
+    Either way the DocUrls will be written to the JsonOutputFile.
+- **-docFileNameType** and **< fileNameType >** will tell the program which fileName-type to use (*originalName, idName, numberName*).
+- **-firstDocFileNum** and **< NUM >** will tell the program to use numbers as *DocFileNames* and the first *DocFile* will have the given number "*NUM*".
     The absence of this argument-group will cause the program to use the original-docFileNames.
 - **-docFilesStorage** and **storageDir** will tell the program to use the given DocFiles-*storageDir*.
+    If the *storageDir* is equal to **"S3ObjectStore"** , then the program uploads the DocFiles to an S3 storage (see the **note** below).
     The absence of this argument will cause the program to use a pre-defined storageDir which is: "*./docFiles*".
 - **-inputDataUrl** and **inputUrl** will tell the program to use the given *URL* to retrieve the inputFile, instead of having it locally stored and redirect the *Standard Input Stream*.
 - **-numOfThreads** and **NUM** will tell the program to use *NUM* number of worker-threads.
 <br><br>
   The order of the program's arguments matters only **per pair**. For example, the argument **'storageDir'**, has to be placed always after the **'-docFilesStorage''** argument.
   <br>
+<br>
+**Note**: in order to access the S3ObjectStore, you should provide a file *"minIO_credentials.txt"* (when using the MinIO) or *"amazon_credentials.txt"*, inside the *working directory*.<br>
+In the *"minIO_credentials.txt"* file, you should provide the *endpoint*, the *accessKey*, the *secretKey*, the *region* and the *bucket*, in that order, separated by comma.<br>
+In the *"amazon_credentials.txt"* file, you should provide the *accessKey*, the *secretKey*, the *region* and the *bucket*, in that order, separated by comma.<br>
+<br>
 
 
 ## Example
@@ -94,13 +101,14 @@ The above script will run the following commands:
 - **`mvn clean install`**: Does a *clean install*.
 - **`rm -rf example/sample_output/*`**: Removes any previous example-results.
 - **``cd target &&
-    java -jar publications_retriever-0.4-SNAPSHOT.jar -retrieveDataType document -downloadDocFiles -firstDocFileNum 1 -docFilesStorage ../example/sample_output/DocFiles
+    java -jar publications_retriever-0.4-SNAPSHOT.jar -retrieveDataType document -downloadDocFiles -docFileNameType numberName -firstDocFileNum 1 -docFilesStorage ../example/sample_output/DocFiles
     < ../example/sample_input/sample_input.json > ../example/sample_output/sample_output.json``**<br>
     This command will run the program with "**../example/sample_input/sample_input.json**" as input
     and "**../example/sample_output/sample_output.json**" as the output.<br>
     The arguments used are:
     - **-retrieveDataType** and **document** will tell the program to retrieve the urls of type "*document*".
     - **-downloadDocFiles** which will tell the program to download the DocFiles.
+    - **-docFileNameType numberName** which will tell the program to use numbers as the docFileNames.
     - **-firstDocFileNum 1** which will tell the program to use numbers as DocFileNames and the first DocFile will have the number <*1*>.
     - **-docFilesStorage ../example/sample_output/DocFiles** which will tell the program to use the custom DocFilesStorageDir: "*../example/sample_output/DocFiles*".
 <br>

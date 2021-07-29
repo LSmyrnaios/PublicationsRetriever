@@ -134,6 +134,21 @@
       <version>20210307</version>
     </dependency>
 
+    <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-s3 -->
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-s3</artifactId>
+      <version>1.12.34</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/io.minio/minio -->
+    <dependency>
+      <groupId>io.minio</groupId>
+      <artifactId>minio</artifactId>
+      <version>8.3.0</version>
+    </dependency>
+
+
     <!-- https://mvnrepository.com/artifact/edu.uci.ics/crawler4j -->
     <dependency>
       <groupId>edu.uci.ics</groupId>

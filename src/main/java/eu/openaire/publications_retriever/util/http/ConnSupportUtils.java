@@ -9,6 +9,7 @@ import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.exceptions.DomainBlockedException;
+import eu.openaire.publications_retriever.util.file.DocFileData;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
@@ -16,10 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.Duration;
@@ -271,13 +269,14 @@ public class ConnSupportUtils
 	 * If it was connected using "HEAD", then, before we can store the data to the disk, we connect again, this time with "GET" in order to download the data.
 	 * It returns the docFileName which was produced for this docUrl.
 	 * @param conn
+	 * @param id
 	 * @param domainStr
 	 * @param docUrl
 	 * @param calledForPageUrl
 	 * @return
 	 * @throws DocFileNotRetrievedException
 	 */
-	public static String downloadAndStoreDocFile(HttpURLConnection conn, String domainStr, String docUrl, boolean calledForPageUrl)
+	public static String downloadAndStoreDocFile(HttpURLConnection conn, String id, String domainStr, String docUrl, boolean calledForPageUrl)
 			throws DocFileNotRetrievedException
 	{
 		boolean reconnected = false;
@@ -300,8 +299,19 @@ public class ConnSupportUtils
 				throw new DocFileNotRetrievedException();
 
 			// Write the downloaded bytes to the docFile and return the docFileName.
-			return FileUtils.storeDocFile(conn.getInputStream(), docUrl, conn.getHeaderField("Content-Disposition"));
-			
+			DocFileData docFileData = FileUtils.storeDocFile(conn.getInputStream(), docUrl, id, conn.getHeaderField("Content-Disposition"));
+			if ( docFileData == null ) {
+				logger.warn("The file could not be " + (FileUtils.shouldUploadFilesToS3 ? "uploaded to S3" : "downloaded") + " from the docUrl " + docUrl);
+				return null;
+			}
+
+			if ( FileUtils.shouldUploadFilesToS3 )
+				return docFileData.getS3Url();
+			else if ( FileUtils.shouldLogFullPathName )
+				return docFileData.getDocFile().getAbsolutePath();	// Return the fullPathName.
+			else
+				return docFileData.getDocFile().getName();	// Return just the fileName.
+
 		} catch (DocFileNotRetrievedException dfnre ) {	// Catch it here, otherwise it will be caught as a general exception.
 			throw dfnre;	// Avoid creating a new "DocFileNotRetrievedException" if it's already created. By doing this we have a better stack-trace if we decide to log it in the caller-method.
 		} catch (Exception e) {

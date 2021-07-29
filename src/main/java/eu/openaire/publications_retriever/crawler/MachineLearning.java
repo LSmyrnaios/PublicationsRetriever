@@ -18,7 +18,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 /**
@@ -70,7 +69,6 @@ public class MachineLearning
 
 	private static final List<Double> successRateList = Collections.synchronizedList(new ArrayList<>());
 
-	private static final Pattern EXTENSION_PATTERN = Pattern.compile("(\\.[^.]+)$");
 
 	/**
 	 * Initialize the Machine Learning Algorithm (MLA).
@@ -154,7 +152,7 @@ public class MachineLearning
 			return;
 
 		// Take the Matcher to retrieve the extension and remove it from the docID, also keep it stored elsewhere so that we can use it in prediction later.
-		Matcher extensionMatcher = EXTENSION_PATTERN.matcher(docUrlID);
+		Matcher extensionMatcher = FileUtils.EXTENSION_PATTERN.matcher(docUrlID);
 		if ( extensionMatcher.find() ) {
 			String extension = null;
 			if ( (extension = extensionMatcher.group(0)) != null )	// Keep info about the docUrl, if it has a PDF-extension ending or not..
@@ -285,7 +283,7 @@ public class MachineLearning
 			return false;
 		else if ( UrlTypeChecker.PLAIN_PAGE_EXTENSION_FILTER.matcher(docIdStr.toLowerCase()).matches() )
 		{	// The docID of this pageUrl contains a page-extension (not a document-one), which we don't want in the docUrl. Thus, we remove the extension from the end.
-			docIdStr = EXTENSION_PATTERN.matcher(docIdStr).replaceAll("");	// This version of "replaceAll" uses a pre-compiled regex-pattern for better performance.
+			docIdStr = FileUtils.EXTENSION_PATTERN.matcher(docIdStr).replaceAll("");	// This version of "replaceAll" uses a pre-compiled regex-pattern for better performance.
 		}
 
 		MachineLearning.urlsCheckedWithMLA.incrementAndGet();

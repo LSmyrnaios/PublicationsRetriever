@@ -21,6 +21,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.apache.commons.io.FileUtils.deleteDirectory;
+import org.apache.commons.io.FileDeleteStrategy;
 
 
 /**
@@ -50,8 +51,16 @@ public class FileUtils
 	public static final Hashtable<String, Integer> numbersOfDuplicateDocFileNames = new Hashtable<>();	// Holds docFileNa,es with their duplicatesNum.
 	
 	public static boolean shouldDownloadDocFiles = false;	// It will be set to "true" if the related command-line-argument is given.
+	public static boolean shouldUploadFilesToS3 = false;	// Should we upload the files to S3 ObjectStore? Otherwise they will be stored locally.
 	public static final boolean shouldDeleteOlderDocFiles = false;	// Should we delete any older stored docFiles? This is useful for testing.
-	public static boolean shouldUseOriginalDocFileNames = false;	// Use number-fileNames by default.
+
+	public enum DocFileNameType {
+		originalName,
+		idName,
+		numberName
+	}
+	public static DocFileNameType docFileNameType = null;
+
 	public static final boolean shouldLogFullPathName = true;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
 	public static int numOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremental system.
 	public static final String workingDir = System.getProperty("user.dir") + File.separator;
@@ -67,7 +76,9 @@ public class FileUtils
 
 	private static final String utf8Charset = "UTF-8";
 
-	
+	public static final Pattern EXTENSION_PATTERN = Pattern.compile("(\\.[^.]+)$");
+
+
 	public FileUtils(InputStream input, OutputStream output)
 	{
 		FileUtils.inputScanner = new Scanner(input, utf8Charset);
@@ -80,6 +91,9 @@ public class FileUtils
 		}
 
 		setOutput(output);
+
+		if ( shouldUploadFilesToS3 )
+			new S3ObjectStoreMinIO();
 	}
 
 
@@ -296,17 +310,22 @@ public class FileUtils
 	 * It is synchronized, in order to avoid files' numbering inconsistency.
 	 * @param inStream
 	 * @param docUrl
+	 * @param id
 	 * @param contentDisposition
 	 * @throws DocFileNotRetrievedException
 	 */
-	public static synchronized String storeDocFile(InputStream inStream, String docUrl, String contentDisposition) throws DocFileNotRetrievedException
+	public static synchronized DocFileData storeDocFile(InputStream inStream, String docUrl, String id, String contentDisposition) throws DocFileNotRetrievedException
 	{
 		File docFile;
 		FileOutputStream outStream = null;
 		try {
-			if ( FileUtils.shouldUseOriginalDocFileNames)
+			if ( docFileNameType.equals(DocFileNameType.originalName) )
 				docFile = getDocFileWithOriginalFileName(docUrl, contentDisposition);
-			else
+			else if ( docFileNameType.equals(DocFileNameType.idName) ) {
+				docFile = new File(storeDocFilesDir + id + ".pdf");    // TODO - Later, on different fileTypes, take care of the extension properly.
+				FileUtils.numOfDocFile ++;
+			}
+			else	// "numberName"
 				docFile = new File(storeDocFilesDir + (numOfDocFile++) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
 
 			try {
@@ -325,8 +344,11 @@ public class FileUtils
 				long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
 				if ( (elapsedTime > FileUtils.maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {
 					logger.warn("Storing docFile from docUrl: \"" + docUrl + "\" is taking over "+ TimeUnit.MILLISECONDS.toSeconds(FileUtils.maxStoringWaitingTime) + "seconds! Aborting..");
-					if ( !docFile.delete() )
+					try {
+						FileDeleteStrategy.FORCE.delete(docFile);
+					} catch (Exception e) {
 						logger.error("Error when deleting the half-retrieved file from docUrl: " + docUrl);
+					}
 					numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 					throw new DocFileNotRetrievedException();
 				}
@@ -334,11 +356,34 @@ public class FileUtils
 					outStream.write(buffer, 0, bytesRead);
 			}
 			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
-			
-			if ( FileUtils.shouldLogFullPathName )
-				return docFile.getAbsolutePath();	// Return the fullPathName.
-			else
-				return docFile.getName();	// Return just the fileName.
+
+			DocFileData docFileData;
+			if ( shouldUploadFilesToS3 ) {
+				String fileName = docFile.getName();
+				docFileData = S3ObjectStoreMinIO.uploadToS3(fileName, docFile.getAbsolutePath());
+				if ( docFileData != null ) {    // Otherwise, the returned object will be null.
+					docFileData.setDocFile(docFile);
+					try {
+						FileDeleteStrategy.FORCE.delete(docFile);    // We don't need the local file anymore..
+					} catch (Exception e) {
+						logger.warn("The file \"" + fileName + "\" could not be deleted after being uploaded to S3 ObjectStore!");
+					}
+					// In the SE case, we use IDs as the names, so no duplicate-overwrite should be a problem here..
+					// as we delete the local files and the online tool just overwrites the file, without responding if it was overwritten..
+					// TODO - so if the other naming methods were used, then we would have to check if the file existed online and then rename of needed and upload back.
+				}
+			} else
+				docFileData = new DocFileData(docFile, null, null);
+
+			// TODO - HOW TO SPOT DUPLICATE-NAMES IN THE S3 MODE?
+			// The local files are deleted after uploaded.. (as they should be)
+			// So we will be uploading files with the same filename-KEY.. in that case, they get overwritten.
+			// An option would be to check if an object already exists, then increment a number and upload the object.
+			// From that moment forward, the number will be stored in memory along with the fileKeyName, just like with "originalNames", so next time no online check should be needed..!
+			// Of-course the above algorithm would work only if the bucket was created of filled for the first time from this program.
+			// Otherwise, a file-key-name (with incremented number-string) might already exist, from a previous or parallel upload from another run.
+
+			return docFileData;
 			
 		} catch (DocFileNotRetrievedException dfnre) {
 			throw dfnre;
@@ -476,7 +521,7 @@ public class FileUtils
 			throw new DocFileNotRetrievedException();
 		}
 	}
-	
+
 	
 	/**
 	 * Closes open Streams and deletes the temporary-inputFile which is used when the MLA is enabled.
