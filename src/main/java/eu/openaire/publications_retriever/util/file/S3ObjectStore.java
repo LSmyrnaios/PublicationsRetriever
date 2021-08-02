@@ -24,8 +24,7 @@ public class S3ObjectStore {
     private static String bucketName = null;
     private static AmazonS3 s3Client;
 
-    public static final boolean shouldEmptyBucket = false;  // TODO - Set true just for testing!
-
+    public static final boolean shouldEmptyBucket = false;  // Set true only for testing!
     public static final String credentialsFilePath = FileUtils.workingDir + "amazon_credentials.txt";
 
 
@@ -53,7 +52,7 @@ public class S3ObjectStore {
                 bucketName = credentials[3];
             }
         } catch (Exception e) {
-            String errorMsg = "An error prevented the retrieval of the minIO credentials from the file: " + credentialsFilePath;
+            String errorMsg = "An error prevented the retrieval of the amazon credentials from the file: " + credentialsFilePath;
             logger.error(errorMsg);
             System.err.println(errorMsg);
             e.printStackTrace();
@@ -85,10 +84,11 @@ public class S3ObjectStore {
             System.exit(55);
         }
 
-        if ( bucketExists && shouldEmptyBucket ) {
+        // Keep this commented-out to avoid objects-deletion by accident. The code is open-sourced, so it's easy to enable this ability if we really want it (e.g. for testing).
+/*        if ( bucketExists && shouldEmptyBucket ) {
             emptyBucket(bucketName, false);
             //throw new RuntimeException("stop just for test!");
-        }
+        }*/
 
         // Create the bucket if not exist.
         try {
@@ -147,7 +147,7 @@ public class S3ObjectStore {
         }
 
         String contentMD5 = result.getContentMd5();
-        String S3Url = s3Client.getUrl(bucketName, fileObjKeyName).toString();
+        String S3Url = s3Client.getUrl(bucketName, fileObjKeyName).toString();  // Be aware: This url works only if the access to the bucket is public.
         logger.debug("fileObjKey \"" + fileObjKeyName + "\" has contentMD5 = " + contentMD5 + " and S3Url: " + S3Url);
         return new DocFileData(null, contentMD5, S3Url);
     }
@@ -155,7 +155,7 @@ public class S3ObjectStore {
 
     public static boolean emptyBucket(String bucketName, boolean shouldDeleteBucket)
     {
-        logger.debug("Going to delete bucket \"" + bucketName + "\"");
+        logger.warn("Going to " + (shouldDeleteBucket ? "delete" : "empty") + " bucket \"" + bucketName + "\"");
 
         // First list the objects of the bucket -taken in multiple pages- and delete each one of them.
         ObjectListing objects;

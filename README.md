@@ -26,7 +26,7 @@ Sample JSON-input:
 ```
 Sample JSON-output (with downloading of the DocFile):
 ```
-{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","sourceUrl":"https://zenodo.org/record/884160","docUrl":"https://zenodo.org/record/884160/files/Data_for_Policy_2017_paper_55.pdf","comment":"/home/lampros/PublicationsRetriever/target/../example/sample_output/DocFiles/1.pdf"}
+{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","sourceUrl":"https://zenodo.org/record/884160","docUrl":"https://zenodo.org/record/884160/files/Data_for_Policy_2017_paper_55.pdf","wasUrlValid":"true","wasDocumentOrDatasetAccessible":"true","wasDirectLink":"false","comment":"/home/lampros/PublicationsRetriever/target/../example/sample_output/DocFiles/1.pdf"}
 ```
 <br>
 
@@ -53,7 +53,7 @@ To run the application you should navigate to the ***target*** directory, which 
 while choosing the appropriate run-command.<br> 
 
 **Run with standard input/output:**<br>
-**``java -jar publications_retriever-0.4-SNAPSHOT.jar arg1:'-inputFileFullPath' arg2:<inputFile> arg3:'-retrieveDataType' arg4:'<dataType: document | dataset | all>' arg5:'-downloadDocFiles' arg6:'-docFileNameType' arg7:'idName' arg8:'-firstDocFileNum' arg9:'NUM' arg10:'-docFilesStorage'
+**``java -jar publications_retriever-1.0-SNAPSHOT.jar arg1:'-inputFileFullPath' arg2:<inputFile> arg3:'-retrieveDataType' arg4:'<dataType: document | dataset | all>' arg5:'-downloadDocFiles' arg6:'-docFileNameType' arg7:'idName' arg8:'-firstDocFileNum' arg9:'NUM' arg10:'-docFilesStorage'
 arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
 
 **Run tests with custom input/output:**
@@ -65,7 +65,7 @@ arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
     and change the ***appender-ref***, from ***File*** to ***Console***.<br>
 - Run ``mvn install`` to create the new ***JAR*** file.<br>
 - Execute the program with the following command:<br>
-**``java -jar publications_retriever-0.4-SNAPSHOT.jar arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-docFileNameType' arg5:'numberName' arg6:'-firstDocFileNum' arg7:'NUM' arg8:'-docFilesStorage' arg9:'storageDir' arg10:'-inputDataUrl' arg11: 'inputUrl' arg12: '-numOfThreads' arg13: <NUM>``**
+**``java -jar publications_retriever-1.0-SNAPSHOT.jar arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-docFileNameType' arg5:'numberName' arg6:'-firstDocFileNum' arg7:'NUM' arg8:'-docFilesStorage' arg9:'storageDir' arg10:'-inputDataUrl' arg11: 'inputUrl' arg12: '-numOfThreads' arg13: <NUM>``**
 <br><br>
 *You can use the argument '-inputFileFullPath' to define the inputFile, instead of the stdin-redirection. That way, the progress percentage will appear in the logging file.*
 <br><br>
@@ -85,8 +85,8 @@ arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
 - **-numOfThreads** and **NUM** will tell the program to use *NUM* number of worker-threads.
 <br><br>
   The order of the program's arguments matters only **per pair**. For example, the argument **'storageDir'**, has to be placed always after the **'-docFilesStorage''** argument.
-  <br>
-<br>
+  <br><br>
+
 **Note**: in order to access the S3ObjectStore, you should provide a file *"minIO_credentials.txt"* (when using the MinIO) or *"amazon_credentials.txt"*, inside the *working directory*.<br>
 In the *"minIO_credentials.txt"* file, you should provide the *endpoint*, the *accessKey*, the *secretKey*, the *region* and the *bucket*, in that order, separated by comma.<br>
 In the *"amazon_credentials.txt"* file, you should provide the *accessKey*, the *secretKey*, the *region* and the *bucket*, in that order, separated by comma.<br>
@@ -101,7 +101,7 @@ The above script will run the following commands:
 - **`mvn clean install`**: Does a *clean install*.
 - **`rm -rf example/sample_output/*`**: Removes any previous example-results.
 - **``cd target &&
-    java -jar publications_retriever-0.4-SNAPSHOT.jar -retrieveDataType document -downloadDocFiles -docFileNameType numberName -firstDocFileNum 1 -docFilesStorage ../example/sample_output/DocFiles
+    java -jar publications_retriever-1.0-SNAPSHOT.jar -retrieveDataType document -downloadDocFiles -docFileNameType numberName -firstDocFileNum 1 -docFilesStorage ../example/sample_output/DocFiles
     < ../example/sample_input/sample_input.json > ../example/sample_output/sample_output.json``**<br>
     This command will run the program with "**../example/sample_input/sample_input.json**" as input
     and "**../example/sample_output/sample_output.json**" as the output.<br>

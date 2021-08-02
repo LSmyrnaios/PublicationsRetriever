@@ -24,7 +24,7 @@ public class S3ObjectStoreMinIO {
 
     private static MinioClient minioClient;
 
-    public static final boolean shouldEmptyBucket = false;  // TODO - Set true just for testing!
+    public static final boolean shouldEmptyBucket = false;  // Set true only for testing!
     public static final String credentialsFilePath = FileUtils.workingDir + "minIO_credentials.txt";
 
 
@@ -82,10 +82,11 @@ public class S3ObjectStoreMinIO {
             System.exit(55);
         }
 
-        if ( bucketExists && shouldEmptyBucket ) {
+        // Keep this commented-out to avoid objects-deletion by accident. The code is open-sourced, so it's easy to enable this ability if we really want it (e.g. for testing).
+/*        if ( bucketExists && shouldEmptyBucket ) {
             emptyBucket(bucketName, false);
             //throw new RuntimeException("stop just for test!");
-        }
+        }*/
 
         // Make the bucket if not exist.
         try {
@@ -151,15 +152,15 @@ public class S3ObjectStoreMinIO {
         }
 
         String contentMD5 = "no idea";
-        String S3Url = endpoint + "/" + bucketName + "/" + fileObjKeyName;
-        logger.debug("Uploaded file \"" + fileObjKeyName + "\". The S3Url is: " + S3Url);
-        return new DocFileData(null, contentMD5, S3Url);
+        String s3Url = endpoint + "/" + bucketName + "/" + fileObjKeyName;  // Be aware: This url works only if the access to the bucket is public.
+        logger.debug("Uploaded file \"" + fileObjKeyName + "\". The s3Url is: " + s3Url);
+        return new DocFileData(null, contentMD5, s3Url);
     }
 
 
     public static boolean emptyBucket(String bucketName, boolean shouldDeleteBucket)
     {
-        logger.debug("Going to delete bucket \"" + bucketName + "\"");
+        logger.warn("Going to " + (shouldDeleteBucket ? "delete" : "empty") + " bucket \"" + bucketName + "\"");
 
         // First list the objects of the bucket.
         Iterable<Result<Item>> results;
