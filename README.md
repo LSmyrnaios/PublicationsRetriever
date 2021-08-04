@@ -5,7 +5,15 @@ It is being developed for the European organization: [**OpenAIRE**](https://www.
 Afterwards, these full-text documents are mined, in order to enrich a much more complete set of OpenAIRE publications with inference links.<br>
 
 The **PublicationsRetriever** takes as input the PubPages with their IDs -in JSON format- and gives an output -also in JSON format,
-which contains the IDs, the PubPages, the Document or Dataset Urls and a comment.<br>
+which contains the IDs, the PubPages, the Document or Dataset Urls, a series of informative booleans and a comment.<br>
+The "booleans" are:
+- "wasUrlChecked": it signals whether the url was checked
+- "wasUrlValid": it signals whether the url was a valid url (one that can be connected)
+- "wasDocumentOrDatasetAccessible": it signals whether the url gave a document or dataset url
+- "wasDirectLink": it signals whether the url was a document or dataset link itself
+- "couldRetry": it signals whether it could be worth to check the url in the future (in case the sourceUrl gave the docOrDatasetUrl or it resulted in an error which might be eliminated in the future)
+<br>
+
 The "comment" can have the following values:
 - an empty string, if the document url is retrieved, and the user specified that the document files will not be downloaded
 - the information if the resulted url is a dataset url
@@ -26,7 +34,7 @@ Sample JSON-input:
 ```
 Sample JSON-output (with downloading of the DocFile):
 ```
-{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","sourceUrl":"https://zenodo.org/record/884160","docUrl":"https://zenodo.org/record/884160/files/Data_for_Policy_2017_paper_55.pdf","wasUrlValid":"true","wasDocumentOrDatasetAccessible":"true","wasDirectLink":"false","comment":"/home/lampros/PublicationsRetriever/target/../example/sample_output/DocFiles/1.pdf"}
+{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","sourceUrl":"https://zenodo.org/record/884160","docUrl":"https://zenodo.org/record/884160/files/Data_for_Policy_2017_paper_55.pdf","wasUrlValid":"true","wasDocumentOrDatasetAccessible":"true","wasDirectLink":"false","couldRetry":"true","comment":"/home/lampros/PublicationsRetriever/target/../example/sample_output/DocFiles/1.pdf"}
 ```
 <br>
 

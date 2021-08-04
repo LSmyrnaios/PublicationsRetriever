@@ -20,14 +20,14 @@ public class DataToBeLogged
     private String urlId;
     private String sourceUrl;
     private String docOrDatasetUrl;
-	private String wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink;
-    private String comment;   // This will be an emptyString, unless there is an error causing the docUrl to be unreachable.
-	
+	private String wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, couldRetry;
+	private String comment;   // This will be an emptyString, unless there is an error causing the docUrl to be unreachable.
+
 	private static final Logger logger = LoggerFactory.getLogger(DataToBeLogged.class);
 
-	public DataToBeLogged(String urlId, String sourceUrl, String docOrDatasetUrl, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String comment)
+	public DataToBeLogged(String urlId, String sourceUrl, String docOrDatasetUrl, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String couldRetry, String comment)
     {
-        if ( urlId == null )
+		if ( urlId == null )
             urlId = "unretrievable";
         
         this.urlId = urlId;
@@ -37,6 +37,7 @@ public class DataToBeLogged
 		this.wasUrlValid = wasUrlValid;
 		this.wasDocumentOrDatasetAccessible = wasDocumentOrDatasetAccessible;
 		this.wasDirectLink = wasDirectLink;
+		this.couldRetry = couldRetry;
 		this.comment = comment;
 	}
 	
@@ -92,6 +93,7 @@ public class DataToBeLogged
 			jsonObject.put("wasUrlValid", this.wasUrlValid);
 			jsonObject.put("wasDocumentOrDatasetAccessible", this.wasDocumentOrDatasetAccessible);
 			jsonObject.put("wasDirectLink", this.wasDirectLink);
+			jsonObject.put("couldRetry", this.couldRetry);
 			jsonObject.put("comment", this.comment);
 		} catch (JSONException je) {
 			// Keep the jsonObject with what it has till now.. plus a "special" comment.

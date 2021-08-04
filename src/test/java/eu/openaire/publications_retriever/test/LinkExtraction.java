@@ -66,7 +66,8 @@ public class LinkExtraction {
 		//exampleUrl = "https://core.ac.uk/display/91816393";
 		//exampleUrl = "https://escholarship.org/uc/item/97b0t7th";
 		//exampleUrl = "https://datadryad.org/stash/dataset/doi:10.5061/dryad.v1c28";
-		exampleUrl = "https://zenodo.org/record/3483813";
+		//exampleUrl = "https://zenodo.org/record/3483813";
+		exampleUrl = "http://sedici.unlp.edu.ar/handle/10915/30810";
 	}
 
 	

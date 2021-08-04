@@ -209,19 +209,25 @@ public class PublicationsRetriever
 					case "-docFileNameType":
 						i ++;
 						String nameType = mainArgs[i];
-						if ( nameType.equals("originalName") )
+						if ( nameType.equals("originalName") ) {
+							logger.info("Going to use the \"originalName\" type.");
 							FileUtils.docFileNameType = FileUtils.DocFileNameType.originalName;
+						}
 						else if ( nameType.equals("idName") ) {
 							if ( !LoaderAndChecker.useIdUrlPairs ) {
 								String errMessage = "You provided the \"DocFileNameType.idName\", but the program's reader is not set to retrieve IDs from the inputFile! Set the program to retrieve IDs by setting the \"utils.url.LoaderAndChecker.useIdUrlPairs\"-variable to \"true\".";
 								System.err.println(errMessage);
 								logger.error(errMessage);
 								System.exit(10);
-							} else
+							} else {
+								logger.info("Going to use the \"idName\" type.");
 								FileUtils.docFileNameType = FileUtils.DocFileNameType.idName;
+							}
 						}
-						else if ( nameType.equals("numberName") )
+						else if ( nameType.equals("numberName") ) {
+							logger.info("Going to use the \"numberName\" type.");
 							FileUtils.docFileNameType = FileUtils.DocFileNameType.numberName;
+						}
 						else {
 							String errMessage = "Invalid \"docFileNameType\" given (\"" + nameType + "\")\nExpected one of the following: \"originalName | idName | numberName\"" + usageMessage;
 							System.err.println(errMessage);
@@ -365,7 +371,6 @@ public class PublicationsRetriever
 		{
 			logger.debug("About " + df.format(UrlTypeChecker.crawlerSensitiveDomains.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.crawlerSensitiveDomains.get()  + " urls) were from known crawler-sensitive domains.");
 			logger.debug("About " + df.format(UrlTypeChecker.javascriptPageUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.javascriptPageUrls.get() + " urls) were from a JavaScript-powered domain, other than the \"sciencedirect.com\", which has dynamic links.");
-			logger.debug("About " + df.format(UrlTypeChecker.elsevierUnwantedUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.elsevierUnwantedUrls.get() + " urls) were from, or reached after redirects, the unwanted domain: \"elsevier.com\", which either doesn't provide docUrls in its docPages, or it redirects to \"sciencedirect.com\", thus being avoided to be crawled.");
 			logger.debug("About " + df.format(UrlTypeChecker.doajResultPageUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.doajResultPageUrls.get() + " urls) were \"doaj.org/toc/\" urls, which are resultPages, thus being avoided to be crawled.");
 			logger.debug("About " + df.format(UrlTypeChecker.pagesWithHtmlDocUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.pagesWithHtmlDocUrls.get() + " urls) were docUrls, but, in HTML, thus being avoided to be crawled.");
 			logger.debug("About " + df.format(UrlTypeChecker.pagesRequireLoginToAccessDocFiles.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.pagesRequireLoginToAccessDocFiles.get() + " urls) were of domains which are known to require login to access docFiles, thus, they were blocked before being connected.");
@@ -374,7 +379,7 @@ public class PublicationsRetriever
 			logger.debug("About " + df.format(UrlTypeChecker.urlsWithUnwantedForm.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.urlsWithUnwantedForm.get() + " urls) were urls which are plain-domains, have unwanted url-extensions, ect...");
 			logger.debug("About " + df.format(LoaderAndChecker.inputDuplicatesNum.get() * 100.0 / inputCheckedUrlNum) + "% (" + LoaderAndChecker.inputDuplicatesNum.get() + " urls) were duplicates in the input file.");
 
-			problematicUrlsNum += UrlTypeChecker.crawlerSensitiveDomains.get() + UrlTypeChecker.javascriptPageUrls.get() + UrlTypeChecker.elsevierUnwantedUrls.get() + UrlTypeChecker.doajResultPageUrls.get() + UrlTypeChecker.pagesWithHtmlDocUrls.get() + UrlTypeChecker.pagesRequireLoginToAccessDocFiles.get()
+			problematicUrlsNum += UrlTypeChecker.crawlerSensitiveDomains.get() + UrlTypeChecker.javascriptPageUrls.get() + UrlTypeChecker.doajResultPageUrls.get() + UrlTypeChecker.pagesWithHtmlDocUrls.get() + UrlTypeChecker.pagesRequireLoginToAccessDocFiles.get()
 					+ UrlTypeChecker.pagesWithLargerCrawlingDepth.get() + UrlTypeChecker.pangaeaUrls.get() + UrlTypeChecker.urlsWithUnwantedForm.get() + LoaderAndChecker.inputDuplicatesNum.get();
 		}
 

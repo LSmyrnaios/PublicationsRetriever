@@ -43,6 +43,10 @@ public class UrlUtils
 
 	public static final Hashtable<String, Integer> domainsAndHits = new Hashtable<>();
 
+	public static final String duplicateUrlIndicator = "duplicate";
+	public static final String unreachableDocOrDatasetUrlIndicator = "unreachable";
+
+
 
 	/**
      * This method logs the outputEntry to be written, as well as the docUrlPath (if non-empty String) and adds entries in the blackList.
@@ -57,15 +61,16 @@ public class UrlUtils
 	 * @param wasUrlValid
 	 * @param wasDocumentOrDatasetAccessible
 	 * @param wasDirectLink
+	 * @param couldRetry
 	 */
     public static void logOutputData(String urlId, String sourceUrl, String pageUrl, String docUrl, String comment, String pageDomain,
-									 boolean isFirstCrossed, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink)
+									 boolean isFirstCrossed, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String couldRetry)
     {
         String finalDocUrl = docUrl;
 
-        if ( !finalDocUrl.equals("duplicate") )
+        if ( !finalDocUrl.equals(duplicateUrlIndicator) )
         {
-			if ( !finalDocUrl.equals("unreachable") )
+			if ( !finalDocUrl.equals(unreachableDocOrDatasetUrlIndicator) )
 			{
 				sumOfDocUrlsFound.incrementAndGet();
 
@@ -101,7 +106,7 @@ public class UrlUtils
 				duplicateUrls.add(sourceUrl);	// Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future. We don't add docUrls here, as we want them to be separate for checking purposes.
 		}
 
-        FileUtils.dataToBeLoggedList.add(new DataToBeLogged(urlId, sourceUrl, finalDocUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, comment));    // Log it to be written later in the outputFile.
+        FileUtils.dataToBeLoggedList.add(new DataToBeLogged(urlId, sourceUrl, finalDocUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, couldRetry, comment));    // Log it to be written later in the outputFile.
     }
 
 
