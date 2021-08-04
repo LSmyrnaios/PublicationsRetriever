@@ -167,4 +167,12 @@ public class DataToBeLogged
 	public void setComment(String comment) {
 		this.comment = comment;
 	}
+
+	public String getCouldRetry() {
+		return couldRetry;
+	}
+
+	public void setCouldRetry(String couldRetry) {
+		this.couldRetry = couldRetry;
+	}
 }

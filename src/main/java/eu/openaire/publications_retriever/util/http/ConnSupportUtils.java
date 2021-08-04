@@ -965,11 +965,13 @@ public class ConnSupportUtils
 	}
 
 
+	// TODO - Find a way to detect when a sourceUrl is automatically redirected through HTTP to the finalDocUrl, in order to return "true".
 	public static String getWasDirectLink(String sourceUrl, String pageUrl, boolean calledForPageUrl, String finalUrlStr) {
 		String wasDirectLink;
 		if ( calledForPageUrl ) {
 			boolean isSpecialUrl = HttpConnUtils.isSpecialUrl.get();	// It's more efficient to save it once in a temp-variable.
-			if ( (!isSpecialUrl && pageUrl.equals(finalUrlStr)) || sourceUrl.equals(finalUrlStr) )	// Or if it was not a "specialUrl" and the pageUrl is the same as the dcoUrl.
+			if ( (!isSpecialUrl && ( pageUrl.equals(finalUrlStr) || ConnSupportUtils.haveOnlyProtocolDifference(pageUrl, finalUrlStr) ))
+					|| sourceUrl.equals(finalUrlStr) || ConnSupportUtils.haveOnlyProtocolDifference(sourceUrl, finalUrlStr))	// Or if it was not a "specialUrl" and the pageUrl is the same as the docUrl.
 				wasDirectLink = "true";
 			else if ( isSpecialUrl )
 				wasDirectLink = "false";
