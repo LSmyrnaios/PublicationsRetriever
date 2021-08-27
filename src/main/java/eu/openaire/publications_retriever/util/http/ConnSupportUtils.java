@@ -965,7 +965,7 @@ public class ConnSupportUtils
 	}
 
 
-	// TODO - Find a way to detect when a sourceUrl is automatically redirected through HTTP to the finalDocUrl, in order to return "true".
+	// TODO - Find a way to detect when a sourceUrl is automatically redirected through HTTP to the finalDocUrl, in order to return "true". Use Thread-local public variables.
 	public static String getWasDirectLink(String sourceUrl, String pageUrl, boolean calledForPageUrl, String finalUrlStr) {
 		String wasDirectLink;
 		if ( calledForPageUrl ) {

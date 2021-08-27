@@ -92,8 +92,10 @@ public class S3ObjectStore {
 
         // Create the bucket if not exist.
         try {
-            if ( !bucketExists )
+            if ( !bucketExists ) {
+                logger.info("Bucket \"" + bucketName + "\" does not exist! Going to create it..");
                 s3Client.createBucket(bucketName);
+            }
             else
                 logger.warn("Bucket \"" + bucketName + "\" already exists.");
         } catch (Exception e) {

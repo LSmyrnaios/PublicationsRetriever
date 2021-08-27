@@ -123,7 +123,7 @@ public class TestNonStandardInputOutput  {
 		args[0] = "-retrieveDataType";
 		args[1] = "document";	// "document" OR "dataset" OR "all"
 		args[2] = "-inputFileFullPath";
-		args[3] = "./testData/idUrlPairs/orderedList5000.json";
+		args[3] = "./testData/idUrlPairs/orderedList1000.json";
 
 		logger.info("Calling main method with these args: ");
 		for ( String arg: args )

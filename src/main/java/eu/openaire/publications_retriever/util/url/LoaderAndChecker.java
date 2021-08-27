@@ -129,17 +129,9 @@ public class LoaderAndChecker
 					try {	// We sent the < null > into quotes to avoid causing NPEs in the thread-safe datastructures that do not support null input.
 						HttpConnUtils.connectAndCheckMimeType("null", retrievedUrlToCheck, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
 					} catch (Exception e) {
-						String wasUrlValid = "true";
-						String couldRetry = "false";
-						if ( e instanceof RuntimeException ) {
-							String message = e.getMessage();
-							if ( message != null) {
-								if ( message.contains("HTTP 404 Client Error") )
-									wasUrlValid = "false";
-								else if ( message.contains("Server Error") || message.contains("HTTP 408") )
-									couldRetry = "true";	// 	We could retry at a later time, as the HTTP-non-404-errors can be temporal.
-							}
-						}
+						List<String> list = getWasValidAndCouldRetry(e);
+						String wasUrlValid = list.get(0);
+						String couldRetry = list.get(1);
 						UrlUtils.logOutputData("null", retrievedUrlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry);
 					}
 					return true;
@@ -276,17 +268,9 @@ public class LoaderAndChecker
 						if ( !isSingleIdUrlPair )	// Otherwise it's already logged.
 							loggedUrlsOfCurrentId.add(urlToCheck);
 					} catch (Exception e) {
-						String wasUrlValid = "true";
-						String couldRetry = "false";
-						if ( e instanceof RuntimeException ) {
-							String message = e.getMessage();
-							if ( message != null) {
-								if ( message.contains("HTTP 404 Client Error") )
-									wasUrlValid = "false";
-								else if ( message.contains("Server Error") || message.contains("HTTP 408") )
-									couldRetry = "true";	// 	We could retry at a later time, as the HTTP-non-404-errors can be temporal.
-							}
-						}
+						List<String> list = getWasValidAndCouldRetry(e);
+						String wasUrlValid = list.get(0);
+						String couldRetry = list.get(1);
 						UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry);
 						// This url had connectivity problems.. but the rest might not, go check them out.
 						if ( !isSingleIdUrlPair ) {
@@ -372,17 +356,9 @@ public class LoaderAndChecker
 					try {    // Check if it's a docUrl, if not, it gets crawled.
 						HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
 					} catch (Exception e) {
-						String wasUrlValid = "true";
-						String couldRetry = "false";
-						if ( e instanceof RuntimeException ) {
-							String message = e.getMessage();
-							if ( message != null) {
-								if ( message.contains("HTTP 404 Client Error") )
-									wasUrlValid = "false";
-								else if ( message.contains("Server Error") || message.contains("HTTP 408") )
-									couldRetry = "true";	// 	We could retry at a later time, as the HTTP-non-404-errors can be temporal.
-							}
-						}
+						List<String> list = getWasValidAndCouldRetry(e);
+						String wasUrlValid = list.get(0);
+						String couldRetry = list.get(1);
 						UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry);
 					}
 					return true;
@@ -458,17 +434,9 @@ public class LoaderAndChecker
 						try {    // Check if it's a docUrl, if not, it gets crawled.
 							HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
 						} catch (Exception e) {
-							String wasUrlValid = "true";
-							String couldRetry = "false";
-							if ( e instanceof RuntimeException ) {
-								String message = e.getMessage();
-								if ( message != null) {
-									if ( message.contains("HTTP 404 Client Error") )
-										wasUrlValid = "false";
-									else if ( message.contains("Server Error") || message.contains("HTTP 408") )
-										couldRetry = "true";	// 	We could retry at a later time, as the HTTP-non-404-errors can be temporal.
-								}
-							}
+							List<String> list = getWasValidAndCouldRetry(e);
+							String wasUrlValid = list.get(0);
+							String couldRetry = list.get(1);
 							UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry);
 						}
 					}
@@ -531,17 +499,9 @@ public class LoaderAndChecker
 					loggedUrlsOfThisId.add(urlToCheck);
 				return true;	// A url was checked and didn't have any problems, return and log the remaining urls.
 			} catch (Exception e) {
-				String wasUrlValid = "true";
-				String couldRetry = "false";
-				if ( e instanceof RuntimeException ) {
-					String message = e.getMessage();
-					if ( message != null) {
-						if ( message.contains("HTTP 404 Client Error") )
-							wasUrlValid = "false";
-						else if ( message.contains("Server Error") || message.contains("HTTP 408") )
-							couldRetry = "true";	// 	We could retry at a later time, as the HTTP-non-404-errors can be temporal.
-					}
-				}
+				List<String> list = getWasValidAndCouldRetry(e);
+				String wasUrlValid = list.get(0);
+				String couldRetry = list.get(1);
 				UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, in checkRemainingUrls(), due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry);
 				if ( !isSingleIdUrlPair )
 					loggedUrlsOfThisId.add(urlToCheck);
@@ -549,7 +509,7 @@ public class LoaderAndChecker
 		}
 		return false;
 	}
-	
+
 	
 	/**
 	 * This method checks if the given url is either of unwantedType or if it's a duplicate in the input, while removing the potential jsessionid from the url.
@@ -665,6 +625,29 @@ public class LoaderAndChecker
 				UrlUtils.logOutputData(retrievedId, retrievedUrl, null, "unreachable",
 					"Skipped in LoaderAndChecker, as a better url was selected for id: " + retrievedId, null, true, "false", "N/A", "N/A", "N/A", "true");
 		}
+	}
+
+
+	public static final Pattern INVALID_URL_HTTP_STATUS = Pattern.compile(".*HTTP 4(?:00|04|10|14|22) Client Error.*");
+	public static final Pattern COULD_RETRY_HTTP_STATUS = Pattern.compile(".*(?:HTTP 4(?:08|2[569]) Client|Server) Error.*");
+
+	public static List<String> getWasValidAndCouldRetry(Exception e)
+	{
+		List<String> list = new ArrayList<>(2);
+		String wasUrlValid = "true";
+		String couldRetry = "false";
+		if ( e instanceof RuntimeException ) {
+			String message = e.getMessage();
+			if ( message != null) {
+				if ( INVALID_URL_HTTP_STATUS.matcher(message).matches() )
+					wasUrlValid = "false";
+				else if ( COULD_RETRY_HTTP_STATUS.matcher(message).matches() )
+					couldRetry = "true";	// 	We could retry at a later time, since some errors might be temporal.
+			}
+		}
+		list.add(0, wasUrlValid);
+		list.add(1, couldRetry);
+		return list;
 	}
 	
 }
