@@ -3,6 +3,8 @@ package eu.openaire.publications_retriever.util.http;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
+import com.google.common.hash.Hashing;
+import com.google.common.io.Files;
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.crawler.MachineLearning;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
@@ -13,6 +15,7 @@ import eu.openaire.publications_retriever.util.file.DocFileData;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
+import org.apache.commons.io.FileDeleteStrategy;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -226,9 +230,9 @@ public class ConnSupportUtils
 		reCrossedDocUrls.incrementAndGet();
 		String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, docUrl);
 		if ( FileUtils.shouldDownloadDocFiles )
-			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(docUrl), null, false, "true", "true", "true", wasDirectLink, "true");
+			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(docUrl), null, false, "true", "true", "true", wasDirectLink, "true", null, null);
 		else
-			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, "", null, false, "true", "true", "true", wasDirectLink, "true");
+			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, "", null, false, "true", "true", "true", wasDirectLink, "true", null, null);
 	}
 
 	
@@ -276,7 +280,7 @@ public class ConnSupportUtils
 	 * @return
 	 * @throws DocFileNotRetrievedException
 	 */
-	public static String downloadAndStoreDocFile(HttpURLConnection conn, String id, String domainStr, String docUrl, boolean calledForPageUrl)
+	public static DocFileData downloadAndStoreDocFile(HttpURLConnection conn, String id, String domainStr, String docUrl, boolean calledForPageUrl)
 			throws DocFileNotRetrievedException
 	{
 		boolean reconnected = false;
@@ -294,23 +298,46 @@ public class ConnSupportUtils
 			}
 
 			// Check if we should abort the download based on its content-size.
-			int contentSize = getContentSize(conn, true);
-			if ( contentSize == -1 )	// "Unacceptable size"-code..
+			if ( getContentSize(conn, true) == -1 )	// "Unacceptable size"-code..
 				throw new DocFileNotRetrievedException();
 
 			// Write the downloaded bytes to the docFile and return the docFileName.
 			DocFileData docFileData = FileUtils.storeDocFile(conn.getInputStream(), docUrl, id, conn.getHeaderField("Content-Disposition"));
 			if ( docFileData == null ) {
 				logger.warn("The file could not be " + (FileUtils.shouldUploadFilesToS3 ? "uploaded to S3" : "downloaded") + " from the docUrl " + docUrl);
-				return null;
+				throw new DocFileNotRetrievedException();
 			}
 
-			if ( FileUtils.shouldUploadFilesToS3 )
-				return docFileData.getS3Url();
-			else if ( FileUtils.shouldLogFullPathName )
-				return docFileData.getDocFile().getAbsolutePath();	// Return the fullPathName.
-			else
-				return docFileData.getDocFile().getName();	// Return just the fileName.
+			// TODO - The following could be put in its own function to be used bo other plugin in the PDF-Service.
+			// Calculate the hash and the size here (after the FileUtils.storeDocFile() call), in order to avoid long threads-blocking, as the "storeDocFile" is synchronized.
+			String hash = null;
+			Long size = 0L;
+			File docFile = docFileData.getDocFile();
+			String fileLocation = docFile.getAbsolutePath();
+			try {
+				hash = Files.hash(docFile, Hashing.md5()).toString();    // These hashing functions are deprecated, but just to inform us that MD5 is not secure. Luckily, we use MD5 just to identify duplicate files.
+				//logger.debug("MD5 for file \"" + docFile.getName() + "\": " + hash); // DEBUG!
+				size = java.nio.file.Files.size(Paths.get(fileLocation));
+				//logger.debug("Size of file \"" + docFile.getName() + "\": " + size); // DEBUG!
+			} catch (Exception e) {
+				if ( hash == null )
+					logger.error("Could not retrieve the MD5-hash for the file: " + fileLocation);
+				if ( size == null )
+					logger.error("Could not retrieve the size of the file: " + fileLocation);
+				e.printStackTrace();
+			}
+			docFileData.setHash(hash);
+			docFileData.setSize(size);
+
+			if ( FileUtils.shouldUploadFilesToS3 ) {
+				try {	// In the "S3"-mode, we don't keep the files locally.
+					FileDeleteStrategy.FORCE.delete(docFile);    // We don't need the local file anymore..
+				} catch (Exception e) {
+					logger.warn("The file \"" + docFile.getName() + "\" could not be deleted after being uploaded to S3 ObjectStore!");
+				}
+			}
+
+			return docFileData;
 
 		} catch (DocFileNotRetrievedException dfnre ) {	// Catch it here, otherwise it will be caught as a general exception.
 			throw dfnre;	// Avoid creating a new "DocFileNotRetrievedException" if it's already created. By doing this we have a better stack-trace if we decide to log it in the caller-method.
@@ -642,8 +669,7 @@ public class ConnSupportUtils
 
 	public static String getHtmlString(HttpURLConnection conn, BufferedReader bufferedReader)
 	{
-		int contentSize = getContentSize(conn, false);
-		if ( contentSize == -1 ) {	// "Unacceptable size"-code..
+		if ( getContentSize(conn, false) == -1 ) {	// "Unacceptable size"-code..
 			logger.warn("Aborting HTML-extraction for pageUrl: " + conn.getURL().toString());
 			return null;
 		}
@@ -752,8 +778,7 @@ public class ConnSupportUtils
 	 */
 	public static DetectedContentType extractContentTypeFromResponseBody(HttpURLConnection conn)
 	{
-		int contentSize = getContentSize(conn, false);
-		if ( contentSize == -1 ) {	// "Unacceptable size"-code..
+		if ( getContentSize(conn, false) == -1 ) {	// "Unacceptable size"-code..
 			logger.warn("Aborting HTML-extraction for pageUrl: " + conn.getURL().toString());
 			return null;
 		}

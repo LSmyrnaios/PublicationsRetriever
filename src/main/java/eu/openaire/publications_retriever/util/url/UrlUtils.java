@@ -50,21 +50,23 @@ public class UrlUtils
 
 	/**
      * This method logs the outputEntry to be written, as well as the docUrlPath (if non-empty String) and adds entries in the blackList.
-	 * @param urlId (it may be null if no id was provided in the input)
-	 * @param sourceUrl
-	 * @param pageUrl
-	 * @param docUrl
-	 * @param comment
-	 * @param pageDomain (it may be null)
-	 * @param isFirstCrossed
-	 * @param wasUrlChecked
-	 * @param wasUrlValid
-	 * @param wasDocumentOrDatasetAccessible
-	 * @param wasDirectLink
-	 * @param couldRetry
-	 */
+     * @param urlId (it may be null if no id was provided in the input)
+     * @param sourceUrl
+     * @param pageUrl
+     * @param docUrl
+     * @param comment
+     * @param pageDomain (it may be null)
+     * @param isFirstCrossed
+     * @param wasUrlChecked
+     * @param wasUrlValid
+     * @param wasDocumentOrDatasetAccessible
+     * @param wasDirectLink
+     * @param couldRetry
+     * @param fileSize
+     * @param fileHash
+     */
     public static void logOutputData(String urlId, String sourceUrl, String pageUrl, String docUrl, String comment, String pageDomain,
-									 boolean isFirstCrossed, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String couldRetry)
+                                     boolean isFirstCrossed, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String couldRetry, Long fileSize, String fileHash)
     {
         String finalDocUrl = docUrl;
 
@@ -106,7 +108,7 @@ public class UrlUtils
 				duplicateUrls.add(sourceUrl);	// Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future. We don't add docUrls here, as we want them to be separate for checking purposes.
 		}
 
-        FileUtils.dataToBeLoggedList.add(new DataToBeLogged(urlId, sourceUrl, finalDocUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, couldRetry, comment));    // Log it to be written later in the outputFile.
+        FileUtils.dataToBeLoggedList.add(new DataToBeLogged(urlId, sourceUrl, finalDocUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, couldRetry, fileHash, fileSize, comment));    // Log it to be written later in the outputFile.
     }
 
 

@@ -151,7 +151,7 @@ public class S3ObjectStore {
         String contentMD5 = result.getContentMd5();
         String S3Url = s3Client.getUrl(bucketName, fileObjKeyName).toString();  // Be aware: This url works only if the access to the bucket is public.
         logger.debug("fileObjKey \"" + fileObjKeyName + "\" has contentMD5 = " + contentMD5 + " and S3Url: " + S3Url);
-        return new DocFileData(null, contentMD5, S3Url);
+        return new DocFileData(null, contentMD5, 0L, S3Url);
     }
 
 

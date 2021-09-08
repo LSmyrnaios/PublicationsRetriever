@@ -5,7 +5,7 @@ It is being developed for the European organization: [**OpenAIRE**](https://www.
 Afterwards, these full-text documents are mined, in order to enrich a much more complete set of OpenAIRE publications with inference links.<br>
 
 The **PublicationsRetriever** takes as input the PubPages with their IDs -in JSON format- and gives an output -also in JSON format,
-which contains the IDs, the PubPages, the Document or Dataset Urls, a series of informative booleans and a comment.<br>
+which contains the IDs, the PubPages, the Document or Dataset Urls, a series of informative booleans, the "fileHash", the "fileSize" and a "comment".<br>
 The "booleans" are:
 - "wasUrlChecked": it signals whether the url was checked
 - "wasUrlValid": it signals whether the url was a valid url (one that can be connected)

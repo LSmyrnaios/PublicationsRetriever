@@ -21,11 +21,13 @@ public class DataToBeLogged
     private String sourceUrl;
     private String docOrDatasetUrl;
 	private String wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, couldRetry;
+	private String hash;
+	private Long size;
 	private String comment;   // This will be an emptyString, unless there is an error causing the docUrl to be unreachable.
 
 	private static final Logger logger = LoggerFactory.getLogger(DataToBeLogged.class);
 
-	public DataToBeLogged(String urlId, String sourceUrl, String docOrDatasetUrl, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String couldRetry, String comment)
+	public DataToBeLogged(String urlId, String sourceUrl, String docOrDatasetUrl, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String couldRetry, String hash, Long size, String comment)
     {
 		if ( urlId == null )
             urlId = "unretrievable";
@@ -38,6 +40,8 @@ public class DataToBeLogged
 		this.wasDocumentOrDatasetAccessible = wasDocumentOrDatasetAccessible;
 		this.wasDirectLink = wasDirectLink;
 		this.couldRetry = couldRetry;
+		this.hash = hash;
+		this.size = size;
 		this.comment = comment;
 	}
 	
@@ -94,6 +98,8 @@ public class DataToBeLogged
 			jsonObject.put("wasDocumentOrDatasetAccessible", this.wasDocumentOrDatasetAccessible);
 			jsonObject.put("wasDirectLink", this.wasDirectLink);
 			jsonObject.put("couldRetry", this.couldRetry);
+			jsonObject.put("fileHash", this.hash);
+			jsonObject.put("fileSize", String.valueOf(this.size));	// Convert Long to String, otherwise the output-JSON will be broken. It may be null!
 			jsonObject.put("comment", this.comment);
 		} catch (JSONException je) {
 			// Keep the jsonObject with what it has till now.. plus a "special" comment.
@@ -160,19 +166,35 @@ public class DataToBeLogged
 		this.wasDirectLink = wasDirectLink;
 	}
 
-	public String getComment() {
-		return comment;
-	}
-
-	public void setComment(String comment) {
-		this.comment = comment;
-	}
-
 	public String getCouldRetry() {
 		return couldRetry;
 	}
 
 	public void setCouldRetry(String couldRetry) {
 		this.couldRetry = couldRetry;
+	}
+
+	public String getHash() {
+		return hash;
+	}
+
+	public void setHash(String hash) {
+		this.hash = hash;
+	}
+
+	public Long getSize() {
+		return size;
+	}
+
+	public void setSize(Long size) {
+		this.size = size;
+	}
+
+	public String getComment() {
+		return comment;
+	}
+
+	public void setComment(String comment) {
+		this.comment = comment;
 	}
 }

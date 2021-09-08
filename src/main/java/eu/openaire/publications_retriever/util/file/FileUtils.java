@@ -247,7 +247,7 @@ public class FileUtils
 
 			if ( !idAndUrlMappedInput.put(inputIdUrlTuple.id, inputIdUrlTuple.url) ) {    // We have a duplicate url in the input.. log it here as we cannot pass it through the HashMultimap. We will handle the first found pair only.
 				duplicateIdUrlEntries ++;
-				UrlUtils.logOutputData(inputIdUrlTuple.id, inputIdUrlTuple.url, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextIdUrlPairBatchFromJson(), as it is a duplicate.", null, false, "true", "true", "false", "false", "false");
+				UrlUtils.logOutputData(inputIdUrlTuple.id, inputIdUrlTuple.url, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextIdUrlPairBatchFromJson(), as it is a duplicate.", null, false, "true", "true", "false", "false", "false", null, null);
 			}
 		}
 
@@ -276,7 +276,7 @@ public class FileUtils
 
 		if ( urlStr.isEmpty() ) {
 			if ( !idStr.isEmpty() )	// If we only have the id, then go and log it.
-				UrlUtils.logOutputData(idStr, urlStr, null, "unreachable", "Discarded in FileUtils.jsonDecoder(), as the url was not found.", null, false, "true", "false", "false", "false", "false");
+				UrlUtils.logOutputData(idStr, urlStr, null, "unreachable", "Discarded in FileUtils.jsonDecoder(), as the url was not found.", null, false, "true", "false", "false", "false", "false", null, null);
 			return null;
 		}
 
@@ -359,21 +359,22 @@ public class FileUtils
 
 			DocFileData docFileData;
 			if ( shouldUploadFilesToS3 ) {
-				String fileName = docFile.getName();
-				docFileData = S3ObjectStoreMinIO.uploadToS3(fileName, docFile.getAbsolutePath());
+				docFileData = S3ObjectStoreMinIO.uploadToS3(docFile.getName(), docFile.getAbsolutePath());
 				if ( docFileData != null ) {    // Otherwise, the returned object will be null.
 					docFileData.setDocFile(docFile);
-					try {
-						FileDeleteStrategy.FORCE.delete(docFile);    // We don't need the local file anymore..
-					} catch (Exception e) {
-						logger.warn("The file \"" + fileName + "\" could not be deleted after being uploaded to S3 ObjectStore!");
-					}
-					// In the SE case, we use IDs as the names, so no duplicate-overwrite should be a problem here..
+					// In the S3 case, we use IDs as the names, so no duplicate-overwrite should be a problem here..
 					// as we delete the local files and the online tool just overwrites the file, without responding if it was overwritten..
 					// TODO - so if the other naming methods were used, then we would have to check if the file existed online and then rename of needed and upload back.
-				}
-			} else
-				docFileData = new DocFileData(docFile, null, null);
+				} else
+					numOfDocFile --;
+			}
+			else {
+				if ( FileUtils.shouldLogFullPathName )
+					docFileData = new DocFileData(docFile, null, null, docFile.getAbsolutePath());
+				else
+					docFileData = new DocFileData(docFile, null, null, docFile.getName());
+			}
+
 
 			// TODO - HOW TO SPOT DUPLICATE-NAMES IN THE S3 MODE?
 			// The local files are deleted after uploaded.. (as they should be)
@@ -383,7 +384,7 @@ public class FileUtils
 			// Of-course the above algorithm would work only if the bucket was created of filled for the first time from this program.
 			// Otherwise, a file-key-name (with incremented number-string) might already exist, from a previous or parallel upload from another run.
 
-			return docFileData;
+			return docFileData;	// It may be null.
 			
 		} catch (DocFileNotRetrievedException dfnre) {
 			throw dfnre;
@@ -593,7 +594,7 @@ public class FileUtils
 			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
 
 			if ( !urlGroup.add(retrievedLineStr) )    // We have a duplicate in the input.. log it here as we cannot pass it through the HashSet. It's possible that this as well as the original might be/give a docUrl.
-				UrlUtils.logOutputData(null, retrievedLineStr, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null, false, "true", "true", "false", "false", "false");
+				UrlUtils.logOutputData(null, retrievedLineStr, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null, false, "true", "true", "false", "false", "false", null, null);
 		}
 		//logger.debug("FileUtils.fileIndex's value after taking urls after " + FileUtils.fileIndex / jsonBatchSize + " time(s), from input file: " + FileUtils.fileIndex);	// DEBUG!
 		

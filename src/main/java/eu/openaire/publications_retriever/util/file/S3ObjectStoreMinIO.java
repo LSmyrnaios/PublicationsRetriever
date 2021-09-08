@@ -139,10 +139,8 @@ public class S3ObjectStoreMinIO {
         try {
             response = minioClient.uploadObject(UploadObjectArgs.builder()
                                                     .bucket(bucketName)
-                                                    .object(fileObjKeyName)
-                                                    .filename(fileFullPath)
-                                                    .contentType(contentType)
-                                                    .build());
+                                                    .object(fileObjKeyName).filename(fileFullPath)
+                                                    .contentType(contentType).build());
 
             // TODO - What if the fileObjKeyName already exists?
             // Right now it gets overwritten (unless we add versioning, which is irrelevant for different objects..)
@@ -153,10 +151,9 @@ public class S3ObjectStoreMinIO {
             return null;
         }
 
-        String contentMD5 = "no idea";
         String s3Url = endpoint + "/" + bucketName + "/" + fileObjKeyName;  // Be aware: This url works only if the access to the bucket is public.
         logger.debug("Uploaded file \"" + fileObjKeyName + "\". The s3Url is: " + s3Url);
-        return new DocFileData(null, contentMD5, s3Url);
+        return new DocFileData(null, null, 0L, s3Url);
     }
 
 

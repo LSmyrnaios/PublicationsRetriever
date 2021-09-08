@@ -4,6 +4,7 @@ import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.crawler.SpecialUrlsHandler;
 import eu.openaire.publications_retriever.exceptions.*;
+import eu.openaire.publications_retriever.util.file.DocFileData;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.url.GenericUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
@@ -136,20 +137,24 @@ public class HttpConnUtils
 				if ( LoaderAndChecker.retrieveDocuments && returnedType.equals("document") ) {
 					logger.info("docUrl found: < " + finalUrlStr + " >");
 					String fullPathFileName = "";
+					String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
+					DocFileData docFileData = null;
 					if ( FileUtils.shouldDownloadDocFiles ) {
 						if ( foundDetectedContentType ) {	// If we went and detected the pdf from the request-code, then reconnect and proceed with downloading (reasons explained elsewhere).
 							conn = handleConnection(urlId, sourceUrl, pageUrl, finalUrlStr, domainStr, calledForPageUrl, calledForPossibleDocOrDatasetUrl);	// No need to "conn.disconnect()" before, as we are re-connecting to the same domain.
 						}
 						try {
-							fullPathFileName = ConnSupportUtils.downloadAndStoreDocFile(conn, urlId, domainStr, finalUrlStr, calledForPageUrl);
+							docFileData = ConnSupportUtils.downloadAndStoreDocFile(conn, urlId, domainStr, finalUrlStr, calledForPageUrl);	// It does not return "null".
+							fullPathFileName = docFileData.getLocation();
 							logger.info("DocFile: \"" + fullPathFileName + "\" has been downloaded.");
+							UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", docFileData.getSize(), docFileData.getHash());	// we send the urls, before and after potential redirections.
+							return true;
 						} catch (DocFileNotRetrievedException dfnde) {
 							fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored. Stacktrace:";
 							logger.error(GenericUtils.getSelectiveStackTrace(dfnde, fullPathFileName, 9));	// TODO - Instead of the stacktrace, provide the right message when first thrown, just like in "RuntimeException".
-						}
+						}	// We log below and then return.
 					}
-					String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true");	// we send the urls, before and after potential redirections.
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", null, null);	// we send the urls, before and after potential redirections.
 					return true;
 				}
 				else if ( LoaderAndChecker.retrieveDatasets && returnedType.equals("dataset") ) {
@@ -157,20 +162,20 @@ public class HttpConnUtils
 					// TODO - handle possible download and improve logging...
 					String fullPathFileName = FileUtils.shouldDownloadDocFiles ? "It's a dataset-url. The download is not supported." : "It's a dataset-url.";
 					String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true");	// we send the urls, before and after potential redirections.
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", null, null);	// we send the urls, before and after potential redirections.
 					return true;
 				}
 				else {	// Either "document" or "dataset", but the user specified that he doesn't want it.
 					//logger.debug("Type \"" + returnedType + "\", which was specified that it's unwanted in this run, was found for url: < " + finalUrlStr + " >");	// DEBUG!
 					if ( calledForPageUrl )
-						UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to an unwanted mimeType: " + returnedType, null, true, "true", "true", "false", "false", "true");
+						UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to an unwanted mimeType: " + returnedType, null, true, "true", "true", "false", "false", "true", null, null);
 					return false;
 				}
 			}
 			else if ( calledForPageUrl ) {	// Visit this url only if this method was called for an inputUrl.
 				if ( finalUrlStr.contains("viewcontent.cgi") ) {	// If this "viewcontent.cgi" isn't a docUrl, then don't check its internalLinks. Check this: "https://docs.lib.purdue.edu/cgi/viewcontent.cgi?referer=&httpsredir=1&params=/context/physics_articles/article/1964/type/native/&path_info="
 					logger.warn("Unwanted pageUrl: \"" + finalUrlStr + "\" will not be visited!");
-					UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to a non-docUrl with 'viewcontent.cgi'.", null, true, "true", "true", "false", "false", "false");
+					UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to a non-docUrl with 'viewcontent.cgi'.", null, true, "true", "true", "false", "false", "false", null, null);
 					UrlTypeChecker.pagesNotProvidingDocUrls.incrementAndGet();
 					return false;
 				}
@@ -181,7 +186,7 @@ public class HttpConnUtils
 					SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson(urlId, sourceUrl, finalUrlStr, conn);
 				else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" with mimeType: \"" + mimeType + "\" will not be visited!");
-					UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after not matching to a docUrl nor to an htm/text-like page.", null, true, "true", "true", "false", "false", "false");
+					UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after not matching to a docUrl nor to an htm/text-like page.", null, true, "true", "true", "false", "false", "false", null, null);
 					if ( ConnSupportUtils.countAndBlockDomainAfterTimes(blacklistedDomains, timesDomainsHadInputNotBeingDocNorPage, domainStr, HttpConnUtils.timesToHaveNoDocNorPageInputBeforeBlocked, true) )
 						logger.warn("Domain: \"" + domainStr + "\" was blocked after having no Doc nor Pages in the input more than " + HttpConnUtils.timesToHaveNoDocNorPageInputBeforeBlocked + " times.");
 				}	// We log the quadruple here, as there is connection-kind-of problem here.. it's just us considering it an unwanted case. We don't throw "DomainBlockedException()", as we don't handle it for inputUrls (it would also log the quadruple twice with diff comments).

@@ -4,14 +4,17 @@ import java.io.File;
 
 public class DocFileData {
 
-    File docFile;
-    String md5;
-    String s3Url;
+    private File docFile;
+    private String hash;
+    private Long size;
+    private String location;
 
-    public DocFileData(File docFile, String md5, String s3Url) {
+
+    public DocFileData(File docFile, String hash, Long size, String location) {
         this.docFile = docFile;
-        this.md5 = md5;
-        this.s3Url = s3Url;
+        this.hash = hash;
+        this.size = size;
+        this.location = location;
     }
 
     public File getDocFile() {
@@ -22,28 +25,37 @@ public class DocFileData {
         this.docFile = docFile;
     }
 
-    public String getMd5() {
-        return md5;
+    public String getHash() {
+        return hash;
     }
 
-    public void setMd5(String md5) {
-        this.md5 = md5;
+    public void setHash(String hash) {
+        this.hash = hash;
     }
 
-    public String getS3Url() {
-        return s3Url;
+    public Long getSize() {
+        return size;
     }
 
-    public void setS3Url(String s3Url) {
-        this.s3Url = s3Url;
+    public void setSize(Long size) {
+        this.size = size;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
     }
 
     @Override
     public String toString() {
         return "DocFileData{" +
                 "docFile=" + docFile +
-                ", md5='" + md5 + '\'' +
-                ", s3Url='" + s3Url + '\'' +
+                ", hash='" + hash + '\'' +
+                ", size=" + size +
+                ", fileLocation='" + location + '\'' +
                 '}';
     }
 }

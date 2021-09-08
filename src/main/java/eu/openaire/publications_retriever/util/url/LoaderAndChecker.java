@@ -110,7 +110,7 @@ public class LoaderAndChecker
 					String urlToCheck = retrievedUrlToCheck;
 					if ( !urlToCheck.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrlToCheck, null, StandardCharsets.UTF_8)) == null ) {
 						logger.warn("Could not canonicalize url: " + retrievedUrlToCheck);
-						UrlUtils.logOutputData("null", retrievedUrlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false");
+						UrlUtils.logOutputData("null", retrievedUrlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false", null, null);
 						LoaderAndChecker.connProblematicUrls.incrementAndGet();
 						return false;
 					}
@@ -132,7 +132,7 @@ public class LoaderAndChecker
 						List<String> list = getWasValidAndCouldRetry(e);
 						String wasUrlValid = list.get(0);
 						String couldRetry = list.get(1);
-						UrlUtils.logOutputData("null", retrievedUrlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry);
+						UrlUtils.logOutputData("null", retrievedUrlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, null);
 					}
 					return true;
 				});
@@ -251,7 +251,7 @@ public class LoaderAndChecker
 					String sourceUrl = urlToCheck;	// Hold it here for the logging-messages.
 					if ( !sourceUrl.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
 						logger.warn("Could not canonicalize url: " + sourceUrl);
-						UrlUtils.logOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false");
+						UrlUtils.logOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false", null, null);
 						LoaderAndChecker.connProblematicUrls.incrementAndGet();
 
 						// If other urls exits, then go and check those.
@@ -271,7 +271,7 @@ public class LoaderAndChecker
 						List<String> list = getWasValidAndCouldRetry(e);
 						String wasUrlValid = list.get(0);
 						String couldRetry = list.get(1);
-						UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry);
+						UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, null);
 						// This url had connectivity problems.. but the rest might not, go check them out.
 						if ( !isSingleIdUrlPair ) {
 							loggedUrlsOfCurrentId.add(urlToCheck);
@@ -334,7 +334,7 @@ public class LoaderAndChecker
 					String sourceUrl = urlToCheck;    // Hold it here for the logging-messages.
 					if ( !sourceUrl.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
 						logger.warn("Could not canonicalize url: " + sourceUrl);
-						UrlUtils.logOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false");
+						UrlUtils.logOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false", null, null);
 						LoaderAndChecker.connProblematicUrls.incrementAndGet();
 						return false;
 					}
@@ -359,7 +359,7 @@ public class LoaderAndChecker
 						List<String> list = getWasValidAndCouldRetry(e);
 						String wasUrlValid = list.get(0);
 						String couldRetry = list.get(1);
-						UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry);
+						UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, null);
 					}
 					return true;
 				});
@@ -412,7 +412,7 @@ public class LoaderAndChecker
 						String sourceUrl = urlToCheck;    // Hold it here for the logging-messages.
 						if ( !sourceUrl.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
 							logger.warn("Could not canonicalize url: " + sourceUrl);
-							UrlUtils.logOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false");
+							UrlUtils.logOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false", null, null);
 							LoaderAndChecker.connProblematicUrls.incrementAndGet();
 							continue;
 						}
@@ -437,7 +437,7 @@ public class LoaderAndChecker
 							List<String> list = getWasValidAndCouldRetry(e);
 							String wasUrlValid = list.get(0);
 							String couldRetry = list.get(1);
-							UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry);
+							UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, null);
 						}
 					}
 					return true;
@@ -502,7 +502,7 @@ public class LoaderAndChecker
 				List<String> list = getWasValidAndCouldRetry(e);
 				String wasUrlValid = list.get(0);
 				String couldRetry = list.get(1);
-				UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, in checkRemainingUrls(), due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry);
+				UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, in checkRemainingUrls(), due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, null);
 				if ( !isSingleIdUrlPair )
 					loggedUrlsOfThisId.add(urlToCheck);
 			}
@@ -523,7 +523,7 @@ public class LoaderAndChecker
 		String urlDomain = UrlUtils.getDomainStr(retrievedUrl, null);
 		if ( urlDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"LoaderAndChecker.handleUrlChecks()\": \"" + retrievedUrl + "\"");
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'LoaderAndChecker.handleUrlChecks()' method, after the occurrence of a domain-retrieval error.", null, true, "true", "false", "false", "false", "false");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'LoaderAndChecker.handleUrlChecks()' method, after the occurrence of a domain-retrieval error.", null, true, "true", "false", "false", "false", "false", null, null);
 			if ( !useIdUrlPairs )
 				connProblematicUrls.incrementAndGet();
 			return null;
@@ -531,7 +531,7 @@ public class LoaderAndChecker
 		
 		if ( HttpConnUtils.blacklistedDomains.contains(urlDomain) ) {	// Check if it has been blackListed after running internal links' checks.
 			logger.debug("Avoid connecting to blackListed domain: \"" + urlDomain + "\" with url: " + retrievedUrl);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", "Discarded in 'LoaderAndChecker.handleUrlChecks()' method, as its domain was found blackListed.", null, true, "true", "true", "false", "false", "false");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", "Discarded in 'LoaderAndChecker.handleUrlChecks()' method, as its domain was found blackListed.", null, true, "true", "true", "false", "false", "false", null, null);
 			if ( !useIdUrlPairs )
 				connProblematicUrls.incrementAndGet();
 			return null;
@@ -539,7 +539,7 @@ public class LoaderAndChecker
 		
 		if ( ConnSupportUtils.checkIfPathIs403BlackListed(retrievedUrl, urlDomain) ) {	// The path-extraction is independent of the jsessionid-removal, so this gets executed before.
 			logger.debug("Preventing reaching 403ErrorCode with url: \"" + retrievedUrl + "\"!");
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", "Discarded in 'LoaderAndChecker.handleUrlChecks()' as it had a blackListed urlPath.", null, true, "true", "true", "false", "false", "false");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", "Discarded in 'LoaderAndChecker.handleUrlChecks()' as it had a blackListed urlPath.", null, true, "true", "true", "false", "false", "false", null, null);
 			if ( !useIdUrlPairs )
 				connProblematicUrls.incrementAndGet();
 			return null;
@@ -557,7 +557,7 @@ public class LoaderAndChecker
 		// Check if it's a duplicate.
 		if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
 			logger.debug("Skipping non-DocOrDataset-url: \"" + retrievedUrl + "\", at loading, as it has already been checked.");
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.duplicateUrlIndicator, "Discarded in 'LoaderAndChecker.handleUrlChecks()', as it's a duplicate.", null, false, "true", "N/A", "false", "false", "false");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.duplicateUrlIndicator, "Discarded in 'LoaderAndChecker.handleUrlChecks()', as it's a duplicate.", null, false, "true", "N/A", "false", "false", "false", null, null);
 			if ( !useIdUrlPairs )
 				inputDuplicatesNum.incrementAndGet();
 			return null;
@@ -623,7 +623,7 @@ public class LoaderAndChecker
 
 			if ( !loggedUrlsOfThisId.contains(retrievedUrl) )
 				UrlUtils.logOutputData(retrievedId, retrievedUrl, null, "unreachable",
-					"Skipped in LoaderAndChecker, as a better url was selected for id: " + retrievedId, null, true, "false", "N/A", "N/A", "N/A", "true");
+					"Skipped in LoaderAndChecker, as a better url was selected for id: " + retrievedId, null, true, "false", "N/A", "N/A", "N/A", "true", null, null);
 		}
 	}
 
