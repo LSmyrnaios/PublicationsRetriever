@@ -611,15 +611,13 @@ public class UrlChecker {
 		if ( urlMatcher == null )
 			return false;
 
-		String urlPart = null;
+		String urlPart;
 		if ( (urlPart = UrlUtils.getDomainStr(url, urlMatcher)) != null )
 			logger.info("\t\tDomain: \"" + urlPart + "\"");
-		
-		urlPart = null;
+
 		if ( (urlPart = UrlUtils.getPathStr(url, urlMatcher)) != null )
 			logger.info("\t\tPath: \"" + urlPart + "\"");
 		
-		urlPart = null;
 		if ( (urlPart = UrlUtils.getDocIdStr(url, urlMatcher)) != null )
 			logger.info("\t\tDocID: \"" + urlPart + "\"");
 

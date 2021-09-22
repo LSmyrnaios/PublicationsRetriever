@@ -25,7 +25,8 @@ public class S3ObjectStore {
     private static AmazonS3 s3Client;
 
     public static final boolean shouldEmptyBucket = false;  // Set true only for testing!
-    public static final String credentialsFilePath = FileUtils.workingDir + "amazon_credentials.txt";
+    public static final String credentialsFilePath = FileUtils.workingDir + "S3_amazon_credentials.txt";
+    private static final boolean shouldShowAllS3Buckets = false;
 
 
     /**
@@ -46,13 +47,13 @@ public class S3ObjectStore {
                 if ( credentials.length < 4 ) {
                     throw new RuntimeException("Not all credentials were retrieved from file \"" + credentialsFilePath + "\"!");
                 }
-                accessKey = credentials[0];
-                secretKey = credentials[1];
-                region = credentials[2];
-                bucketName = credentials[3];
+                accessKey = credentials[0].trim();
+                secretKey = credentials[1].trim();
+                region = credentials[2].trim();
+                bucketName = credentials[3].trim();
             }
         } catch (Exception e) {
-            String errorMsg = "An error prevented the retrieval of the amazon credentials from the file: " + credentialsFilePath;
+            String errorMsg = "An error prevented the retrieval of the amazon credentials from the file: " + credentialsFilePath + "\n" + e.getMessage();
             logger.error(errorMsg);
             System.err.println(errorMsg);
             e.printStackTrace();
@@ -63,11 +64,12 @@ public class S3ObjectStore {
         }
 
         if ( (accessKey == null) || (secretKey == null) || (region == null) || (bucketName == null) ) {
-            String errorMsg = "No \"accessKey\" or/and \"secretKey\" or/and \"region\" or/and \"bucketName\" could be retrieved!";
+            String errorMsg = "No \"accessKey\" or/and \"secretKey\" or/and \"region\" or/and \"bucketName\" could be retrieved from the file: " + credentialsFilePath;
             logger.error(errorMsg);
             System.err.println(errorMsg);
             System.exit(54);
         }
+        // It's not safe, nor helpful to show the credentials in the logs.
 
         s3Client = AmazonS3ClientBuilder.standard()
                 .withRegion(Regions.US_EAST_2)  // TODO - Change the region if needed.
@@ -90,7 +92,7 @@ public class S3ObjectStore {
             //throw new RuntimeException("stop just for test!");
         }*/
 
-        // Create the bucket if not exist.
+        // Create the bucket, if not exist.
         try {
             if ( !bucketExists ) {
                 logger.info("Bucket \"" + bucketName + "\" does not exist! Going to create it..");
@@ -104,6 +106,19 @@ public class S3ObjectStore {
             System.err.println(errorMsg);
             e.printStackTrace();
             System.exit(56);
+        }
+
+        if ( shouldShowAllS3Buckets ) {
+            List<Bucket> buckets = null;
+            try {
+                buckets = s3Client.listBuckets();
+                logger.debug("The buckets in the S3 ObjectStore are:");
+                for ( Bucket bucket : buckets ) {
+                    logger.debug(bucket.getName());
+                }
+            } catch (Exception e) {
+                logger.warn("Could not listBuckets: " + e.getMessage());
+            }
         }
     }
 

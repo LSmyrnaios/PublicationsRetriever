@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 
 /**
- * This class contains testing for all of the program's functionality, by using non-standard Input/Output.
+ * This class contains testing for all the program's functionality, by using non-standard Input/Output.
  * @author Lampros Smyrnaios
  */
 public class TestNonStandardInputOutput  {

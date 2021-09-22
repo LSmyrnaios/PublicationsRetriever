@@ -362,26 +362,24 @@ public class FileUtils
 				docFileData = S3ObjectStoreMinIO.uploadToS3(docFile.getName(), docFile.getAbsolutePath());
 				if ( docFileData != null ) {    // Otherwise, the returned object will be null.
 					docFileData.setDocFile(docFile);
-					// In the S3 case, we use IDs as the names, so no duplicate-overwrite should be a problem here..
-					// as we delete the local files and the online tool just overwrites the file, without responding if it was overwritten..
-					// TODO - so if the other naming methods were used, then we would have to check if the file existed online and then rename of needed and upload back.
+					// In the S3 case, we use IDs or increment-numbers as the names, so no duplicate-overwrite should be a problem here.
+					// as we delete the local files and the online tool just overwrites the file, without responding if it was overwritten.
+					// So if the other naming methods were used with S3, we would have to check if the file existed online and then rename of needed and upload back.
 				} else
 					numOfDocFile --;
-			}
-			else {
+			} else {
 				if ( FileUtils.shouldLogFullPathName )
 					docFileData = new DocFileData(docFile, null, null, docFile.getAbsolutePath());
 				else
 					docFileData = new DocFileData(docFile, null, null, docFile.getName());
 			}
 
-
 			// TODO - HOW TO SPOT DUPLICATE-NAMES IN THE S3 MODE?
 			// The local files are deleted after uploaded.. (as they should be)
 			// So we will be uploading files with the same filename-KEY.. in that case, they get overwritten.
 			// An option would be to check if an object already exists, then increment a number and upload the object.
 			// From that moment forward, the number will be stored in memory along with the fileKeyName, just like with "originalNames", so next time no online check should be needed..!
-			// Of-course the above algorithm would work only if the bucket was created of filled for the first time from this program.
+			// Of-course the above algorithm would work only if the bucket was created of filled for the first time, from this program, in a single machine.
 			// Otherwise, a file-key-name (with incremented number-string) might already exist, from a previous or parallel upload from another run.
 
 			return docFileData;	// It may be null.

@@ -1,13 +1,14 @@
 package eu.openaire.publications_retriever.util.file;
 
-import com.amazonaws.services.s3.model.ObjectMetadata;
 import io.minio.*;
+import io.minio.messages.Bucket;
 import io.minio.messages.Item;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
 import java.io.File;
+import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 
@@ -25,7 +26,8 @@ public class S3ObjectStoreMinIO {
     private static MinioClient minioClient;
 
     public static final boolean shouldEmptyBucket = false;  // Set true only for testing!
-    public static final String credentialsFilePath = FileUtils.workingDir + "minIO_credentials.txt";
+    public static final String credentialsFilePath = FileUtils.workingDir + "S3_minIO_credentials.txt";
+    private static final boolean shouldShowAllS3Buckets = false;
 
 
     /**
@@ -46,14 +48,14 @@ public class S3ObjectStoreMinIO {
                 if ( credentials.length < 5 ) {
                     throw new RuntimeException("Not all credentials were retrieved from file \"" + credentialsFilePath + "\"!");
                 }
-                endpoint = credentials[0];
-                accessKey = credentials[1];
-                secretKey = credentials[2];
-                region = credentials[3];
-                bucketName = credentials[4];
+                endpoint = credentials[0].trim();
+                accessKey = credentials[1].trim();
+                secretKey = credentials[2].trim();
+                region = credentials[3].trim();
+                bucketName = credentials[4].trim();
             }
         } catch (Exception e) {
-            String errorMsg = "An error prevented the retrieval of the minIO credentials from the file: " + credentialsFilePath;
+            String errorMsg = "An error prevented the retrieval of the minIO credentials from the file: " + credentialsFilePath + "\n" + e.getMessage();
             logger.error(errorMsg);
             System.err.println(errorMsg);
             e.printStackTrace();
@@ -64,11 +66,12 @@ public class S3ObjectStoreMinIO {
         }
 
         if ( (endpoint == null) || (accessKey == null) || (secretKey == null) || (region == null) || (bucketName == null) ) {
-            String errorMsg = "No \"endpoint\" or/and \"accessKey\" or/and \"secretKey\" or/and \"region\" or/and \"bucketName\" could be retrieved!";
+            String errorMsg = "No \"endpoint\" or/and \"accessKey\" or/and \"secretKey\" or/and \"region\" or/and \"bucketName\" could be retrieved from the file: " + credentialsFilePath;
             logger.error(errorMsg);
             System.err.println(errorMsg);
             System.exit(54);
         }
+        // It's not safe, nor helpful to show the credentials in the logs.
 
         minioClient = MinioClient.builder().endpoint(endpoint).credentials(accessKey, secretKey).region(region).build();
 
@@ -88,7 +91,7 @@ public class S3ObjectStoreMinIO {
             //throw new RuntimeException("stop just for test!");
         }*/
 
-        // Make the bucket if not exist.
+        // Make the bucket, if not exist.
         try {
             if ( !bucketExists ) {
             	logger.info("Bucket \"" + bucketName + "\" does not exist! Going to create it..");
@@ -103,6 +106,19 @@ public class S3ObjectStoreMinIO {
             System.err.println(errorMsg);
             System.exit(56);
         }
+
+        if ( shouldShowAllS3Buckets ) {
+            List<Bucket> buckets = null;
+            try {
+                buckets = minioClient.listBuckets();
+                logger.debug("The buckets in the S3 ObjectStore are:");
+                for ( Bucket bucket : buckets ) {
+                    logger.debug(bucket.name());
+                }
+            } catch (Exception e) {
+                logger.warn("Could not listBuckets: " + e.getMessage());
+            }
+        }
     }
 
 
@@ -113,7 +129,6 @@ public class S3ObjectStoreMinIO {
      */
     public static DocFileData uploadToS3(String fileObjKeyName, String fileFullPath)
     {
-        ObjectMetadata metadata = new ObjectMetadata();
         String contentType = null;
 
         // Take the Matcher to retrieve the extension.

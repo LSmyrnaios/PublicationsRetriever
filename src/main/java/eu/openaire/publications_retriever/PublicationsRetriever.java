@@ -306,6 +306,17 @@ public class PublicationsRetriever
 				}
 			}
 
+			if ( FileUtils.shouldUploadFilesToS3 && FileUtils.docFileNameType.equals(FileUtils.DocFileNameType.originalName) ) {
+				String baseMsg = "The uploading of the docFiles to the S3-ObjectStore requires the use of \"ID-names\" or \"Number-names\" for the DocFiles. You specified the \"originalName\" DocFileNameType.";
+				if ( LoaderAndChecker.useIdUrlPairs ) {
+					logger.warn(baseMsg + " Replacing the DocFileNameType \"originalName\" with \"idName\".");
+					FileUtils.docFileNameType = FileUtils.DocFileNameType.idName;
+				} else {
+					logger.warn(baseMsg + " Replacing the DocFileNameType \"originalName\" with \"numberName\".");
+					FileUtils.docFileNameType = FileUtils.DocFileNameType.numberName;
+				}
+			}
+
 			if ( firstNumGiven && !FileUtils.docFileNameType.equals(FileUtils.DocFileNameType.numberName) )
 				logger.warn("You provided the \"-firstDocFileNum\" a, but you also specified a \"docFileNameType\" of non numeric-type. The \"-firstDocFileNum\" will be ignored!" + usageMessage);
 		}
