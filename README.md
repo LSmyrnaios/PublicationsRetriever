@@ -34,7 +34,7 @@ Sample JSON-input:
 ```
 Sample JSON-output (with downloading of the DocFile):
 ```
-{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","sourceUrl":"https://zenodo.org/record/884160","docUrl":"https://zenodo.org/record/884160/files/Data_for_Policy_2017_paper_55.pdf","wasUrlValid":"true","wasDocumentOrDatasetAccessible":"true","wasDirectLink":"false","couldRetry":"true","comment":"/home/lampros/PublicationsRetriever/target/../example/sample_output/DocFiles/1.pdf"}
+{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","sourceUrl":"https://zenodo.org/record/884160","docUrl":"https://zenodo.org/record/884160/files/Data_for_Policy_2017_paper_55.pdf","wasUrlChecked":"true","wasUrlValid":"true","wasDocumentOrDatasetAccessible":"true","wasDirectLink":"false","couldRetry":"true","fileHash":"4e38a82fe1182e62b1c752b50f5ea59b","fileSize":"263917","comment":"/home/lampros/PublicationsRetriever/target/../example/sample_output/DocFiles/dedup_wf_001::83872a151fd78b045e62275ca626ec94.pdf"}
 ```
 <br>
 

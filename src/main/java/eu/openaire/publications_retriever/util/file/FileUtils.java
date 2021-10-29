@@ -36,9 +36,10 @@ public class FileUtils
 	
 	public static long numOfLines = 0;	// Only the main thread accesses it.
 	
-	public static final int jsonBatchSize = 3000;
+	public static int jsonBatchSize = 3000;	// Do not set it as "final", since other apps using this program might want to set their own limit.
 
-	private static final StringBuilder strB = new StringBuilder(jsonBatchSize * 500);  // 500: the usual-maximum-expected-length for an <id-sourceUrl-docUrl-comment> quadruple.
+	private static StringBuilder stringToBeWritten = null;	// It will be assigned and pre-allocated only if the "WriteToFile()" method is called.
+	// Other programs using this program as a library might not want to write the results in a file, but send them over the network.
 
 	private static int fileIndex = 0;	// Index in the input file
 	public static boolean skipFirstRow = false;	// Use this to skip the HeaderLine in a csv-kindOf-File.
@@ -247,7 +248,7 @@ public class FileUtils
 
 			if ( !idAndUrlMappedInput.put(inputIdUrlTuple.id, inputIdUrlTuple.url) ) {    // We have a duplicate url in the input.. log it here as we cannot pass it through the HashMultimap. We will handle the first found pair only.
 				duplicateIdUrlEntries ++;
-				UrlUtils.logOutputData(inputIdUrlTuple.id, inputIdUrlTuple.url, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextIdUrlPairBatchFromJson(), as it is a duplicate.", null, false, "true", "true", "false", "false", "false", null, null);
+				UrlUtils.logOutputData(inputIdUrlTuple.id, inputIdUrlTuple.url, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextIdUrlPairBatchFromJson(), as it is a duplicate.", null, false, "true", "true", "false", "false", "false", null, "null");
 			}
 		}
 
@@ -276,7 +277,7 @@ public class FileUtils
 
 		if ( urlStr.isEmpty() ) {
 			if ( !idStr.isEmpty() )	// If we only have the id, then go and log it.
-				UrlUtils.logOutputData(idStr, urlStr, null, "unreachable", "Discarded in FileUtils.jsonDecoder(), as the url was not found.", null, false, "true", "false", "false", "false", "false", null, null);
+				UrlUtils.logOutputData(idStr, urlStr, null, "unreachable", "Discarded in FileUtils.jsonDecoder(), as the url was not found.", null, false, "true", "false", "false", "false", "false", null, "null");
 			return null;
 		}
 
@@ -290,15 +291,18 @@ public class FileUtils
 	 */
 	public static void writeResultsToFile()
 	{
+		if ( stringToBeWritten == null )
+			stringToBeWritten = new StringBuilder(jsonBatchSize * 900);  // 900: the usual-maximum-expected-length for an <id-sourceUrl-docUrl-comment> quadruple.
+
 		for ( DataToBeLogged data : FileUtils.dataToBeLoggedList )
 		{
-			strB.append(data.toJsonString()).append(endOfLine);
+			stringToBeWritten.append(data.toJsonString()).append(endOfLine);
 		}
 		
-		printStream.print(strB);
+		printStream.print(stringToBeWritten);
 		printStream.flush();
 		
-		strB.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
+		stringToBeWritten.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
 		logger.debug("Finished writing " + FileUtils.dataToBeLoggedList.size() + " quadruples to the outputFile.");
 		
 		FileUtils.dataToBeLoggedList.clear();	// Clear the list to put the new <jsonBatchSize> values. The backing array used by List is not de-allocated. Only the String-references contained get GC-ed.
@@ -592,7 +596,7 @@ public class FileUtils
 			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
 
 			if ( !urlGroup.add(retrievedLineStr) )    // We have a duplicate in the input.. log it here as we cannot pass it through the HashSet. It's possible that this as well as the original might be/give a docUrl.
-				UrlUtils.logOutputData(null, retrievedLineStr, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null, false, "true", "true", "false", "false", "false", null, null);
+				UrlUtils.logOutputData(null, retrievedLineStr, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null, false, "true", "true", "false", "false", "false", null, "null");
 		}
 		//logger.debug("FileUtils.fileIndex's value after taking urls after " + FileUtils.fileIndex / jsonBatchSize + " time(s), from input file: " + FileUtils.fileIndex);	// DEBUG!
 		

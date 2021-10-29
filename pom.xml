@@ -103,14 +103,14 @@
     <dependency>
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>
-      <version>1.14.2</version>
+      <version>1.14.3</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>30.1.1-jre</version>
+      <version>31.0.1-jre</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
@@ -138,16 +138,21 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
-      <version>1.12.70</version>
+      <version>1.12.98</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/io.minio/minio -->
     <dependency>
       <groupId>io.minio</groupId>
       <artifactId>minio</artifactId>
-      <version>8.3.0</version>
+      <version>8.3.3</version>
+      <exclusions>
+      <exclusion>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+      </exclusion>
+      </exclusions>
     </dependency>
-
 
     <!-- https://mvnrepository.com/artifact/edu.uci.ics/crawler4j -->
     <dependency>
@@ -182,7 +187,7 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
-      <version>5.8.0</version>
+      <version>5.8.1</version>
       <scope>test</scope>
     </dependency>
 

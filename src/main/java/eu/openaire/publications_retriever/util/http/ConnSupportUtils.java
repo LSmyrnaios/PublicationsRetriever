@@ -230,9 +230,9 @@ public class ConnSupportUtils
 		reCrossedDocUrls.incrementAndGet();
 		String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, docUrl);
 		if ( FileUtils.shouldDownloadDocFiles )
-			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(docUrl), null, false, "true", "true", "true", wasDirectLink, "true", null, null);
+			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(docUrl), null, false, "true", "true", "true", wasDirectLink, "true", null, "null");
 		else
-			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, "", null, false, "true", "true", "true", wasDirectLink, "true", null, null);
+			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, "", null, false, "true", "true", "true", wasDirectLink, "true", null, "null");
 	}
 
 	
@@ -351,7 +351,7 @@ public class ConnSupportUtils
 	}
 
 
-	public static final Hashtable<String, DomainConnectionData> domainsWithLocks = new Hashtable<>();
+	public static final Hashtable<String, DomainConnectionData> domainsWithConnectionData = new Hashtable<>();
 
 	/**
 	 * This method receives the domain and manages the sleep-time, if needed.
@@ -366,14 +366,14 @@ public class ConnSupportUtils
 		// Consider only the last three parts of a domain, not all, otherwise, a sub-sub-domain might connect simultaneously with a another sub-sub-domain.
 		domainStr = UrlUtils.getTopThreeLevelDomain(domainStr);
 
-		DomainConnectionData domainConnectionData = domainsWithLocks.get(domainStr);
+		DomainConnectionData domainConnectionData = domainsWithConnectionData.get(domainStr);
 		if ( domainConnectionData == null ) {	// If it is the 1st time connecting.
-			domainsWithLocks.put(domainStr, new DomainConnectionData());
+			domainsWithConnectionData.put(domainStr, new DomainConnectionData());
 			return;
 		}
 
-		domainConnectionData.lock.lock();// Threads trying to connect with the same domain, should sleep one AFTER the other, to avoid coming back after sleep at the same time, in the end..
 		long elapsedTimeMillis;
+		domainConnectionData.lock.lock();// Threads trying to connect with the same domain, should sleep one AFTER the other, to avoid coming back after sleep at the same time, in the end..
 		Instant currentTime = Instant.now();
 		try {
 			elapsedTimeMillis = Duration.between(domainConnectionData.lastTimeConnected, currentTime).toMillis();
@@ -384,9 +384,13 @@ public class ConnSupportUtils
 		}
 
 		if ( elapsedTimeMillis < minPolitenessDelay ) {
-			long randomPolitenessDelay = getRandomNumber(minPolitenessDelay, maxPolitenessDelay);
-			long finalPolitenessDelay = randomPolitenessDelay - elapsedTimeMillis;
+			long finalPolitenessDelay = getRandomNumber(minPolitenessDelay, maxPolitenessDelay) - elapsedTimeMillis;
+
+			// Apply the following for testing. Otherwise, it's more efficient to use the above method.
+			//long randomPolitenessDelay = getRandomNumber(minPolitenessDelay, maxPolitenessDelay);
+			//long finalPolitenessDelay = randomPolitenessDelay - elapsedTimeMillis;	// This way we avoid reaching the upper limit while preventing underflow (in case we applied the difference in the parameters of "getRandomNumber()").
 			//logger.debug("WILL SLEEP for " + finalPolitenessDelay + " | randomNumber was " + randomPolitenessDelay + ", elapsedTime was: " + elapsedTimeMillis + " | domain: " + domainStr);	// DEBUG!
+
 			try {
 				Thread.sleep(finalPolitenessDelay);    // Avoid server-overloading for the same domain.
 			} catch (InterruptedException ie) {
@@ -405,7 +409,7 @@ public class ConnSupportUtils
 					} catch (InterruptedException ignored) {
 					}
 				}
-			}	// At this point, if both sleeps failed, some time has already passed, so it's ok to connect to the same domain.
+			}	// At this point, if both sleeps were interrupted, some time has already passed, so it's ok to connect to the same domain.
 			currentTime = Instant.now();	// Update, after the sleep.
 		} //else
 			//logger.debug("NO SLEEP NEEDED, elapsedTime: " + elapsedTimeMillis + " > " + minPolitenessDelay + " | domain: " + domainStr);	// DEBUG!
