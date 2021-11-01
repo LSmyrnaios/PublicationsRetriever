@@ -84,7 +84,9 @@ public class LoaderAndChecker
 		Collection<String> loadedUrlGroup;
 		boolean isFirstRun = true;
 		int batchCount = 0;
-		
+
+		List<Callable<Boolean>> callableTasks = new ArrayList<>(FileUtils.jsonBatchSize);
+
 		// Start loading and checking urls.
 		while ( true )
 		{
@@ -95,9 +97,7 @@ public class LoaderAndChecker
 			else
 				isFirstRun = false;
 
-			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null)? " | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) : "") + "% | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
-
-			List<Callable<Boolean>> callableTasks = new ArrayList<>(loadedUrlGroup.size());
+			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null) ? " | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) : "") + "% | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
 
 			for ( String retrievedUrl : loadedUrlGroup )
 			{
@@ -138,6 +138,7 @@ public class LoaderAndChecker
 				});
 			}// end for-loop
 			invokeAllTasksAndWait(callableTasks);
+			callableTasks.clear();
 			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end while-loop
 	}
@@ -154,6 +155,8 @@ public class LoaderAndChecker
 		boolean isFirstRun = true;
 		int batchCount = 0;
 
+		List<Callable<Boolean>> callableTasks = new ArrayList<>(FileUtils.jsonBatchSize);
+
 		// Start loading and checking urls.
 		while ( true )
 		{
@@ -164,13 +167,11 @@ public class LoaderAndChecker
 			else
 				isFirstRun = false;
 
-			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null)? " | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) : "") + "% | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
+			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null) ? " | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) : "") + "% | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
 			
 			Set<String> keys = loadedIdUrlPairs.keySet();
 			numOfIDs += keys.size();
 			//logger.debug("numOfIDs = " + numOfIDs);	// DEBUG!
-
-			List<Callable<Boolean>> callableTasks = new ArrayList<>(numOfIDs);
 
 			for ( String retrievedId : keys )
 			{
@@ -286,6 +287,7 @@ public class LoaderAndChecker
 				});
 			}// end id-for-loop
 			invokeAllTasksAndWait(callableTasks);
+			callableTasks.clear();
 			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end loading-while-loop
 	}
@@ -302,6 +304,8 @@ public class LoaderAndChecker
 		boolean isFirstRun = true;
 		int batchCount = 0;
 
+		List<Callable<Boolean>> callableTasks = new ArrayList<>(FileUtils.jsonBatchSize);
+
 		// Start loading and checking urls.
 		while ( true )
 		{
@@ -315,9 +319,7 @@ public class LoaderAndChecker
 			Set<Map.Entry<String, String>> pairs = loadedIdUrlPairs.entries();
 			numOfIDs += pairs.size();
 
-			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null)? " | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) : "") + "% | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
-
-			List<Callable<Boolean>> callableTasks = new ArrayList<>(numOfIDs);
+			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null) ? " | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) : "") + "% | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
 
 			for ( Map.Entry<String,String> pair : pairs )
 			{
@@ -365,6 +367,7 @@ public class LoaderAndChecker
 				});
 			}// end pairs-for-loop
 			invokeAllTasksAndWait(callableTasks);
+			callableTasks.clear();
 			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end loading-while-loop
 	}
@@ -381,6 +384,8 @@ public class LoaderAndChecker
 		boolean isFirstRun = true;
 		int batchCount = 0;
 
+		List<Callable<Boolean>> callableTasks = new ArrayList<>(FileUtils.jsonBatchSize);
+
 		// Start loading and checking urls.
 		while ( true )
 		{
@@ -391,9 +396,7 @@ public class LoaderAndChecker
 			else
 				isFirstRun = false;
 
-			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null)? " | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) : "") + "% | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
-
-			List<Callable<Boolean>> callableTasks = new ArrayList<>(numOfIDs);
+			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null) ? " | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) : "") + "% | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
 
 			for ( String retrievedId : loadedIdUrlPairs.keySet() ) {
 
@@ -444,6 +447,7 @@ public class LoaderAndChecker
 				});
 			}// end for-id-loop
 			invokeAllTasksAndWait(callableTasks);
+			callableTasks.clear();
 			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end loading-while-loop
 	}
