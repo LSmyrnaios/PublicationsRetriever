@@ -467,7 +467,12 @@ public class UrlChecker {
 		//urlList.add("https://orbi.uliege.be/bitstream/2268/218222/1/hal-02830219.pdf");
 		//urlList.add("https://www.sciencedirect.com/science/article/pii/S1687850718300177/pdf");
 
-		urlList.add("https://zenodo.org/record/1145726");
+		//urlList.add("https://zenodo.org/record/1145726");
+
+		//urlList.add("https://dblp.uni-trier.de/db/journals/jocs/jocs9.html");
+		//urlList.add("https://dblp.uni-trier.de/db/journals/jat/jat164.html");
+		urlList.add("https://dblp.uni-trier.de/db/conf/cscw/cscw2017.html");
+		//urlList.add("https://dblp.uni-trier.de/db/journals/cis/cis40.html");
 
 		logger.info("Urls to check:");
 		for ( String url: urlList )

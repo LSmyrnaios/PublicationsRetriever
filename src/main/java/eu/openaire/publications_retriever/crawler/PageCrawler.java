@@ -214,6 +214,11 @@ public class PageCrawler
 		HashSet<String> currentPageLinks = null;
 		try {
 			currentPageLinks = extractInternalLinksFromHtml(pageHtml, pageUrl);
+		} catch (RuntimeException re) {
+			logger.warn("Avoid checking more than " + MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE + " internal links which were found in pageUrl \"" + pageUrl + "\". This page was discarded.");
+			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.retrieveInternalLinks()' method, as it has more than " + MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE + " internal links.", null, true, "true", "true", "false", "false", "false", null, "null");
+			contentProblematicUrls.incrementAndGet();
+			return null;
 		} catch (DynamicInternalLinksFoundException dilfe) {
 			HttpConnUtils.blacklistedDomains.add(pageDomain);
 			logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after found to have dynamic links. Its domain \"" + pageDomain + "\"  was blocked.");	// Refer "PageCrawler.visit()" here for consistency with other similar messages.
@@ -252,15 +257,7 @@ public class PageCrawler
 			return null;
 		}
 
-		int numOfInternalLinks = currentPageLinks.size();
-		if ( numOfInternalLinks > MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE ) {
-			logger.warn("Avoid checking more than " + MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE + " internal links (" + numOfInternalLinks + ") which were found in pageUrl \"" + pageUrl + "\". This page was discarded.");
-			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.retrieveInternalLinks()' method, as it has more than " + MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE + " internal links.", null, true, "true", "true", "false", "false", "false", null, "null");
-			contentProblematicUrls.incrementAndGet();
-			return null;
-		}
-
-		//logger.debug("Num of links in: \"" + pageUrl + "\" is: " + numOfInternalLinks);
+		//logger.debug("Num of links in: \"" + pageUrl + "\" is: " + currentPageLinks.size());
 
 		//if ( pageUrl.contains(<keyWord> || <url>) )	// In case we want to print internal-links only for specific-pageTypes.
 			//printInternalLinksForDebugging(currentPageLinks);
@@ -276,8 +273,10 @@ public class PageCrawler
 	 * @return The internalLinks
 	 * @throws DocLinkFoundException
 	 * @throws DynamicInternalLinksFoundException
+	 * @throws DocLinkInvalidException
+	 * @throws RuntimeException
 	 */
-	public static HashSet<String> extractInternalLinksFromHtml(String pageHtml, String pageUrl) throws DocLinkFoundException, DynamicInternalLinksFoundException, DocLinkInvalidException
+	public static HashSet<String> extractInternalLinksFromHtml(String pageHtml, String pageUrl) throws DocLinkFoundException, DynamicInternalLinksFoundException, DocLinkInvalidException, RuntimeException
 	{
 		Document document = Jsoup.parse(pageHtml);
 		Elements elementLinksOnPage = document.select("a, link[href][type*=pdf]");
@@ -286,8 +285,9 @@ public class PageCrawler
 			return null;
 		}
 
-		HashSet<String> urls = new HashSet<>(elementLinksOnPage.size()/2);	// Only some of the links will be added in the final set.
+		HashSet<String> urls = new HashSet<>(elementLinksOnPage.size()/2);	// Only some links will be added in the final set.
 		String linkAttr, internalLink;
+		int curNumOfInternalLinks = 0;
 
 		for ( Element el : elementLinksOnPage )
 		{
@@ -338,8 +338,11 @@ public class PageCrawler
 				if ( internalLink.isEmpty() )
 					continue;
 			}
-			if ( (internalLink = gatherInternalLink(internalLink)) != null )	// Throws exceptions which go to the caller method.
+			if ( (internalLink = gatherInternalLink(internalLink)) != null ) {	// Throws exceptions which go to the caller method.
 				urls.add(internalLink);
+				if ( (++curNumOfInternalLinks) > MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE )
+					throw new RuntimeException();
+			}
 		}
 		return urls;
 	}
@@ -451,7 +454,7 @@ public class PageCrawler
 			// After this threshold, evaluate the percentage of found docUrls, if it's too low, then stop handling the remaining-links for any pageUrl.
 			double percentage = (timesFoundDocOrDatasetUrlFromRemainingLinks.get() * 100.0 / temp_timesCheckedRemainingLinks);
 			if ( percentage < leastPercentageOfHitsFromRemainingLinks ) {
-				logger.warn("The percentage of found docUrls from the remaining links is too low ( " + percentage + "% ). Stop checking the internalLinks..");
+				logger.warn("The percentage of found docUrls from the remaining links is too low ( " + percentage + "% ). Stop checking the remaining-internalLinks for any pageUrl..");
 				should_check_remaining_links = false;
 				handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false, false);
 				return false;

@@ -11,7 +11,7 @@ The "booleans" are:
 - "wasUrlValid": it signals whether the url was a valid url (one that can be connected)
 - "wasDocumentOrDatasetAccessible": it signals whether the url gave a document or dataset url
 - "wasDirectLink": it signals whether the url was a document or dataset link itself
-- "couldRetry": it signals whether it could be worth to check the url in the future (in case the sourceUrl gave the docOrDatasetUrl or it resulted in an error which might be eliminated in the future)
+- "couldRetry": it signals whether it could be worth to check the url in the future (in case the sourceUrl gave the docOrDatasetUrl or it resulted in an error which might be eliminated in the future, like a "ConnectionTimeout")
 <br>
 
 The "comment" can have the following values:
