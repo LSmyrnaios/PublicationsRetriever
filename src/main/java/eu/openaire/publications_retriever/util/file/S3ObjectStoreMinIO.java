@@ -56,9 +56,8 @@ public class S3ObjectStoreMinIO {
             }
         } catch (Exception e) {
             String errorMsg = "An error prevented the retrieval of the minIO credentials from the file: " + credentialsFilePath + "\n" + e.getMessage();
-            logger.error(errorMsg);
+            logger.error(errorMsg, e);
             System.err.println(errorMsg);
-            e.printStackTrace();
             System.exit(53);
         } finally {
             if ( myReader != null )
@@ -101,8 +100,7 @@ public class S3ObjectStoreMinIO {
                 logger.warn("Bucket \"" + bucketName + "\" already exists.");
         } catch (Exception e) {
             String errorMsg = "Could not create the bucket \"" + bucketName + "\"!";
-            logger.error(errorMsg);
-            e.printStackTrace();
+            logger.error(errorMsg, e);
             System.err.println(errorMsg);
             System.exit(56);
         }
@@ -161,8 +159,7 @@ public class S3ObjectStoreMinIO {
             // Right now it gets overwritten (unless we add versioning, which is irrelevant for different objects..)
 
         } catch (Exception e) {
-            logger.error("Could not upload the file \"" + fileObjKeyName + "\" to the S3 ObjectStore, exception: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Could not upload the file \"" + fileObjKeyName + "\" to the S3 ObjectStore, exception: " + e.getMessage(), e);
             return null;
         }
 
@@ -203,8 +200,7 @@ public class S3ObjectStoreMinIO {
             try {
                 minioClient.removeBucket(RemoveBucketArgs.builder().bucket(bucketName).build());
             } catch (Exception e) {
-                logger.error("Could not delete the bucket \"" + bucketName + "\" from the S3 ObjectStore, exception: " + e.getMessage());
-                e.printStackTrace();
+                logger.error("Could not delete the bucket \"" + bucketName + "\" from the S3 ObjectStore, exception: " + e.getMessage(), e);
                 return false;
             }
         }
@@ -218,8 +214,7 @@ public class S3ObjectStoreMinIO {
         try {
             minioClient.removeObject(RemoveObjectArgs.builder().bucket(bucketName).object(fileObjKeyName).build());
         } catch (Exception e) {
-            logger.error("Could not delete the file \"" + fileObjKeyName + "\" from the S3 ObjectStore, exception: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Could not delete the file \"" + fileObjKeyName + "\" from the S3 ObjectStore, exception: " + e.getMessage(), e);
             return false;
         }
         return true;

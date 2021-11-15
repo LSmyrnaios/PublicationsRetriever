@@ -321,10 +321,9 @@ public class ConnSupportUtils
 				//logger.debug("Size of file \"" + docFile.getName() + "\": " + size); // DEBUG!
 			} catch (Exception e) {
 				if ( hash == null )
-					logger.error("Could not retrieve the MD5-hash for the file: " + fileLocation);
+					logger.error("Could not retrieve the MD5-hash for the file: " + fileLocation, e);
 				if ( size == null )
-					logger.error("Could not retrieve the size of the file: " + fileLocation);
-				e.printStackTrace();
+					logger.error("Could not retrieve the size of the file: " + fileLocation, e);
 			}
 			docFileData.setHash(hash);
 			docFileData.setSize(size);

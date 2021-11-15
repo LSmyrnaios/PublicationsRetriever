@@ -55,7 +55,7 @@ public class DocFileData {
                 "docFile=" + docFile +
                 ", hash='" + hash + '\'' +
                 ", size=" + size +
-                ", fileLocation='" + location + '\'' +
+                ", location='" + location + '\'' +
                 '}';
     }
 }

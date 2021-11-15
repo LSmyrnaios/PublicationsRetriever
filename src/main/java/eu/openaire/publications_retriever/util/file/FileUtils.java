@@ -307,7 +307,10 @@ public class FileUtils
 		
 		FileUtils.dataToBeLoggedList.clear();	// Clear the list to put the new <jsonBatchSize> values. The backing array used by List is not de-allocated. Only the String-references contained get GC-ed.
 	}
-	
+
+
+	private static final byte[] buffer = new byte[3145728];	// 3Mb (average docFiles-size)
+	// The "storeDocFile()" method is synchronized, so this buffer can be safely used across threads.
 	
 	/**
 	 * This method is responsible for storing the docFiles and store them in permanent storage.
@@ -341,7 +344,6 @@ public class FileUtils
 			}
 
 			int bytesRead = -1;
-			byte[] buffer = new byte[3145728];	// 3Mb (average docFiles-size)
 			long startTime = System.nanoTime();
 			while ( (bytesRead = inStream.read(buffer)) != -1 )
 			{

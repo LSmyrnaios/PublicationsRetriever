@@ -54,9 +54,8 @@ public class S3ObjectStore {
             }
         } catch (Exception e) {
             String errorMsg = "An error prevented the retrieval of the amazon credentials from the file: " + credentialsFilePath + "\n" + e.getMessage();
-            logger.error(errorMsg);
+            logger.error(errorMsg, e);
             System.err.println(errorMsg);
-            e.printStackTrace();
             System.exit(53);
         } finally {
             if ( myReader != null )
@@ -102,9 +101,8 @@ public class S3ObjectStore {
                 logger.warn("Bucket \"" + bucketName + "\" already exists.");
         } catch (Exception e) {
             String errorMsg = "Could not create the bucket \"" + bucketName + "\"!";
-            logger.error(errorMsg);
+            logger.error(errorMsg, e);
             System.err.println(errorMsg);
-            e.printStackTrace();
             System.exit(56);
         }
 
@@ -208,8 +206,7 @@ public class S3ObjectStore {
             try {
                 s3Client.deleteBucket(bucketName);
             } catch (Exception e) {
-                logger.error("Could not delete the bucket \"" + bucketName + "\" from the S3 ObjectStore, exception: " + e.getMessage());
-                e.printStackTrace();
+                logger.error("Could not delete the bucket \"" + bucketName + "\" from the S3 ObjectStore, exception: " + e.getMessage(), e);
                 return false;
             }
         }

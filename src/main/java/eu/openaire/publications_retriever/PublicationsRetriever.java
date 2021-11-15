@@ -114,14 +114,21 @@ public class PublicationsRetriever
 			System.exit(-4);
 		}
 
+		logger.info("Shutting down the threads..");
 		PublicationsRetriever.executor.shutdown();	// Define that no new tasks will be scheduled.
 		try {
 			if ( !PublicationsRetriever.executor.awaitTermination(1, TimeUnit.MINUTES) ) {
 				logger.warn("The working threads did not finish on time! Stopping them immediately..");
 				PublicationsRetriever.executor.shutdownNow();
 			}
-		} catch (InterruptedException e) {
-			PublicationsRetriever.executor.shutdownNow();
+		} catch (SecurityException se) {
+			logger.error("Could not shutdown the threads in any way..!", se);
+		} catch (InterruptedException ie) {
+			try {
+				PublicationsRetriever.executor.shutdownNow();
+			} catch (SecurityException se) {
+				logger.error("Could not shutdown the threads in any way..!", se);
+			}
 		}
 
 		showStatistics(startTime);

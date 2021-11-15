@@ -301,7 +301,7 @@ public class PageCrawler
 						continue;	// Avoid collecting it..
 					}
 					else if ( lowerCaseLinkAttr.contains("pdf") ) {
-						internalLink = el.attr("href");
+						internalLink = el.attr("href").trim();
 						if ( !internalLink.isEmpty() && !internalLink.startsWith("#", 0) ) {
 							//logger.debug("Found the docLink < " + internalLink + " > from link-text: \"" + linkAttr + "\"");	// DEBUG
 							throw new DocLinkFoundException(internalLink);
@@ -312,7 +312,7 @@ public class PageCrawler
 
 				linkAttr = el.attr("title");
 				if ( !linkAttr.isEmpty() && linkAttr.toLowerCase().contains("pdf") ) {
-					internalLink = el.attr("href");
+					internalLink = el.attr("href").trim();
 					if ( !internalLink.isEmpty() && !internalLink.startsWith("#", 0) ) {
 						//logger.debug("Found the docLink < " + internalLink + " > from link-title: \"" + linkAttr + "\"");	// DEBUG
 						throw new DocLinkFoundException(internalLink);
@@ -321,9 +321,9 @@ public class PageCrawler
 				}
 
 				// Check if we have a "link[href][type*=pdf]" get the docUrl. This also check all the "types" even from the HTML-"a" elements.
-				linkAttr = el.attr("type");
+				linkAttr = el.attr("type").trim();
 				if ( !linkAttr.isEmpty() && ConnSupportUtils.knownDocMimeTypes.contains(linkAttr) ) {
-					internalLink = el.attr("href");
+					internalLink = el.attr("href").trim();
 					if ( !internalLink.isEmpty() && !internalLink.startsWith("#", 0) ) {
 						//logger.debug("Found the docLink < " + internalLink + " > from link-type: \"" + linkAttr + "\"");	// DEBUG
 						throw new DocLinkFoundException(internalLink);
@@ -332,9 +332,9 @@ public class PageCrawler
 				}
 			}
 
-			internalLink = el.attr("href");
+			internalLink = el.attr("href").trim();
 			if ( internalLink.isEmpty() || internalLink.equals("#") ) {
-				internalLink = el.attr("data-popup");	// Ex: https://www.ingentaconnect.com/content/cscript/cvia/2017/00000002/00000003/art00008
+				internalLink = el.attr("data-popup").trim();	// Ex: https://www.ingentaconnect.com/content/cscript/cvia/2017/00000002/00000003/art00008
 				if ( internalLink.isEmpty() )
 					continue;
 			}
