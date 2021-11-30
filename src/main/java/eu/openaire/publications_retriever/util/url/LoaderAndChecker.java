@@ -52,6 +52,7 @@ public class LoaderAndChecker
 
 	public LoaderAndChecker() throws RuntimeException
 	{
+		setCouldRetryRegex();
 		try {
 			if ( useIdUrlPairs )
 				loadAndCheckIdUrlPairs();
@@ -633,20 +634,21 @@ public class LoaderAndChecker
 
 
 	public static final Pattern INVALID_URL_HTTP_STATUS = Pattern.compile(".*HTTP 4(?:00|04|10|14|22) Client Error.*");
-
-	public static Pattern COULD_RETRY_HTTP_STATUS = null;
-	private static String couldRetryRegexString = ".*(?:HTTP 4(?:08|2[569]) Client|";	// This is the "starting" pattern.
+	public static Pattern COULD_RETRY_HTTP_STATUS;
 
 	public static void setCouldRetryRegex()
 	{
+		String debugLog;
+		String couldRetryRegexString = ".*(?:HTTP 4(?:08|2[569]) Client|";	// This is the "starting" pattern.
 		if ( ConnSupportUtils.shouldBlockMost5XXDomains ) {
 			couldRetryRegexString += "503";    // Only retry for 503-urls. The 503-domains are also excluded from been blocked.
-			logger.debug("Going to block most of the 5XX domains, except from the 503-domains.");
+			debugLog = "Going to block most of the 5XX domains, except from the 503-domains.";
 		} else {
 			couldRetryRegexString += "(?<!511)";    // Retry for every 5XX url EXCEPT for the 511-urls. The 511-domains are also blocked in this case.
-			logger.debug("Going to avoid to block most of the 5XX domains, except from the 511-domains, which will be blocked.");
+			debugLog = "Going to avoid to block most of the 5XX domains, except from the 511-domains, which will be blocked.";
 		}
 		couldRetryRegexString += " Server) Error.*";
+		logger.debug(debugLog + " The \"couldRetryRegex\" is: " + couldRetryRegexString);
 		COULD_RETRY_HTTP_STATUS = Pattern.compile(couldRetryRegexString);
 	}
 

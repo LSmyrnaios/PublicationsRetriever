@@ -200,8 +200,6 @@ public class TestNonStandardInputOutput  {
 		logger.info("Use " + PublicationsRetriever.workerThreadsCount + " worker-threads.");
 		PublicationsRetriever.executor = Executors.newFixedThreadPool(PublicationsRetriever.workerThreadsCount);
 
-		LoaderAndChecker.setCouldRetryRegex();
-
 		try {
 			new LoaderAndChecker();
 		} catch (RuntimeException e) {  // In case there was no input, a RuntimeException will be thrown, after logging the cause.
