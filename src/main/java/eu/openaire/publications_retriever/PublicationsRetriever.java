@@ -103,6 +103,8 @@ public class PublicationsRetriever
 		logger.info("Use " + workerThreadsCount + " worker-threads.");
 		executor = Executors.newFixedThreadPool(workerThreadsCount);
 
+		LoaderAndChecker.setCouldRetryRegex();
+
 		try {
 			new LoaderAndChecker();
 		} catch (RuntimeException e) {  // In case there was no input, a RuntimeException will be thrown, after logging the cause.

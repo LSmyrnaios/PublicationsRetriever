@@ -525,8 +525,8 @@ public class LoaderAndChecker
 	public static String handleUrlChecks(String urlId, String retrievedUrl)
 	{
 		String urlDomain = UrlUtils.getDomainStr(retrievedUrl, null);
-		if ( urlDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
-			logger.warn("Problematic URL in \"LoaderAndChecker.handleUrlChecks()\": \"" + retrievedUrl + "\"");
+		if ( urlDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage, and we shouldn't crawl it.
+			// The reason is already logged.
 			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'LoaderAndChecker.handleUrlChecks()' method, after the occurrence of a domain-retrieval error.", null, true, "true", "false", "false", "false", "false", null, "null");
 			if ( !useIdUrlPairs )
 				connProblematicUrls.incrementAndGet();
@@ -633,7 +633,23 @@ public class LoaderAndChecker
 
 
 	public static final Pattern INVALID_URL_HTTP_STATUS = Pattern.compile(".*HTTP 4(?:00|04|10|14|22) Client Error.*");
-	public static final Pattern COULD_RETRY_HTTP_STATUS = Pattern.compile(".*(?:HTTP 4(?:08|2[569]) Client|Server) Error.*");
+
+	public static Pattern COULD_RETRY_HTTP_STATUS = null;
+	private static String couldRetryRegexString = ".*(?:HTTP 4(?:08|2[569]) Client|";	// This is the "starting" pattern.
+
+	public static void setCouldRetryRegex()
+	{
+		if ( ConnSupportUtils.shouldBlockMost5XXDomains ) {
+			couldRetryRegexString += "503";    // Only retry for 503-urls. The 503-domains are also excluded from been blocked.
+			logger.debug("Going to block most of the 5XX domains, except from the 503-domains.");
+		} else {
+			couldRetryRegexString += "(?<!511)";    // Retry for every 5XX url EXCEPT for the 511-urls. The 511-domains are also blocked in this case.
+			logger.debug("Going to avoid to block most of the 5XX domains, except from the 511-domains, which will be blocked.");
+		}
+		couldRetryRegexString += " Server) Error.*";
+		COULD_RETRY_HTTP_STATUS = Pattern.compile(couldRetryRegexString);
+	}
+
 
 	public static List<String> getWasValidAndCouldRetry(Exception e)
 	{

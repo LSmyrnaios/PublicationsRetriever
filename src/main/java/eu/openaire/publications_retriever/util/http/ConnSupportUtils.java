@@ -69,6 +69,8 @@ public class ConnSupportUtils
 	private static final int timesToHave403errorCodeBeforePathBlocked = 10;	// If a path leads to 403 with different urls, more than 5 times, then this path gets blocked.
 	private static final int numberOf403BlockedPathsBeforeDomainBlocked = 50;	// If a domain has more than 5 different 403-blocked paths, then the whole domain gets blocked.
 
+	public static boolean shouldBlockMost5XXDomains = true;	// In General, if we decide to block, then the 503 will be excluded. If we decide to not block, then only the 511 will be blocked.
+	// Keep the above as "public" and "non-final", in order to be set by external services.
 	private static final int timesToHave5XXerrorCodeBeforeDomainBlocked = 10;
 	private static final int timesToHaveTimeoutExBeforeDomainBlocked = 25;
 
@@ -308,7 +310,7 @@ public class ConnSupportUtils
 				throw new DocFileNotRetrievedException();
 			}
 
-			// TODO - The following could be put in its own function to be used bo other plugin in the PDF-Service.
+			// TODO - The following could be put in its own function to be used by other plugins in the PDF-Service.
 			// Calculate the hash and the size here (after the FileUtils.storeDocFile() call), in order to avoid long threads-blocking, as the "storeDocFile" is synchronized.
 			String hash = null;
 			Long size = 0L;
@@ -477,13 +479,8 @@ public class ConnSupportUtils
 		if ( (errorStatusCode >= 400) && (errorStatusCode <= 499) )	// Client Error.
 		{
 			errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received: HTTP " + errorStatusCode + " Client Error.";
-			if ( errorStatusCode == 403 ) {
-				if ( (domainStr == null) || !urlStr.contains(domainStr) )	// The domain might have changed after redirections.
-					domainStr = UrlUtils.getDomainStr(urlStr, null);
-
-				if ( domainStr != null )	// It may be null if "UrlUtils.getDomainStr()" failed.
-					on403ErrorCode(urlStr, domainStr, calledForPageUrl);	// The "DomainBlockedException" will go up-method by its own, if thrown inside this one.
-			}
+			if ( errorStatusCode == 403 )
+				on403ErrorCode(urlStr, domainStr, calledForPageUrl);	// The "DomainBlockedException" will go up-method by its own, if thrown inside this one.
 		}
 		else {	// Other errorCodes. Retrieve the domain and make the required actions.
 			if ( (domainStr == null) || !urlStr.contains(domainStr) )	// The domain might have changed after redirections.
@@ -491,8 +488,7 @@ public class ConnSupportUtils
 
 			if ( (errorStatusCode >= 500) && (errorStatusCode <= 599) ) {	// Server Error.
 				errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received: HTTP " + errorStatusCode + " Server Error.";
-				if ( domainStr != null )
-					on5XXerrorCode(domainStr);
+				on5XXerrorCode(errorStatusCode, domainStr);
 			} else {	// Unknown Error (including non-handled: 1XX and the weird one: 999 (used for example on Twitter), responseCodes).
 				logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Received unexpected responseCode: " + errorStatusCode);
 				if ( domainStr != null ) {
@@ -518,7 +514,15 @@ public class ConnSupportUtils
 	 */
 	public static void on403ErrorCode(String urlStr, String domainStr, boolean calledForPageUrl) throws DomainBlockedException
 	{
-		String pathStr = UrlUtils.getPathStr(urlStr, null);
+		Matcher matcher = null;
+		if ( (domainStr == null) || !urlStr.contains(domainStr) ) {    // The domain might have changed after redirections.
+			if ( (matcher = UrlUtils.getUrlMatcher(urlStr)) == null )
+				return;
+			if ( (domainStr = UrlUtils.getDomainStr(urlStr, matcher)) == null )
+				return;
+		}
+
+		String pathStr = UrlUtils.getPathStr(urlStr, matcher);
 		if ( pathStr == null )
 			return;
 		
@@ -526,11 +530,11 @@ public class ConnSupportUtils
 		{
 			logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code more than " + timesToHave403errorCodeBeforePathBlocked + " times.");
 			// Block the whole domain if it has more than a certain number of blocked paths.
-			if ( domainsMultimapWithPaths403BlackListed.get(domainStr).size() > numberOf403BlockedPathsBeforeDomainBlocked )
+			if ( domainsMultimapWithPaths403BlackListed.get(domainStr).size() > numberOf403BlockedPathsBeforeDomainBlocked )	// It will not throw an NPE, as the domain is inserted by the previous method.
 			{
 				HttpConnUtils.blacklistedDomains.add(domainStr);	// Block the whole domain itself.
 				logger.debug("Domain: \"" + domainStr + "\" was blocked, after having more than " + numberOf403BlockedPathsBeforeDomainBlocked + " of its paths 403blackListed.");
-				domainsMultimapWithPaths403BlackListed.removeAll(domainStr);	// No need to keep its paths anymore.
+				domainsMultimapWithPaths403BlackListed.removeAll(domainStr);	// No need to keep this anymore.
 				throw new DomainBlockedException(domainStr);
 			}
 		}
@@ -539,8 +543,8 @@ public class ConnSupportUtils
 	
 	public static boolean countAndBlockPathAfterTimes(SetMultimap<String, String> domainsWithPaths, Hashtable<String, Integer> pathsWithTimes, String pathStr, String domainStr, int timesBeforeBlocked, boolean calledForPageUrl)
 	{
-		if ( countInsertAndGetTimes(pathsWithTimes, pathStr) > timesBeforeBlocked ) {
-
+		if ( countInsertAndGetTimes(pathsWithTimes, pathStr) > timesBeforeBlocked )
+		{
 			// If we use MLA, we are storing the docPage-successful-paths, so check if this is one of them, if it is then don't block it.
 			// If it's an internal-link, then.. we can't iterate over every docUrl-successful-path of every docPage-successful-path.. it's too expensive O(5*n), not O(1)..
 			if ( calledForPageUrl && MachineLearning.useMLA && MachineLearning.successPathsHashMultiMap.containsKey(pathStr) )
@@ -575,10 +579,22 @@ public class ConnSupportUtils
 		}
 		return false;
 	}
-	
-	
-	public static void on5XXerrorCode(String domainStr) throws DomainBlockedException
+
+
+	/**
+	 * This method is called for an HTTP-5XX case. Depending on the value of "shouldBlockMost5XXDomains", it blocks the domain if it has given a 5XX more than Y times.
+	 * @param domainStr
+	 * @throws DomainBlockedException
+	 */
+	public static void on5XXerrorCode(int http5xxErrorCode, String domainStr) throws DomainBlockedException
 	{
+		if ( !shouldBlockMost5XXDomains )
+			if ( http5xxErrorCode != 511 )
+				return;
+
+		if ( (http5xxErrorCode == 503) || (domainStr == null) )
+			return;
+
 		if ( countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsReturned5XX, domainStr, timesToHave5XXerrorCodeBeforeDomainBlocked, true) ) {
 			logger.debug("Domain: \"" + domainStr + "\" was blocked after returning 5XX Error Code " + timesToHave5XXerrorCodeBeforeDomainBlocked + " times.");
 			throw new DomainBlockedException(domainStr);
@@ -670,6 +686,8 @@ public class ConnSupportUtils
 	}
 
 
+	public static ThreadLocal<StringBuilder> htmlStrBuilder = new ThreadLocal<StringBuilder>();	// Every Thread has its own variable.
+
 	public static String getHtmlString(HttpURLConnection conn, BufferedReader bufferedReader)
 	{
 		if ( getContentSize(conn, false) == -1 ) {	// "Unacceptable size"-code..
@@ -677,7 +695,11 @@ public class ConnSupportUtils
 			return null;
 		}
 
-		StringBuilder htmlStrB = new StringBuilder(300000);	// Initialize it here each time for thread-safety (thread-locality).
+		StringBuilder htmlStrB = htmlStrBuilder.get();
+		if ( htmlStrB == null ) {
+			htmlStrBuilder.set(new StringBuilder(300000));	// Initialize and pre-allocate the StringBuilder for the current Thread.
+			htmlStrB = htmlStrBuilder.get();
+		}
 
 		try (BufferedReader br = (bufferedReader != null ? bufferedReader : new BufferedReader(new InputStreamReader(conn.getInputStream()))) )	// Try-with-resources
 		{
@@ -745,7 +767,7 @@ public class ConnSupportUtils
 				} else if ( detectedContentType.detectedContentType.equals("undefined") )
 					logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have UNDEFINED contentType.");
 				else
-					warnMsg += "\nUnspecified \"detectedContentType\":" + detectedContentType.detectedContentType;
+					warnMsg += "\nUnspecified \"detectedContentType\": " + detectedContentType.detectedContentType;
 			}
 			else	//  ( detectedContentType == null )
 				warnMsg += "\nCould not retrieve the response-body for url: " + finalUrlStr;
@@ -870,21 +892,21 @@ public class ConnSupportUtils
 	 * This method constructs fully-formed urls which are connection-ready, as the retrieved links may be relative-links.
 	 * @param pageUrl
 	 * @param currentLink
-	 * @param UrlBase
+	 * @param urlBase
 	 * @return
 	 */
-	public static String getFullyFormedUrl(String pageUrl, String currentLink, URL UrlBase)
+	public static String getFullyFormedUrl(String pageUrl, String currentLink, URL urlBase)
 	{
 		try {
-			if ( UrlBase == null ) {
+			if ( urlBase == null ) {
 				if ( pageUrl != null )
-					UrlBase = new URL(pageUrl);
+					urlBase = new URL(pageUrl);
 				else {
-					logger.error("No UrlBase to produce a fully-formedUrl for internal-link: " + currentLink);
+					logger.error("No urlBase to produce a fully-formedUrl for internal-link: " + currentLink);
 					return null;
 				}
 			}
-			return	new URL(UrlBase, currentLink).toString();	// Return the TargetUrl.
+			return	new URL(urlBase, currentLink).toString();	// Return the TargetUrl.
 		} catch (Exception e) {
 			logger.error("Error when producing fully-formedUrl for internal-link: " + currentLink, e.getMessage());
 			return null;
