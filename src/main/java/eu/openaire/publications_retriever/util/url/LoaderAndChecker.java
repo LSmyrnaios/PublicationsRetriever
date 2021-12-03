@@ -44,6 +44,8 @@ public class LoaderAndChecker
 	public static AtomicInteger inputDuplicatesNum = new AtomicInteger(0);
 	public static AtomicInteger numOfIDsWithoutAcceptableSourceUrl = new AtomicInteger(0);	// The number of IDs which failed to give an acceptable sourceUrl.
 	public static AtomicInteger loadingRetries = new AtomicInteger(0);
+	public static AtomicInteger totalNumFailedTasks = new AtomicInteger(0);
+
 
 	// The following are set from the user.
 	public static boolean retrieveDocuments = true;
@@ -138,7 +140,11 @@ public class LoaderAndChecker
 					return true;
 				});
 			}// end for-loop
-			invokeAllTasksAndWait(callableTasks);
+			int numFailedTasks = invokeAllTasksAndWait(callableTasks);
+			if ( numFailedTasks > 0 ) {
+				logger.warn(numFailedTasks + " tasks failed in batch_" + batchCount);
+				totalNumFailedTasks.incrementAndGet();
+			}
 			callableTasks.clear();
 			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end while-loop
@@ -287,7 +293,11 @@ public class LoaderAndChecker
 					return true;
 				});
 			}// end id-for-loop
-			invokeAllTasksAndWait(callableTasks);
+			int numFailedTasks = invokeAllTasksAndWait(callableTasks);
+			if ( numFailedTasks > 0 ) {
+				logger.warn(numFailedTasks + " tasks failed in batch_" + batchCount);
+				totalNumFailedTasks.incrementAndGet();
+			}
 			callableTasks.clear();
 			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end loading-while-loop
@@ -367,7 +377,11 @@ public class LoaderAndChecker
 					return true;
 				});
 			}// end pairs-for-loop
-			invokeAllTasksAndWait(callableTasks);
+			int numFailedTasks = invokeAllTasksAndWait(callableTasks);
+			if ( numFailedTasks > 0 ) {
+				logger.warn(numFailedTasks + " tasks failed in batch_" + batchCount);
+				totalNumFailedTasks.incrementAndGet();
+			}
 			callableTasks.clear();
 			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end loading-while-loop
@@ -447,15 +461,20 @@ public class LoaderAndChecker
 					return true;
 				});
 			}// end for-id-loop
-			invokeAllTasksAndWait(callableTasks);
+			int numFailedTasks = invokeAllTasksAndWait(callableTasks);
+			if ( numFailedTasks > 0 ) {
+				logger.warn(numFailedTasks + " tasks failed in batch_" + batchCount);
+				totalNumFailedTasks.incrementAndGet();
+			}
 			callableTasks.clear();
 			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end loading-while-loop
 	}
 
 
-	public static void invokeAllTasksAndWait(List<Callable<Boolean>> callableTasks)
+	public static int invokeAllTasksAndWait(List<Callable<Boolean>> callableTasks)
 	{
+		int numFailedTasks = 0;
 		try {	// Invoke all the tasks and wait for them to finish before moving to the next batch.
 			List<Future<Boolean>> futures = PublicationsRetriever.executor.invokeAll(callableTasks);
 			int sizeOfFutures = futures.size();
@@ -468,14 +487,16 @@ public class LoaderAndChecker
 					String stackTraceMessage = GenericUtils.getSelectiveStackTrace(ee, null, 15);	// These can be serious errors like an "out of memory exception" (Java HEAP).
 					logger.error("Task_" + (i+1) + " failed with: " + ee.getMessage() + "\n" + stackTraceMessage);
 					System.err.println(stackTraceMessage);
-				}
-				catch (CancellationException ce) {
+					numFailedTasks ++;
+				} catch (CancellationException ce) {
 					logger.error("Task_" + (i+1) + " was cancelled: " + ce.getMessage());
+					numFailedTasks ++;
 				}
 			}
 		} catch (InterruptedException ie) {
 			logger.warn("The main thread was interrupted when waiting for the current batch's worker-tasks to finish: " + ie.getMessage());
 		}
+		return numFailedTasks;
 	}
 
 

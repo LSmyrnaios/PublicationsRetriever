@@ -210,6 +210,13 @@ public class FileUtils
 	}
 
 
+	private static final int expectedPathsPerID = 5;
+	private static final int expectedIDsPerBatch = (jsonBatchSize / expectedPathsPerID);
+
+	private static HashMultimap<String, String> idAndUrlMappedInput = null;	// This is used only be the main Thread, so no synchronization is needed.
+	// This will be initialized and pre-allocated the 1st time it is needed.
+	// When PublicationsRetriever is used as a library by a service, this functionality may not be needed.
+
 	/**
 	 * This method parses a Json file and extracts the urls, along with the IDs.
 	 * @return HashMultimap<String, String>
@@ -217,10 +224,9 @@ public class FileUtils
 	public static HashMultimap<String, String> getNextIdUrlPairBatchFromJson()
 	{
 		IdUrlTuple inputIdUrlTuple;
-		int expectedPathsPerID = 5;
-		int expectedIDsPerBatch = jsonBatchSize / expectedPathsPerID;
 
-		HashMultimap<String, String> idAndUrlMappedInput = HashMultimap.create(expectedIDsPerBatch, expectedPathsPerID);
+		if ( idAndUrlMappedInput == null )
+			idAndUrlMappedInput = HashMultimap.create(expectedIDsPerBatch, expectedPathsPerID);
 
 		int curBeginning = FileUtils.fileIndex;
 		
@@ -309,8 +315,9 @@ public class FileUtils
 	}
 
 
-	private static final byte[] buffer = new byte[3145728];	// 3Mb (average docFiles-size)
-	// The "storeDocFile()" method is synchronized, so this buffer can be safely used across threads.
+	private static final int BUFFER_SIZE = 3145728;	// 3MB (average fullText-size)
+	private static final byte[] buffer = new byte[BUFFER_SIZE];
+	// The "storeDocFile()" method is synchronized, so this buffer can be safely used across threads. Only one thread uses it at a time.
 	
 	/**
 	 * This method is responsible for storing the docFiles and store them in permanent storage.
@@ -345,7 +352,7 @@ public class FileUtils
 
 			int bytesRead = -1;
 			long startTime = System.nanoTime();
-			while ( (bytesRead = inStream.read(buffer)) != -1 )
+			while ( (bytesRead = inStream.read(buffer, 0, BUFFER_SIZE)) != -1 )
 			{
 				long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
 				if ( (elapsedTime > FileUtils.maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {

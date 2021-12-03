@@ -2,11 +2,13 @@
 
     <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>   <!-- Default delay: 0ms (zero) -->
 
-    <appender name="File" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="RollingFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>logs/PublicationsRetriever.log</file>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
             <fileNamePattern>logs/PublicationsRetriever.%i.log.zip</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>20</maxIndex>
         </rollingPolicy>
 
         <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
@@ -26,7 +28,7 @@
     </appender>
 
     <root level="debug">
-        <appender-ref ref="File" />
+        <appender-ref ref="RollingFile" />
     </root>
 
 </configuration>

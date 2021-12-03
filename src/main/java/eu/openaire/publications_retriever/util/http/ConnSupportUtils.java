@@ -721,8 +721,7 @@ public class ConnSupportUtils
 		} catch ( Exception e ) {
 			logger.error("", e);
 			return null;
-		}
-		finally {
+		} finally {
 			htmlStrB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating.
 		}
 	}
@@ -1079,7 +1078,8 @@ public class ConnSupportUtils
 			logger.debug("Target: " + targetUrl + "\n");
 		}
 	}
-	
+
+
 	/**
 	 * This method print redirectStatistics if the initial url matched to the given wantedUrlType.
 	 * It's intended to be used for debugging-only.

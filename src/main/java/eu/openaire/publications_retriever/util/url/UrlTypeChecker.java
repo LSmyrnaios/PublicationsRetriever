@@ -45,7 +45,7 @@ public class UrlTypeChecker
 			+ "|evernote|skype|(?<!academic.)microsoft|adobe|buffer|digg|stumbleupon|addthis|delicious|dailymotion|gostats|blog(?:ger)?|copyright|friendfeed|newsvine|telegram|getpocket"
 			+ "|flipboard|line.me|vk|ok.rudouban|baidu|qzone|xing|renren|weibo|doubleclick|github|reviewofbooks"
 			+ "|(?<!linkinghub.)elsevier.com"	// Avoid pageUrls redirecting to plain "elsevier.com"  ("(www|journals).elsevier.com", coming mostly from "doi.org"-urls).
-			+ "|validate.perfdrive.com"	// Avoid "robot-check domain".
+			+ "|perfdrive."	// Avoid "robot-check domain". It blocks quickly and redirect us to "validate.perfdrive.com".
 			+ "|services.bepress.com"	// Avoid potential malicious domain (Avast had some urls of this domain in the Blacklist).
 			+ ").*/.*");
 

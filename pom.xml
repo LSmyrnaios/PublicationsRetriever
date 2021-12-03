@@ -82,7 +82,7 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
-      <version>1.2.6</version>
+      <version>1.2.7</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
@@ -96,7 +96,7 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.2.6</version>
+      <version>1.2.7</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.jsoup/jsoup -->
@@ -138,14 +138,14 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
-      <version>1.12.119</version>
+      <version>1.12.122</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/io.minio/minio -->
     <dependency>
       <groupId>io.minio</groupId>
       <artifactId>minio</artifactId>
-      <version>8.3.3</version>
+      <version>8.3.4</version>
       <exclusions>
       <exclusion>
         <groupId>com.google.guava</groupId>
@@ -192,4 +192,5 @@
     </dependency>
 
   </dependencies>
+
 </project>
