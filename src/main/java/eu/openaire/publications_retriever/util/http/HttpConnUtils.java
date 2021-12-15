@@ -66,7 +66,8 @@ public class HttpConnUtils
 
 	public static ThreadLocal<Boolean> isSpecialUrl = new ThreadLocal<Boolean>();	// Every Thread has its own variable.
 
-
+	public static final String docFileNotRetrievedBaseMessage = DocFileNotRetrievedException.class.getSimpleName() + " was thrown before the docFile could be stored.";  // Keep it here to easily spot the error if the exception-name changes.
+	
 	/**
 	 * This method checks if a certain url can give us its mimeType, as well as if this mimeType is a docMimeType.
 	 * It automatically calls the "logUrl()" method for the valid docUrls, while it doesn't call it for non-success cases, thus allowing calling method to handle the case.
@@ -150,7 +151,7 @@ public class HttpConnUtils
 							UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", docFileData.getSize(), docFileData.getHash());	// we send the urls, before and after potential redirections.
 							return true;
 						} catch (DocFileNotRetrievedException dfnde) {
-							fullPathFileName = "DocFileNotRetrievedException was thrown before the docFile could be stored. Stacktrace:";
+							fullPathFileName = docFileNotRetrievedBaseMessage;
 							logger.error(GenericUtils.getSelectiveStackTrace(dfnde, fullPathFileName, 9));	// TODO - Instead of the stacktrace, provide the right message when first thrown, just like in "RuntimeException".
 						}	// We log below and then return.
 					}

@@ -97,7 +97,7 @@ public class S3ObjectStoreMinIO {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
             }
             else
-                logger.warn("Bucket \"" + bucketName + "\" already exists.");
+                logger.debug("Bucket \"" + bucketName + "\" already exists.");
         } catch (Exception e) {
             String errorMsg = "Could not create the bucket \"" + bucketName + "\"!";
             logger.error(errorMsg, e);

@@ -864,7 +864,6 @@ public class ConnSupportUtils
 			}
 			//logger.debug("Content-length of \"" + conn.getURL().toString() + "\" is: " + contentSize);	// DEBUG!
 			return contentSize;
-
 		} catch (NumberFormatException nfe) {
 			if ( calledForFullTextDownload )	// It's not useful to show a logging-message otherwise.
 				logger.warn("No \"Content-Length\" was retrieved from docUrl: \"" + conn.getURL().toString() + "\"! We will store the docFile anyway..");	// No action is needed.

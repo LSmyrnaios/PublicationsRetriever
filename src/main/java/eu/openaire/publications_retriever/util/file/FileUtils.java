@@ -50,6 +50,7 @@ public class FileUtils
 	public static final List<DataToBeLogged> dataToBeLoggedList = Collections.synchronizedList(new ArrayList<>(jsonBatchSize));
 	
 	public static final Hashtable<String, Integer> numbersOfDuplicateDocFileNames = new Hashtable<>();	// Holds docFileNa,es with their duplicatesNum.
+	// If we use the above without external synchronization, then the "ConcurrentHashMap" should be used instead.
 	
 	public static boolean shouldDownloadDocFiles = false;	// It will be set to "true" if the related command-line-argument is given.
 	public static boolean shouldUploadFilesToS3 = false;	// Should we upload the files to S3 ObjectStore? Otherwise they will be stored locally.
@@ -398,7 +399,7 @@ public class FileUtils
 			return docFileData;	// It may be null.
 			
 		} catch (DocFileNotRetrievedException dfnre) {
-			throw dfnre;
+			throw dfnre;	// No reversion of the number needed.
 		} catch (IOException ioe) {
 			numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 			throw new DocFileNotRetrievedException(ioe.getMessage());
@@ -410,10 +411,6 @@ public class FileUtils
 			try {
 				if ( inStream != null )
 					inStream.close();
-			} catch (Exception e) {
-				logger.error("", e);
-			}
-			try {
 				if ( outStream != null )
 					outStream.close();
 			} catch (Exception e) {
@@ -480,8 +477,8 @@ public class FileUtils
 		} else
 			hasUnretrievableDocName = true;
 
-		// If this ever is called from a code block without synchronization, then it should be a synchronized block.
 		if ( hasUnretrievableDocName ) {
+			// If this ever is called from a code block without synchronization, then it should be a synchronized block.
 			if ( unretrievableDocNamesNum == 0 )
 				docFileName = "unretrievableDocName" + dotFileExtension;
 			else

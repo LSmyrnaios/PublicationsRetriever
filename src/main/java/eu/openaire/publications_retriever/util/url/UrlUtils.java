@@ -94,12 +94,14 @@ public class UrlUtils
 						MachineLearning.gatherMLData(pageUrl, finalDocUrl, pageDomain);
 
 					// Add the domains of the pageUrl and the finalDocUrl to the successful domains as both lead in some way to a docUrl.
+					// The data inside HashTable "domainsAndHits" is used to evaluate how good the domain is doing while is having some problems.
+					// If the "goods" surpass the "bads", then that domain will not get blocked, even if the "minimum-accepted-bad-cases" was exceeded.
 					ConnSupportUtils.countInsertAndGetTimes(domainsAndHits, pageDomain);
 
 					// Now if the "finalDocUrl" is different than the "pageUrl", get the domain of the "finalDocUrl" and if it's different, then add it to "domainsAndHits"-HashMap.
 					if ( !pageUrl.equals(finalDocUrl) ) {
 						String docUrlDomain = UrlUtils.getDomainStr(finalDocUrl, null);
-						if ( (docUrlDomain != null) && !pageDomain.equals(docUrlDomain) )
+						if ( (docUrlDomain != null) && !docUrlDomain.equals(pageDomain) )
 							ConnSupportUtils.countInsertAndGetTimes(domainsAndHits, docUrlDomain);
 					}
 				}
