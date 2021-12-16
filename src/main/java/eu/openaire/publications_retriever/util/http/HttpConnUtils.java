@@ -92,7 +92,7 @@ public class HttpConnUtils
 		try {
 			if ( domainStr == null )	// No info about domainStr from the calling method.. we have to find it here.
 				if ( (domainStr = UrlUtils.getDomainStr(resourceURL, null)) == null )
-					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
+					throw new RuntimeException("Unable to obtain the domain!");	// The cause it's already logged inside "getDomainStr()".
 
 			conn = handleConnection(urlId, sourceUrl, pageUrl, resourceURL, domainStr, calledForPageUrl, calledForPossibleDocOrDatasetUrl);
 
@@ -104,7 +104,7 @@ public class HttpConnUtils
 
 			if ( !finalUrlStr.contains(domainStr) )	// Get the new domain after possible change from redirects.
 				if ( (domainStr = UrlUtils.getDomainStr(finalUrlStr, null)) == null )
-					throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
+					throw new RuntimeException("Unable to obtain the domain!");	// The cause it's already logged inside "getDomainStr()".
 
 			boolean foundDetectedContentType = false;
 			String firstHtmlLine = null;
@@ -219,7 +219,7 @@ public class HttpConnUtils
 				logger.warn("Could not handle connection for \"" + resourceURL + "\"!");
 				LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			}
-			throw new RuntimeException();
+			throw new RuntimeException(e.getMessage());
 		} finally {
 			if ( conn != null )
 				conn.disconnect();
@@ -232,7 +232,7 @@ public class HttpConnUtils
 										throws AlreadyFoundDocUrlException, RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException, IOException
 	{
 		if ( (domainStr == null) && (domainStr = UrlUtils.getDomainStr(resourceURL, null)) == null )
-			throw new RuntimeException();
+			throw new RuntimeException("Unable to obtain the domain!");
 
 		HttpURLConnection conn = openHttpConnection(resourceURL, domainStr, calledForPageUrl, calledForPossibleDocUrl);
 		// The "resourceUrl" might have changed (due to special-handling of some pages), but it doesn't cause any problem. It's only used with "internalLinks" which are not affected by the special handling.
@@ -457,7 +457,7 @@ public class HttpConnUtils
 			}
 
 			logger.error("", e);
-			throw new RuntimeException();
+			throw new RuntimeException(e.getMessage());
 		}
 		
 		return conn;
@@ -552,7 +552,7 @@ public class HttpConnUtils
 				if ( !targetUrl.contains(domainStr) ) {    // If the next page is not in the same domain as the current one, we have to find the domain again.
 					conn.disconnect();	// Close the socket with that server.
 					if ( (domainStr = UrlUtils.getDomainStr(targetUrl, null)) == null )
-						throw new RuntimeException();	// The cause it's already logged inside "getDomainStr()".
+						throw new RuntimeException("Unable to obtain the domain!");	// The cause it's already logged inside "getDomainStr()".
 				}
 
 				// Check if this redirection is just http-to-https and store the domain to do offline-redirection in the future.
@@ -582,7 +582,7 @@ public class HttpConnUtils
 		} catch (Exception e) {
 			logger.warn("", e);
 			conn.disconnect();
-			throw new RuntimeException();
+			throw new RuntimeException(e.getMessage());
 		}
 	}
 

@@ -1,6 +1,7 @@
 package eu.openaire.publications_retriever.util.url;
 
 
+import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,8 +23,8 @@ public class UrlTypeChecker
 	private static final String mediaExtensionsPattern = "ico|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov";
 
 	public static final Pattern URL_DIRECTORY_FILTER =
-			Pattern.compile(".+://.*/(?:(discover|profile|user|survey)(?!.+(?:file|pdf|document|dataset))|(?:(?:ldap|password)-)?login|auth(?:entication)?\\.|ac[c]?ess(?!\\.)|sign(?:in|out|up)|session|join|subscr|register|submi(?:t|ssion)|search[/]*$|(?:post|send|shop|view|export|(?:wp-)?admin|home)/|watch|browse|import|bookmark|announcement|rss|feedback|share|about|faq|wiki|news|events|cart|support|(?:site|html)map|documentation|help|contact|license|disclaimer|copyright|polic(?:y|ies)|privacy|terms|law|principles"
-					+ "|(?:my|your|create)?account|settings|fund|aut[h]?or|editor|author:|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic(s)?/.*/view/|conta[c]?t|wallet|contribute|deposit|donate|our[_-][\\w]+|template|logo|image|photo|video|media|theme|advertiser|product|people|(?:the)?press|forum|blog|column|row|for-authors|css|js|captcha|clipboard"
+			Pattern.compile(".+://.*/(?:(discover|profile|user|survey)(?!.+(?:file|pdf|document|dataset))|(?:(?:ldap|password)-)?login|auth(?:entication)?\\.|ac[c]?ess(?!\\.)|sign(?:in|out|up)|session|join|subscr|register|submi(?:t|ssion)|search[/]*$|(?:post|send|shop|view|export|(?:wp-)?admin|home)/|watch|browse|import|bookmark|announcement|rss|feedback|share|about|faq|wiki|news|events|cart|support|(?:site|html)map|documentation|default/|help|license|disclaimer|copyright|(?:site-)?polic(?:y|ies)|privacy|terms|law|principles"
+					+ "|(?:my|your|create)?account|settings|fund|aut[h]?or|(?:journal-)?editor|author:|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic(s)?/.*/view/|conta[c]?t|wallet|contribute|deposit|donate|our[_-][\\w]+|template|logo|image|photo|video|media|theme|advertiser|product|people|(?:the)?press|forum|blog|column|row|for-authors|css|js|captcha|clipboard"
 					+ "|restricted|noaccess|crawlprevention|error|(?:mis|ab)use|\\?denied|gateway|defaultwebpage|sorryserver|cookie|notfound|(?:404|accessibility|catalog(?:ue|ar|o)?)\\." + htExtensionsPattern + ").*");
 	// We check them as a directory to avoid discarding publications' urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
 	
@@ -47,6 +48,7 @@ public class UrlTypeChecker
 			+ "|(?<!linkinghub.)elsevier.com"	// Avoid pageUrls redirecting to plain "elsevier.com"  ("(www|journals).elsevier.com", coming mostly from "doi.org"-urls).
 			+ "|perfdrive."	// Avoid "robot-check domain". It blocks quickly and redirect us to "validate.perfdrive.com".
 			+ "|services.bepress.com"	// Avoid potential malicious domain (Avast had some urls of this domain in the Blacklist).
+			+ "|careers."
 			+ ").*/.*");
 
 	public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile(".+://[\\w.:-]+(?:/[\\w]{2})?(?:/index.(?:" + htExtensionsPattern + "|" + phpExtensionsPattern + "))?[/]?(?:\\?(?:locale(?:-attribute)?|ln)=[\\w_-]+)?$");	// Exclude plain domains' urls. Use "ISO 639-1" for language-codes (2 letters directory).
@@ -202,6 +204,7 @@ public class UrlTypeChecker
 		
 		return	PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches() || SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
 				|| URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches() || URL_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches()
+				|| PageCrawler.NON_VALID_DOCUMENT.matcher(lowerCaseUrl).matches()
 				|| CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseUrl).matches();	// TODO - To be removed when these docExtensions get supported.
 	}
 	
@@ -216,6 +219,7 @@ public class UrlTypeChecker
 				|| SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLink).matches() || PLAIN_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
 				|| URL_FILE_EXTENSION_FILTER.matcher(lowerCaseLink).matches() || INTERNAL_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseLink).matches()
 				|| PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseLink).matches()
+				|| PageCrawler.NON_VALID_DOCUMENT.matcher(lowerCaseLink).matches()
 				|| CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseLink).matches();	// TODO - To be removed when these docExtensions get supported.
 	}
 	

@@ -244,7 +244,7 @@ public class UrlUtils
 	{
 		if ( urlStr == null ) {	// Avoid NPE in "Matcher"
 			logger.error("The received \"urlStr\" was null in \"removeTemporalIdentifier()\"!");
-			return null;
+			return "null";	// Avoid a potential NPE in the caller method, in case this method is used a non-controlled context.
 		}
 
 		Matcher temporalIdMatcher = TEMPORAL_IDENTIFIER_FILTER.matcher(urlStr);

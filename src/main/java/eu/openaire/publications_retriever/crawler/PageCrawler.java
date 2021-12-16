@@ -48,10 +48,10 @@ public class PageCrawler
 	private static final int MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE = 500;	// If a page has more than 500 internal links, then discard it. Example: "https://dblp.uni-trier.de/db/journals/corr/corr1805.html"
 	private static final int MAX_POSSIBLE_DOC_OR_DATASET_LINKS_TO_CONNECT = 5;	// The < 5 > is the optimal value, figured out after experimentation. Example: "https://doaj.org/article/acf5f095dc0f49a59d98a6c3abca7ab6".
 
-	private static boolean should_check_remaining_links = true;	// The remaining links very rarely give docUrls.. so, for time-performance, we can disable them.
+	public static boolean should_check_remaining_links = true;	// The remaining links very rarely give docUrls.. so, for time-performance, we can disable them.
 	private static final int MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT = 10;	// The < 10 > is the optimal value, figured out after experimentation.
 
-	private static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:manu[ae]l|guide|preview).*");
+	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:manu[ae]l|guide|preview|disclosefile).*");
 
 
 	public static void visit(String urlId, String sourceUrl, String pageUrl, String pageContentType, HttpURLConnection conn, String firstHTMLlineFromDetectedContentType, BufferedReader bufferedReader)
