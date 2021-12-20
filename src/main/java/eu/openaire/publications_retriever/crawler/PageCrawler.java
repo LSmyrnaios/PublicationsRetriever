@@ -51,7 +51,7 @@ public class PageCrawler
 	public static boolean should_check_remaining_links = true;	// The remaining links very rarely give docUrls.. so, for time-performance, we can disable them.
 	private static final int MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT = 10;	// The < 10 > is the optimal value, figured out after experimentation.
 
-	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:manu[ae]l|guide|preview|disclosefile).*");
+	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:manu[ae]l|gu[ií](?:de|a)|preview|leaflet|agreement|accessibility|journal[\\s]?catalog|disclose[\\s]*file|(?:embargo|privacy|data[\\s]*protection|take[\\s]?down)[\\s]*policy|normativa|consumer[\\s]?information).*");
 
 
 	public static void visit(String urlId, String sourceUrl, String pageUrl, String pageContentType, HttpURLConnection conn, String firstHTMLlineFromDetectedContentType, BufferedReader bufferedReader)
@@ -302,7 +302,8 @@ public class PageCrawler
 					}
 					else if ( lowerCaseLinkAttr.contains("pdf") ) {
 						internalLink = el.attr("href").trim();
-						if ( !internalLink.isEmpty() && !internalLink.startsWith("#", 0) ) {
+						if ( !internalLink.isEmpty() && !internalLink.startsWith("#", 0)
+								&& !UrlTypeChecker.URL_DIRECTORY_FILTER.matcher(internalLink.toLowerCase()).matches() ) {
 							//logger.debug("Found the docLink < " + internalLink + " > from link-text: \"" + linkAttr + "\"");	// DEBUG
 							throw new DocLinkFoundException(internalLink);
 						}

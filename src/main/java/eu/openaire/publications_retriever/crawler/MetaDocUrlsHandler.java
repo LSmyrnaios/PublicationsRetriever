@@ -90,6 +90,7 @@ public class MetaDocUrlsHandler {
 
         if ( hasUnsupportedDocExtension
             || UrlTypeChecker.PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseMetaDocUrl).matches()
+            || UrlTypeChecker.URL_DIRECTORY_FILTER.matcher(lowerCaseMetaDocUrl).matches()
             || COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS.matcher(lowerCaseMetaDocUrl).matches()
             || PageCrawler.NON_VALID_DOCUMENT.matcher(lowerCaseMetaDocUrl).matches() )
         {

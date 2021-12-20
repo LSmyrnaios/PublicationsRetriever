@@ -471,12 +471,37 @@ public class UrlChecker {
 
 		//urlList.add("https://dblp.uni-trier.de/db/journals/jocs/jocs9.html");
 		//urlList.add("https://dblp.uni-trier.de/db/journals/jat/jat164.html");
-		urlList.add("https://dblp.uni-trier.de/db/conf/cscw/cscw2017.html");
+		//urlList.add("https://dblp.uni-trier.de/db/conf/cscw/cscw2017.html");
 		//urlList.add("https://dblp.uni-trier.de/db/journals/cis/cis40.html");
+
+//		urlList.add("https://t2r2.star.titech.ac.jp/cgi-bin/publicationinfo.cgi?q_publication_content_number=CTT100749302");
+//		urlList.add("https://www.emeraldgrouppublishing.com/sites/default/files/2020-08/MCB-Pension-Chair-Statement-2019.pdf");
+//		urlList.add("https://www.emeraldgrouppublishing.com/sites/default/files/2020-06/Emerald-covid-19-policy.pdf");
+//		urlList.add("https://www.emerald.com/insight/content/doi/10.1108/11766090510635451/full/html");
+//		urlList.add("https://www.ejinme.com/article/S0953-6205(21)00400-3/fulltext");
+//		urlList.add("https://www.ejinme.com/action/showPdf?pii=S0953-6205%2821%2900400-3");
+
+		//urlList.add("https://journals.lww.com/jtrauma/Fulltext/1997/11000/Practice_Patterns_of_Pediatric_Surgeons_Caring_for.14.aspx");
+		//urlList.add("https://hal-univ-lyon3.archives-ouvertes.fr/hal-01722903");
+		//urlList.add("https://research.vu.nl/en/publications/de-gevaarlijke-verleiding-van-de-staatskerk");
+
+		//urlList.add("https://www.metallurgical-research.org/articles/metal/abs/1915/03/metal19151203p155/metal19151203p155.html");
+		//urlList.add("https://direct.mit.edu/neco/article-abstract/21/6/1642/7449/Generation-of-Spike-Trains-with-Controlled-Auto?redirectedFrom=fulltext");
+		//urlList.add("https://www.eurekaselect.com/51112/chapter/introduction");
+		//urlList.add("https://rikkyo.repo.nii.ac.jp/?action=pages_view_main&active_action=repository_view_main_item_detail&item_id=8455&item_no=1&page_id=13&block_id=49");
+		//urlList.add("https://dora.dmu.ac.uk/xmlui/handle/2086/5869");
+		//urlList.add("https://digitum.um.es/digitum/handle/10201/34439");
+
+		//urlList.add("https://eref.thieme.de/ebooks/2324370#/ebook_2324370_SL87281097");
+		urlList.add("https://research.vu.nl/en/publications/het-geluid-van-basistraumas");
+
 
 		logger.info("Urls to check:");
 		for ( String url: urlList )
 			logger.info(url);
+
+
+		//LoaderAndChecker.retrieveDatasets = false;
 
 		Instant start = Instant.now();
 

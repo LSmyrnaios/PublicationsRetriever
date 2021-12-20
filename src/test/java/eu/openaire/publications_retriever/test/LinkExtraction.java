@@ -67,7 +67,10 @@ public class LinkExtraction {
 		//exampleUrl = "https://escholarship.org/uc/item/97b0t7th";
 		//exampleUrl = "https://datadryad.org/stash/dataset/doi:10.5061/dryad.v1c28";
 		//exampleUrl = "https://zenodo.org/record/3483813";
-		exampleUrl = "http://sedici.unlp.edu.ar/handle/10915/30810";
+		//exampleUrl = "http://sedici.unlp.edu.ar/handle/10915/30810";
+		//exampleUrl = "https://www.ejinme.com/article/S0953-6205(21)00400-3/fulltext";
+		//exampleUrl = "https://direct.mit.edu/neco/article-abstract/21/6/1642/7449/Generation-of-Spike-Trains-with-Controlled-Auto?redirectedFrom=fulltext";
+		exampleUrl = "https://www.eurekaselect.com/51112/chapter/introduction";
 	}
 
 	
