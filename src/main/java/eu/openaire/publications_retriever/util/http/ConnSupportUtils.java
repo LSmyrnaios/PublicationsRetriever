@@ -313,19 +313,18 @@ public class ConnSupportUtils
 			// TODO - The following could be put in its own function to be used by other plugins in the PDF-Service.
 			// Calculate the hash and the size here (after the FileUtils.storeDocFile() call), in order to avoid long threads-blocking, as the "storeDocFile" is synchronized.
 			String hash = null;
-			Long size = 0L;
+			Long size = null;
 			File docFile = docFileData.getDocFile();
 			String fileLocation = docFile.getAbsolutePath();
 			try {
-				hash = Files.hash(docFile, Hashing.md5()).toString();    // These hashing functions are deprecated, but just to inform us that MD5 is not secure. Luckily, we use MD5 just to identify duplicate files.
+				hash = Files.asByteSource(docFile).hash(Hashing.md5()).toString();	// These hashing functions are deprecated, but just to inform us that MD5 is not secure. Luckily, we use MD5 just to identify duplicate files.
 				//logger.debug("MD5 for file \"" + docFile.getName() + "\": " + hash); // DEBUG!
 				size = java.nio.file.Files.size(Paths.get(fileLocation));
 				//logger.debug("Size of file \"" + docFile.getName() + "\": " + size); // DEBUG!
 			} catch (Exception e) {
 				if ( hash == null )
 					logger.error("Could not retrieve the MD5-hash for the file: " + fileLocation, e);
-				if ( size == null )
-					logger.error("Could not retrieve the size of the file: " + fileLocation, e);
+				logger.error("Could not retrieve the size of the file: " + fileLocation, e);	// The size will not be found anyway.
 			}
 			docFileData.setHash(hash);
 			docFileData.setSize(size);

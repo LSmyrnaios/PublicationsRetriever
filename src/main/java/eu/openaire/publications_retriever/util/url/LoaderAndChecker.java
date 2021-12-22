@@ -100,7 +100,7 @@ public class LoaderAndChecker
 			else
 				isFirstRun = false;
 
-			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null) ? " | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) : "") + "% | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
+			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null) ? (" | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) + "%") : "") + " | every batch contains at most " + FileUtils.jsonBatchSize + " id-url pairs.");
 
 			for ( String retrievedUrl : loadedUrlGroup )
 			{
@@ -174,7 +174,7 @@ public class LoaderAndChecker
 			else
 				isFirstRun = false;
 
-			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null) ? " | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) : "") + "% | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
+			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null) ? (" | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) + "%") : "") + " | every batch contains at most " + FileUtils.jsonBatchSize + " id-url pairs.");
 			
 			Set<String> keys = loadedIdUrlPairs.keySet();
 			numOfIDs += keys.size();
@@ -327,10 +327,10 @@ public class LoaderAndChecker
 			else
 				isFirstRun = false;
 
+			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null) ? (" | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) + "%") : "") + " | every batch contains at most " + FileUtils.jsonBatchSize + " id-url pairs.");
+
 			Set<Map.Entry<String, String>> pairs = loadedIdUrlPairs.entries();
 			numOfIDs += pairs.size();
-
-			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null) ? " | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) : "") + "% | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
 
 			for ( Map.Entry<String,String> pair : pairs )
 			{
@@ -411,7 +411,7 @@ public class LoaderAndChecker
 			else
 				isFirstRun = false;
 
-			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null) ? " | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) : "") + "% | every batch contains " + FileUtils.jsonBatchSize + " id-url pairs.");
+			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null) ? (" | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) + "%") : "") + " | every batch contains at most " + FileUtils.jsonBatchSize + " id-url pairs.");
 
 			for ( String retrievedId : loadedIdUrlPairs.keySet() ) {
 
@@ -583,7 +583,7 @@ public class LoaderAndChecker
 		// Check if it's a duplicate.
 		if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
 			logger.debug("Skipping non-DocOrDataset-url: \"" + retrievedUrl + "\", at loading, as it has already been checked.");
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.duplicateUrlIndicator, "Discarded in 'LoaderAndChecker.handleUrlChecks()', as it's a duplicate.", null, false, "true", "N/A", "false", "false", "false", null, "null");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.duplicateUrlIndicator, "Discarded in 'LoaderAndChecker.handleUrlChecks()', as it's a duplicate.", null, false, "true", "N/A", "N/A", "N/A", "true", null, "null");
 			if ( !useIdUrlPairs )
 				inputDuplicatesNum.incrementAndGet();
 			return null;

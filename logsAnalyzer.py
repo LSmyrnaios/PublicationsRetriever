@@ -11,7 +11,6 @@ TODO - Update this program to handle the multithread-logs..
 @author Lampros Smyrnaios
 """
 
-import datetime
 import os
 import re
 import sys

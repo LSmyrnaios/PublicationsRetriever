@@ -98,7 +98,7 @@ public class DataToBeLogged
 			jsonObject.put("wasDocumentOrDatasetAccessible", this.wasDocumentOrDatasetAccessible);
 			jsonObject.put("wasDirectLink", this.wasDirectLink);
 			jsonObject.put("couldRetry", this.couldRetry);
-			jsonObject.put("fileHash", this.hash);
+			jsonObject.put("fileHash", String.valueOf(this.hash));	// The hash may be null,  convert it to a string "null".
 			jsonObject.put("fileSize", String.valueOf(this.size));	// Convert Long to String, otherwise the output-JSON will be broken. It may be null!
 			jsonObject.put("comment", this.comment);
 		} catch (JSONException je) {

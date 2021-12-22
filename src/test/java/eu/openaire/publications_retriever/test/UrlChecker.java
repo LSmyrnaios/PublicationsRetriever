@@ -493,7 +493,9 @@ public class UrlChecker {
 		//urlList.add("https://digitum.um.es/digitum/handle/10201/34439");
 
 		//urlList.add("https://eref.thieme.de/ebooks/2324370#/ebook_2324370_SL87281097");
-		urlList.add("https://research.vu.nl/en/publications/het-geluid-van-basistraumas");
+		//urlList.add("https://research.vu.nl/en/publications/het-geluid-van-basistraumas");
+
+		urlList.add("https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3141000");
 
 
 		logger.info("Urls to check:");
@@ -502,6 +504,9 @@ public class UrlChecker {
 
 
 		//LoaderAndChecker.retrieveDatasets = false;
+		FileUtils.shouldDownloadDocFiles = true;
+		FileUtils.docFileNameType = FileUtils.DocFileNameType.idName;
+
 
 		Instant start = Instant.now();
 

@@ -5,9 +5,10 @@ import com.google.common.collect.HashMultimap;
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.crawler.MachineLearning;
 import eu.openaire.publications_retriever.exceptions.DocFileNotRetrievedException;
-import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.DataToBeLogged;
+import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
+import org.apache.commons.io.FileDeleteStrategy;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,7 +22,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.apache.commons.io.FileUtils.deleteDirectory;
-import org.apache.commons.io.FileDeleteStrategy;
 
 
 /**
@@ -226,8 +226,10 @@ public class FileUtils
 	{
 		IdUrlTuple inputIdUrlTuple;
 
-		if ( idAndUrlMappedInput == null )
+		if ( idAndUrlMappedInput == null )	// Create this HashMultimap the first time it is needed.
 			idAndUrlMappedInput = HashMultimap.create(expectedIDsPerBatch, expectedPathsPerID);
+		else
+			idAndUrlMappedInput.clear();	// Clear it from its elements (without deallocating the memory), before gathering the next batch.
 
 		int curBeginning = FileUtils.fileIndex;
 		
@@ -253,9 +255,9 @@ public class FileUtils
 				continue;
 			}
 
-			if ( !idAndUrlMappedInput.put(inputIdUrlTuple.id, inputIdUrlTuple.url) ) {    // We have a duplicate url in the input.. log it here as we cannot pass it through the HashMultimap. We will handle the first found pair only.
+			if ( !idAndUrlMappedInput.put(inputIdUrlTuple.id, inputIdUrlTuple.url) ) {    // We have a duplicate id-url pair in the input, log it here as we cannot pass it through the HashMultimap. We will handle the first found pair only.
 				duplicateIdUrlEntries ++;
-				UrlUtils.logOutputData(inputIdUrlTuple.id, inputIdUrlTuple.url, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextIdUrlPairBatchFromJson(), as it is a duplicate.", null, false, "true", "true", "false", "false", "false", null, "null");
+				UrlUtils.logOutputData(inputIdUrlTuple.id, inputIdUrlTuple.url, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextIdUrlPairBatchFromJson(), as it is a duplicate.", null, false, "true", "N/A", "N/A", "N/A", "true", null, "null");
 			}
 		}
 
@@ -602,11 +604,11 @@ public class FileUtils
 			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
 
 			if ( !urlGroup.add(retrievedLineStr) )    // We have a duplicate in the input.. log it here as we cannot pass it through the HashSet. It's possible that this as well as the original might be/give a docUrl.
-				UrlUtils.logOutputData(null, retrievedLineStr, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null, false, "true", "true", "false", "false", "false", null, "null");
+				UrlUtils.logOutputData(null, retrievedLineStr, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null, false, "true", "N/A", "N/A", "N/A", "true", null, "null");
 		}
 		//logger.debug("FileUtils.fileIndex's value after taking urls after " + FileUtils.fileIndex / jsonBatchSize + " time(s), from input file: " + FileUtils.fileIndex);	// DEBUG!
 		
 		return urlGroup;
 	}
-	
+
 }

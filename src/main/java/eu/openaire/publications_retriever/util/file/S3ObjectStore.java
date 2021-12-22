@@ -1,10 +1,5 @@
 package eu.openaire.publications_retriever.util.file;
 
-import java.io.File;
-import java.util.List;
-import java.util.Scanner;
-import java.util.regex.Matcher;
-
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
@@ -13,6 +8,11 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.util.List;
+import java.util.Scanner;
+import java.util.regex.Matcher;
 
 public class S3ObjectStore {
 
