@@ -141,10 +141,15 @@ public class LoaderAndChecker
 				});
 			}// end for-loop
 			int numFailedTasks = invokeAllTasksAndWait(callableTasks);
-			if ( numFailedTasks > 0 ) {
+			if ( numFailedTasks == -1 ) {
+				FileUtils.writeResultsToFile();	// Writes to the output file
+				System.err.println("Invoking and/or executing the callableTasks failed with the exception written in the log files!");
+				System.exit(99);
+			} else if ( numFailedTasks > 0 ) {
 				logger.warn(numFailedTasks + " tasks failed in batch_" + batchCount);
 				totalNumFailedTasks.incrementAndGet();
 			}
+
 			callableTasks.clear();
 			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end while-loop
@@ -294,10 +299,15 @@ public class LoaderAndChecker
 				});
 			}// end id-for-loop
 			int numFailedTasks = invokeAllTasksAndWait(callableTasks);
-			if ( numFailedTasks > 0 ) {
+			if ( numFailedTasks == -1 ) {
+				FileUtils.writeResultsToFile();	// Writes to the output file
+				System.err.println("Invoking and/or executing the callableTasks failed with the exception written in the log files!");
+				System.exit(99);
+			} else if ( numFailedTasks > 0 ) {
 				logger.warn(numFailedTasks + " tasks failed in batch_" + batchCount);
 				totalNumFailedTasks.incrementAndGet();
 			}
+
 			callableTasks.clear();
 			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end loading-while-loop
@@ -378,10 +388,15 @@ public class LoaderAndChecker
 				});
 			}// end pairs-for-loop
 			int numFailedTasks = invokeAllTasksAndWait(callableTasks);
-			if ( numFailedTasks > 0 ) {
+			if ( numFailedTasks == -1 ) {
+				FileUtils.writeResultsToFile();	// Writes to the output file
+				System.err.println("Invoking and/or executing the callableTasks failed with the exception written in the log files!");
+				System.exit(99);
+			} else if ( numFailedTasks > 0 ) {
 				logger.warn(numFailedTasks + " tasks failed in batch_" + batchCount);
 				totalNumFailedTasks.incrementAndGet();
 			}
+
 			callableTasks.clear();
 			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end loading-while-loop
@@ -462,10 +477,15 @@ public class LoaderAndChecker
 				});
 			}// end for-id-loop
 			int numFailedTasks = invokeAllTasksAndWait(callableTasks);
-			if ( numFailedTasks > 0 ) {
+			if ( numFailedTasks == -1 ) {
+				FileUtils.writeResultsToFile();	// Writes to the output file
+				System.err.println("Invoking and/or executing the callableTasks failed with the exception written in the log files!");
+				System.exit(99);
+			} else if ( numFailedTasks > 0 ) {
 				logger.warn(numFailedTasks + " tasks failed in batch_" + batchCount);
 				totalNumFailedTasks.incrementAndGet();
 			}
+
 			callableTasks.clear();
 			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end loading-while-loop
@@ -491,12 +511,15 @@ public class LoaderAndChecker
 				} catch (CancellationException ce) {
 					logger.error("Task_" + (i+1) + " was cancelled: " + ce.getMessage());
 					numFailedTasks ++;
+				} catch (IndexOutOfBoundsException ioobe) {
+					logger.error("IOOBE for task_" + i + " in the futures-list! " + ioobe.getMessage());
 				}
 			}
-		} catch (InterruptedException ie) {
+		} catch (InterruptedException ie) {	// In this case, any unfinished tasks are cancelled.
 			logger.warn("The main thread was interrupted when waiting for the current batch's worker-tasks to finish: " + ie.getMessage());
 		} catch (Exception e) {
 			logger.error("", e);
+			return -1;
 		}
 		return numFailedTasks;
 	}
