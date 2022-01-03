@@ -191,7 +191,6 @@ public class LinkExtraction {
 				if ( !UrlTypeChecker.shouldNotAcceptInternalLink(targetUrl, null) )
 					logger.info(targetUrl);
 			}
-			
 		} catch (Exception e) {
 			logger.error("", e);
 		}

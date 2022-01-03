@@ -495,6 +495,8 @@ public class LoaderAndChecker
 			}
 		} catch (InterruptedException ie) {
 			logger.warn("The main thread was interrupted when waiting for the current batch's worker-tasks to finish: " + ie.getMessage());
+		} catch (Exception e) {
+			logger.error("", e);
 		}
 		return numFailedTasks;
 	}

@@ -495,7 +495,15 @@ public class UrlChecker {
 		//urlList.add("https://eref.thieme.de/ebooks/2324370#/ebook_2324370_SL87281097");
 		//urlList.add("https://research.vu.nl/en/publications/het-geluid-van-basistraumas");
 
-		urlList.add("https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3141000");
+		//urlList.add("https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3141000");
+
+		//urlList.add("https://pubs.geoscienceworld.org/geolmag/article-abstract/138/1/97/65154/Lockley-M-2000-The-Eternal-Trail-A-Tracker-Looks?redirectedFrom=fulltext");
+		//urlList.add("https://pubs.geoscienceworld.org/geolmag/article-abstract/155/5/1063/532137/the-tectonic-evolution-of-the-bogda-region-from");
+		//urlList.add("https://aaltodoc.aalto.fi/handle/123456789/45855");
+		//urlList.add("http://irep.iium.edu.my/58343/");
+		//urlList.add("https://ashpublications.org/blood/article/110/11/2069/56211/Systematic-Genomic-Screen-for-Tyrosine-Kinase");
+		//urlList.add("https://journals.lww.com/plasreconsurg/Fulltext/2016/08000/Race_and_Breast_Cancer_Reconstruction__Is_There_a.9.aspx");
+		urlList.add("https://cadmus.eui.eu/handle/1814/20884");
 
 
 		logger.info("Urls to check:");
