@@ -111,7 +111,7 @@ public class MetaDocUrlsHandler {
         }
 
         if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(metaDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
-            ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, metaDocUrl, logger, false);
+            ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, metaDocUrl, false);
             numOfMetaDocUrlsFound.incrementAndGet();
             return true;
         }

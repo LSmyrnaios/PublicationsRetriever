@@ -71,7 +71,7 @@ public class S3ObjectStore {
         // It's not safe, nor helpful to show the credentials in the logs.
 
         s3Client = AmazonS3ClientBuilder.standard()
-                .withRegion(Regions.US_EAST_2)  // TODO - Change the region if needed.
+                .withRegion(region)
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey)))
                 .build();
 

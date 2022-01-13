@@ -227,7 +227,7 @@ public class ConnSupportUtils
 	}
 
 
-	public static void handleReCrossedDocUrl(String urlId, String sourceUrl, String pageUrl, String docUrl, Logger logger, boolean calledForPageUrl) {
+	public static void handleReCrossedDocUrl(String urlId, String sourceUrl, String pageUrl, String docUrl, boolean calledForPageUrl) {
 		logger.info("re-crossed docUrl found: < " + docUrl + " >");
 		reCrossedDocUrls.incrementAndGet();
 		String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, docUrl);

@@ -120,7 +120,7 @@ public class SpecialUrlsHandler
 			// Offline-redirect to the docUrl.
 			String idStr = UrlUtils.getDocIdStr(europepmcUrl, null);
 			if ( idStr != null )
-				return (europepmcPageUrlBasePath + (!idStr.startsWith("PMC", 0) ? "PMC"+idStr : idStr) + "&blobtype=pdf");    // TODO - Investigate some 404-failures (THE DOCURLS belong to diff domain)
+				return (europepmcPageUrlBasePath + (!idStr.startsWith("PMC", 0) ? "PMC"+idStr : idStr) + "&blobtype=pdf");    // TODO - Investigate some 404-failures (THE DOC-URLS belong to diff domain)
 			else
 				return europepmcUrl;
 		}
@@ -221,7 +221,7 @@ public class SpecialUrlsHandler
 		//logger.debug("AcademicMicrosoft PossibleDocUrl: " + possibleDocUrl);	// DEBUG!
 
 		if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(possibleDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
-			ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, possibleDocUrl, logger, false);
+			ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, possibleDocUrl, false);
 			return true;
 		}
 

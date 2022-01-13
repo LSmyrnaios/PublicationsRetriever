@@ -516,6 +516,8 @@ public class UrlChecker {
 		FileUtils.docFileNameType = FileUtils.DocFileNameType.idName;
 
 
+		String testID = "testID";
+
 		Instant start = Instant.now();
 
 		for ( String url : urlList )
@@ -526,7 +528,7 @@ public class UrlChecker {
 				continue;
 			}
 
-			if ( UrlTypeChecker.matchesUnwantedUrlType(null, urlToCheck, urlToCheck.toLowerCase()) )
+			if ( UrlTypeChecker.matchesUnwantedUrlType(testID, urlToCheck, urlToCheck.toLowerCase()) )
 				continue;
 
 /*			String urlPath = UrlUtils.getPathStr(urlToCheck, null);
@@ -535,10 +537,15 @@ public class UrlChecker {
 			else
 				logger.debug("urlPath: " + urlPath);*/
 
+			if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(urlToCheck) ) {    // If we got into an already-found docUrl, log it and return.
+				ConnSupportUtils.handleReCrossedDocUrl(testID, urlToCheck, urlToCheck, urlToCheck, true);
+				continue;
+			}
+
 			try {
-				HttpConnUtils.connectAndCheckMimeType("null", urlToCheck, urlToCheck, urlToCheck, null, true, false);	// Sent the < null > in quotes to avoid an NPE in the concurrent data-structures.
+				HttpConnUtils.connectAndCheckMimeType(testID, urlToCheck, urlToCheck, urlToCheck, null, true, false);	// Sent the < null > in quotes to avoid an NPE in the concurrent data-structures.
 			} catch (Exception e) {
-				UrlUtils.logOutputData(null, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", "true", "false", "false", "false", null, "null");
+				UrlUtils.logOutputData(testID, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", "true", "false", "false", "false", null, "null");
 			}
 		}
 

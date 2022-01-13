@@ -118,7 +118,7 @@ public class PageCrawler
 			}
 
             if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
-				ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, urlToCheck, logger, false);
+				ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, urlToCheck, false);
 				return;
             }
 
@@ -418,7 +418,7 @@ public class PageCrawler
 		}
 
 		if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(docLink) ) {    // If we got into an already-found docUrl, log it and return.
-			ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, docLink, logger, false);
+			ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, docLink, false);
 			return true;
 		}
 

@@ -119,7 +119,7 @@ public class LoaderAndChecker
 					}
 
 					if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
-						ConnSupportUtils.handleReCrossedDocUrl("null", retrievedUrl, retrievedUrl, retrievedUrl, logger, true);
+						ConnSupportUtils.handleReCrossedDocUrl("null", retrievedUrl, retrievedUrl, retrievedUrl, true);
 						return true;
 					}
 
@@ -212,7 +212,7 @@ public class LoaderAndChecker
 						}	// The "retrievedUrl" might have changed (inside "handleUrlChecks()").
 
 						if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
-							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, logger, true);
+							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, true);
 							if ( !isSingleIdUrlPair )
 								loggedUrlsOfCurrentId.add(retrievedUrl);
 							goToNextId = true;    // Skip the best-url evaluation & connection after this loop.
@@ -363,7 +363,7 @@ public class LoaderAndChecker
 					}
 
 					if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {    // If we got into an already-found docUrl, log it and return.
-						ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, logger, true);
+						ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, true);
 						return true;
 					}
 
@@ -451,7 +451,7 @@ public class LoaderAndChecker
 						}
 
 						if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {    // If we got into an already-found docUrl, log it and return.
-							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, logger, true);
+							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, true);
 							continue;
 						}
 
