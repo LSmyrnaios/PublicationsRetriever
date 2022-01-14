@@ -72,7 +72,8 @@ public class LinkExtraction {
 		//exampleUrl = "https://direct.mit.edu/neco/article-abstract/21/6/1642/7449/Generation-of-Spike-Trains-with-Controlled-Auto?redirectedFrom=fulltext";
 		//exampleUrl = "https://www.eurekaselect.com/51112/chapter/introduction";
 		//exampleUrl = "https://www.hal.inserm.fr/inserm-02159846";
-		exampleUrl = "https://ashpublications.org/blood/article/132/Supplement%201/2876/263920/Long-Term-Follow-up-of-Acalabrutinib-Monotherapy";
+		//exampleUrl = "https://ashpublications.org/blood/article/132/Supplement%201/2876/263920/Long-Term-Follow-up-of-Acalabrutinib-Monotherapy";
+		exampleUrl = "https://hal-univ-lyon3.archives-ouvertes.fr/hal-00873244";
 	}
 
 	

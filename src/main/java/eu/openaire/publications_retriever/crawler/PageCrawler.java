@@ -51,9 +51,9 @@ public class PageCrawler
 	public static boolean should_check_remaining_links = true;	// The remaining links very rarely give docUrls.. so, for time-performance, we can disable them.
 	private static final int MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT = 10;	// The < 10 > is the optimal value, figured out after experimentation.
 
-	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:manu[ae]l|gu[ií](?:de|a)|preview|leaflet|agreement|accessibility|journal[\\s]?catalog|disclose[\\s]*file|(?:repository|embargo|privacy|data[\\s]*protection|take[\\s]?down|supplement|access)[\\s]*polic(?:y|ies)"
-																		+ "|normativa|consumer[\\s]?information|permissions|editorial[\\s]*board|déposer"
-																		+ "|information[\\s]?for[\\s]?authors|pdf(?:/a)?[\\s]?conversion|classifieds).*");	// classifieds = job-ads
+	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:manu[ae]l|gu[ií](?:de|a)|preview|leaflet|agreement|accessibility|journal[\\s]*catalog|disclose[\\s]*file|(?:repository|embargo|privacy|data[\\s]*protection|take[\\s]*down|supplement|access)[\\s]*polic(?:y|ies)"
+																		+ "|normativa|consumer[\\s]*information|permissions|editorial[\\s]*board|dép(?:ôts|oser)|créer[\\s]*votre|orcid"
+																		+ "|information[\\s]*for[\\s]*authors|pdf(?:/a)?[\\s]*conversion|classifieds).*");	// classifieds = job-ads
 
 
 	public static void visit(String urlId, String sourceUrl, String pageUrl, String pageContentType, HttpURLConnection conn, String firstHTMLlineFromDetectedContentType, BufferedReader bufferedReader)
