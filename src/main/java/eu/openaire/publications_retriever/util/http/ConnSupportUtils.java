@@ -13,6 +13,7 @@ import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.exceptions.DomainBlockedException;
 import eu.openaire.publications_retriever.util.file.DocFileData;
 import eu.openaire.publications_retriever.util.file.FileUtils;
+import eu.openaire.publications_retriever.util.file.IdUrlTuple;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
 import org.apache.commons.io.FileDeleteStrategy;
@@ -231,9 +232,10 @@ public class ConnSupportUtils
 		logger.info("re-crossed docUrl found: < " + docUrl + " >");
 		reCrossedDocUrls.incrementAndGet();
 		String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, docUrl);
-		if ( FileUtils.shouldDownloadDocFiles )
-			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, UrlUtils.alreadyDownloadedByIDMessage + UrlUtils.docOrDatasetUrlsWithIDs.get(docUrl), null, false, "true", "true", "true", wasDirectLink, "true", null, "null");
-		else
+		if ( FileUtils.shouldDownloadDocFiles ) {
+			IdUrlTuple idUrlTuple = UrlUtils.docOrDatasetUrlsWithIDs.get(docUrl);
+			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, UrlUtils.alreadyDownloadedFromIDMessage + idUrlTuple.id + UrlUtils.alreadyDownloadedFromSourceUrlContinuedMessage + idUrlTuple.url, null, false, "true", "true", "true", wasDirectLink, "true", null, "null");
+		} else
 			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, "", null, false, "true", "true", "true", wasDirectLink, "true", null, "null");
 	}
 

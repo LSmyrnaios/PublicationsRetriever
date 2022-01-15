@@ -2,6 +2,7 @@ package eu.openaire.publications_retriever.util.url;
 
 import eu.openaire.publications_retriever.crawler.MachineLearning;
 import eu.openaire.publications_retriever.util.file.FileUtils;
+import eu.openaire.publications_retriever.util.file.IdUrlTuple;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -37,9 +38,10 @@ public class UrlUtils
 
 	public static final Set<String> duplicateUrls = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
-	public static final Hashtable<String, String> docOrDatasetUrlsWithIDs = new Hashtable<String, String>();	// Null keys are allowed (in case they are not available in the input).
+	public static final Hashtable<String, IdUrlTuple> docOrDatasetUrlsWithIDs = new Hashtable<String, IdUrlTuple>();	// Null keys are allowed (in case they are not available in the input).
 
-	public static final String alreadyDownloadedByIDMessage = "This file is probably already downloaded from ID=";
+	public static final String alreadyDownloadedFromIDMessage = "This file is probably already downloaded from ID=";
+	public static final String alreadyDownloadedFromSourceUrlContinuedMessage = " and SourceUrl=";
 
 	public static final Hashtable<String, Integer> domainsAndHits = new Hashtable<>();
 
@@ -82,7 +84,7 @@ public class UrlUtils
 					finalDocUrl = UrlUtils.removeTemporalIdentifier(finalDocUrl);	// We send the non-lowerCase-url as we may want to continue with that docUrl in case of an error.
 
 				if ( isFirstCrossed )	// Add this id, only if this is a first-crossed docUrl.
-					docOrDatasetUrlsWithIDs.put(finalDocUrl, urlId);	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
+					docOrDatasetUrlsWithIDs.put(finalDocUrl, new IdUrlTuple(urlId, sourceUrl));	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
 
 				if ( pageDomain == null )
 					pageDomain = UrlUtils.getDomainStr(pageUrl, null);
