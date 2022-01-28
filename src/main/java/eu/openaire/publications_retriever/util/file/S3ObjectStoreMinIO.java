@@ -94,8 +94,7 @@ public class S3ObjectStoreMinIO {
             if ( !bucketExists ) {
             	logger.info("Bucket \"" + bucketName + "\" does not exist! Going to create it..");
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
-            }
-            else
+            } else
                 logger.debug("Bucket \"" + bucketName + "\" already exists.");
         } catch (Exception e) {
             String errorMsg = "Could not create the bucket \"" + bucketName + "\"!";
@@ -204,6 +203,7 @@ public class S3ObjectStoreMinIO {
             }
         }
 
+        logger.info("Bucket " + bucketName + " was " + (shouldDeleteBucket ? "deleted!" : "emptied!"));
         return true;
     }
 
@@ -218,6 +218,5 @@ public class S3ObjectStoreMinIO {
         }
         return true;
     }
-
 
 }

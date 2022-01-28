@@ -298,7 +298,7 @@ public class ConnSupportUtils
 				if ( (responseCode < 200) || (responseCode >= 400) ) {    // If we have unwanted/error codes.
 					String errorMessage = onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode, calledForPageUrl);
 					throw new DocFileNotRetrievedException(errorMessage);
-				}
+				}	// No redirection should exist in this re-connection with another HTTP-Method.
 			}
 
 			// Check if we should abort the download based on its content-size.

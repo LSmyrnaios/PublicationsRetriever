@@ -109,43 +109,48 @@ public class FileUtils
 			System.exit(20);
 		}
 
-		if ( shouldDownloadDocFiles ) {
-			File dir = new File(storeDocFilesDir);
-			if ( shouldDeleteOlderDocFiles ) {
-				logger.info("Deleting old docFiles..");
-				try {
-					deleteDirectory(dir);	// org.apache.commons.io.FileUtils
-				} catch (IOException ioe) {
-					logger.error(ioe.getMessage(), ioe);
-					FileUtils.shouldDownloadDocFiles = false;	// Continue without downloading the docFiles, just create the jsonOutput.
-					return;
-				}
-			}
+		if ( shouldDownloadDocFiles )
+			handleStoreDocFileDirectory();
+	}
 
-			// If the directory doesn't exist, try to (re)create it.
+
+	public static void handleStoreDocFileDirectory()
+	{
+		File dir = new File(storeDocFilesDir);
+		if ( shouldDeleteOlderDocFiles ) {
+			logger.info("Deleting old docFiles..");
 			try {
-				if ( !dir.exists() && !dir.mkdirs() ) {	// Try to create the directory(-ies) if they don't exist.
-					String errorMessage;
-					if ( PublicationsRetriever.docFilesStorageGivenByUser )
-						errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
-								+ "\nPlease give a valid Directory-path.";
-					else	// User has left the storageDir to be the default one.
-						errorMessage = "Problem when creating the default \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
-								+ "\nPlease verify you have the necessary privileges in the directory you are running the program from or specify the directory you want to save the files to."
-								+ "\nIf the above is not an option, then you can set to retrieve just the " + PublicationsRetriever.targetUrlType + "s and download the full-texts later (on your own).";
-					System.err.println(errorMessage);
-					logger.error(errorMessage);
-					FileUtils.closeIO();
-					System.exit(-3);
-				}
-			} catch (SecurityException se) {
-				logger.error(se.getMessage(), se);
-				logger.warn("There was an error creating the docFiles-storageDir! Continuing without downloading the docFiles, while creating the jsonOutput with the docUrls.");
-				FileUtils.shouldDownloadDocFiles = false;
+				deleteDirectory(dir);	// org.apache.commons.io.FileUtils
+			} catch (IOException ioe) {
+				logger.error(ioe.getMessage(), ioe);
+				FileUtils.shouldDownloadDocFiles = false;	// Continue without downloading the docFiles, just create the jsonOutput.
+				return;
 			}
 		}
+
+		// If the directory doesn't exist, try to (re)create it.
+		try {
+			if ( !dir.exists() && !dir.mkdirs() ) {	// Try to create the directory(-ies) if they don't exist.
+				String errorMessage;
+				if ( PublicationsRetriever.docFilesStorageGivenByUser )
+					errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
+							+ "\nPlease give a valid Directory-path.";
+				else	// User has left the storageDir to be the default one.
+					errorMessage = "Problem when creating the default \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
+							+ "\nPlease verify you have the necessary privileges in the directory you are running the program from or specify the directory you want to save the files to."
+							+ "\nIf the above is not an option, then you can set to retrieve just the " + PublicationsRetriever.targetUrlType + "s and download the full-texts later (on your own).";
+				System.err.println(errorMessage);
+				logger.error(errorMessage);
+				FileUtils.closeIO();
+				System.exit(-3);
+			}
+		} catch (SecurityException se) {
+			logger.error(se.getMessage(), se);
+			logger.warn("There was an error creating the docFiles-storageDir! Continuing without downloading the docFiles, while creating the jsonOutput with the docUrls.");
+			FileUtils.shouldDownloadDocFiles = false;
+		}
 	}
-	
+
 	
 	public static long getInputNumOfLines()
 	{
@@ -338,10 +343,8 @@ public class FileUtils
 		try {
 			if ( docFileNameType.equals(DocFileNameType.originalName) )
 				docFile = getDocFileWithOriginalFileName(docUrl, contentDisposition);
-			else if ( docFileNameType.equals(DocFileNameType.idName) ) {
-				docFile = new File(storeDocFilesDir + id + ".pdf");    // TODO - Later, on different fileTypes, take care of the extension properly.
-				FileUtils.numOfDocFile ++;
-			}
+			else if ( docFileNameType.equals(DocFileNameType.idName) )
+				docFile = getDocFileNameAndHandleExisting(id, ".pdf", false);	// TODO - Later, on different fileTypes, take care of the extension properly.
 			else	// "numberName"
 				docFile = new File(storeDocFilesDir + (numOfDocFile++) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
 
@@ -367,8 +370,7 @@ public class FileUtils
 					}
 					numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 					throw new DocFileNotRetrievedException();
-				}
-				else
+				} else
 					outStream.write(buffer, 0, bytesRead);
 			}
 			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
@@ -395,8 +397,8 @@ public class FileUtils
 			// So we will be uploading files with the same filename-KEY.. in that case, they get overwritten.
 			// An option would be to check if an object already exists, then increment a number and upload the object.
 			// From that moment forward, the number will be stored in memory along with the fileKeyName, just like with "originalNames", so next time no online check should be needed..!
-			// Of-course the above algorithm would work only if the bucket was created of filled for the first time, from this program, in a single machine.
-			// Otherwise, a file-key-name (with incremented number-string) might already exist, from a previous or parallel upload from another run.
+			// Of-course the above fast-check algorithm would work only if the bucket was created or filled for the first time, from this program, in a single machine.
+			// Otherwise, a file-key-name (with incremented number-string) might already exist, from a previous or parallel upload from another run and so it will be overwritten!
 
 			return docFileData;	// It may be null.
 			
@@ -490,11 +492,20 @@ public class FileUtils
 		}
 		
 		//logger.debug("docFileName: " + docFileName);
-		
+
+		return getDocFileNameAndHandleExisting(docFileName, dotFileExtension, hasUnretrievableDocName);
+	}
+
+
+	public static File getDocFileNameAndHandleExisting(String docFileName, String dotFileExtension, boolean hasUnretrievableDocName) throws  DocFileNotRetrievedException
+	{
 		try {
 			String saveDocFileFullPath = storeDocFilesDir + docFileName;
+			if ( ! docFileName.endsWith(dotFileExtension) )
+				saveDocFileFullPath += dotFileExtension;
+
 			File docFile = new File(saveDocFileFullPath);
-			
+
 			if ( !hasUnretrievableDocName )	// If we retrieved the fileName, go check if it's a duplicate.
 			{
 				boolean isDuplicate = false;
@@ -509,26 +520,29 @@ public class FileUtils
 				}
 
 				if ( isDuplicate ) {	// Construct final-DocFileName by renaming.
-					String preExtensionFileName = docFileName.substring(0, docFileName.lastIndexOf("."));
+					String preExtensionFileName = docFileName;
+					int lastIndexOfDot = docFileName.lastIndexOf(".");
+					if ( lastIndexOfDot != -1 )
+						preExtensionFileName = docFileName.substring(0, lastIndexOfDot);
 					String newDocFileName = preExtensionFileName + "(" + curDuplicateNum + ")" + dotFileExtension;
 					saveDocFileFullPath = storeDocFilesDir + File.separator + newDocFileName;
-					File renamedDocFile = new File(saveDocFileFullPath);
-					if ( docFile.renameTo(renamedDocFile) )	// If renaming was successful, store the "curDuplicateNum" for this base-"docFileName".
-						numbersOfDuplicateDocFileNames.put(docFileName, curDuplicateNum);
+					docFile = new File(saveDocFileFullPath);
+					if ( docFile.createNewFile() )
+						numbersOfDuplicateDocFileNames.put(docFileName, curDuplicateNum);	// We should add the new "curDuplicateNum" for the original fileName, only if the new file can be created.
 					else {
-						logger.error("Renaming operation of \"" + docFileName + "\" to \"" + newDocFileName + "\" has failed!");
+						logger.error("Error when creating the new file \"" + newDocFileName + "\" failed!");
 						throw new DocFileNotRetrievedException();
 					}
 				}
 			}
-			
+
 			FileUtils.numOfDocFile ++;	// This is applied only if none exception is thrown, so in case of an exception, we don't have to revert the incremented value.
 			return docFile;
-			
+
 		} catch (DocFileNotRetrievedException dfnre) {
 			throw dfnre;
 		} catch (Exception e) {	// Mostly I/O and Security Exceptions.
-			logger.warn("", e);
+			logger.warn("Error when handling the fileName = \"" + docFileName + "\" and dotFileExtension = \"" + dotFileExtension + "\"!", e);
 			throw new DocFileNotRetrievedException();
 		}
 	}

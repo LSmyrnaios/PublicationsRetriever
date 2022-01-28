@@ -2,7 +2,6 @@ package eu.openaire.publications_retriever.util.file;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.*;
@@ -96,8 +95,7 @@ public class S3ObjectStore {
             if ( !bucketExists ) {
                 logger.info("Bucket \"" + bucketName + "\" does not exist! Going to create it..");
                 s3Client.createBucket(bucketName);
-            }
-            else
+            } else
                 logger.debug("Bucket \"" + bucketName + "\" already exists.");
         } catch (Exception e) {
             String errorMsg = "Could not create the bucket \"" + bucketName + "\"!";
@@ -211,6 +209,7 @@ public class S3ObjectStore {
             }
         }
 
+        logger.info("Bucket " + bucketName + " was " + (shouldDeleteBucket ? "deleted!" : "emptied!"));
         return true;
     }
 
