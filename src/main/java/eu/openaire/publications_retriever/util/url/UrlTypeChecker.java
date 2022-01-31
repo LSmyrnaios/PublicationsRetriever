@@ -22,7 +22,7 @@ public class UrlTypeChecker
 	private static final String mediaExtensionsPattern = "ico|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov";
 
 	public static final Pattern URL_DIRECTORY_FILTER =
-			Pattern.compile(".+://.*/(?:(discover|profile|user|survey)(?!.+(?:file|pdf|document|dataset))|(?:(?:ldap|password)-)?login|auth(?:entication)?\\.|ac[c]?ess(?!\\.)|sign[-]?(?:in|out|up)|session|join|subscr|register|submi(?:t|ssion)|(?:post|send|shop|view|export|(?:wp-)?admin|home|form)/|watch|browse|import|bookmark|announcement|rss|feedback|share|about|faq|wiki|news|events|cart|support|(?:site|html)map|documentation|default/|help|license|disclaimer|copyright|(?:site-)?polic(?:y|ies)|privacy|terms|law|principles"
+			Pattern.compile("[^/]+://.*/(?:(discover|profile|user|survey)(?!.+(?:file|pdf|document|dataset))|(?:(?:ldap|password)-)?login|auth(?:entication)?\\.|ac[c]?ess(?!\\.)|sign[-]?(?:in|out|up)|session|join|subscr|register|submi(?:t|ssion)|(?:post|send|shop|view|export|(?:wp-)?admin|home|form)/|watch|browse|import|bookmark|announcement|rss|feedback|share|about|faq|wiki|news|events|cart|support|(?:site|html)map|documentation|default/|help|license|disclaimer|copyright|(?:site-)?polic(?:y|ies)|privacy|terms|law|principles"
 					+ "|(?:my|your|create)?[-]?account|(?:service|help)[-]?desk|settings|fund|aut[h]?or|(?:journal-)?editor|author:|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic(s)?/.*/view/|conta[c]?t|wallet|contribute|deposit|donate|our[_-][\\w]+|template|logo|image|photo|video|media|theme|advertiser|product|people|(?:the)?press|forum|blog|column|row|for-authors|css|js|captcha|clipboard"
 					+ "|(?:(?:advanced[-]?)?search|search-results|(?:[e]?books|journals)(?:-catalog)?|issue|docs|index|oai|(?:abstracting-)?indexing|online[-]?early)[/]?$"	// Url ends with these.
 					// TODO - In case we have just DocUrls (not datasetUrls), exclude the following as well: "/(?:bibtext|dc(?:terms)?|tei|endnote)$", it could be added in another regex.. or do an initialization check and construct this regex based on the url-option provided.
@@ -43,7 +43,7 @@ public class UrlTypeChecker
 	
 	public static final Pattern INTERNAL_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+format=(?:xml|" + htExtensionsPattern + "|rss|ris|bib).*");	// This exists as a url-parameter.
 
-	public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile(".+://.*(?:(?<!drive.)google\\.|goo.gl|gstatic|facebook|twitter|insta(?:gram|paper)|youtube|vimeo|linkedin|wordpress|ebay|bing|(?:amazon|analytics)\\.|s.w.org|wikipedia|myspace|yahoo|mail|pinterest|reddit|tumblr"
+	public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile("[^/]+://.*(?:(?<!drive.)google\\.|goo.gl|gstatic|facebook|twitter|insta(?:gram|paper)|youtube|vimeo|linkedin|wordpress|ebay|bing|(?:amazon|analytics)\\.|s.w.org|wikipedia|myspace|yahoo|mail|pinterest|reddit|tumblr"
 			+ "|www.ccdc.cam.ac.uk|figshare.com/collections/|datadryad.org/stash/dataset/"
 			+ "|evernote|skype|(?<!academic.)microsoft|adobe|buffer|digg|stumbleupon|addthis|delicious|dailymotion|gostats|blog(?:ger)?|copyright|friendfeed|newsvine|telegram|getpocket"
 			+ "|flipboard|line.me|vk|ok.rudouban|baidu|qzone|xing|renren|weibo|doubleclick|bit.ly|github|reviewofbooks"
@@ -53,7 +53,7 @@ public class UrlTypeChecker
 			+ "|careers."
 			+ ").*/.*");
 
-	public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile(".+://[\\w.:-]+(?:/[\\w]{2})?(?:/index.(?:" + htExtensionsPattern + "|" + phpExtensionsPattern + "))?[/]?(?:\\?(?:locale(?:-attribute)?|ln)=[\\w_-]+)?$");	// Exclude plain domains' urls. Use "ISO 639-1" for language-codes (2 letters directory).
+	public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile("[^/]+://[\\w.:-]+(?:/[\\w]{2})?(?:/index.(?:" + htExtensionsPattern + "|" + phpExtensionsPattern + "))?[/]?(?:\\?(?:locale(?:-attribute)?|ln)=[\\w_-]+)?$");	// Exclude plain domains' urls. Use "ISO 639-1" for language-codes (2 letters directory).
 
 	// Counters for certain unwanted domains. We show statistics in the end.
 	public static AtomicInteger javascriptPageUrls = new AtomicInteger(0);
