@@ -54,7 +54,7 @@ public class FileUtils
 	
 	public static boolean shouldDownloadDocFiles = false;	// It will be set to "true" if the related command-line-argument is given.
 	public static boolean shouldUploadFilesToS3 = false;	// Should we upload the files to S3 ObjectStore? Otherwise they will be stored locally.
-	public static final boolean shouldDeleteOlderDocFiles = false;	// Should we delete any older stored docFiles? This is useful for testing.
+	public static boolean shouldDeleteOlderDocFiles = false;	// Should we delete any older stored docFiles? This is useful for testing.
 
 	public enum DocFileNameType {
 		originalName,
@@ -351,9 +351,9 @@ public class FileUtils
 			try {
 				outStream = new FileOutputStream(docFile);
 			} catch (FileNotFoundException fnfe) {
-				logger.warn("", fnfe);
+				logger.error("", fnfe);
 				numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
-				throw new DocFileNotRetrievedException();
+				throw new DocFileNotRetrievedException(fnfe.getMessage());
 			}
 
 			int bytesRead = -1;
@@ -362,14 +362,15 @@ public class FileUtils
 			{
 				long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
 				if ( (elapsedTime > FileUtils.maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {
-					logger.warn("Storing docFile from docUrl: \"" + docUrl + "\" is taking over "+ TimeUnit.MILLISECONDS.toSeconds(FileUtils.maxStoringWaitingTime) + "seconds! Aborting..");
+					String errMsg = "Storing docFile from docUrl: \"" + docUrl + "\" is taking over "+ TimeUnit.MILLISECONDS.toSeconds(FileUtils.maxStoringWaitingTime) + "seconds! Aborting..";
+					logger.warn(errMsg);
 					try {
 						FileDeleteStrategy.FORCE.delete(docFile);
 					} catch (Exception e) {
 						logger.error("Error when deleting the half-retrieved file from docUrl: " + docUrl);
 					}
 					numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
-					throw new DocFileNotRetrievedException();
+					throw new DocFileNotRetrievedException(errMsg);
 				} else
 					outStream.write(buffer, 0, bytesRead);
 			}
@@ -409,8 +410,8 @@ public class FileUtils
 			throw new DocFileNotRetrievedException(ioe.getMessage());
 		} catch (Exception e) {
 			numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
-			logger.warn("", e);
-			throw new DocFileNotRetrievedException();
+			logger.error("", e);
+			throw new DocFileNotRetrievedException(e.getMessage());
 		} finally {
 			try {
 				if ( inStream != null )
@@ -530,8 +531,9 @@ public class FileUtils
 					if ( docFile.createNewFile() )
 						numbersOfDuplicateDocFileNames.put(docFileName, curDuplicateNum);	// We should add the new "curDuplicateNum" for the original fileName, only if the new file can be created.
 					else {
-						logger.error("Error when creating the new file \"" + newDocFileName + "\" failed!");	// This includes the case that this file already exists from another run of this program.
-						throw new DocFileNotRetrievedException();
+						String errMsg = "Error when creating the new file '" + newDocFileName + "'!";
+						logger.error(errMsg);	// Here we include the case that this file already exists from another run of this program.
+						throw new DocFileNotRetrievedException(errMsg);
 					}
 				}
 			}
@@ -542,8 +544,9 @@ public class FileUtils
 		} catch (DocFileNotRetrievedException dfnre) {
 			throw dfnre;
 		} catch (Exception e) {	// Mostly I/O and Security Exceptions.
-			logger.warn("Error when handling the fileName = \"" + docFileName + "\" and dotFileExtension = \"" + dotFileExtension + "\"!", e);
-			throw new DocFileNotRetrievedException();
+			String errMsg = "Error when handling the fileName = \"" + docFileName + "\" and dotFileExtension = \"" + dotFileExtension + "\"!";
+			logger.error(errMsg, e);
+			throw new DocFileNotRetrievedException(errMsg);
 		}
 	}
 

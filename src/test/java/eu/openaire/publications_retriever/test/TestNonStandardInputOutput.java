@@ -188,7 +188,12 @@ public class TestNonStandardInputOutput  {
 
 		// Use testing input/output files.
 		setInputOutput();
-		
+
+		if ( FileUtils.shouldDownloadDocFiles ) {
+			FileUtils.shouldDeleteOlderDocFiles = true;
+			FileUtils.handleStoreDocFileDirectory();
+		}
+
 		if ( MachineLearning.useMLA )
 			new MachineLearning();
 

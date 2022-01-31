@@ -66,7 +66,7 @@ public class HttpConnUtils
 
 	public static ThreadLocal<Boolean> isSpecialUrl = new ThreadLocal<Boolean>();	// Every Thread has its own variable.
 
-	public static final String docFileNotRetrievedMessage = DocFileNotRetrievedException.class.getSimpleName() + " was thrown before the docFile could be stored.";  // Keep it here to easily spot the error if the exception-name changes.
+	public static final String docFileNotRetrievedMessage = DocFileNotRetrievedException.class.getSimpleName() + " was thrown before the docFile could be stored. ";  // Keep it here to easily spot the error if the exception-name changes.
 
 
 	/**
@@ -152,8 +152,7 @@ public class HttpConnUtils
 							UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", docFileData.getSize(), docFileData.getHash());	// we send the urls, before and after potential redirections.
 							return true;
 						} catch (DocFileNotRetrievedException dfnde) {
-							fullPathFileName = docFileNotRetrievedMessage;
-							logger.error(GenericUtils.getSelectiveStackTrace(dfnde, fullPathFileName, 9));	// TODO - Instead of the stacktrace, provide the right message when first thrown, just like in "RuntimeException".
+							fullPathFileName = docFileNotRetrievedMessage + dfnde.getMessage();
 						}	// We log below and then return.
 					}
 					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", null, "null");	// we send the urls, before and after potential redirections.
@@ -161,7 +160,7 @@ public class HttpConnUtils
 				}
 				else if ( LoaderAndChecker.retrieveDatasets && returnedType.equals("dataset") ) {
 					logger.info("datasetUrl found: < " + finalUrlStr + " >");
-					// TODO - handle possible download and improve logging...
+					// TODO - handle possible download and improve logging... The dataset might have huge size each. Downloading these, isn't a requirement at the moment.
 					String fullPathFileName = FileUtils.shouldDownloadDocFiles ? "It's a dataset-url. The download is not supported." : "It's a dataset-url.";
 					String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
 					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", null, "null");	// we send the urls, before and after potential redirections.

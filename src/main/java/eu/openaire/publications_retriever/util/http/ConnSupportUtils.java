@@ -303,33 +303,18 @@ public class ConnSupportUtils
 
 			// Check if we should abort the download based on its content-size.
 			if ( getContentSize(conn, true) == -1 )	// "Unacceptable size"-code..
-				throw new DocFileNotRetrievedException();
+				throw new DocFileNotRetrievedException("The HTTP-reported size of this file was unacceptable!");
 
 			// Write the downloaded bytes to the docFile and return the docFileName.
 			DocFileData docFileData = FileUtils.storeDocFile(conn.getInputStream(), docUrl, id, conn.getHeaderField("Content-Disposition"));
 			if ( docFileData == null ) {
-				logger.warn("The file could not be " + (FileUtils.shouldUploadFilesToS3 ? "uploaded to S3" : "downloaded") + " from the docUrl " + docUrl);
-				throw new DocFileNotRetrievedException();
+				String errMsg = "The file could not be " + (FileUtils.shouldUploadFilesToS3 ? "uploaded to S3" : "downloaded") + " from the docUrl " + docUrl;
+				logger.warn(errMsg);
+				throw new DocFileNotRetrievedException(errMsg);
 			}
 
-			// TODO - The following could be put in its own function to be used by other plugins in the PDF-Service.
-			// Calculate the hash and the size here (after the FileUtils.storeDocFile() call), in order to avoid long threads-blocking, as the "storeDocFile" is synchronized.
-			String hash = null;
-			Long size = null;
 			File docFile = docFileData.getDocFile();
-			String fileLocation = docFile.getAbsolutePath();
-			try {
-				hash = Files.asByteSource(docFile).hash(Hashing.md5()).toString();	// These hashing functions are deprecated, but just to inform us that MD5 is not secure. Luckily, we use MD5 just to identify duplicate files.
-				//logger.debug("MD5 for file \"" + docFile.getName() + "\": " + hash); // DEBUG!
-				size = java.nio.file.Files.size(Paths.get(fileLocation));
-				//logger.debug("Size of file \"" + docFile.getName() + "\": " + size); // DEBUG!
-			} catch (Exception e) {
-				if ( hash == null )
-					logger.error("Could not retrieve the MD5-hash for the file: " + fileLocation, e);
-				logger.error("Could not retrieve the size of the file: " + fileLocation, e);	// The size will not be found anyway.
-			}
-			docFileData.setHash(hash);
-			docFileData.setSize(size);
+			setHashAndSize(docFileData, docFile);	// Calculate the hash and the size here (after the FileUtils.storeDocFile() call), in order to avoid long threads-blocking, as the "storeDocFile" is synchronized.
 
 			if ( FileUtils.shouldUploadFilesToS3 ) {
 				try {	// In the "S3"-mode, we don't keep the files locally.
@@ -344,12 +329,31 @@ public class ConnSupportUtils
 		} catch (DocFileNotRetrievedException dfnre ) {	// Catch it here, otherwise it will be caught as a general exception.
 			throw dfnre;	// Avoid creating a new "DocFileNotRetrievedException" if it's already created. By doing this we have a better stack-trace if we decide to log it in the caller-method.
 		} catch (Exception e) {
-			logger.warn("", e);
-			throw new DocFileNotRetrievedException();
+			logger.error("", e);
+			throw new DocFileNotRetrievedException(e.getMessage());
 		} finally {
 			if ( reconnected )	// Otherwise the given-previous connection will be closed by the calling method.
 				conn.disconnect();
 		}
+	}
+
+
+	public static DocFileData setHashAndSize(DocFileData docFileData, File docFile)
+	{
+		String hash = null;
+		Long size = null;
+		String fileLocation = docFile.getAbsolutePath();
+		try {
+			hash = Files.asByteSource(docFile).hash(Hashing.md5()).toString();	// These hashing functions are deprecated, but just to inform us that MD5 is not secure. Luckily, we use MD5 just to identify duplicate files.
+			//logger.debug("MD5 for file \"" + docFile.getName() + "\": " + hash); // DEBUG!
+			size = java.nio.file.Files.size(Paths.get(fileLocation));
+			//logger.debug("Size of file \"" + docFile.getName() + "\": " + size); // DEBUG!
+		} catch (Exception e) {
+			logger.error("Could not retrieve the size " + ((hash == null) ? "and the MD5-hash " : "") + "of the file: " + fileLocation, e);
+		}
+		docFileData.setHash(hash);
+		docFileData.setSize(size);
+		return docFileData;
 	}
 
 

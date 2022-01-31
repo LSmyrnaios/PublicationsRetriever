@@ -514,9 +514,10 @@ public class UrlChecker {
 		//LoaderAndChecker.retrieveDatasets = false;
 		FileUtils.shouldDownloadDocFiles = true;
 		FileUtils.docFileNameType = FileUtils.DocFileNameType.idName;
-		if ( FileUtils.shouldDownloadDocFiles )
+		if ( FileUtils.shouldDownloadDocFiles ) {
+			FileUtils.shouldDeleteOlderDocFiles = true;
 			FileUtils.handleStoreDocFileDirectory();
-
+		}
 
 		String testID = "testID";
 
