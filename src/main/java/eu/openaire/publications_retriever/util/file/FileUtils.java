@@ -530,7 +530,7 @@ public class FileUtils
 					if ( docFile.createNewFile() )
 						numbersOfDuplicateDocFileNames.put(docFileName, curDuplicateNum);	// We should add the new "curDuplicateNum" for the original fileName, only if the new file can be created.
 					else {
-						logger.error("Error when creating the new file \"" + newDocFileName + "\" failed!");
+						logger.error("Error when creating the new file \"" + newDocFileName + "\" failed!");	// This includes the case that this file already exists from another run of this program.
 						throw new DocFileNotRetrievedException();
 					}
 				}

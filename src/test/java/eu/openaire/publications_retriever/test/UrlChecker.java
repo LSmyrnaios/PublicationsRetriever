@@ -614,6 +614,11 @@ public class UrlChecker {
 		urlList.add("https://upcommons.upc.edu/bitstream/handle/2117/11500/docID:Check?sequence=1&isAllowed=y");
 		// Add more urls to test.
 
+		urlList.add("https://www1.domain1.com/oauth2server/oauth/authorize?client_id=Lfvdfdfgdfg&redirect_uri=https://apps.domain2.com/eAccess/domain1/login.xhtml&response_type=code&scope=read");
+		urlList.add("https://www1.domain1.com?redirect_uri=https://apps.domain2.com/eAccess/domain1/login.xhtml&response_type=code&scope=read");
+		// TODO - Consider: Before connecting with a url like the above, we could extract the inner-url as well and check it also against the filter-regexes. The parent url may be ok, but the child url may not.
+		// It will increase complexity, but it will help avoid one more connection in case of a problematic child-url.
+
 		int regex_problematic_urls = 0;
 
 		for ( String url : urlList )

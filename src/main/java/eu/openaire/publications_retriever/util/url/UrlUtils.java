@@ -24,9 +24,9 @@ public class UrlUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(UrlUtils.class);
 
-	public static final Pattern URL_TRIPLE = Pattern.compile("(.+://(?:ww(?:w|\\d)(?:(?:\\w+)?\\.)?)?([\\w.\\-]+)(?:[:\\d]+)?(?:.*/)?)(?:([^/^;?]*)(?:[;?][^/^=]+(?:=.*)?)?)?");
+	public static final Pattern URL_TRIPLE = Pattern.compile("([^/]+://(?:ww(?:w|\\d)(?:(?:\\w+)?\\.)?)?([\\w.\\-]+)(?:[:\\d]+)?(?:.*/)?)(?:([^/^;?]*)(?:[;?][^/^=]+(?:=.*)?)?)?");
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
-	// TODO - Add explanation also for the non-captured groups for better maintenance. For example the "ww(?:w|\d)" can capture "www", "ww2", "ww3" ect.
+	// TODO - Add explanation also for the non-captured groups for better maintenance. For example the "ww(?:w|\\d)" can capture "www", "ww2", "ww3" ect.
 
 	public static final Pattern TEMPORAL_IDENTIFIER_FILTER = Pattern.compile("(.+://.+)(?:(?:(?i)(?:\\?|&|;|%3b)(?:.*token|jsessionid)(?:=|%3d))[^?&]+)([?&].+)?");	// Remove the token or the jsessionid (with case-insensitive) but keep the url-params in the end.
 	// Simpler, non-encoding-aware regex: (.+://.+)(?:(?:[?&;](?i)(?:.*token|jsessionid))=[^?&]+)([?&].+)?
