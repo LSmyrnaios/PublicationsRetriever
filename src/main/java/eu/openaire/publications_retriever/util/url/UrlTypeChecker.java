@@ -24,9 +24,9 @@ public class UrlTypeChecker
 	public static final Pattern URL_DIRECTORY_FILTER =
 			Pattern.compile("[^/]+://.*/(?:(discover|profile|user|survey)(?!.+(?:file|pdf|document|dataset))|(?:(?:ldap|password)-)?login|auth(?:entication)?\\.|ac[c]?ess(?!\\.)|sign[-]?(?:in|out|up)|session|join|subscr|register|submi(?:t|ssion)|(?:post|send|shop|view|export|(?:wp-)?admin|home|form)/|watch|browse|import|bookmark|announcement|rss|feedback|share|about|faq|wiki|news|events|cart|support|(?:site|html)map|documentation|default/|help|license|disclaimer|copyright|(?:site-)?polic(?:y|ies)|privacy|terms|law|principles"
 					+ "|(?:my|your|create)?[-]?account|(?:service|help)[-]?desk|settings|fund|aut[h]?or|(?:journal-)?editor|author:|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic(s)?/.*/view/|conta[c]?t|wallet|contribute|deposit|donate|our[_-][\\w]+|template|logo|image|photo|video|media|theme|advertiser|product|people|(?:the)?press|forum|blog|column|row|for-authors|css|js|captcha|clipboard"
-					+ "|(?:(?:advanced[-]?)?search|search-results|(?:[e]?books|journals)(?:-catalog)?|issue|docs|index|oai|(?:abstracting-)?indexing|online[-]?early)[/]?$"	// Url ends with these.
+					+ "|(?:(?:advanced[-]?)?search|search-results|(?:[e]?books|journals)(?:-catalog)?|issue|docs|index|oai|(?:abstracting-)?indexing|online[-]?early|honors|awards|careers|meetings|calendar|diversity|scholarships|invo(?:ice|lved)|errata|classroom)[/]?$"	// Url ends with these.
 					// TODO - In case we have just DocUrls (not datasetUrls), exclude the following as well: "/(?:bibtext|dc(?:terms)?|tei|endnote)$", it could be added in another regex.. or do an initialization check and construct this regex based on the url-option provided.
-					+ "|rights[-]?permissions|publication[-]?ethics|advertising|reset[-]?password|\\*/"
+					+ "|rights[-]?permissions|publication[-]?ethics|advertising|reset[-]?password|\\*/|communit(?:y|ies)"
 					+ "|restricted|noaccess|crawlprevention|error|(?:mis|ab)use|\\?denied|gateway|defaultwebpage|sorryserver|cookie|notfound|(?:404|accessibility|catalog(?:ue|ar|o)?)\\." + htExtensionsPattern + ").*");
 	// We check them as a directory to avoid discarding publications' urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
 

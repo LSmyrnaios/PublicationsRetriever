@@ -73,7 +73,9 @@ public class LinkExtraction {
 		//exampleUrl = "https://www.eurekaselect.com/51112/chapter/introduction";
 		//exampleUrl = "https://www.hal.inserm.fr/inserm-02159846";
 		//exampleUrl = "https://ashpublications.org/blood/article/132/Supplement%201/2876/263920/Long-Term-Follow-up-of-Acalabrutinib-Monotherapy";
-		exampleUrl = "https://hal-univ-lyon3.archives-ouvertes.fr/hal-00873244";
+		//exampleUrl = "https://hal-univ-lyon3.archives-ouvertes.fr/hal-00873244";
+		//exampleUrl = "https://journals.lww.com/ijo/Fulltext/2020/68040/Comparative_clinical_trial_of_intracameral.8.aspx";
+		exampleUrl = "https://www.ans.org/pubs/journals/nse/article-27191/";
 	}
 
 	
@@ -147,7 +149,7 @@ public class LinkExtraction {
 			for ( String link: extractedLinksHashSet )
 				logger.info(link);
 
-			logger.info("\nThe accepted links from the above are:");
+			logger.info("\n\nThe accepted links from the above are:");
 			for ( String link : extractedLinksHashSet )
 				if ( !UrlTypeChecker.shouldNotAcceptInternalLink(link, null) )
 					logger.info(link);
