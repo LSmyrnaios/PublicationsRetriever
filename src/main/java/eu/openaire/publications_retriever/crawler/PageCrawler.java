@@ -52,9 +52,10 @@ public class PageCrawler
 	private static final int MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT = 10;	// The < 10 > is the optimal value, figured out after experimentation.
 
 	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:manu[ae]l|gu[ií](?:de|a)|preview|leaflet|agreement|accessibility|journal[\\s]*catalog|disclose[\\s]*file|(?:repository|embargo|privacy|data[\\s]*protection|take[\\s]*down|supplement|access)?[\\s]*polic(?:y|ies)"
-																		+ "|normativa|consumer[\\s]*information|permissions|editorial[\\s]*board|dé(?:p(?:ôts|oser)|butez)|créer[\\s]*votre|orcid|subscription"
-																		+ "|information[\\s]*for[\\s]*authors|pdf(?:/a)?[\\s]*conversion|classifieds"	// classifieds = job-ads
-																		+ "|conflicts[\\s]*of[\\s]*interest[\\s]*).*");
+																		+ "|normativa|consumer[\\s]*information|permissions|editorial[\\s]*board|dé(?:p(?:ôts|oser)|butez)|créer[\\s]*votre|orcid|subscription|instructions|code[\\s]*of[\\s]*conduct"
+																		+ "|information[\\s]*for[\\s]*authors|pdf(?:/a)?[\\s]*conversion|catalogue|classifieds"	// classifieds = job-ads
+																		+ "|conflicts[\\s]*of[\\s]*interest|(?:recommendation|order)[\\s]*form|adverti[sz]e|mandatory[\\s]*open[\\s]*access|hal.*collections|terms|conditions|hakuohjeet"
+																		+ "|procedure|規程).*");	// 規程 == procedure (in japanese)
 
 
 	public static void visit(String urlId, String sourceUrl, String pageUrl, String pageContentType, HttpURLConnection conn, String firstHTMLlineFromDetectedContentType, BufferedReader bufferedReader)
