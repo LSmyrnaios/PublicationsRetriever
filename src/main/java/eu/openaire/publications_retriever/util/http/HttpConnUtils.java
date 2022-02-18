@@ -6,7 +6,6 @@ import eu.openaire.publications_retriever.crawler.SpecialUrlsHandler;
 import eu.openaire.publications_retriever.exceptions.*;
 import eu.openaire.publications_retriever.util.file.DocFileData;
 import eu.openaire.publications_retriever.util.file.FileUtils;
-import eu.openaire.publications_retriever.util.url.GenericUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlTypeChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
