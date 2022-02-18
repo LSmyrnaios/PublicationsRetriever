@@ -51,11 +51,14 @@ public class PageCrawler
 	public static boolean should_check_remaining_links = true;	// The remaining links very rarely give docUrls.. so, for time-performance, we can disable them.
 	private static final int MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT = 10;	// The < 10 > is the optimal value, figured out after experimentation.
 
-	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:manu[ae]l|gu[ií](?:de|a)|preview|leaflet|agreement|accessibility|journal[\\s]*catalog|disclose[\\s]*file|(?:repository|embargo|privacy|data[\\s]*protection|take[\\s]*down|supplement|access)?[\\s]*polic(?:y|ies)"
-																		+ "|normativa|consumer[\\s]*information|permissions|editorial[\\s]*board|dé(?:p(?:ôts|oser)|butez)|créer[\\s]*votre|orcid|subscription|instructions|code[\\s]*of[\\s]*conduct"
-																		+ "|information[\\s]*for[\\s]*authors|pdf(?:/a)?[\\s]*conversion|catalogue|classifieds"	// classifieds = job-ads
-																		+ "|conflicts[\\s]*of[\\s]*interest|(?:recommendation|order)[\\s]*form|adverti[sz]e|mandatory[\\s]*open[\\s]*access|hal.*collections|terms|conditions|hakuohjeet"
-																		+ "|procedure|規程).*");	// 規程 == procedure (in japanese)
+	private static final String space = "(?:\\s|%20)*";	// This includes the encoded space inside the url-string.
+
+	// The following regex is used both in the text around the links and in the links themselves.
+	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:manu[ae]l|gu[ií](?:de|a)|preview|leaflet|agreement|accessibility|journal" + space + "catalog|disclose" + space + "file|(?:repository|embargo|privacy|data" + space + "protection|take" + space + "down|supplement|access)?" + space + "polic(?:y|ies)"
+																		+ "|normativa|consumer" + space + "information|permission|editorial" + space + "board|dé(?:p(?:ôt[s]?|oser)|butez)|créer" + space + "votre|orcid|subscription|instruction|code" + space + "of" + space + "conduct|request|join|compte|account"
+																		+ "|table" + space + "of" + space + "contents|front" + space + "matter|information" + space + "for" + space + "authors|pdf(?:/a)?" + space + "conversion|catalogue|classifieds"	// classifieds = job-ads
+																		+ "|conflicts" + space + "of" + space + "interest|(?:recommendation|order)" + space + "form|adverti[sz]e|mandatory" + space + "open" + space + "access|hal.*collections|terms|conditions|hakuohjeet|logigramme|export_liste_publi"
+																		+ "|procedure|規程|運営規程).*");	// 規程 == procedure, 運営規程 = Operating regulations  (in japanese)
 
 
 	public static void visit(String urlId, String sourceUrl, String pageUrl, String pageContentType, HttpURLConnection conn, String firstHTMLlineFromDetectedContentType, BufferedReader bufferedReader)
@@ -307,7 +310,7 @@ public class PageCrawler
 					else if ( lowerCaseLinkAttr.contains("pdf") ) {
 						internalLink = el.attr("href").trim();
 						if ( !internalLink.isEmpty() && !internalLink.startsWith("#", 0)
-								&& !UrlTypeChecker.URL_DIRECTORY_FILTER.matcher(internalLink.toLowerCase()).matches() ) {
+								&& !UrlTypeChecker.shouldNotAcceptInternalLink(internalLink, null) ) {
 							//logger.debug("Found the docLink < " + internalLink + " > from link-text: \"" + linkAttr + "\"");	// DEBUG
 							throw new DocLinkFoundException(internalLink);
 						}
@@ -492,7 +495,7 @@ public class PageCrawler
 			try {
 				if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, currentLink, null, false, false) )    // We log the docUrl inside this method.
 				{    // Log this in order to find ways to make these docUrls get found sooner..!
-					logger.debug("Page \"" + pageUrl + "\", gave the \"remaining\" docUrl \"" + currentLink + "\"");    // DEBUG!!
+					//logger.debug("Page \"" + pageUrl + "\", gave the \"remaining\" docOrDatasetUrl \"" + currentLink + "\"");    // DEBUG!!
 					timesFoundDocOrDatasetUrlFromRemainingLinks.incrementAndGet();
 					return true;
 				} else

@@ -75,7 +75,8 @@ public class LinkExtraction {
 		//exampleUrl = "https://ashpublications.org/blood/article/132/Supplement%201/2876/263920/Long-Term-Follow-up-of-Acalabrutinib-Monotherapy";
 		//exampleUrl = "https://hal-univ-lyon3.archives-ouvertes.fr/hal-00873244";
 		//exampleUrl = "https://journals.lww.com/ijo/Fulltext/2020/68040/Comparative_clinical_trial_of_intracameral.8.aspx";
-		exampleUrl = "https://www.ans.org/pubs/journals/nse/article-27191/";
+		//exampleUrl = "https://www.ans.org/pubs/journals/nse/article-27191/";
+		exampleUrl = "https://www.hal.inserm.fr/inserm-00348834";
 	}
 
 	

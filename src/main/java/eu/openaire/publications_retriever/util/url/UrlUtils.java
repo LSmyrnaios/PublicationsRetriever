@@ -44,6 +44,7 @@ public class UrlUtils
 	public static final String alreadyDownloadedFromSourceUrlContinuedMessage = " and SourceUrl=";
 
 	public static final Hashtable<String, Integer> domainsAndHits = new Hashtable<>();
+	// The data inside HashTable "domainsAndHits" is used to evaluate how good the domain is doing while is having some problems.
 
 	public static final String duplicateUrlIndicator = "duplicate";
 	public static final String unreachableDocOrDatasetUrlIndicator = "unreachable";
