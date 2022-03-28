@@ -18,12 +18,13 @@ The "comment" can have the following values:
 - an empty string, if the document url is retrieved, and the user specified that the document files will not be downloaded
 - the information if the resulted url is a dataset url
 - the DocFileFullPath, if we have chosen to download the DocFiles
-- the ErrorCause, if there was any error which prevented the discovery of the DocUrl (in that case, the DocUrl is set to "unreachable")
+- the ErrorCause, if there was any error which prevented the discovery of the DocOrDatasetUrl (in that case, the DocOrDatasetUrl is set to "unreachable")
 <br>
 
 PubPage: *the web page with the publication's information.*<br> 
 DocUrl: *the url of the fulltext-document-file.*<br>
 DatasetUrl: *the url of the dataset-file.*<br>
+DocOrDatasetUrl: *the url of the document or the dataset file.*<br>
 Full-text: *the document containing all the text of a publication.*<br>
 DocFileFullPath: *the full-storage-path of the fulltext-document-file.*<br>
 ErrorCause: *the cause of the failure of retrieving the docUrl or the docFile.*<br>

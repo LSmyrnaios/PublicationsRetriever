@@ -16,7 +16,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.10.0</version>
+        <version>3.10.1</version>
         <configuration>
           <source>1.8</source>
           <target>1.8</target>
@@ -82,7 +82,7 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
-      <version>1.2.10</version>
+      <version>1.2.11</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
@@ -96,7 +96,7 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.2.10</version>
+      <version>1.2.11</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.jsoup/jsoup -->
@@ -110,7 +110,7 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>31.0.1-jre</version>
+      <version>31.1-jre</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
@@ -131,21 +131,21 @@
     <dependency>
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
-      <version>20211205</version>
+      <version>20220320</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-s3 -->
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
-      <version>1.12.161</version>
+      <version>1.12.186</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/io.minio/minio -->
     <dependency>
       <groupId>io.minio</groupId>
       <artifactId>minio</artifactId>
-      <version>8.3.6</version>
+      <version>8.3.7</version>
       <exclusions>
       <exclusion>
         <groupId>com.google.guava</groupId>

@@ -503,7 +503,86 @@ public class UrlChecker {
 		//urlList.add("http://irep.iium.edu.my/58343/");
 		//urlList.add("https://ashpublications.org/blood/article/110/11/2069/56211/Systematic-Genomic-Screen-for-Tyrosine-Kinase");
 		//urlList.add("https://journals.lww.com/plasreconsurg/Fulltext/2016/08000/Race_and_Breast_Cancer_Reconstruction__Is_There_a.9.aspx");
-		urlList.add("https://cadmus.eui.eu/handle/1814/20884");
+		//urlList.add("https://cadmus.eui.eu/handle/1814/20884");
+
+		//urlList.add("https://www.researchgate.net/publication/259590159_The_influence_of_personal_attributes_and_organizational_ethics_position_on_accountants_judgments_Malaysian_scenario");
+
+
+/*		String testStr = "https://www.researchgate.net/publication/259590159_The_influence_of_personal_attributes_and_organizational_ethics_position_on_accountants'_judgments_Malaysian_scenario";
+
+		logger.debug("BEFORE: " + testStr);
+
+		testStr = StringUtils.replace(testStr, "'", "\\'");
+
+		logger.debug("AFTER: " + testStr);
+
+		urlList.add(testStr);*/
+
+
+		//urlList.add("https://arxiv.org/pdf/1802.04561.pdf");
+
+		//urlList.add("https://arxiv.org/pdf/1803.02373.pdf");
+
+		///urlList.add("https://jp.arxiv.org/pdf/1803.02373.pdf");
+
+		//urlList.add("http://esperos.di.uoa.gr:9000/full-texts/doiboost____::f5d6dfe71e972e457bc78d16cb835260.pdf");
+
+/*
+		urlList.add("http://www.koreascience.or.kr/article/JAKO200817153876653.pdf");
+		urlList.add("http://livros01.livrosgratis.com.br/cp096087.pdf");
+		urlList.add("https://kar.kent.ac.uk/58181/1/Direct%20ABM%20comparison.pdf");*/
+
+		//urlList.add("https://hal-univ-lyon3.archives-ouvertes.fr/hal-00873244");
+
+		//urlList.add("https://www.jstage.jst.go.jp/article/ieejias1987/112/3/112_3_235/_pdf");
+
+		//urlList.add("https://academic.oup.com/jnci/article/89/18/1379/2526396");
+
+		//urlList.add("https://works.bepress.com/aaron_romanowsky/142/");
+		//urlList.add("https://ui.adsabs.harvard.edu/abs/2018MNRAS.476.4543B/abstract");
+
+
+		//urlList.add("http://crl.acrl.org/index.php/crl/article/viewFile/13710/15156");
+		//urlList.add("https://crl.acrl.org/index.php/crl/article/download/13710/15156");
+
+/*		urlList.add("https://edoc.rki.de/handle/176904/5241");
+		urlList.add("https://edoc.rki.de/handle/176904/5241");
+		urlList.add("https://edoc.rki.de/handle/176904/5241");*/
+
+		//urlList.add("https://edoc.rki.de/handle/176904/2385;jsessionid=2168808BF61D8FA453A015AF807F74C8");
+		//urlList.add("https://edoc.rki.de/handle/176904/2385");
+		//urlList.add("https://edoc.rki.de/handle/176904/2385");
+
+		//urlList.add("https://journals.lww.com/ijo/Fulltext/2020/68040/Comparative_clinical_trial_of_intracameral.8.aspx");
+		//urlList.add("https://hal-univ-pau.archives-ouvertes.fr/hal-02592628");
+		//urlList.add("https://epubs.ans.org/info/");
+
+		//urlList.add("https://www.lib.fukushima-u.ac.jp/repo/repository/fukuro/R000000706/?lang=1&cate_schema=100&chk_schema=100");
+		//urlList.add("https://www.lib.fukushima-u.ac.jp/repo/repository/fukuro/R000000706/?lang=0&cate_schema=100&chk_schema=100");
+
+		//urlList.add("https://imanagerpublications.com/index.php/article/1837");
+		//urlList.add("https://rfppl.co.in/view_abstract.php?jid=62&art_id=10818");
+
+		//urlList.add("https://www.clin-lab-publications.com/article/2842");
+		//urlList.add("https://www.hal.inserm.fr/inserm-00348834");
+
+		//urlList.add("https://www.scienceopen.com/hosted-document?doi=10.13169/socialistlawyer.84.0030");
+		//urlList.add("https://jukuri.luke.fi/handle/10024/544567");
+		//urlList.add("https://juniperpublishers.com/jgwh/JGWH.MS.ID.555648.php");
+		//urlList.add("https://practicalactionpublishing.com/book/1439/money-with-a-mission-volume-2");
+
+		//urlList.add("https://hal-univ-pau.archives-ouvertes.fr/hal-01913213");
+		//urlList.add("https://acikerisim.medipol.edu.tr/xmlui/handle/20.500.12511/2353");
+
+		//urlList.add("https://www.eajm.org//en/the-relationships-between-prenatal-attachment-basic-personality-traits-styles-of-coping-with-stress-depression-and-anxiety-and-marital-adjustment-among-women-in-the-third-trimester-of-pregnancy-133234");
+
+		//urlList.add("https://www.hal.inserm.fr/inserm-00966565");
+
+		//urlList.add("https://revistas.uexternado.edu.co/index.php?journal=emerca&page=article&op=view&path%5B%5D=3512&path%5B%5D=3400");
+
+		//urlList.add("http://id.nii.ac.jp/1391/00011918/");
+
+		urlList.add("https://juniperpublishers.com/ofoaj/OFOAJ.MS.ID.555572.php");
 
 
 		logger.info("Urls to check:");
