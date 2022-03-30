@@ -3,8 +3,6 @@ package eu.openaire.publications_retriever.util.http;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
-import com.google.common.hash.Hashing;
-import com.google.common.io.Files;
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.crawler.MachineLearning;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
@@ -24,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -313,10 +310,11 @@ public class ConnSupportUtils
 				throw new DocFileNotRetrievedException(errMsg);
 			}
 
-			File docFile = docFileData.getDocFile();
-			setHashAndSize(docFileData, docFile);	// Calculate the hash and the size here (after the FileUtils.storeDocFile() call), in order to avoid long threads-blocking, as the "storeDocFile" is synchronized.
+			// Calculate the hash and the size here (AFTER the FileUtils.storeDocFile() call), in order to avoid long threads-blocking, as the "storeDocFile" is synchronized.
+			docFileData.calculateAndSetHashAndSize();
 
 			if ( FileUtils.shouldUploadFilesToS3 ) {
+				File docFile = docFileData.getDocFile();
 				try {	// In the "S3"-mode, we don't keep the files locally.
 					FileDeleteStrategy.FORCE.delete(docFile);    // We don't need the local file anymore..
 				} catch (Exception e) {
@@ -335,25 +333,6 @@ public class ConnSupportUtils
 			if ( reconnected )	// Otherwise the given-previous connection will be closed by the calling method.
 				conn.disconnect();
 		}
-	}
-
-
-	public static DocFileData setHashAndSize(DocFileData docFileData, File docFile)
-	{
-		String hash = null;
-		Long size = null;
-		String fileLocation = docFile.getAbsolutePath();
-		try {
-			hash = Files.asByteSource(docFile).hash(Hashing.md5()).toString();	// These hashing functions are deprecated, but just to inform us that MD5 is not secure. Luckily, we use MD5 just to identify duplicate files.
-			//logger.debug("MD5 for file \"" + docFile.getName() + "\": " + hash); // DEBUG!
-			size = java.nio.file.Files.size(Paths.get(fileLocation));
-			//logger.debug("Size of file \"" + docFile.getName() + "\": " + size); // DEBUG!
-		} catch (Exception e) {
-			logger.error("Could not retrieve the size " + ((hash == null) ? "and the MD5-hash " : "") + "of the file: " + fileLocation, e);
-		}
-		docFileData.setHash(hash);
-		docFileData.setSize(size);
-		return docFileData;
 	}
 
 
