@@ -28,7 +28,7 @@ public class GenericUtils {
         HttpConnUtils.domainsSupportingHTTPS.clear();
         HttpConnUtils.domainsWithUnsupportedAcceptLanguageParameter.clear();
 
-        // Paths' data
+        // Paths' data.
         ConnSupportUtils.timesPathsReturned403.clear();
         ConnSupportUtils.domainsMultimapWithPaths403BlackListed.clear();
     }

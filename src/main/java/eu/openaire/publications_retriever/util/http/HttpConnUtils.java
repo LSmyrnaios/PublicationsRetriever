@@ -44,7 +44,7 @@ public class HttpConnUtils
 
 	public static AtomicInteger numOfDomainsBlockedDueToSSLException = new AtomicInteger(0);
 
-	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0";	// This should not be "final", another program should be able to set its own "UserAgent".
+	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0";	// This should not be "final", another program should be able to set its own "UserAgent".
 	public static String acceptLanguage = "en-US,en;q=0.5";
 
 	public static final int maxConnGETWaitingTime = 15000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
@@ -58,14 +58,13 @@ public class HttpConnUtils
 	public static final int maxAllowedContentSize = 1073741824;	// 1Gb ; yes some publications can be huge..
 	private static final boolean shouldNOTacceptGETmethodForUncategorizedInternalLinks = true;
 
-
 	public static final Set<String> domainsSupportingHTTPS = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
 	public static AtomicInteger timesDidOfflineHTTPSredirect = new AtomicInteger(0);
 
 	public static ThreadLocal<Boolean> isSpecialUrl = new ThreadLocal<Boolean>();	// Every Thread has its own variable.
 
-	public static final String docFileNotRetrievedMessage = DocFileNotRetrievedException.class.getSimpleName() + " was thrown before the docFile could be stored. ";  // Keep it here to easily spot the error if the exception-name changes.
+	public static final String docFileNotRetrievedMessage = DocFileNotRetrievedException.class.getSimpleName() + " was thrown before the docFile could be stored. ";  // Get the class-name programmatically, in order to easily spot the error if the exception-name changes.
 
 
 	/**

@@ -75,6 +75,9 @@ public class ConnSupportUtils
 	private static final int timesToReturnNoTypeBeforeDomainBlocked = 10;
 	public static AtomicInteger reCrossedDocUrls = new AtomicInteger(0);
 
+	public static final String alreadyDownloadedFromIDMessage = "This file is probably already downloaded from ID=";
+	public static final String alreadyDownloadedFromSourceUrlContinuedMessage = " and SourceUrl=";
+
 	public static final Set<String> knownDocMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 	public static final Set<String> knownDatasetMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
@@ -231,7 +234,7 @@ public class ConnSupportUtils
 		String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, docUrl);
 		if ( FileUtils.shouldDownloadDocFiles ) {
 			IdUrlTuple idUrlTuple = UrlUtils.docOrDatasetUrlsWithIDs.get(docUrl);
-			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, UrlUtils.alreadyDownloadedFromIDMessage + idUrlTuple.id + UrlUtils.alreadyDownloadedFromSourceUrlContinuedMessage + idUrlTuple.url, null, false, "true", "true", "true", wasDirectLink, "true", null, "null");
+			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, alreadyDownloadedFromIDMessage + idUrlTuple.id + alreadyDownloadedFromSourceUrlContinuedMessage + idUrlTuple.url, null, false, "true", "true", "true", wasDirectLink, "true", null, "null");
 		} else
 			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, "", null, false, "true", "true", "true", wasDirectLink, "true", null, "null");
 	}

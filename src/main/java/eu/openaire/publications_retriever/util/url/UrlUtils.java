@@ -40,9 +40,6 @@ public class UrlUtils
 
 	public static final Hashtable<String, IdUrlTuple> docOrDatasetUrlsWithIDs = new Hashtable<String, IdUrlTuple>();	// Null keys are allowed (in case they are not available in the input).
 
-	public static final String alreadyDownloadedFromIDMessage = "This file is probably already downloaded from ID=";
-	public static final String alreadyDownloadedFromSourceUrlContinuedMessage = " and SourceUrl=";
-
 	public static final Hashtable<String, Integer> domainsAndHits = new Hashtable<>();
 	// The data inside HashTable "domainsAndHits" is used to evaluate how good the domain is doing while is having some problems.
 
