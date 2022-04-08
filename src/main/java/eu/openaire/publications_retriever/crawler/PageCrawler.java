@@ -55,7 +55,7 @@ public class PageCrawler
 
 	// The following regex is used both in the text around the links and in the links themselves.
 	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:manu[ae]l|gu[ií](?:de|a)|preview|leaflet|agreement|accessibility|journal" + space + "catalog|disclose" + space + "file|(?:repository|embargo|privacy|data" + space + "protection|take" + space + "down|supplement|access)?" + space + "polic(?:y|ies)"
-																		+ "|licen(?:se|cia)" + space + "(?:of|de)" + space + "us[eo]|normativa|consumer" + space + "information|permission|editorial" + space + "board|dé(?:p(?:ôt[s]?|oser)|butez)|créer" + space + "votre|orcid|subscription|instruction|code" + space + "of" + space + "conduct|request|join|compte|account"
+																		+ "|licen(?:se|cia)" + space + "(?:of|de)" + space + "us[eo]|governance" + space + "statement|normativa|consumer" + space + "information|permission|editorial" + space + "board|dé(?:p(?:ôt[s]?|oser)|butez)|créer" + space + "votre|orcid|subscription|instruction|code" + space + "of" + space + "conduct|request|join|compte|account"
 																		+ "|table" + space + "of" + space + "contents|front" + space + "matter|information" + space + "for" + space + "authors|pdf(?:/a)?" + space + "conversion|catalogue|classifieds"	// classifieds = job-ads
 																		+ "|conflicts" + space + "of" + space + "interest|(?:recommendation|order)" + space + "form|adverti[sz]e|mandatory" + space + "open" + space + "access|hal.*collections|terms|conditions|hakuohjeet|logigramme|export_liste_publi"
 																		+ "|procedure|規程|運営規程"	// 規程 == procedure, 運営規程 = Operating regulations  (in japanese)
