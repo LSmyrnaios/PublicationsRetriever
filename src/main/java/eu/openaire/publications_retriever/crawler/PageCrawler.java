@@ -68,7 +68,7 @@ public class PageCrawler
 		logger.debug("Visiting pageUrl: \"" + pageUrl + "\".");
 
 		String pageDomain = UrlUtils.getDomainStr(pageUrl, null);
-		if ( pageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage and we shouldn't crawl it.
+		if ( pageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage, and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"PageCrawler.visit()\": \"" + pageUrl + "\"");
 			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in PageCrawler.visit() method, after the occurrence of a domain-retrieval error.", null, true, "true", "false", "false", "false", "false", null, "null");
 			LoaderAndChecker.connProblematicUrls.incrementAndGet();

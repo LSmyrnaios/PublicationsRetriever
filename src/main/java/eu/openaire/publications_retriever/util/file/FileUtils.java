@@ -16,6 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -53,7 +55,7 @@ public class FileUtils
 	// If we use the above without external synchronization, then the "ConcurrentHashMap" should be used instead.
 	
 	public static boolean shouldDownloadDocFiles = false;	// It will be set to "true" if the related command-line-argument is given.
-	public static boolean shouldUploadFilesToS3 = false;	// Should we upload the files to S3 ObjectStore? Otherwise they will be stored locally.
+	public static boolean shouldUploadFilesToS3 = false;	// Should we upload the files to S3 ObjectStore? Otherwise, they will be stored locally.
 	public static boolean shouldDeleteOlderDocFiles = false;	// Should we delete any older stored docFiles? This is useful for testing.
 
 	public enum DocFileNameType {
@@ -72,7 +74,7 @@ public class FileUtils
 	
 	public static final int MAX_FILENAME_LENGTH = 250;	// TODO - Find a way to get the current-system's MAX-value.
 	
-	public static String fullInputFilePath = null;	// Used when the MLA is enabled and we want to count the number of lines in the inputFile, in order to optimize the M.L.A.'s execution.
+	public static String fullInputFilePath = null;	// Used when the MLA is enabled, and we want to count the number of lines in the inputFile, in order to optimize the M.L.A.'s execution.
 
 	public static int duplicateIdUrlEntries = 0;
 
@@ -166,7 +168,7 @@ public class FileUtils
 		else
 			extension = ".csv";	// This is just a guess, it may be a ".tsv" as well or sth else. There is no way to know what type of file was assigned in the "System.in".
 		
-		// Make sure we create a new distinct file which will not replace any other existing file. Tis new file will get deleted in the end.
+		// Make sure we create a new distinct file which will not replace any other existing file. This new file will get deleted in the end.
 		int fileNum = 1;
 		fullInputFilePath = baseFileName + extension;
 		File file = new File(fullInputFilePath);
@@ -176,7 +178,7 @@ public class FileUtils
 		}
 		
 		try {
-			printStream = new PrintStream(new FileOutputStream(file), false, utf8Charset);
+			printStream = new PrintStream(Files.newOutputStream(file.toPath()), false, utf8Charset);
 			
 			while ( inputScanner.hasNextLine() ) {
 				printStream.print(inputScanner.nextLine());
@@ -189,7 +191,7 @@ public class FileUtils
 			inputScanner.close();
 			
 			// Assign the new input-file from which the data will be read for the rest of the program's execution.
-			inputScanner = new Scanner(new FileInputStream(fullInputFilePath));
+			inputScanner = new Scanner(Files.newInputStream(Paths.get(fullInputFilePath)));
 		} catch (Exception e) {
 			logger.error("", e);
 			FileUtils.closeIO();
@@ -473,7 +475,7 @@ public class FileUtils
 			
 			String fullDocName = storeDocFilesDir + docFileName;
 
-			// Check if the FileName is too long and we are going to get an error at file-creation.
+			// Check if the FileName is too long, and we are going to get an error at file-creation.
 			int docFullNameLength = fullDocName.length();
 			if ( docFullNameLength > MAX_FILENAME_LENGTH ) {
 				logger.warn("Too long docFullName found (" + docFullNameLength + " chars), it would cause file-creation to fail, so we mark the file-name as \"unretrievable\".\nThe long docName is: \"" + fullDocName + "\".");

@@ -12,15 +12,13 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 
 /**
@@ -173,8 +171,8 @@ public class TestNonStandardInputOutput  {
 
 		main(args);
 	}
-	
-	
+
+
 	public static void main( String[] args )
 	{
 		SignalUtils.setSignalHandlers();
@@ -253,8 +251,12 @@ public class TestNonStandardInputOutput  {
 				else
 					PublicationsRetriever.inputStream = new FileInputStream(inputFile);
 			} else {
-				FileUtils.numOfLines = Files.lines(Paths.get(PublicationsRetriever.inputFileFullPath)).count();
-				logger.info("The numOfLines in the inputFile is " + FileUtils.numOfLines);
+				try ( Stream<String> linesStream = Files.lines(Paths.get(PublicationsRetriever.inputFileFullPath)) ) {
+					FileUtils.numOfLines = linesStream.count();
+					logger.info("The numOfLines in the inputFile is " + FileUtils.numOfLines);
+				} catch (IOException ioe) {
+					logger.error("Problem when retrieving the input-\"numOfLines\"!", ioe);
+				}
 			}
 
 			if ( PublicationsRetriever.inputFileFullPath != null ) {	// If the user gave the inputFile as a cmd-arg..

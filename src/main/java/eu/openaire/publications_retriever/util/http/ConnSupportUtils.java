@@ -351,7 +351,7 @@ public class ConnSupportUtils
 	 */
 	public static void applyPolitenessDelay(String domainStr)
 	{
-		// Consider only the last three parts of a domain, not all, otherwise, a sub-sub-domain might connect simultaneously with a another sub-sub-domain.
+		// Consider only the last three parts of a domain, not all, otherwise, a sub-sub-domain might connect simultaneously with another sub-sub-domain.
 		domainStr = UrlUtils.getTopThreeLevelDomain(domainStr);
 
 		DomainConnectionData domainConnectionData = domainsWithConnectionData.get(domainStr);
@@ -435,7 +435,7 @@ public class ConnSupportUtils
 			if ( extractedLinksHashSet == null || extractedLinksHashSet.size() == 0 )
 				return null;	// Logging is handled inside..
 
-			return new ArrayList<>(extractedLinksHashSet).get(0);	// There will be only a couple of urls so it's not a big deal to gather them all.
+			return new ArrayList<>(extractedLinksHashSet).get(0);	// There will be only a couple of urls, so it's not a big deal to gather them all.
 		} catch ( DocLinkFoundException dlfe) {
 			return dlfe.getMessage();	// Return the DocLink to connect with.
 		} catch (Exception e) {
@@ -492,7 +492,7 @@ public class ConnSupportUtils
 	
 	/**
 	 * This method handles the HTTP 403 Error Code.
-	 * When a connection returns 403, we take the path of the url and we block it, as the directory which we are trying to connect to, is forbidden to be accessed.
+	 * When a connection returns 403, we take the path of the url, and we block it, as the directory which we are trying to connect to, is forbidden to be accessed.
 	 * If a domain ends up having more paths blocked than a certain number, we block the whole domain itself.
 	 * @param urlStr
 	 * @param domainStr

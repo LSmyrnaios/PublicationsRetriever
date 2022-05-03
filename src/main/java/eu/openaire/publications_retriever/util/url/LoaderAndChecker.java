@@ -79,7 +79,7 @@ public class LoaderAndChecker
 	/**
 	 * This method loads the urls from the input file in memory, in packs.
 	 * If the loaded urls pass some checks, then they get connected to retrieve the docUrls
-	 * Then, the loaded urls will either reach the connection point, were they will be checked for a docMimeType or they will be send directly for crawling.
+	 * Then, the loaded urls will either reach the connection point, were they will be checked for a docMimeType, or they will be sent directly for crawling.
 	 * @throws RuntimeException if no input-urls were retrieved.
 	 */
 	public static void loadAndCheckUrls() throws RuntimeException
@@ -665,7 +665,7 @@ public class LoaderAndChecker
 	{
 		for ( String retrievedUrl : retrievedUrlsOfThisId )
 		{
-			// Some of the "retrieved-urls" maybe were excluded before the canonicalization point (e.g. because their domains were blocked or were duplicates).
+			// Some "retrieved-urls" maybe were excluded before the canonicalization point (e.g. because their domains were blocked or were duplicates).
 			// We have to make sure the "equal()" and the "contains()" succeed on the same-started-urls.
 			String tempUrl = retrievedUrl;
 			if ( !retrievedUrl.contains("#/") )

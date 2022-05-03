@@ -57,10 +57,10 @@ public class MachineLearning
 	public static final Hashtable<String, String> successDocPathsExtensionHashMap = new Hashtable<String, String>();
 
 	public static AtomicInteger docUrlsFoundByMLA = new AtomicInteger(0);
-	// If we later want to show statistics, we should take into account only the number of the urls to which the MLA was tested against, not all of the urls in the inputFile.
+	// If we later want to show statistics, we should take into account only the number of the urls to which the MLA was tested against, not all the urls in the inputFile.
 
-	private static final Set<String> domainsBlockedFromMLA = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());;
-	static {	// These domain is not compatible with the MLA.
+	private static final Set<String> domainsBlockedFromMLA = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+	static {	// These domains are not compatible with the MLA.
 		domainsBlockedFromMLA.add("sciencedirect.com");
 	}
 
@@ -178,7 +178,7 @@ public class MachineLearning
 
 	/**
 	 * This method checks if we should continue running predictions using the MLA.
-	 * Since the MLA is still experimental and it doesn't work on all domains, we take measures to stop running it, if it doesn't succeed.
+	 * Since the MLA is still experimental, and it doesn't work on all domains, we take measures to stop running it, if it doesn't succeed.
 	 * It returns "true", either when we don't have reached a specific testing number, or when the MLA was successful for most of the previous cases.
 	 * It returns "false", when it still hasn't gathered sufficient data, or when the MLA failed to have a specific success-rate (which leads to "sleep-mode"), or if the MLA is already in "sleep-mode".
 	 * @return true/false
@@ -265,11 +265,11 @@ public class MachineLearning
 			return false;
 
 		// If the path can be handled, then go check for previous successful docUrls' paths.
-		Collection<String> knownDocUrlPaths = successPathsHashMultiMap.get(pagePath);	// Get all available docUrlPaths for this docPagePath, to try them along with current ID.
+		Collection<String> knownDocUrlPaths = successPathsHashMultiMap.get(pagePath);	// Get all available docUrlPaths for this docPagePath, to try them along with current ID. This returns an empty collection, if the pagePath is not there.
 		int pathsSize = knownDocUrlPaths.size();
 		if ( pathsSize == 0 )	// If this path cannot be handled by the MLA (no known data in our model), then return.
 			return false;
-		else if ( pathsSize > 5 ) {	// Too many docPaths for this pagePath, means that there's probably only one pagePath we get for this domain (paths are not mapped to domains so we can't actually check).
+		else if ( pathsSize > 5 ) {	// Too many docPaths for this pagePath, means that there's probably only one pagePath we get for this domain (paths are not mapped to domains, so we can't actually check).
 			logger.debug("Domain: \"" + pageDomain + "\" was blocked from being accessed again by the MLA, after retrieving a proved-to-be incompatible pagePath.");
 			domainsBlockedFromMLA.add(pageDomain);
 			successPathsHashMultiMap.removeAll(pagePath);	// This domain was blocked, remove current non-needed paths-data.
@@ -319,15 +319,14 @@ public class MachineLearning
 			// todo - then, remove the (<= 3) paths restriction some lines above.. as now the process will be 1000 times faster and we really want to find a match in the internal-links.
 			try {
 				logger.debug("Going to connect & check predictedDocUrl: \"" + predictedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");	// DEBUG!
-
 				if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, predictedDocUrl, null, false, true) ) {
 					logger.info("MachineLearningAlgorithm got a hit for pageUrl: \""+ pageUrl + "\"! Resulted docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
 					MachineLearning.docUrlsFoundByMLA.incrementAndGet();
-					return true;	// Note that we have already add it in the output links inside "connectAndCheckMimeType()".
+					return true;	// Note that we have already added it in the output links inside "connectAndCheckMimeType()".
 				}
 				logger.debug("The predictedDocUrl was not a valid docUrl: \"" + predictedDocUrl + "\"");
 			} catch (Exception e) {
-				// No special handling here, neither logging.. since it's expected that some "predictedDocUrls" will fail.
+				// No special handling here, neither logging.. since it's expected that some "predictedDocUrls" will fail. If it has a connection issue, it will be logged anyway.
 			}
 		}// end for-loop
 

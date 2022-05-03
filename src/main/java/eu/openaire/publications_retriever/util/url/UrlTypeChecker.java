@@ -64,7 +64,7 @@ public class UrlTypeChecker
 	public static AtomicInteger pagesWithLargerCrawlingDepth = new AtomicInteger(0);	// Pages with their docUrl behind an internal "view" page.
 	public static AtomicInteger longToRespondUrls = new AtomicInteger(0);	// Urls belonging to domains which take too long to respond.
 	public static AtomicInteger urlsWithUnwantedForm = new AtomicInteger(0);	// (plain domains, unwanted page-extensions ect.)
-	public static AtomicInteger pangaeaUrls = new AtomicInteger(0);	// These urls are in false form by default, but even if they weren't or we transform them, PANGAEA. only gives datasets, not fulltext.
+	public static AtomicInteger pangaeaUrls = new AtomicInteger(0);	// These urls are in false form by default, but even if they weren't, or we transform them, PANGAEA. only gives datasets, not fulltext.
 	public static AtomicInteger pagesNotProvidingDocUrls = new AtomicInteger(0);
 	
 	

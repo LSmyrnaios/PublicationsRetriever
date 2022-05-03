@@ -15,10 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
@@ -28,6 +25,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 
 /**
@@ -51,7 +49,7 @@ public class PublicationsRetriever
 	public static String inputFileFullPath = null;
 
 	public static Instant startTime = null;
-	public static String targetUrlType = "docOrDatasetUrl";	// docUrl, documentUrl, docOrDatasetUrl ; this is set by the args-parser and it's used when outputting data.
+	public static String targetUrlType = "docOrDatasetUrl";	// docUrl, documentUrl, docOrDatasetUrl ; this is set by the args-parser, and it's used when outputting data.
 
 	public static DecimalFormat df = new DecimalFormat("0.00");
 
@@ -78,11 +76,11 @@ public class PublicationsRetriever
 			else
 				PublicationsRetriever.inputStream = System.in;
 		} else {
-			try {
-				FileUtils.numOfLines = Files.lines(Paths.get(PublicationsRetriever.inputFileFullPath)).count();
+			try ( Stream<String> linesStream = Files.lines(Paths.get(PublicationsRetriever.inputFileFullPath)) ) {
+				FileUtils.numOfLines = linesStream.count();
 				logger.info("The numOfLines in the inputFile is " + FileUtils.numOfLines);
-			} catch (Exception e) {
-				logger.error("Could not retrieve the numOfLines. " + e);
+			} catch (IOException ioe) {
+				logger.error("Problem when retrieving the input-\"numOfLines\"!", ioe);
 			}
 		}
 
@@ -216,30 +214,31 @@ public class PublicationsRetriever
 					case "-docFileNameType":
 						i ++;
 						String nameType = mainArgs[i];
-						if ( nameType.equals("originalName") ) {
-							logger.info("Going to use the \"originalName\" type.");
-							FileUtils.docFileNameType = FileUtils.DocFileNameType.originalName;
-						}
-						else if ( nameType.equals("idName") ) {
-							if ( !LoaderAndChecker.useIdUrlPairs ) {
-								String errMessage = "You provided the \"DocFileNameType.idName\", but the program's reader is not set to retrieve IDs from the inputFile! Set the program to retrieve IDs by setting the \"utils.url.LoaderAndChecker.useIdUrlPairs\"-variable to \"true\".";
+						switch ( nameType ) {
+							case "originalName":
+								logger.info("Going to use the \"originalName\" type.");
+								FileUtils.docFileNameType = FileUtils.DocFileNameType.originalName;
+								break;
+							case "idName":
+								if ( !LoaderAndChecker.useIdUrlPairs ) {
+									String errMessage = "You provided the \"DocFileNameType.idName\", but the program's reader is not set to retrieve IDs from the inputFile! Set the program to retrieve IDs by setting the \"utils.url.LoaderAndChecker.useIdUrlPairs\"-variable to \"true\".";
+									System.err.println(errMessage);
+									logger.error(errMessage);
+									System.exit(10);
+								} else {
+									logger.info("Going to use the \"idName\" type.");
+									FileUtils.docFileNameType = FileUtils.DocFileNameType.idName;
+								}
+								break;
+							case "numberName":
+								logger.info("Going to use the \"numberName\" type.");
+								FileUtils.docFileNameType = FileUtils.DocFileNameType.numberName;
+								break;
+							default:
+								String errMessage = "Invalid \"docFileNameType\" given (\"" + nameType + "\")\nExpected one of the following: \"originalName | idName | numberName\"" + usageMessage;
 								System.err.println(errMessage);
 								logger.error(errMessage);
-								System.exit(10);
-							} else {
-								logger.info("Going to use the \"idName\" type.");
-								FileUtils.docFileNameType = FileUtils.DocFileNameType.idName;
-							}
-						}
-						else if ( nameType.equals("numberName") ) {
-							logger.info("Going to use the \"numberName\" type.");
-							FileUtils.docFileNameType = FileUtils.DocFileNameType.numberName;
-						}
-						else {
-							String errMessage = "Invalid \"docFileNameType\" given (\"" + nameType + "\")\nExpected one of the following: \"originalName | idName | numberName\"" + usageMessage;
-							System.err.println(errMessage);
-							logger.error(errMessage);
-							System.exit(11);
+								System.exit(11);
 						}
 						break;
 					case "-firstDocFileNum":

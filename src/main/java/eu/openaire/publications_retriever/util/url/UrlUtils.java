@@ -196,7 +196,7 @@ public class UrlUtils
 			return null;
 		}
 
-		// If the url ends with "/" then remove it as its a "mistake" and the last part of it is the "docID" we want.
+		// If the url ends with "/" then remove it as it's a "mistake" and the last part of it is the "docID" we want.
 		if ( urlStr.endsWith("/") )
 			urlStr = urlStr.substring(0, (urlStr.length() -1));
 		Matcher urlMatcher = UrlUtils.URL_TRIPLE.matcher(urlStr);

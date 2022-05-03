@@ -45,7 +45,7 @@ public class MetaDocUrlsHandler {
 
     /**
      * This method takes in the "pageHtml" of an already-connected url and checks if there is a metaDocUrl inside.
-     * If such url exist, then it connects to it and checks if it's really a docUrl and it may also download the full-text-document, if wanted.
+     * If such url exist, then it connects to it and checks if it's really a docUrl, and it may also download the full-text-document, if wanted.
      * It returns "true" when the metaDocUrl was found and handled (independently of how it was handled),
      * otherwise, if the metaDocUrl was not-found, it returns "false".
      * @param urlId
@@ -98,7 +98,7 @@ public class MetaDocUrlsHandler {
             UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was unsupported.", null, true, "true", "true", "false", "false", (hasUnsupportedDocExtension ? "true" : "false"), null, "null");  // We log the source-url, and that was discarded in "PageCrawler.visit()".
             PageCrawler.contentProblematicUrls.incrementAndGet();
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
-            return true;    // It was found and handled. Do not continue crawling as we wont find any docUrl..
+            return true;    // It was found and handled. Do not continue crawling as we won't find any docUrl..
         }
 
         String tempMetaDocUrl = metaDocUrl;
@@ -120,7 +120,7 @@ public class MetaDocUrlsHandler {
         try {
             if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, metaDocUrl, pageDomain, false, true) ) {    // On success, we log the docUrl inside this method.
                 numOfMetaDocUrlsFound.incrementAndGet();
-                return true;    // It should be the docUrl and it was handled.. so we don't continue checking the internalLink even if this wasn't an actual docUrl.
+                return true;    // It should be the docUrl, and it was handled.. so we don't continue checking the internalLink even if this wasn't an actual docUrl.
             }
             logger.warn("The retrieved metaDocUrl was not a docUrl (unexpected): " + metaDocUrl);
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?

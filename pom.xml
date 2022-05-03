@@ -138,14 +138,14 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-s3</artifactId>
-      <version>1.12.197</version>
+      <version>1.12.210</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/io.minio/minio -->
     <dependency>
       <groupId>io.minio</groupId>
       <artifactId>minio</artifactId>
-      <version>8.3.8</version>
+      <version>8.3.9</version>
       <exclusions>
       <exclusion>
         <groupId>com.google.guava</groupId>

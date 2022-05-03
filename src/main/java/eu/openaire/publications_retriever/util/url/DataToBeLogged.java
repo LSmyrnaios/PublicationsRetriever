@@ -33,7 +33,7 @@ public class DataToBeLogged
             urlId = "unretrievable";
         
         this.urlId = urlId;
-        this.sourceUrl = escapeSourceUrl(sourceUrl);	// The input may have non-expected '\"', '\\' or even '\\\"' which will be unescaped by JsonObject and we have to re-escape them in the output.
+        this.sourceUrl = escapeSourceUrl(sourceUrl);	// The input may have non-expected '\"', '\\' or even '\\\"' which will be unescaped by JsonObject, and we have to re-escape them in the output.
         this.docOrDatasetUrl = docOrDatasetUrl;
 		this.wasUrlChecked = wasUrlChecked;
 		this.wasUrlValid = wasUrlValid;
