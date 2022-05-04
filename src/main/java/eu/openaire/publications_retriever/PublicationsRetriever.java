@@ -138,7 +138,7 @@ public class PublicationsRetriever
 
 	public static void parseArgs(String[] mainArgs)
 	{
-		String usageMessage = "\nUsage: java -jar publications_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all> -inputFileFullPath inputFile -downloadDocFiles(OPTIONAL) -docFileNameType(OPTIONAL) <nameType: originalName | idName | numberName> -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' -inputDataUrl 'inputUrl' < 'input' > 'output'";
+		String usageMessage = "\nUsage: java -jar publications_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all> -inputFileFullPath inputFile -downloadDocFiles(OPTIONAL) -docFileNameType(OPTIONAL) <nameType: originalName | idName | numberName> -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' -inputDataUrl(OPTIONAL) 'inputUrl' -numOfThreads(OPTIONAL) 'threadsNum' < 'input' > 'output'";
 
 		if ( mainArgs.length > 15 ) {
 			String errMessage = "\"PublicationsRetriever\" expected only up to 15 arguments, while you gave: " + mainArgs.length + "!" + usageMessage;
@@ -153,32 +153,6 @@ public class PublicationsRetriever
 		{
 			try {
 				switch ( mainArgs[i] ) {
-					case "-inputFileFullPath":
-						i ++;
-						inputFileFullPath = mainArgs[i];
-						if ( !(inputFileFullPath.startsWith(File.separator) || inputFileFullPath.startsWith("~")) )
-						{
-							if ( inputFileFullPath.startsWith("..") )
-								inputFileFullPath = File.separator + inputFileFullPath;	// Add the separator to not break the path.
-							else if ( inputFileFullPath.startsWith(".") )	// Remove the starting "dot", if exists.
-								inputFileFullPath = StringUtils.replace(inputFileFullPath, ".", "", 1);
-
-							inputFileFullPath = System.getProperty("user.dir") + inputFileFullPath;
-						}
-						try {
-							inputStream = new FileInputStream(inputFileFullPath);
-						} catch (FileNotFoundException fnfe) {
-							String errMessage = "No inputFile was found in \"" + inputFileFullPath + "\"";
-							logger.error(errMessage);
-							System.err.println(errMessage);
-							System.exit(-144);
-						} catch (Exception e) {
-							String errMessage = e.toString();
-							logger.error(errMessage);
-							System.err.println(errMessage);
-							System.exit(-145);
-						}
-						break;
 					case "-retrieveDataType":
 						i ++;
 						String dataType = mainArgs[i];
@@ -206,6 +180,30 @@ public class PublicationsRetriever
 								System.err.println(errMessage);
 								logger.error(errMessage);
 								System.exit(9);
+						}
+						break;
+					case "-inputFileFullPath":
+						i ++;
+						inputFileFullPath = mainArgs[i];
+						if ( !(inputFileFullPath.startsWith(File.separator) || inputFileFullPath.startsWith("~")) )
+						{
+							if ( inputFileFullPath.startsWith("." + File.separator) )	// Remove the starting "dot" + "/" or "\", if exists.
+								inputFileFullPath = StringUtils.replace(inputFileFullPath, "." + File.separator, "", 1);
+
+							inputFileFullPath = System.getProperty("user.dir") + File.separator + inputFileFullPath;	// In case the given path starts with "..", then this also works.
+						}
+						try {
+							inputStream = new FileInputStream(inputFileFullPath);
+						} catch (FileNotFoundException fnfe) {
+							String errMessage = "No inputFile was found in \"" + inputFileFullPath + "\"";
+							logger.error(errMessage);
+							System.err.println(errMessage);
+							System.exit(-144);
+						} catch (Exception e) {
+							String errMessage = e.toString();
+							logger.error(errMessage);
+							System.err.println(errMessage);
+							System.exit(-145);
 						}
 						break;
 					case "-downloadDocFiles":
