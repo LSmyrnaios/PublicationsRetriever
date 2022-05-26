@@ -37,7 +37,7 @@ public class GenericUtils {
     public static String getSelectiveStackTrace(Throwable thr, String initialMessage, int numOfLines)
     {
         StackTraceElement[] stels = thr.getStackTrace();
-        StringBuilder sb = new StringBuilder(22);
+        StringBuilder sb = new StringBuilder(numOfLines *100);
         if ( initialMessage != null )
             sb.append(initialMessage).append(" Stacktrace:").append(FileUtils.endOfLine);	// This StringBuilder is thread-safe as a local-variable.
         for ( int i = 0; (i < stels.length) && (i <= numOfLines); ++i ) {

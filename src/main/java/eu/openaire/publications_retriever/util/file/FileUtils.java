@@ -325,10 +325,6 @@ public class FileUtils
 	}
 
 
-	private static final int BUFFER_SIZE = 3145728;	// 3MB (average fullText-size)
-	private static final byte[] buffer = new byte[BUFFER_SIZE];
-	// The "storeDocFile()" method is synchronized, so this buffer can be safely used across threads. Only one thread uses it at a time.
-	
 	/**
 	 * This method is responsible for storing the docFiles and store them in permanent storage.
 	 * It is synchronized, in order to avoid files' numbering inconsistency.
@@ -358,9 +354,9 @@ public class FileUtils
 				throw new DocFileNotRetrievedException(fnfe.getMessage());
 			}
 
-			int bytesRead = -1;
+			int readByte = -1;
 			long startTime = System.nanoTime();
-			while ( (bytesRead = inStream.read(buffer, 0, BUFFER_SIZE)) != -1 )
+			while ( (readByte = inStream.read()) != -1 )
 			{
 				long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
 				if ( (elapsedTime > FileUtils.maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {
@@ -374,7 +370,7 @@ public class FileUtils
 					numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 					throw new DocFileNotRetrievedException(errMsg);
 				} else
-					outStream.write(buffer, 0, bytesRead);
+					outStream.write(readByte);
 			}
 			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
 
