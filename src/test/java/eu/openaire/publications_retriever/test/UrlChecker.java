@@ -582,7 +582,26 @@ public class UrlChecker {
 
 		//urlList.add("http://id.nii.ac.jp/1391/00011918/");
 
-		urlList.add("https://juniperpublishers.com/ofoaj/OFOAJ.MS.ID.555572.php");
+		//urlList.add("https://juniperpublishers.com/ofoaj/OFOAJ.MS.ID.555572.php");
+
+		//urlList.add("https://www.fujipress.jp/jdr/dr/dsstr000700040343/");
+		//urlList.add("https://www.emerald.com/insight/content/doi/10.1108/TCJ-02-2014-0015/full/html");
+
+		//urlList.add("https://www.ctsu.ox.ac.uk/publications/7626");
+
+		//urlList.add("https://hal.univ-grenoble-alpes.fr/hal-02301376");
+
+		//urlList.add("http://dx.doi.org/10.1080/1751696x.2019.1609799");
+		//urlList.add("https://www.tandfonline.com/doi/full/10.1080/1751696X.2019.1609799?scroll=top&needAccess=true");
+		//urlList.add("https://www.tandfonline.com/doi/pdf/10.1080/1751696X.2019.1609799?download=true");
+
+
+		//urlList.add("https://zenodo.org/record/3778723");
+		//urlList.add("https://iovs.arvojournals.org/arvo/content_public/journal/iovs/933234/z7g00206000501.pdf");
+		//urlList.add("https://iovs.arvojournals.org/article.aspx?articleid=2166142");
+		//urlList.add("https://jov.arvojournals.org/article.aspx?articleid=2136239");
+
+		urlList.add("https://dspace.mit.edu/handle/1721.1/124788");
 
 
 		logger.info("Urls to check:");
@@ -631,6 +650,7 @@ public class UrlChecker {
 			}
 		}
 
+		logger.debug("Found " + UrlUtils.docOrDatasetUrlsWithIDs.keySet().size() + " docOrDataset-urls!");
 		logger.debug("Connection-problematic-urls: " + LoaderAndChecker.connProblematicUrls);
 		logger.debug("Content-problematic-urls: " + PageCrawler.contentProblematicUrls);
 

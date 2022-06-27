@@ -237,7 +237,7 @@ public class PageCrawler
 		} catch ( DocLinkFoundException dlfe) {
 			if ( !verifyDocLink(urlId, sourceUrl, pageUrl, pageDomain, pageContentType, dlfe) )	// url-logging is handled inside.
 				handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false, true);
-			return null;	// This DocLink is the only docLink we will ever gonna get from this page. The sourceUrl is logged inside the called method.
+			return null;	// This DocLink is the only docLink we will ever go to get from this page. The sourceUrl is logged inside the called method.
 			// If this "DocLink" is a DocUrl, then returning "null" here, will trigger the 'PageCrawler.retrieveInternalLinks()' method to exit immediately (and normally).
 		} catch ( DocLinkInvalidException dlie ) {
 			//logger.warn("An invalid docLink < " + dlie.getMessage() + " > was found for pageUrl: \"" + pageUrl + "\". Search was stopped.");	// DEBUG!
@@ -298,6 +298,9 @@ public class PageCrawler
 		String linkAttr, internalLink;
 		int curNumOfInternalLinks = 0;
 
+		// Iterate through the elements and extract the internal link.
+		// The internal link might be half-link, or it may have canonicalization issues. That's ok, it is made whole and cannonicalized later, if needed.
+
 		for ( Element el : elementLinksOnPage )
 		{
 			if ( LoaderAndChecker.retrieveDocuments)	// Currently, these smart-checks are only available for specific docFiles (not for datasets).
@@ -311,8 +314,18 @@ public class PageCrawler
 					}
 					else if ( lowerCaseLinkAttr.contains("pdf") ) {
 						internalLink = el.attr("href").trim();
-						if ( !internalLink.isEmpty() && !internalLink.startsWith("#", 0)
-								&& !UrlTypeChecker.shouldNotAcceptInternalLink(internalLink, null) ) {
+						if ( internalLink.isEmpty() || internalLink.startsWith("#", 0) )
+						{
+							internalLink = el.attr("data-popup").trim();	// Ex: https://www.ingentaconnect.com/content/cscript/cvia/2017/00000002/00000003/art00008
+							if ( internalLink.isEmpty() || internalLink.startsWith("#", 0) )
+							{
+								internalLink = el.attr("data-article-url").trim();
+								if ( internalLink.isEmpty() || internalLink.startsWith("#", 0) )
+									throw new DocLinkInvalidException(internalLink);
+							}
+						}
+
+						if ( !UrlTypeChecker.shouldNotAcceptInternalLink(internalLink, null) ) {
 							//logger.debug("Found the docLink < " + internalLink + " > from link-text: \"" + linkAttr + "\"");	// DEBUG
 							throw new DocLinkFoundException(internalLink);
 						}
@@ -343,9 +356,12 @@ public class PageCrawler
 			}
 
 			internalLink = el.attr("href").trim();
-			if ( internalLink.isEmpty() || internalLink.equals("#") ) {
+			if ( internalLink.isEmpty() || internalLink.startsWith("#", 0) ) {
 				internalLink = el.attr("data-popup").trim();	// Ex: https://www.ingentaconnect.com/content/cscript/cvia/2017/00000002/00000003/art00008
 				if ( internalLink.isEmpty() )
+					continue;
+				internalLink = el.attr("data-article-url").trim();
+				if ( internalLink.isEmpty() || internalLink.startsWith("#", 0) )
 					continue;
 			}
 			if ( (internalLink = gatherInternalLink(internalLink)) != null ) {	// Throws exceptions which go to the caller method.
@@ -480,7 +496,7 @@ public class PageCrawler
 				|| UrlUtils.duplicateUrls.contains(currentLink) )
 				continue;
 
-			// We re-check here, as, in the fast-loop not all of the links are checked against this.
+			// We re-check here, as, in the fast-loop not all the links are checked against this.
 			if ( UrlTypeChecker.shouldNotAcceptInternalLink(currentLink, null) ) {    // If this link matches certain blackListed criteria, move on..
 				//logger.debug("Avoided link: " + currentLink );
 				UrlUtils.duplicateUrls.add(currentLink);

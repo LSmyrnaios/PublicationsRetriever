@@ -1,6 +1,8 @@
 package eu.openaire.publications_retriever.test;
 
+import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
+import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.url.UrlTypeChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
@@ -10,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -77,7 +80,8 @@ public class LinkExtraction {
 		//exampleUrl = "https://journals.lww.com/ijo/Fulltext/2020/68040/Comparative_clinical_trial_of_intracameral.8.aspx";
 		//exampleUrl = "https://www.ans.org/pubs/journals/nse/article-27191/";
 		//exampleUrl = "https://www.hal.inserm.fr/inserm-00348834";
-		exampleUrl = "https://juniperpublishers.com/ofoaj/OFOAJ.MS.ID.555572.php";
+		//exampleUrl = "https://juniperpublishers.com/ofoaj/OFOAJ.MS.ID.555572.php";
+		exampleUrl = "https://iovs.arvojournals.org/article.aspx?articleid=2166142";
 	}
 
 	
@@ -87,8 +91,8 @@ public class LinkExtraction {
 	{
 		String link;
 		try {
-			HashSet<String> extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(exampleHtml, null);
-			if ( (extractedLinksHashSet == null) || (extractedLinksHashSet.size() == 0) )
+			HashSet<String> extractedLinksHashSet = getLinksList(exampleHtml, null);
+			if ( extractedLinksHashSet == null )
 				return;	// Logging is handled inside..
 
 			link = new ArrayList<>(extractedLinksHashSet).get(0);
@@ -109,20 +113,18 @@ public class LinkExtraction {
 	public void testExtractOneLinkFromUrl()
 	{
 		// This is actually a test of how link-extraction from an HTTP-300-page works.
-		
 		String link;
 		try {
 			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl, null), true, false);
-
-			String newUrl = conn.getURL().toString();
+			String finalUrl = conn.getURL().toString();
 			String html = null;
 			if ( (html = ConnSupportUtils.getHtmlString(conn, null)) == null ) {
-				logger.error("Could not retrieve the HTML-code for pageUrl: " + newUrl);
+				logger.error("Could not retrieve the HTML-code for pageUrl: " + finalUrl);
 				link = null;
 			}
 			else {
-				HashSet<String> extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(html, newUrl);
-				if ( extractedLinksHashSet == null || extractedLinksHashSet.size() == 0 )
+				HashSet<String> extractedLinksHashSet = getLinksList(html, finalUrl);
+				if ( extractedLinksHashSet == null )
 					return;	// Logging is handled inside..
 
 				link = new ArrayList<>(extractedLinksHashSet).get(0);
@@ -143,10 +145,10 @@ public class LinkExtraction {
 	public void testExtractAllLinksFromHtml()
 	{
 		try {
-			HashSet<String> extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(exampleHtml, null);
-			if ( extractedLinksHashSet == null || extractedLinksHashSet.size() == 0 )
+			HashSet<String> extractedLinksHashSet = getLinksList(exampleHtml, null);
+			if ( extractedLinksHashSet == null )
 				return;	// Logging is handled inside..
-
+			
 			logger.info("The list of all the internalLinks of \"" + exampleUrl + "\" is:");
 			for ( String link: extractedLinksHashSet )
 				logger.info(link);
@@ -168,17 +170,16 @@ public class LinkExtraction {
 	{
 		try {
 			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl, null), true, false);
-
-			String newUrl = conn.getURL().toString();
+			String finalUrl = conn.getURL().toString();
 			String html = null;
 			if ( (html = ConnSupportUtils.getHtmlString(conn, null)) == null ) {
-				logger.error("Could not retrieve the HTML-code for pageUrl: " + newUrl);
+				logger.error("Could not retrieve the HTML-code for pageUrl: " + finalUrl);
 				return;
 			}
 			//logger.debug("HTML:\n" + html);
 
-			HashSet<String> extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(html, newUrl);
-			if ( extractedLinksHashSet == null || extractedLinksHashSet.size() == 0 )
+			HashSet<String> extractedLinksHashSet = getLinksList(html, finalUrl);
+			if ( extractedLinksHashSet == null )
 				return;	// Logging is handled inside..
 
 			logger.info("The list of all the internalLinks of \"" + exampleUrl + "\" is:");
@@ -200,5 +201,29 @@ public class LinkExtraction {
 			logger.error("", e);
 		}
 	}
-	
+
+
+	private static HashSet<String> getLinksList(String html, String url) throws Exception
+	{
+		HashSet<String> extractedLinksHashSet = null;
+		try {
+			extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(html, url);
+			if ( extractedLinksHashSet == null || extractedLinksHashSet.size() == 0 )
+				return null;    // Logging is handled inside..
+		} catch (DocLinkFoundException dlfe) {
+			// A true-pdf link was found. The only problem is that the list of the links is missing now, since the method exited early.
+			// Using step-by-step debugging can reveal all the available HTML-elements captured (which include the pre-extracted links).
+			String verifiedPdfLink = dlfe.getMessage();
+			String tempLink = verifiedPdfLink;
+			if ( (verifiedPdfLink = URLCanonicalizer.getCanonicalURL(verifiedPdfLink, exampleUrl, StandardCharsets.UTF_8)) == null ) {
+				logger.warn("Could not canonicalize internal url: " + tempLink);
+				verifiedPdfLink = tempLink;
+			}
+			logger.warn("A verified pdf-link was found and the \"PageCrawler.extractInternalLinksFromHtml()\" method exited early, so the list with the can-be-extracted links was not returned!\n"
+					+ verifiedPdfLink);
+			return null;
+		}
+		return extractedLinksHashSet;
+	}
+
 }
