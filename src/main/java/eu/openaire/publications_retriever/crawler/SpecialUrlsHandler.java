@@ -33,10 +33,6 @@ public class SpecialUrlsHandler
 
 	private static final String europepmcPageUrlBasePath = "https://europepmc.org/backend/ptpmcrender.fcgi?accid=";
 
-	private static final String academicMicrosoftFinalPageUrlBasePath = "https://academic.microsoft.com/api/entity/";
-
-	private static final Pattern ACADEMIC_MICROSOFT_ID = Pattern.compile(".+/([\\d]+).*");
-
 	private static final String nasaBaseDomainPath = "https://ntrs.nasa.gov/";
 
 
@@ -51,10 +47,6 @@ public class SpecialUrlsHandler
 		}
 		else if ( (updatedUrl = checkAndGetEuropepmcDocUrl(resourceUrl)) != null ) {
 			//logger.debug("Europepmc-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
-			resourceUrl = updatedUrl;
-		}
-		else if ( (updatedUrl = checkAndGetAcademicMicrosoftPageUrl(resourceUrl)) != null ) {
-			//logger.debug("AcademicMicrosoft-PageURL: " + resourceURL + " to api-entity-pageUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		}
 		else if ( (updatedUrl = checkAndGetNasaDocUrl(resourceUrl)) != null ) {
@@ -125,94 +117,6 @@ public class SpecialUrlsHandler
 				return europepmcUrl;
 		}
 		return null;	// It's from another domain, keep looking..
-	}
-
-
-	/////////// academic.microsoft.com ////////////////////
-	public static String checkAndGetAcademicMicrosoftPageUrl(String initialAcademicMicrosoftUrl)
-	{
-		// https://academic.microsoft.com/#/detail/2084896083
-		// https://academic.microsoft.com/paper/1585286892/related
-
-		// Offline-redirect to the docUrl.
-		if ( initialAcademicMicrosoftUrl.contains("academic.microsoft") )
-		{
-			Matcher academicMicrosoftIdMatcher = ACADEMIC_MICROSOFT_ID.matcher(initialAcademicMicrosoftUrl);
-			if ( !academicMicrosoftIdMatcher.matches() )
-				return initialAcademicMicrosoftUrl;	// Return the url as it is..
-
-			String idStr = null;
-			try {
-				idStr = academicMicrosoftIdMatcher.group(1);
-			} catch (Exception e) { logger.error("", e); return initialAcademicMicrosoftUrl; }	// TODO - Should we throw an exception here..?
-			if ( (idStr != null) && !idStr.isEmpty() )
-				return (academicMicrosoftFinalPageUrlBasePath + idStr + "?entityType=2");
-			else
-				return initialAcademicMicrosoftUrl;
-		}
-		return null;	// It's from another domain, keep looking..
-	}
-
-
-	public static void extractDocUrlFromAcademicMicrosoftJson(String urlId, String sourceUrl, String pageUrl, HttpURLConnection conn)
-	{
-		// There is a json with data containing the docUrl..
-		// https://academic.microsoft.com/api/entity/1585286892?entityType=2
-
-		String jsonData = null;
-		if ( (jsonData = ConnSupportUtils.getHtmlString(conn, null)) == null ) {
-			logger.warn("Could not retrieve the responseBody for pageUrl: " + pageUrl);
-			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + conn.getContentType() + "'.", null, true, "true", "true", "false", "false", "false", null, "null");
-			LoaderAndChecker.connProblematicUrls.incrementAndGet();
-			return;
-		}
-
-		try {
-			// Parse the jsonData
-			JSONObject jObj = new JSONObject(jsonData); // Construct a JSONObject from the retrieved jsonData.
-
-			JSONObject entityObject = jObj.getJSONObject("entity");
-			//logger.debug("EntityObject: " + entityObject.toString());	// DEBUG!
-
-			JSONArray sourceLinks = entityObject.getJSONArray("s");
-			//logger.debug("SourceLinks: " + sourceLinks.toString());	// DEBUG!
-
-			List<String> type999or0possibleDocUrlList = new ArrayList<>(sourceLinks.length());	// 1-4 links usually.
-
-			for ( Object linkObject : sourceLinks ) {
-				JSONObject linkJsonObject = (JSONObject) linkObject;
-				//logger.debug("LinkJsonObject: " + linkJsonObject.toString());	// DEBUG!
-
-				int sourceTypeNum = linkJsonObject.getInt("sourceType");
-				//logger.debug("SourceTypeNum: " + sourceTypeNum);	// DEBUG!
-
-				if ( sourceTypeNum == 3 ) {
-					if ( verifyMicrosoftAcademicPossibleDocLink(urlId, sourceUrl, pageUrl, linkJsonObject.getString("link")) )
-						return;
-				}
-				else if ( (sourceTypeNum == 999) || (sourceTypeNum == 0) ) {	// Keep the "999" and the "0" aside for now.
-					// This ensures that we don't connect with a "999" or "0" type if we don't check the docUrl-guaranteed-type "3" first.
-					String link = linkJsonObject.getString("link");
-					if ( !link.contains("doi.org") )	// This gives only pageUrls for sure, do not connect with it.
-						type999or0possibleDocUrlList.add(link);
-				}
-			}
-
-			// If no type-3 link found or if it wasn't a docUrl or had conn-problems, then check if we got any 999 or 0 to connect with. (Java checks if the list is empty automatically.)
-			for ( String type999or0possibleDocUrl : type999or0possibleDocUrlList )
-				if ( verifyMicrosoftAcademicPossibleDocLink(urlId, sourceUrl, pageUrl, type999or0possibleDocUrl) )
-					return;
-
-			// If it has not "returned" already, then no DocUrl was found.
-			logger.warn("No docUrl was extracted from the academic.microsoft jsonData for pageUrl: " + pageUrl);
-			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson()' method, as no docUrl was extracted from the academic.microsoft jsonData.", null, true, "true", "true", "false", "false", "false", null, "null");
-			PageCrawler.contentProblematicUrls.incrementAndGet();
-
-		} catch ( JSONException je ) {	// In case any of the above "json-keys" was not found.
-			logger.warn("JSON Exception was thrown while trying to retrieve the microsoft.academic docUrl: " + je.getMessage());
-			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson()' method, as there was a JSON-problem while retrieving the microsoft.academic docUrl.", null, true, "true", "true", "false", "false", "false", null, "null");
-			PageCrawler.contentProblematicUrls.incrementAndGet();
-		}
 	}
 
 

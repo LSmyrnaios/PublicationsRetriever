@@ -138,7 +138,7 @@ public class HttpConnUtils
 			//logger.debug("Url: " + finalUrlStr);	// DEBUG!
 			//logger.debug("MimeType: " + mimeType);	// DEBUG!
 			String returnedType = ConnSupportUtils.hasDocOrDatasetMimeType(finalUrlStr, lowerCaseMimeType, contentDisposition, conn, calledForPageUrl, calledForPossibleDocOrDatasetUrl);
-			if ( (returnedType != null) && !finalUrlStr.contains("academic.microsoft.com/api") )	// The "academic.microsoft.com/api" is a json-page which provides the docUrls, so avoid identify it as a "dataset" here..
+			if ( (returnedType != null) )
 			{
 				if ( LoaderAndChecker.retrieveDocuments && returnedType.equals("document") ) {
 					logger.info("docUrl found: < " + finalUrlStr + " >");
@@ -187,8 +187,6 @@ public class HttpConnUtils
 				else if ( (lowerCaseMimeType != null) && ((lowerCaseMimeType.contains("htm") || (lowerCaseMimeType.contains("text") && !lowerCaseMimeType.contains("xml") && !lowerCaseMimeType.contains("csv") && !lowerCaseMimeType.contains("tsv")))) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
 					// TODO - Better make a regex for the above checks..
 					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn, firstHtmlLine, bufferedReader);
-				else if ( finalUrlStr.contains("academic.microsoft.com/api/") )	// JSON content.
-					SpecialUrlsHandler.extractDocUrlFromAcademicMicrosoftJson(urlId, sourceUrl, finalUrlStr, conn);
 				else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" with mimeType: \"" + mimeType + "\" will not be visited!");
 					UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after not matching to a docUrl nor to an htm/text-like page.", null, true, "true", "true", "false", "false", "false", null, "null");

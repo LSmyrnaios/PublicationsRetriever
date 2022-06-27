@@ -32,7 +32,7 @@ public class UrlUtils
 	// Simpler, non-encoding-aware regex: ([^/]+://.+)(?:(?:[?&;](?i)(?:.*token|jsessionid))=[^?&]+)([?&].+)?
 
 	public static final Pattern ANCHOR_FILTER = Pattern.compile("(.+)(#(?!/).+)");	// Remove the anchor at the end of the url to avoid duplicate versions. (anchors might exist even in docUrls themselves)
-	// Note that we may have this: https://academic.microsoft.com/#/detail/2945595536
+	// Note that we may have this: https://academic.microsoft.com/#/detail/2945595536 (these urls are dead now, but others like it , may exist)
 
 	public static AtomicInteger sumOfDocUrlsFound = new AtomicInteger(0);	// Change it back to simple int if finally in singleThread mode
 
