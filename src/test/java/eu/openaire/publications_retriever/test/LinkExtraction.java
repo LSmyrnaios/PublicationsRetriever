@@ -3,6 +3,7 @@ package eu.openaire.publications_retriever.test;
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
+import eu.openaire.publications_retriever.exceptions.DocLinkInvalidException;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.url.UrlTypeChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
@@ -81,7 +82,8 @@ public class LinkExtraction {
 		//exampleUrl = "https://www.ans.org/pubs/journals/nse/article-27191/";
 		//exampleUrl = "https://www.hal.inserm.fr/inserm-00348834";
 		//exampleUrl = "https://juniperpublishers.com/ofoaj/OFOAJ.MS.ID.555572.php";
-		exampleUrl = "https://iovs.arvojournals.org/article.aspx?articleid=2166142";
+		//exampleUrl = "https://iovs.arvojournals.org/article.aspx?articleid=2166142";
+		exampleUrl = "https://www.erudit.org/fr/revues/irrodl/2019-v20-n3-irrodl04799/1062522ar/";
 	}
 
 	
@@ -203,24 +205,23 @@ public class LinkExtraction {
 	}
 
 
-	private static HashSet<String> getLinksList(String html, String url) throws Exception
+	private static HashSet<String> getLinksList(String html, String url)
 	{
 		HashSet<String> extractedLinksHashSet = null;
 		try {
 			extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(html, url);
 			if ( extractedLinksHashSet == null || extractedLinksHashSet.size() == 0 )
 				return null;    // Logging is handled inside..
-		} catch (DocLinkFoundException dlfe) {
-			// A true-pdf link was found. The only problem is that the list of the links is missing now, since the method exited early.
-			// Using step-by-step debugging can reveal all the available HTML-elements captured (which include the pre-extracted links).
-			String verifiedPdfLink = dlfe.getMessage();
-			String tempLink = verifiedPdfLink;
-			if ( (verifiedPdfLink = URLCanonicalizer.getCanonicalURL(verifiedPdfLink, exampleUrl, StandardCharsets.UTF_8)) == null ) {
-				logger.warn("Could not canonicalize internal url: " + tempLink);
-				verifiedPdfLink = tempLink;
+		} catch (Exception e) {
+			String link = e.getMessage();
+			if ( e instanceof DocLinkFoundException ) {
+				// A true-pdf link was found. The only problem is that the list of the links is missing now, since the method exited early.
+				// Using step-by-step debugging can reveal all the available HTML-elements captured (which include the pre-extracted links).
+				PageCrawler.verifyDocLink("urlId", url, url, null, null, (DocLinkFoundException) e);
+			} else if ( e instanceof DocLinkInvalidException ) {
+				logger.warn("A invalid docLink was found: " + link);
 			}
-			logger.warn("A verified pdf-link was found and the \"PageCrawler.extractInternalLinksFromHtml()\" method exited early, so the list with the can-be-extracted links was not returned!\n"
-					+ verifiedPdfLink);
+			logger.warn("The \"PageCrawler.extractInternalLinksFromHtml()\" method exited early, so the list with the can-be-extracted links was not returned!");
 			return null;
 		}
 		return extractedLinksHashSet;

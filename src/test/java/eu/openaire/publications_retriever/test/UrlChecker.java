@@ -601,7 +601,9 @@ public class UrlChecker {
 		//urlList.add("https://iovs.arvojournals.org/article.aspx?articleid=2166142");
 		//urlList.add("https://jov.arvojournals.org/article.aspx?articleid=2136239");
 
-		urlList.add("https://dspace.mit.edu/handle/1721.1/124788");
+		//urlList.add("https://dspace.mit.edu/handle/1721.1/124788");
+
+		urlList.add("https://www.erudit.org/fr/revues/irrodl/2019-v20-n3-irrodl04799/1062522ar/");
 
 
 		logger.info("Urls to check:");
