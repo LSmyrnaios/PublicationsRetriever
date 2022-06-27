@@ -10,6 +10,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.net.CookieStore;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -88,6 +90,7 @@ public class LoaderAndChecker
 		boolean isFirstRun = true;
 		int batchCount = 0;
 
+		CookieStore cookieStore = HttpConnUtils.cookieManager.getCookieStore();
 		List<Callable<Boolean>> callableTasks = new ArrayList<>(FileUtils.jsonBatchSize);
 
 		// Start loading and checking urls.
@@ -151,6 +154,9 @@ public class LoaderAndChecker
 			}
 
 			callableTasks.clear();
+			logger.debug("The number of cookies is: " + cookieStore.getCookies().size());
+			boolean cookiesDeleted = cookieStore.removeAll();
+			logger.debug(cookiesDeleted ? "The cookies where removed!" : "No cookies where removed!");
 			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end while-loop
 	}
@@ -167,6 +173,7 @@ public class LoaderAndChecker
 		boolean isFirstRun = true;
 		int batchCount = 0;
 
+		CookieStore cookieStore = HttpConnUtils.cookieManager.getCookieStore();	// This cookie store is a reference to the one used throughout the execution.
 		List<Callable<Boolean>> callableTasks = new ArrayList<>(FileUtils.jsonBatchSize);
 
 		// Start loading and checking urls.
@@ -309,6 +316,9 @@ public class LoaderAndChecker
 			}
 
 			callableTasks.clear();
+			logger.debug("The number of cookies is: " + cookieStore.getCookies().size());
+			boolean cookiesDeleted = cookieStore.removeAll();
+			logger.debug(cookiesDeleted ? "The cookies where removed!" : "No cookies where removed!");
 			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end loading-while-loop
 	}
@@ -324,6 +334,9 @@ public class LoaderAndChecker
 		HashMultimap<String, String> loadedIdUrlPairs;
 		boolean isFirstRun = true;
 		int batchCount = 0;
+
+		CookieStore cookieStore = HttpConnUtils.cookieManager.getCookieStore();	// This cookie store is a reference to the one used throughout the execution.
+		// So, this is fine to be "cached" here, and not to be called in every batch. (it is tested that the )
 
 		List<Callable<Boolean>> callableTasks = new ArrayList<>(FileUtils.jsonBatchSize);
 
@@ -345,7 +358,6 @@ public class LoaderAndChecker
 			for ( Map.Entry<String,String> pair : pairs )
 			{
 				callableTasks.add(() -> {
-
 					String retrievedId = pair.getKey();
 					String retrievedUrl = pair.getValue();
 
@@ -398,6 +410,9 @@ public class LoaderAndChecker
 			}
 
 			callableTasks.clear();
+			logger.debug("The number of cookies is: " + cookieStore.getCookies().size());
+			boolean cookiesDeleted = cookieStore.removeAll();
+			logger.debug(cookiesDeleted ? "The cookies where removed!" : "No cookies where removed!");
 			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end loading-while-loop
 	}
@@ -414,6 +429,7 @@ public class LoaderAndChecker
 		boolean isFirstRun = true;
 		int batchCount = 0;
 
+		CookieStore cookieStore = HttpConnUtils.cookieManager.getCookieStore();
 		List<Callable<Boolean>> callableTasks = new ArrayList<>(FileUtils.jsonBatchSize);
 
 		// Start loading and checking urls.
@@ -487,6 +503,9 @@ public class LoaderAndChecker
 			}
 
 			callableTasks.clear();
+			logger.debug("The number of cookies is: " + cookieStore.getCookies().size());
+			boolean cookiesDeleted = cookieStore.removeAll();
+			logger.debug(cookiesDeleted ? "The cookies where removed!" : "No cookies where removed!");
 			FileUtils.writeResultsToFile();	// Writes to the output file
 		}// end loading-while-loop
 	}

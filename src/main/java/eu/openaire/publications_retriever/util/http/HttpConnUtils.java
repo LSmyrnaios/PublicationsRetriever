@@ -66,6 +66,12 @@ public class HttpConnUtils
 
 	public static final String docFileNotRetrievedMessage = DocFileNotRetrievedException.class.getSimpleName() + " was thrown before the docFile could be stored. ";  // Get the class-name programmatically, in order to easily spot the error if the exception-name changes.
 
+	public static final CookieManager cookieManager = new java.net.CookieManager();
+	static {
+		CookieHandler.setDefault(cookieManager);
+		cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER);
+	}
+
 
 	/**
 	 * This method checks if a certain url can give us its mimeType, as well as if this mimeType is a docMimeType.
@@ -270,7 +276,7 @@ public class HttpConnUtils
 
 		try {
 			if ( blacklistedDomains.contains(domainStr) )
-		    	throw new RuntimeException("Avoid connecting to blackListed domain: \"" + domainStr + "\" with url: " + resourceURL);
+				throw new RuntimeException("Avoid connecting to blackListed domain: \"" + domainStr + "\" with url: " + resourceURL);
 
 			// Check whether we don't accept "GET" method for uncategorizedInternalLinks and if this url is such a case.
 			if ( !calledForPageUrl && shouldNOTacceptGETmethodForUncategorizedInternalLinks
