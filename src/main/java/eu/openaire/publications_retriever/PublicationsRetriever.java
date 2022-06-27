@@ -420,7 +420,16 @@ public class PublicationsRetriever
 
 		if ( logger.isDebugEnabled() )
 		{
-			sortHashTableByValueAndPrint(UrlUtils.domainsAndHits, true);
+			List<Map.Entry<String, DomainConnectionData>> list = new LinkedList<>(ConnSupportUtils.domainsWithConnectionData.entrySet());
+			Comparator<Map.Entry<String, DomainConnectionData>> comparator = Comparator.comparingInt(o -> o.getValue().getTimesConnected());
+			list.sort(comparator.reversed());	// Descending order.
+			logger.debug(list.size() + " domains : timesConnected");
+			for ( Map.Entry<String, DomainConnectionData> domainWithLock : list )
+			{
+				logger.debug(domainWithLock.getKey() + " : " + domainWithLock.getValue().getTimesConnected());
+			}
+
+			//sortHashTableByValueAndPrint(UrlUtils.domainsAndHits, true);
 
 			// DEBUG! comment-out the following in production (even in debug-mode).
 			/*if ( MachineLearning.useMLA )
