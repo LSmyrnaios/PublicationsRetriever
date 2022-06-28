@@ -8,6 +8,7 @@ import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlTypeChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -19,6 +20,7 @@ import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -53,11 +55,13 @@ public class PageCrawler
 
 	private static final String space = "(?:\\s|%20)*";	// This includes the encoded space inside the url-string.
 
+	public static final Pattern DOCUMENT_TEXT = Pattern.compile("pdf|télécharger|texte" + space + "intégral");
+
 	// The following regex is used both in the text around the links and in the links themselves.
 	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:manu[ae]l|gu[ií](?:de|a)|preview|leaflet|agreement|accessibility|journal" + space + "catalog|disclose" + space + "file|poli(?:c(?:y|ies)|tika)"	// "policy" can be a lone word or a word after: repository|embargo|privacy|data protection|take down|supplement|access
 																		+ "|licen(?:se|cia)" + space + "(?:of|de)" + space + "us[eo]|governance" + space + "statement|normativa|consumer" + space + "information|permission|editorial" + space + "board|dé(?:p(?:ôt[s]?|oser)|butez)|créer" + space + "votre|orcid|subscription|instruction|code" + space + "of" + space + "conduct|request|join|compte|account"
 																		+ "|table" + space + "of" + space + "contents|front" + space + "matter|information" + space + "for" + space + "authors|pdf(?:/a)?" + space + "conversion|catalogue|classifieds"	// classifieds = job-ads
-																		+ "|conflicts" + space + "of" + space + "interest|(?:recommendation|order)" + space + "form|adverti[sz]e|mandatory" + space + "open" + space + "access|recommandations" + space + "pour" + space + "s'affilier|hal.*collections|terms|conditions|hakuohjeet|logigramme|export_liste_publi"
+																		+ "|pdf-viewer|conflicts" + space + "of" + space + "interest|(?:recommendation|order)" + space + "form|adverti[sz]e|mandatory" + space + "open" + space + "access|recommandations" + space + "pour" + space + "s'affilier|hal.*collections|terms|conditions|hakuohjeet|logigramme|export_liste_publi"
 																		+ "|procedure|規程|運営規程"	// 規程 == procedure, 運営規程 = Operating regulations  (in japanese)
 																		+ "|editorial|(?:peer|mini)" + space + "review|case" + space + "report|review" + space + "article|short" + space + "communication|letter" + space + "to" + space + "editor"
 																		+ "|/(?:entry|information|opinion|research-article).pdf$).*");	// The plain "research-article.pdf" is the template provided by journals.
@@ -312,18 +316,11 @@ public class PageCrawler
 						//logger.debug("Avoiding invalid full-text with context: \"" + linkAttr + "\", internalLink: " + el.attr("href"));	// DEBUG!
 						continue;	// Avoid collecting it..
 					}
-					else if ( lowerCaseLinkAttr.contains("pdf") ) {
+					else if ( DOCUMENT_TEXT.matcher(lowerCaseLinkAttr).matches() ) {
 						internalLink = el.attr("href").trim();
-						if ( internalLink.isEmpty() || internalLink.startsWith("#", 0) )
-						{
-							internalLink = el.attr("data-popup").trim();	// Ex: https://www.ingentaconnect.com/content/cscript/cvia/2017/00000002/00000003/art00008
-							if ( internalLink.isEmpty() || internalLink.startsWith("#", 0) )
-							{
-								internalLink = el.attr("data-article-url").trim();
-								if ( internalLink.isEmpty() || internalLink.startsWith("#", 0) )
-									throw new DocLinkInvalidException(internalLink);
-							}
-						}
+						if ( internalLink.isEmpty() || internalLink.equals("#") )
+							if ( (internalLink = getInternalDataLink(el)) == null )
+								continue;	// This means that no attributes containing the word "data" was found in this element.
 
 						if ( !UrlTypeChecker.shouldNotAcceptInternalLink(internalLink, null) ) {
 							//logger.debug("Found the docLink < " + internalLink + " > from link-text: \"" + linkAttr + "\"");	// DEBUG
@@ -334,9 +331,9 @@ public class PageCrawler
 				}
 
 				linkAttr = el.attr("title");
-				if ( !linkAttr.isEmpty() && linkAttr.toLowerCase().contains("pdf") ) {
+				if ( !linkAttr.isEmpty() && DOCUMENT_TEXT.matcher(linkAttr.toLowerCase()).matches() ) {
 					internalLink = el.attr("href").trim();
-					if ( !internalLink.isEmpty() && !internalLink.startsWith("#", 0) ) {
+					if ( !internalLink.isEmpty() && !internalLink.equals("#") ) {
 						//logger.debug("Found the docLink < " + internalLink + " > from link-title: \"" + linkAttr + "\"");	// DEBUG
 						throw new DocLinkFoundException(internalLink);
 					}
@@ -347,7 +344,7 @@ public class PageCrawler
 				linkAttr = el.attr("type").trim();
 				if ( !linkAttr.isEmpty() && ConnSupportUtils.knownDocMimeTypes.contains(linkAttr) ) {
 					internalLink = el.attr("href").trim();
-					if ( !internalLink.isEmpty() && !internalLink.startsWith("#", 0) ) {
+					if ( !internalLink.isEmpty() && !internalLink.equals("#") ) {
 						//logger.debug("Found the docLink < " + internalLink + " > from link-type: \"" + linkAttr + "\"");	// DEBUG
 						throw new DocLinkFoundException(internalLink);
 					}
@@ -356,14 +353,10 @@ public class PageCrawler
 			}
 
 			internalLink = el.attr("href").trim();
-			if ( internalLink.isEmpty() || internalLink.startsWith("#", 0) ) {
-				internalLink = el.attr("data-popup").trim();	// Ex: https://www.ingentaconnect.com/content/cscript/cvia/2017/00000002/00000003/art00008
-				if ( internalLink.isEmpty() )
+			if ( internalLink.isEmpty() || internalLink.equals("#") )
+				if ( (internalLink = getInternalDataLink(el)) == null )
 					continue;
-				internalLink = el.attr("data-article-url").trim();
-				if ( internalLink.isEmpty() || internalLink.startsWith("#", 0) )
-					continue;
-			}
+
 			if ( (internalLink = gatherInternalLink(internalLink)) != null ) {	// Throws exceptions which go to the caller method.
 				urls.add(internalLink);
 				if ( (++curNumOfInternalLinks) > MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE )
@@ -371,6 +364,22 @@ public class PageCrawler
 			}
 		}
 		return urls;
+	}
+
+
+	private static String getInternalDataLink(Element element)
+	{
+		String internalLink = null;
+		List<Attribute> attributes = element.attributes().asList();
+		for ( Attribute attribute : attributes ) {
+			String name = attribute.getKey();
+			if ( name.contains("data") ) {	// For example: "data", "data-popup", "data-article-url". Example-url: https://www.ingentaconnect.com/content/cscript/cvia/2017/00000002/00000003/art00008
+				internalLink = attribute.getValue().trim();
+				if ( !internalLink.isEmpty() && !internalLink.equals("#") )
+					break;	// Upon finding the first real link, the method returns it.
+			}
+		}
+		return internalLink;
 	}
 
 

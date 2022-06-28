@@ -26,18 +26,18 @@ public class MetaDocUrlsHandler {
 
     public static Pattern COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS;    // Its pattern gets compiled at runtime, only one time, depending on the Datatype.
     static {
-        // Depending on the datatype, the pattern is formed differently.
-        String pattern = "\".+\\.(?:";
+        // Depending on the datatype, the regex is formed differently.
+        String regex = ".+\\.(?:";
 
         if ( !LoaderAndChecker.retrieveDatasets )
-            pattern += "zip|rar|";  // If no datasets retrieved, block these types.
+            regex += "zip|rar|";  // If no datasets retrieved, block these types.
         else if ( !LoaderAndChecker.retrieveDocuments )
-            pattern += "pdf|doc[x]?|";  // If no documents retrieved, block these types.
+            regex += "pdf|doc[x]?|";  // If no documents retrieved, block these types.
         //else -> no more datatype-dependent additions
 
-        pattern += "apk|jpg)(?:\\?.+)?$";
-        logger.debug("MetaDocUrlsHandler -> Pattern: " + pattern);
-        COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS = Pattern.compile(pattern);
+        regex += "apk|jpg|png)(?:\\?.+)?$";
+        logger.debug("COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS -> REGEX: " + regex);
+        COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS = Pattern.compile(regex);
     }
 
     public static AtomicInteger numOfMetaDocUrlsFound = new AtomicInteger(0);
