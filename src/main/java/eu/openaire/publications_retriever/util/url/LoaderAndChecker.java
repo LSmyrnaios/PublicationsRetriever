@@ -336,7 +336,6 @@ public class LoaderAndChecker
 		int batchCount = 0;
 
 		CookieStore cookieStore = HttpConnUtils.cookieManager.getCookieStore();	// This cookie store is a reference to the one used throughout the execution.
-		// So, this is fine to be "cached" here, and not to be called in every batch. (it is tested that the )
 
 		List<Callable<Boolean>> callableTasks = new ArrayList<>(FileUtils.jsonBatchSize);
 

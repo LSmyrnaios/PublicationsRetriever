@@ -81,6 +81,8 @@ public class ConnSupportUtils
 	public static final Set<String> knownDocMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 	public static final Set<String> knownDatasetMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
+	public static final Hashtable<String, DomainConnectionData> domainsWithConnectionData = new Hashtable<>();
+
 
 	public static void setKnownMimeTypes()
 	{
@@ -338,8 +340,6 @@ public class ConnSupportUtils
 		}
 	}
 
-
-	public static final Hashtable<String, DomainConnectionData> domainsWithConnectionData = new Hashtable<>();
 
 	/**
 	 * This method receives the domain and manages the sleep-time, if needed.

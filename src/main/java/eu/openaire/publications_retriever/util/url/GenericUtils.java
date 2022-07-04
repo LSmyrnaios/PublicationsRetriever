@@ -1,5 +1,6 @@
 package eu.openaire.publications_retriever.util.url;
 
+import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
@@ -22,15 +23,25 @@ public class GenericUtils {
         HttpConnUtils.timesDomainsReturnedNoType.clear();
         ConnSupportUtils.timesDomainsReturned5XX.clear();
         ConnSupportUtils.timesDomainsHadTimeoutEx.clear();
+        PageCrawler.timesDomainNotGivingInternalLinks.clear();
+        PageCrawler.timesDomainNotGivingDocUrls.clear();
+        UrlUtils.docOrDatasetUrlsWithIDs.clear();
         UrlUtils.domainsAndHits.clear();
 
         // Domain additional data, which does not contribute in blocking the domains, but they do contribute in performance.
         HttpConnUtils.domainsSupportingHTTPS.clear();
+        HttpConnUtils.domainsWithUnsupportedHeadMethod.clear();
         HttpConnUtils.domainsWithUnsupportedAcceptLanguageParameter.clear();
 
         // Paths' data.
         ConnSupportUtils.timesPathsReturned403.clear();
         ConnSupportUtils.domainsMultimapWithPaths403BlackListed.clear();
+
+        // Other data which is handled per-batch by the PDF-AggregationService. These are commented-out here, as they will be cleared anyway.
+        //ConnSupportUtils.domainsWithConnectionData.clear();
+        //UrlUtils.docOrDatasetUrlsWithIDs.clear();
+
+        // The data-structures from the "MachineLearning" class are not added here, since it is in experimental phase, and thus these data-structures will most likely be empty.
     }
 
 
