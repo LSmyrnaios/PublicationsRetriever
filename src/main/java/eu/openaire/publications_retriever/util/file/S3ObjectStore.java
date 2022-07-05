@@ -12,9 +12,9 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 
 
-public class S3ObjectStoreMinIO {
+public class S3ObjectStore {
 
-    private static final Logger logger = LoggerFactory.getLogger(S3ObjectStoreMinIO.class);
+    private static final Logger logger = LoggerFactory.getLogger(S3ObjectStore.class);
 
     private static String endpoint = null;
     private static String accessKey = null;
@@ -32,7 +32,7 @@ public class S3ObjectStoreMinIO {
     /**
      * This must be called before any other methods.
      * */
-    public S3ObjectStoreMinIO()
+    public S3ObjectStore()
     {
         // Take the credentials from the file.
         Scanner myReader = null;

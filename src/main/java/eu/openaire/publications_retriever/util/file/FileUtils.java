@@ -97,7 +97,7 @@ public class FileUtils
 		setOutput(output);
 
 		if ( shouldUploadFilesToS3 )
-			new S3ObjectStoreMinIO();
+			new S3ObjectStore();
 	}
 
 
@@ -376,7 +376,7 @@ public class FileUtils
 
 			DocFileData docFileData;
 			if ( shouldUploadFilesToS3 ) {
-				docFileData = S3ObjectStoreMinIO.uploadToS3(docFile.getName(), docFile.getAbsolutePath());
+				docFileData = S3ObjectStore.uploadToS3(docFile.getName(), docFile.getAbsolutePath());
 				if ( docFileData != null ) {    // Otherwise, the returned object will be null.
 					docFileData.setDocFile(docFile);
 					// In the S3 case, we use IDs or increment-numbers as the names, so no duplicate-overwrite should be a problem here.
