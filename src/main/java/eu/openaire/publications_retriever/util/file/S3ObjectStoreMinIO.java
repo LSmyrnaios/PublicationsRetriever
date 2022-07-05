@@ -25,7 +25,7 @@ public class S3ObjectStoreMinIO {
     private static MinioClient minioClient;
 
     public static final boolean shouldEmptyBucket = false;  // Set true only for testing!
-    public static final String credentialsFilePath = FileUtils.workingDir + "S3_minIO_credentials.txt";
+    public static final String credentialsFilePath = FileUtils.workingDir + "S3_credentials.txt";
     private static final boolean shouldShowAllS3Buckets = false;
 
 

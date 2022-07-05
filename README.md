@@ -96,9 +96,7 @@ arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
   The order of the program's arguments matters only **per pair**. For example, the argument **'storageDir'**, has to be placed always after the **'-docFilesStorage''** argument.
   <br><br>
 
-**Note**: in order to access the S3ObjectStore, you should provide a file *"S3_minIO_credentials.txt"* (when using the MinIO) or *"S3_amazon_credentials.txt"*, inside the *working directory*.<br>
-In the *"S3_minIO_credentials.txt"* file, you should provide the *endpoint*, the *accessKey*, the *secretKey*, the *region* and the *bucket*, in that order, separated by comma.<br>
-In the *"S3_amazon_credentials.txt"* file, you should provide the *accessKey*, the *secretKey*, the *region* and the *bucket*, in that order, separated by comma.<br>
+**Note**: in order to access the S3ObjectStore, you should provide the file *"S3_credentials.txt"*, inside the *working directory*, which must contain the *endpoint*, the *accessKey*, the *secretKey*, the *region* and the *bucket*, in that order, separated by commas.<br>
 <br>
 
 
