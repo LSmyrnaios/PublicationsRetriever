@@ -98,7 +98,7 @@ public class LoaderAndChecker
 		{
 			loadedUrlGroup = FileUtils.getNextUrlBatchTest();	// Take urls from single-columned (testing) csvFile.
 			
-			if ( isFinishedLoading(loadedUrlGroup.isEmpty(), isFirstRun) )	// Throws RuntimeException which is automatically passed on.
+			if ( isFinishedLoading(loadedUrlGroup.isEmpty(), isFirstRun) )
 				break;
 			else
 				isFirstRun = false;
@@ -181,7 +181,7 @@ public class LoaderAndChecker
 		{
 			loadedIdUrlPairs = FileUtils.getNextIdUrlPairBatchFromJson(); // Take urls from jsonFile.
 			
-			if ( isFinishedLoading(loadedIdUrlPairs.isEmpty(), isFirstRun) )	// Throws RuntimeException which is automatically passed on.
+			if ( isFinishedLoading(loadedIdUrlPairs.isEmpty(), isFirstRun) )
 				break;
 			else
 				isFirstRun = false;
@@ -236,7 +236,7 @@ public class LoaderAndChecker
 						}
 
 						// Use this rule, if we accept the slow "hdl.handle.net"
-						if ( retrievedUrl.contains("/handle/") )	// If this url contains "/handle/" we know that it's a bestCaseUrl among urls from the domain "handle.net", which after redirects reaches the bestCaseUrl (containing "/handle/").
+						if ( retrievedUrl.contains("/handle/") )	// If this url contains "/handle/" we know that it's a bestCaseUrl among urls from the domain "handle.net", which, after redirects, reaches the bestCaseUrl (containing "/handle/").
 							bestNonDocNonDatasetUrl = retrievedUrl;	// We can't just connect here, as the next url might be a possibleDocOrDatasetUrl.
 						else if ( (bestNonDocNonDatasetUrl == null) && !retrievedUrl.contains("doi.org") )	// If no other preferable url is found, we should prefer the nonDOI-one, if present, as the DOI-urls have lots of redirections.
 							nonDoiUrl = retrievedUrl;
@@ -344,7 +344,7 @@ public class LoaderAndChecker
 		{
 			loadedIdUrlPairs = FileUtils.getNextIdUrlPairBatchFromJson(); // Take urls from jsonFile.
 
-			if ( isFinishedLoading(loadedIdUrlPairs.isEmpty(), isFirstRun) )	// Throws RuntimeException which is automatically passed on.
+			if ( isFinishedLoading(loadedIdUrlPairs.isEmpty(), isFirstRun) )
 				break;
 			else
 				isFirstRun = false;
@@ -436,7 +436,7 @@ public class LoaderAndChecker
 		{
 			loadedIdUrlPairs = FileUtils.getNextIdUrlPairBatchFromJson(); // Take urls from jsonFile.
 
-			if ( isFinishedLoading(loadedIdUrlPairs.isEmpty(), isFirstRun) )	// Throws RuntimeException which is automatically passed on.
+			if ( isFinishedLoading(loadedIdUrlPairs.isEmpty(), isFirstRun) )
 				break;
 			else
 				isFirstRun = false;

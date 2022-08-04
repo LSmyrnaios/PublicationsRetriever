@@ -60,6 +60,10 @@ public class PublicationsRetriever
 
 	public static void main( String[] args )
     {
+		logger.info("Calling main method with these args: ");
+		for ( String arg: args )
+			logger.info("'" + arg + "'");
+
 		SignalUtils.setSignalHandlers();
 
 		startTime = Instant.now();

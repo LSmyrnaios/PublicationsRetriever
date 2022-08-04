@@ -38,7 +38,7 @@ public class TestNonStandardInputOutput  {
 
 
 	@BeforeAll
-	private static void setTypeOfInputData()
+	public static void setTypeOfInputData()
 	{
 		LoaderAndChecker.useIdUrlPairs = testingSubDir.equals("idUrlPairs");
 		if ( !LoaderAndChecker.useIdUrlPairs )
@@ -65,11 +65,6 @@ public class TestNonStandardInputOutput  {
 		args[6] = "1";
 		args[7] = "-docFilesStorage";
 		args[8] = "/storage/docFiles";
-
-		logger.info("Calling main method with these args: ");
-		for ( String arg: args )
-			logger.info("'" + arg + "'");
-
 		main(args);
 	}
 
@@ -86,11 +81,6 @@ public class TestNonStandardInputOutput  {
 		args[4] = "originalName";
 		args[5] = "-docFilesStorage";
 		args[6] = "/storage/runs/run1/docFiles";
-
-		logger.info("Calling main method with these args: ");
-		for ( String arg: args )
-			logger.info("'" + arg + "'");
-
 		main(args);
 	}
 
@@ -107,11 +97,6 @@ public class TestNonStandardInputOutput  {
 		args[4] = "idName";
 		args[5] = "-docFilesStorage";
 		args[6] = "S3ObjectStore";
-
-		logger.info("Calling main method with these args: ");
-		for ( String arg: args )
-			logger.info("'" + arg + "'");
-
 		main(args);
 	}
 
@@ -125,11 +110,6 @@ public class TestNonStandardInputOutput  {
 		args[1] = "document";	// "document" OR "dataset" OR "all"
 		args[2] = "-inputFileFullPath";
 		args[3] = "./testData/idUrlPairs/orderedList1000.json";
-
-		logger.info("Calling main method with these args: ");
-		for ( String arg: args )
-			logger.info("'" + arg + "'");
-
 		main(args);
 	}
 
@@ -145,11 +125,6 @@ public class TestNonStandardInputOutput  {
 		args[3] = "./testData/idUrlPairs/orderedList1000.json";
 		args[4] = "-numOfThreads";
 		args[5] = "10";
-
-		logger.info("Calling main method with these args: ");
-		for ( String arg: args )
-			logger.info("'" + arg + "'");
-
 		main(args);
 	}
 
@@ -164,17 +139,16 @@ public class TestNonStandardInputOutput  {
 		args[2] = "-inputDataUrl";
 		args[3] = "https://drive.google.com/uc?export=download&id=1YIF6EkU-yqlOFnQ73hqy2Dj0GUKEKz-S";	// "orderedList1000.json"
 		//args[3] = "http://localhost:8080/api/urls";
-
-		logger.info("Calling main method with these args: ");
-		for ( String arg: args )
-			logger.info("'" + arg + "'");
-
 		main(args);
 	}
 
 
 	public static void main( String[] args )
 	{
+		logger.info("Calling main method with these args: ");
+		for ( String arg: args )
+			logger.info("'" + arg + "'");
+
 		SignalUtils.setSignalHandlers();
 		
 		PublicationsRetriever.startTime = Instant.now();
