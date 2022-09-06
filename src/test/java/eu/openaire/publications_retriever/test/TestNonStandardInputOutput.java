@@ -5,6 +5,7 @@ import eu.openaire.publications_retriever.crawler.MachineLearning;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.signal.SignalUtils;
+import eu.openaire.publications_retriever.util.url.GenericUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -154,6 +155,11 @@ public class TestNonStandardInputOutput  {
 		PublicationsRetriever.startTime = Instant.now();
 		
 		PublicationsRetriever.parseArgs(args);
+
+		if ( ! GenericUtils.checkInternetConnectivity() ) {
+			FileUtils.closeIO();
+			System.exit(-44);
+		}
 
 		logger.info("Starting PublicationsRetriever..");
 		ConnSupportUtils.setKnownMimeTypes();

@@ -1,6 +1,5 @@
 package eu.openaire.publications_retriever.test;
 
-import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.exceptions.DocLinkInvalidException;
@@ -13,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.HttpURLConnection;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 

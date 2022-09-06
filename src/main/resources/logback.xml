@@ -1,6 +1,6 @@
 <configuration debug="false">
 
-    <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>   <!-- Default delay: 0ms (zero) -->
+    <shutdownHook class="ch.qos.logback.core.hook.DefaultShutdownHook"/>   <!-- Default delay: 0ms (zero) -->
 
     <appender name="RollingFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>logs/PublicationsRetriever.log</file>

@@ -4,8 +4,27 @@ import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.URL;
 
 public class GenericUtils {
+
+    private static final Logger logger = LoggerFactory.getLogger(GenericUtils.class);
+
+
+    public static boolean checkInternetConnectivity()
+    {
+        try {
+            new URL("https://www.google.com/").openConnection().connect();
+            logger.info("The internet connection is successful.");
+            return true;
+        } catch (Exception e) {
+            logger.error("The internet connection has failed!", e);
+            return false;
+        }
+    }
 
 
     /**

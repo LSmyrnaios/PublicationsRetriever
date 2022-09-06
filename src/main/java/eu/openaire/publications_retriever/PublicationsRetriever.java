@@ -8,6 +8,7 @@ import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.DomainConnectionData;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import eu.openaire.publications_retriever.util.signal.SignalUtils;
+import eu.openaire.publications_retriever.util.url.GenericUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlTypeChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
@@ -69,6 +70,11 @@ public class PublicationsRetriever
 		startTime = Instant.now();
 
 		parseArgs(args);
+
+		if ( ! GenericUtils.checkInternetConnectivity() ) {
+			FileUtils.closeIO();
+			System.exit(-44);
+		}
 
 		logger.info("Starting PublicationsRetriever..");
 		ConnSupportUtils.setKnownMimeTypes();
