@@ -603,7 +603,96 @@ public class UrlChecker {
 
 		//urlList.add("https://dspace.mit.edu/handle/1721.1/124788");
 
-		urlList.add("https://www.erudit.org/fr/revues/irrodl/2019-v20-n3-irrodl04799/1062522ar/");
+		//urlList.add("https://www.erudit.org/fr/revues/irrodl/2019-v20-n3-irrodl04799/1062522ar/");
+
+
+		//urlList.add("https://actamedica.lfhk.cuni.cz/61/3/0108/");
+		//urlList.add("https://actamedica.lfhk.cuni.cz/media/pdf/am_2018061030108.pdf");
+
+		//urlList.add("https://manuscript.elsevier.com/S0955221916301078/pdf/S0955221916301078.pdf");
+
+		//urlList.add("https://culturalanalytics.org/article/11773.pdf");	// For some reason, this fails passing the regexes-check.
+
+		//urlList.add("http://publikationen.ub.uni-frankfurt.de/opus4/frontdoor/deliver/index/docId/45461/file/daek_et_al_2017_editorial.pdf");
+		// The above is failing due to the "editorial" keyword which is used in some false-positive publications. While this url point to a true publication.
+
+		//urlList.add("https://www.jstage.jst.go.jp/article/photopolymer/19/1/19_1_5/_pdf");
+
+		// TODO - Check why the following working DocUrls are rejected from the regexes!
+		// Make sure they are not false-positive pubs.
+		//urlList.add("http://www.meteo.psu.edu/holocene/public_html/shared/articles/NingEtAlJClimate12.pdf");
+
+		//urlList.add("https://www.thieme-connect.de/products/ejournals/pdf/10.4103/jde.JDE_8_19.pdf");
+		//hAlso this:   https://www.thieme-connect.de/products/ejournals/pdf/10.1055/s-0037-1606739.pdf
+
+		//urlList.add("https://www.ahajournals.org/doi/pdf/10.1161/01.CIR.0000114527.10764.CC");
+
+		//urlList.add("https://journals.openedition.org/quaderni/pdf/461");
+
+		//urlList.add("http://repositorio.unicamp.br/jspui/bitstream/REPOSIP/61466/1/WOSA1995RC25900007.pdf");
+
+		//urlList.add("https://upcommons.upc.edu/bitstream/handle/2117/104283/Study-of-Hybrid-and-Pure-Plasmonic-Terahertz-Antennas-Based-on-Graphene-Guided-wave-Structures.pdf;jsessionid=AE849B3D57036EAFC4E66E1FC6208F82?sequence=4");
+
+		//urlList.add("https://www.banrep.gov.co/sites/default/files/publicaciones/archivos/be_846.pdf");
+
+		//urlList.add("https://www.jstage.jst.go.jp/article/jsb1944/10/10/10_10_847/_pdf");
+
+		//urlList.add("https://medcraveonline.com/JSRT/JSRT-02-00086.pdf");
+
+		//urlList.add("https://www.pure.ed.ac.uk/ws/portalfiles/portal/16304268/DOUMAS_A_Computational_Account.pdf");
+
+		//urlList.add("https://journals.openedition.org/bifea/pdf/1556");
+		//urlList.add("https://oestrangeirodotorg.files.wordpress.com/2013/03/biopolc3adtica-da-depressc3a3o.pdf");
+		//urlList.add("https://www.impan.pl/shop/publication/transaction/download/product/85801?download.pdf");
+		//urlList.add("https://journals.openedition.org/archeosciences/pdf/2504");
+
+		//urlList.add("https://www.jstage.jst.go.jp/article/jsme1958/17/109/17_109_859/_pdf");
+
+		//urlList.add("https://repositorio.unb.br/bitstream/10482/18179/1/2015_AntonioEmanuelRamalhodeAlbuquerqueSouza.pdf");
+
+		//urlList.add("http://www.wider.unu.edu/sites/default/files/rp2008-42.pdf");
+
+		//urlList.add("https://academic.oup.com/jpepsy/article-pdf/40/4/419/11826116/jsu098.pdf");
+
+		//urlList.add("http://www.econ.qmul.ac.uk/media/econ/research/workingpapers/archive/wp607.pdf");
+
+		//urlList.add("https://www.jstage.jst.go.jp/article/jscej1984/2000/648/2000_648_127/_pdf");
+
+		//urlList.add("http://repositorio.unicamp.br/jspui/bitstream/REPOSIP/55304/1/WOS000241723600002.pdf");	// This results in 404, but in theory another file in that directory could exists.
+
+		//urlList.add("https://www.int-res.com/articles/theme/m487p231.pdf");
+		//urlList.add("https://www.impan.pl/shop/publication/transaction/download/product/102622?download.pdf");
+
+		//urlList.add("https://file.scirp.org/pdf/JSIP20110300010_48537766.pdf");
+
+		//urlList.add("http://www.shd.org.yu/JSCS/Vol72/No12/JSCS_V72_No12-31.pdf");	// This site does not exist now, but still, why rejected by regexes..?
+
+		//urlList.add("https://irep.ntu.ac.uk/id/eprint/40188/1/__Opel.ads.ntu.ac.uk_IRep-PGR%24_2020%20Theses%20and%20deposit%20agreement%20forms_BLSS_NBS_FARRIER-WILLIAMS%2C%20Elizabeth_EFW%20Thesis%202020.pdf");
+
+		//urlList.add("https://www.napier.ac.uk/~/media/worktribe/output-186250/idling-emission-at-intersection-and-exploring-suitable-mitigation-measures.pdf");
+
+		//urlList.add("https://scielosp.org/pdf/rpsp/2011.v30n5/490-500");
+		//urlList.add("https://www.tandfonline.com/doi/pdf/10.1080/10942912.2017.1352601");
+		//urlList.add("https://www.tandfonline.com/doi/pdf/10.1080/14693062.2007.9685673?needAccess=true");
+		//urlList.add("https://www.tandfonline.com/doi/full/10.1080/23311843.2018.1537067");
+
+		//urlList.add("https://zenodo.org/record/1923777/files/article.pdf");
+
+		//urlList.add("https://www.irss.uoguelph.ca/index.php/irss/article/download/591/1022");
+
+		//urlList.add("http://dx.doi.org/10.6035/ForumRecerca.2012.17.38");
+
+		//urlList.add("https://www.preprints.org/manuscript/201903.0157/v1/download");
+
+		//urlList.add("https://www.cambridge.org/core/product/identifier/S0022143000028343/type/journal_article");
+
+		//urlList.add("https://www.cambridge.org/core/services/aop-cambridge-core/content/view/89B7C05816991D885F3A4C9853719D1E/S0022143000028343a.pdf/div-class-title-some-physical-and-mechanical-properties-of-polar-snow-div.pdf");
+
+		urlList.add("https://pubs.acs.org/doi/suppl/10.1021/jacs.7b06823/suppl_file/ja7b06823_si_001.pdf");
+
+		urlList.add("https://checklist.pensoft.net/article/18320/download/pdf/286091");
+
+		urlList.add("https://www.fdr.uni-hamburg.de/record/593/files/COMSt_Newsletter_7_2014-2831-Nosnitsin.pdf");
 
 
 		logger.info("Urls to check:");

@@ -41,7 +41,7 @@ public class ConnSupportUtils
 
 	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("(?:\\([']?)?([\\w]+/[\\w+\\-.]+).*");
 
-	public static final Pattern POSSIBLE_DOC_OR_DATASET_MIME_TYPE = Pattern.compile("(?:(?:application|binary)/(?:(?:x-)?octet-stream|save|force-download))|unknown");	// We don't take it for granted.. if a match is found, then we check for the "pdf" keyword in the "contentDisposition" (if it exists) or in the url.
+	public static final Pattern POSSIBLE_DOC_OR_DATASET_MIME_TYPE = Pattern.compile("(?:(?:application|binary)/(?:(?:x-)?octet(?:-stream)?|save|force-download))|unknown");	// We don't take it for granted.. if a match is found, then we check for the "pdf" keyword in the "contentDisposition" (if it exists) or in the url.
 	// There are special cases. (see: "https://kb.iu.edu/d/agtj" for "octet" info.
 	// and an example for "unknown" : "http://imagebank.osa.org/getExport.xqy?img=OG0kcC5vZS0yMy0xNy0yMjE0OS1nMDAy&xtype=pdf&article=oe-23-17-22149-g002")
 
