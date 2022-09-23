@@ -258,14 +258,14 @@ public class PageCrawler
 			return null;
 		}
 
-		boolean isNull = (currentPageLinks == null);
+		boolean isNull = (currentPageLinks == null);	// This is the case, only when Jsoup could not extract any link-elements from the html.
 		boolean isEmpty = false;
 
 		if ( !isNull )
 			isEmpty = (currentPageLinks.size() == 0);
 
 		if ( isNull || isEmpty ) {	// If no links were retrieved (e.g. the pageUrl was some kind of non-page binary content)
-			logger.warn("No " + (isEmpty ? "valid " : "") + "links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
+			logger.warn("No " + (isEmpty ? "valid" : "available") + " links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
 			PageCrawler.contentProblematicUrls.incrementAndGet();
 			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in PageCrawler.retrieveInternalLinks() method, as no " + (isEmpty ? "valid " : "") + "links were able to be retrieved from it. Its contentType is: '" + pageContentType + "'", null, true, "true", "true", "false", "false", "false", null, "null");
 			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingInternalLinks, pageDomain, PageCrawler.timesToGiveNoInternalLinksBeforeBlocked, true) )
@@ -297,7 +297,7 @@ public class PageCrawler
 		Document document = Jsoup.parse(pageHtml);
 		Elements elementLinksOnPage = document.select("a, link[href][type*=pdf]");
 		if ( elementLinksOnPage.isEmpty() ) {	// It will surely not be null, by Jsoup-documentation.
-			logger.warn("Jsoup did not extract any links from pageUrl: \"" + pageUrl + "\"");
+			//logger.warn("Jsoup did not extract any links from pageUrl: \"" + pageUrl + "\"");	// DEBUG!
 			return null;
 		}
 
