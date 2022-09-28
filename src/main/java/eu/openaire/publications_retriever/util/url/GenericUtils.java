@@ -28,15 +28,12 @@ public class GenericUtils {
 
 
     /**
-     * This method clears all domain tracking data from the HashSets and HashMaps.
-     * It can be used to allow both reduced memory consumption and a second chance for some domains after a very long time.
-     * For example, after a month, a domain might be more responsive, and it should not be blocked anymore.
-     * It empties all those data-structures without de-allocating the existing space.
-     * This guarantees than the memory-space will not get infinitely large, while avoiding re-allocation of the memory for the next id-url pairs to be handled.
-     */
-    public static void clearDomainAndPathTrackingData()
+     * This method deletes all data related to blocking domains.
+     * This is useful, when the app is processing hundreds of thousands of urls, and we want to give a "second chance", every now and then.
+     * */
+    public static void clearDomainAndPathBlockingData()
     {
-        // Domain data, related to domain-blocking.
+        // Domains' blocking data.
         HttpConnUtils.blacklistedDomains.clear();
         HttpConnUtils.timesDomainsHadInputNotBeingDocNorPage.clear();
         HttpConnUtils.timesDomainsReturnedNoType.clear();
@@ -47,21 +44,33 @@ public class GenericUtils {
         UrlUtils.docOrDatasetUrlsWithIDs.clear();
         UrlUtils.domainsAndHits.clear();
 
+        // Paths' data, which also contribute to domain-blocking.
+        ConnSupportUtils.timesPathsReturned403.clear();
+        ConnSupportUtils.domainsMultimapWithPaths403BlackListed.clear();
+    }
+
+
+    /**
+     * This method clears all domain tracking data from the HashSets and HashMaps.
+     * It can be used to allow both reduced memory consumption and a second chance for some domains after a very long time.
+     * For example, after a month, a domain might be more responsive, and it should not be blocked anymore.
+     * It empties all those data-structures without de-allocating the existing space.
+     * This guarantees than the memory-space will not get infinitely large, while avoiding re-allocation of the memory for the next id-url pairs to be handled.
+     */
+    public static void clearDomainAndPathTrackingData()
+    {
+        clearDomainAndPathBlockingData();
+
         // Domain additional data, which does not contribute in blocking the domains, but they do contribute in performance.
         HttpConnUtils.domainsSupportingHTTPS.clear();
         HttpConnUtils.domainsWithSlashRedirect.clear();
         HttpConnUtils.domainsWithUnsupportedHeadMethod.clear();
         HttpConnUtils.domainsWithUnsupportedAcceptLanguageParameter.clear();
 
-        // Paths' data.
-        ConnSupportUtils.timesPathsReturned403.clear();
-        ConnSupportUtils.domainsMultimapWithPaths403BlackListed.clear();
-
         // Other data which is handled per-batch by the PDF-AggregationService. These are commented-out here, as they will be cleared anyway.
         //ConnSupportUtils.domainsWithConnectionData.clear();
-        //UrlUtils.docOrDatasetUrlsWithIDs.clear();
 
-        // The data-structures from the "MachineLearning" class are not added here, since it is in experimental phase, and thus these data-structures will most likely be empty.
+        // The data-structures from the "MachineLearning" class are not added here, since it is in experimental phase and not running in production, thus these data-structures will most likely be empty.
     }
 
 
