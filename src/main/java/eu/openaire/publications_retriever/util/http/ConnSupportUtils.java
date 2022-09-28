@@ -405,17 +405,6 @@ public class ConnSupportUtils
 		domainConnectionData.updateAndUnlock(currentTime);
 	}
 
-
-	/**
-	 * This method does an offline-redirect to HTTPS. It is called when the url uses HTTP, but handles exceptions as well.
-	 * @param url
-	 * @return
-	 */
-	public static String offlineRedirectToHTTPS(String url)
-	{
-		return StringUtils.replace(url, "http:", "https:", 1);
-	}
-	
 	
 	/**
 	 * This method receives a pageUrl which gave an HTTP-300-code and extracts an internalLink out of the multiple choices provided.
@@ -902,11 +891,18 @@ public class ConnSupportUtils
 	public static boolean isJustAnHTTPSredirect(String currentUrl, String targetUrl)
 	{
 		// First check if we go from an http to an https in general.
-		if ( !currentUrl.startsWith("http://", 0) || !targetUrl.startsWith("https", 0) )
+		if ( !currentUrl.startsWith("http://", 0) && !targetUrl.startsWith("https://", 0) )
 			return false;
 
 		// Take the url after the protocol and check if it's the same, if it is then we have our HTTPS redirect, if not then it's another type of redirect.
 		return haveOnlyProtocolDifference(currentUrl, targetUrl);
+	}
+
+
+	public static boolean isJustASlashRedirect(String currentUrl, String targetUrl)
+	{
+		return ( !currentUrl.endsWith("/") && targetUrl.endsWith("/")
+				&& currentUrl.equals(targetUrl.substring(0, targetUrl.length() -1)) );
 	}
 
 

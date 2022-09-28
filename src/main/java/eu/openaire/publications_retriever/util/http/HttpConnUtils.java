@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 
 /**
@@ -60,7 +61,15 @@ public class HttpConnUtils
 
 	public static final Set<String> domainsSupportingHTTPS = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
+	public static final Set<String> domainsWithSlashRedirect = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+
+
+	public static final Pattern ENDING_WITH_SLASH_OR_EXTENSION_FILTER = Pattern.compile(".*(/|\\.[^.-?&_]+(?:\\?.+)?)$");
+
+
 	public static AtomicInteger timesDidOfflineHTTPSredirect = new AtomicInteger(0);
+
+	public static AtomicInteger timesDidOfflineSlashRedirect = new AtomicInteger(0);
 
 	public static ThreadLocal<Boolean> isSpecialUrl = new ThreadLocal<Boolean>();	// Every Thread has its own variable.
 
@@ -284,9 +293,14 @@ public class HttpConnUtils
 			if ( ConnSupportUtils.checkIfPathIs403BlackListed(resourceURL, domainStr) )
 				throw new RuntimeException("Avoid reaching 403ErrorCode with url: \"" + resourceURL + "\"!");
 
-			if ( !resourceURL.startsWith("https", 0) && domainsSupportingHTTPS.contains(domainStr) ) {
-				resourceURL = ConnSupportUtils.offlineRedirectToHTTPS(resourceURL);
+			if ( !resourceURL.startsWith("https:", 0) && domainsSupportingHTTPS.contains(domainStr) ) {
+				resourceURL = StringUtils.replace(resourceURL, "http:", "https:", 1);
 				timesDidOfflineHTTPSredirect.incrementAndGet();
+			}
+
+			if ( !ENDING_WITH_SLASH_OR_EXTENSION_FILTER.matcher(resourceURL).matches() && domainsWithSlashRedirect.contains(domainStr) ) {
+				resourceURL += "/";
+				timesDidOfflineSlashRedirect.incrementAndGet();
 			}
 
 			// For the urls which has reached this point, make sure no weird "ampersand"-anomaly blocks us...
@@ -561,6 +575,11 @@ public class HttpConnUtils
 				if ( ConnSupportUtils.isJustAnHTTPSredirect(currentUrl, targetUrl) ) {
 					domainsSupportingHTTPS.add(domainStr);    // It does not store duplicates.
 					//logger.debug("Found an HTTP-TO-HTTPS redirect: " + currentUrl + " --> " + targetUrl);	// DEBUG!
+				}
+
+				if ( ConnSupportUtils.isJustASlashRedirect(currentUrl, targetUrl) ) {	// If the "targetUrl" is the "currentUrl" but with just an added "/".
+					domainsWithSlashRedirect.add(domainStr);
+					//logger.debug("Found a non-slash-ended to slash-ended url redirection: " + currentUrl + " --> " + targetUrl);	// DEBUG!s
 				}
 
 				conn = HttpConnUtils.openHttpConnection(targetUrl, domainStr, calledForPageUrl, calledForPossibleDocUrl);

@@ -49,6 +49,7 @@ public class GenericUtils {
 
         // Domain additional data, which does not contribute in blocking the domains, but they do contribute in performance.
         HttpConnUtils.domainsSupportingHTTPS.clear();
+        HttpConnUtils.domainsWithSlashRedirect.clear();
         HttpConnUtils.domainsWithUnsupportedHeadMethod.clear();
         HttpConnUtils.domainsWithUnsupportedAcceptLanguageParameter.clear();
 
