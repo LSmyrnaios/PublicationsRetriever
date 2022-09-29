@@ -64,8 +64,9 @@ public class HttpConnUtils
 	public static final Set<String> domainsWithSlashRedirect = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
 
-	public static final Pattern ENDING_WITH_SLASH_OR_EXTENSION_FILTER = Pattern.compile(".*(/|\\.[^.-?&_]+(?:\\?.+)?)$");
-
+	public static final Pattern ENDING_WITH_SLASH_OR_EXTENSION_FILTER = Pattern.compile(".*(?:(?:/|\\.[^.?&/_-]{1,7})(?:\\?.+)?|(?:\\?.+))$");
+	// The above regex, assumes file-extensions up to 7-chars long. Rare file-extensions with app to 10 or more characters exist,
+	// but then the risk of identifying irrelevant dot-prepended strings as extensions, increases (some urls end with: "<other chars>.NOTEXTENSIONSTRING").
 
 	public static AtomicInteger timesDidOfflineHTTPSredirect = new AtomicInteger(0);
 
