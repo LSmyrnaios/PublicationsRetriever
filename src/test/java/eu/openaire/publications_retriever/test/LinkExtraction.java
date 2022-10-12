@@ -81,7 +81,10 @@ public class LinkExtraction {
 		//exampleUrl = "https://www.hal.inserm.fr/inserm-00348834";
 		//exampleUrl = "https://juniperpublishers.com/ofoaj/OFOAJ.MS.ID.555572.php";
 		//exampleUrl = "https://iovs.arvojournals.org/article.aspx?articleid=2166142";
-		exampleUrl = "https://www.erudit.org/fr/revues/irrodl/2019-v20-n3-irrodl04799/1062522ar/";
+		//exampleUrl = "https://www.erudit.org/fr/revues/irrodl/2019-v20-n3-irrodl04799/1062522ar/";
+		//exampleUrl = "https://academic.oup.com/nar/article/24/1/125/2359312";
+		//exampleUrl = "https://www.thieme-connect.com/products/ejournals/abstract/10.1055/s-2008-1075002";
+		exampleUrl = "https://archiv.ub.uni-marburg.de/ubfind/Record/urn:nbn:de:hebis:04-z2017-0572";
 	}
 
 	
@@ -148,16 +151,23 @@ public class LinkExtraction {
 			HashSet<String> extractedLinksHashSet = getLinksList(exampleHtml, null);
 			if ( extractedLinksHashSet == null )
 				return;	// Logging is handled inside..
-			
-			logger.info("The list of all the internalLinks of \"" + exampleUrl + "\" is:");
+
+			int numberOfExtractedLinks = extractedLinksHashSet.size();
+			logger.info("The list of the " + numberOfExtractedLinks + " extracted internalLinks of \"" + exampleUrl + "\" is:");
 			for ( String link: extractedLinksHashSet )
 				logger.info(link);
 
+			int acceptedLinksCount = 0;
 			logger.info("\n\nThe accepted links from the above are:");
-			for ( String link : extractedLinksHashSet )
-				if ( !UrlTypeChecker.shouldNotAcceptInternalLink(link, null) )
+			for ( String link : extractedLinksHashSet ) {
+				if ( !UrlTypeChecker.shouldNotAcceptInternalLink(link, null) ) {
 					logger.info(link);
-			
+					acceptedLinksCount ++;
+				}
+			}
+
+			logger.info("The number of accepted links is: " + acceptedLinksCount + " (out of " + numberOfExtractedLinks + ").");
+
 		} catch (Exception e) {
 			logger.error("", e);
 		}
@@ -182,10 +192,12 @@ public class LinkExtraction {
 			if ( extractedLinksHashSet == null )
 				return;	// Logging is handled inside..
 
-			logger.info("The list of all the internalLinks of \"" + exampleUrl + "\" is:");
+			int numberOfExtractedLinks = extractedLinksHashSet.size();
+			logger.info("The list of the " + numberOfExtractedLinks + " extracted internalLinks of \"" + exampleUrl + "\" is:");
 			for ( String link: extractedLinksHashSet )
 				logger.info(link);
 
+			int acceptedLinksCount = 0;
 			logger.info("\nThe accepted links from the above are:");
 			for ( String link : extractedLinksHashSet )
 			{
@@ -194,9 +206,14 @@ public class LinkExtraction {
 					logger.debug("Could not create target url for resourceUrl: " + conn.getURL().toString() + " having location: " + link);
 					continue;
 				}
-				if ( !UrlTypeChecker.shouldNotAcceptInternalLink(targetUrl, null) )
+				if ( !UrlTypeChecker.shouldNotAcceptInternalLink(targetUrl, null) ) {
 					logger.info(targetUrl);
+					acceptedLinksCount ++;
+				}
 			}
+
+			logger.info("The number of accepted links is: " + acceptedLinksCount + " (out of " + numberOfExtractedLinks + ").");
+
 		} catch (Exception e) {
 			logger.error("", e);
 		}
