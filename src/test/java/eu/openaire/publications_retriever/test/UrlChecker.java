@@ -688,11 +688,20 @@ public class UrlChecker {
 
 		//urlList.add("https://www.cambridge.org/core/services/aop-cambridge-core/content/view/89B7C05816991D885F3A4C9853719D1E/S0022143000028343a.pdf/div-class-title-some-physical-and-mechanical-properties-of-polar-snow-div.pdf");
 
-		urlList.add("https://pubs.acs.org/doi/suppl/10.1021/jacs.7b06823/suppl_file/ja7b06823_si_001.pdf");
+		//urlList.add("https://pubs.acs.org/doi/suppl/10.1021/jacs.7b06823/suppl_file/ja7b06823_si_001.pdf");
 
-		urlList.add("https://checklist.pensoft.net/article/18320/download/pdf/286091");
+		//urlList.add("https://checklist.pensoft.net/article/18320/download/pdf/286091");
 
-		urlList.add("https://www.fdr.uni-hamburg.de/record/593/files/COMSt_Newsletter_7_2014-2831-Nosnitsin.pdf");
+		//urlList.add("https://www.fdr.uni-hamburg.de/record/593/files/COMSt_Newsletter_7_2014-2831-Nosnitsin.pdf");
+
+		//urlList.add("http://hdl.handle.net/10261/214605");
+		//urlList.add("https://www.spandidos-publications.com/10.3892/ijmm.12.5.783");
+
+		//urlList.add("https://www.thieme-connect.com/products/ejournals/abstract/10.1055/s-2008-1075002");
+
+		//urlList.add("https://archiv.ub.uni-marburg.de/ubfind/Record/urn:nbn:de:hebis:04-z2017-0572");
+		//urlList.add("https://science-of-synthesis.thieme.com/app/text/?id=SD-139-00109");	// It requires login to give the fulltext. Now it just gives a "warning-pdf".
+		//urlList.add("http://dx.doi.org/10.1259/arr.1904.0064");
 
 
 		logger.info("Urls to check:");

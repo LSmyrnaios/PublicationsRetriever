@@ -28,10 +28,10 @@ public class UrlTypeChecker
 
 	public static final Pattern URL_DIRECTORY_FILTER =
 			Pattern.compile("[^/]+://.*/(?:(discover|profile|user|survey|index|media|theme|product|deposit|default|shop|view)/" + docOrDatasetNegativeLookAroundPattern	// Avoid blocking these if the url is likely to give a file.
-					+ "|(?:(?:ldap|password)-)?login|auth(?:entication)?\\.|ac[c]?ess(?!\\.)|sign[-]?(?:in|out|up)|session|join|subscr|register|submi(?:t|ssion)|(?:post|send|export|(?:wp-)?admin|home|form)/|watch|browse|import|bookmark|announcement|feedback|share[^d]|about|faq|wiki|news|events|cart|support|(?:site|html)map|documentation|help|license|disclaimer|copyright|(?:site-)?polic(?:y|ies)|privacy|terms|law|principles"
-					+ "|(?:my|your|create)?[-]?account|(?:service|help)[-]?desk|settings|fund|aut[h]?or|(?:journal-)?editor|author:|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic(s)?/.*/view/|conta[c]?t|wallet|contribute|donate|our[_-][\\w]+|template|logo|image|photo/|video|advertiser|people|(?:the)?press|for-authors|captcha|clipboard"
+					+ "|(?:(?:ldap|password)-)?login|auth(?:entication)?\\.|ac[c]?ess(?!\\.)|sign[-]?(?:in|out|up)|session|join|subscr|regist(?:er|ration)|submi(?:t|ssion)|(?:post|send|export|(?:wp-)?admin|home|form)/|watch|browse|import|bookmark|announcement|feedback|share[^d]|about|faq|wiki|news|events|cart|support|(?:site|html)map|documentation|help|license|disclaimer|copyright|(?:site-)?polic(?:y|ies)|privacy|terms|law|principles"
+					+ "|(?:my|your|create)?[-]?account|mydspace|(?:service|help)[-]?desk|settings|fund|aut[h]?or|(?:journal-)?editor|author:|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic(s)?/.*/view/|conta[c]?t|wallet|contribute|donate|our[_-][\\w]+|template|logo|image|photo/|video|advertiser|most-popular|people|(?:the)?press|for-authors|captcha|clipboard|dropdown"
 					+ "|(?:forum|blog|column|row|js|css|rss)/"	// These are absolute directory names.
-					+ "|(?:(?:advanced[-]?)?search|search-results|(?:[e]?books|journals)(?:-catalog)?|issue|docs|oai|(?:abstracting-)?indexing|online[-]?early|honors|awards|careers|meetings|calendar|diversity|scholarships|invo(?:ice|lved)|errata|classroom)[/]?$"	// Url ends with these.
+					+ "|(?:(?:advanced[-]?)?search|search/advanced|search-results|(?:[e]?books|journals)(?:-catalog)?|issue|docs|oai|(?:abstracting-)?indexing|online[-]?early|honors|awards|careers|meetings|calendar|diversity|scholarships|invo(?:ice|lved)|errata|classroom|publish|upload|products)[/]?$"	// Url ends with these.
 					// TODO - In case we have just DocUrls (not datasetUrls), exclude the following as well: "/(?:bibtext|dc(?:terms)?|tei|endnote)$", it could be added in another regex.. or do an initialization check and construct this regex based on the url-option provided.
 					+ "|rights[-]?permissions|publication[-]?ethics|advertising|reset[-]?password|\\*/|communit(?:y|ies)"
 					+ "|restricted|noaccess|crawlprevention|error|(?:mis|ab)use|\\?denied|gateway|defaultwebpage|sorryserver|cookie|notfound|(?:404|accessibility|invalid|catalog(?:ue|ar|o)?)\\." + htExtensionsPattern + ").*");
@@ -62,7 +62,7 @@ public class UrlTypeChecker
 			+ "|books.openedition.org"	// Avoid this closed-access sub-domain. (other subdomains, like "journals.openedition.org" are fine).
 			+ "|perfdrive."	// Avoid "robot-check domain". It blocks quickly and redirect us to "validate.perfdrive.com".
 			+ "|services.bepress.com"	// Avoid potential malicious domain (Avast had some urls of this domain in the Blacklist).
-			+ "|careers."
+			+ "|(?:careers|shop)."
 			+ ").*/.*");
 
 	public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile("[^/]+://[\\w.:-]+(?:/[\\w]{2})?(?:/index.(?:" + htExtensionsPattern + "|" + phpExtensionsPattern + "))?[/]?(?:\\?(?:locale(?:-attribute)?|ln)=[\\w_-]+)?$");	// Exclude plain domains' urls. Use "ISO 639-1" for language-codes (2 letters directory).
