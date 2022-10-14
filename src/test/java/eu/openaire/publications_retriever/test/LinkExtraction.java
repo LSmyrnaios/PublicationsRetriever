@@ -85,7 +85,8 @@ public class LinkExtraction {
 		//exampleUrl = "https://academic.oup.com/nar/article/24/1/125/2359312";
 		//exampleUrl = "https://www.thieme-connect.com/products/ejournals/abstract/10.1055/s-2008-1075002";
 		//exampleUrl = "https://archiv.ub.uni-marburg.de/ubfind/Record/urn:nbn:de:hebis:04-z2017-0572";
-		exampleUrl = "https://science-of-synthesis.thieme.com/app/text/?id=SD-139-00109";
+		//exampleUrl = "https://science-of-synthesis.thieme.com/app/text/?id=SD-139-00109";
+		exampleUrl = "https://acikerisim.sakarya.edu.tr/handle/20.500.12619/66006";
 	}
 
 	

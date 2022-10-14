@@ -703,6 +703,13 @@ public class UrlChecker {
 		//urlList.add("https://science-of-synthesis.thieme.com/app/text/?id=SD-139-00109");	// It requires login to give the fulltext. Now it just gives a "warning-pdf".
 		//urlList.add("http://dx.doi.org/10.1259/arr.1904.0064");
 
+		//urlList.add("https://www.tropmedres.ac/publications/697622");
+
+		urlList.add("https://hal.umontpellier.fr/hal-01833503");
+
+		//urlList.add("https://www.cell.com/cell/references/0092-8674(89)90024-X");
+		//urlList.add("https://acikerisim.sakarya.edu.tr/handle/20.500.12619/66006");
+
 
 		logger.info("Urls to check:");
 		for ( String url: urlList )

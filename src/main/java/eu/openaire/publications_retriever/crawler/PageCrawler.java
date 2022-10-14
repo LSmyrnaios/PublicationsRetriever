@@ -57,17 +57,17 @@ public class PageCrawler
 
 	public static final Pattern DOCUMENT_TEXT = Pattern.compile("pdf|télécharger|texte" + space + "intégral");
 
-	// The following regex is used both in the text around the links and in the links themselves.
-	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:[^e]manu[ae]l|gu[ií](?:de[^d]|a)|preview|leaflet|agreement(?!.*thesis" + space + "(?:19|20)[\\d]{2}.*)|accessibility|journal" + space + "catalog|disclose" + space + "file|poli(?:c(?:y|ies)|tika)"	// "policy" can be a lone word or a word after: repository|embargo|privacy|data protection|take down|supplement|access
+	// The following regex is used both in the text around the links and in the links themselves. Everything should be LOWERCASE, from the regex-rules to the link to be matched against them.
+	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:[^e]manu[ae]l|(?:\\|\\|" + space + ")?gu[ií](?:de|a)|preview|leaflet|agreement(?!.*thesis" + space + "(?:19|20)[\\d]{2}.*)|accessibility|journal" + space + "catalog|disclose" + space + "file|poli(?:c(?:y|ies)|tika)"	// "policy" can be a lone word or a word after: repository|embargo|privacy|data protection|take down|supplement|access
 																		// We may have the "Emanuel" writer's name in the url-string. Also, we may have the "agreement"-keyword in a valid pub-url like: https://irep.ntu.ac.uk/id/eprint/40188/1/__Opel.ads.ntu.ac.uk_IRep-PGR%24_2020%20Theses%20and%20deposit%20agreement%20forms_BLSS_NBS_FARRIER-WILLIAMS%2C%20Elizabeth_EFW%20Thesis%202020.pdf
 																		+ "|licen(?:se|cia)" + space + "(?:of|de)" + space + "us[eo]|(?:governance|safety)" + space + "statement|normativa|(?:consumer|hazard|copyright)" + space + "information|permission|editorial" + space + "board|dé(?:p(?:ôt[s]?|oser)|butez)|créer" + space + "votre|orcid|subscription|instruction|code" + space + "of" + space + "conduct|request|join|compte|[^_]account"
 																		+ "|table" + space + "of" + space + "contents|front" + space + "matter|information" + space + "for" + space + "authors|pdf(?:/a)?" + space + "conversion|catalogue|classifieds"	// classifieds = job-ads
 																		+ "|pdf-viewer|conflicts" + space + "of" + space + "interest|(?:recommendation|order)" + space + "form|adverti[sz]e|mandatory" + space + "open" + space + "access|recommandations" + space + "pour" + space + "s'affilier|hal.*collections|terms|conditions|hakuohjeet|logigramme|export_liste_publi|yearbook|pubs_(?:brochure|overview)"
 																		+ "|procedure|規程|運営規程"	// 規程 == procedure, 運営規程 = Operating regulations  (in japanese)
 																		+ "|(?:peer|mini)" + space + "review|(?:case|annual)" + space + "report|review" + space + "article|short" + space + "communication|letter" + space + "to" + space + "editor"
-																		+ "|data-sharing-guidance|rate(?:" + space + ")?cards|press" + space + "release|liability" + space + "disclaimer"
-																		+ "|^(?:licen[cs]e|help|reprints)$"	// Single words/phrases inside the html-text.
-																		+ "|/(?:entry|information|opinion|rapportannuel|accesorestringido|library_recommendation_form|research-article|publerkl[\\w]*).pdf$).*");	// The plain "research-article.pdf" is the template provided by journals.
+																		+ "|data-sharing-guidance|rate(?:" + space + ")?cards|press" + space + "release|liability" + space + "disclaimer|(?:avec|dans)" + space + "(?:ocd|x2)?hal"
+																		+ "|^(?:licen[cs]e|help|reprints|politik[sa]|for" + space + "recruiters|charte" + space + "de" + space + "signature)$"	// Single words/phrases inside the html-text.
+																		+ "|/(?:entry|information|opinion|rapportannuel|accesorestringido|library_recommendation_form|research-article|publerkl[\\w]*|loi_republique_numerique_publis).pdf$).*");	// The plain "research-article.pdf" is the template provided by journals.
 
 	// Example of docUrl having the "editorial" keyword: https://publikationen.ub.uni-frankfurt.de/opus4/frontdoor/deliver/index/docId/45461/file/daek_et_al_2017_editorial.pdf
 
@@ -325,6 +325,16 @@ public class PageCrawler
 
 			if ( LoaderAndChecker.retrieveDocuments)	// Currently, these smart-checks are only available for specific docFiles (not for datasets).
 			{
+				// Exclude links which have the class "state-published", are full-links AND have a different domain, than the pageUrl.
+				if ( el.className().trim().equals("state-published") ) {
+					internalLink = el.attr("href").trim();
+					if ( internalLink.startsWith("http", 0) ) {
+						String linkDomain = UrlUtils.getDomainStr(internalLink, null);
+						if ( (linkDomain != null) && !pageUrl.contains(linkDomain) )
+							continue;
+					}
+				}
+
 				linkAttr = el.text();
 				if ( !linkAttr.isEmpty() ) {
 					String lowerCaseLinkAttr = linkAttr.toLowerCase();
