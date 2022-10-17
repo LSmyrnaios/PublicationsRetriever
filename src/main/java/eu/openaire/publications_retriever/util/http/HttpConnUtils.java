@@ -208,7 +208,7 @@ public class HttpConnUtils
 			return true;	// It's already logged for the outputFile.
 		} catch (RuntimeException re) {
 			if ( re instanceof NullPointerException )
-				logger.error(re.getMessage(), re);
+				logger.error("", re);
 
 			if ( calledForPageUrl ) {
 				LoaderAndChecker.connProblematicUrls.incrementAndGet();

@@ -705,10 +705,18 @@ public class UrlChecker {
 
 		//urlList.add("https://www.tropmedres.ac/publications/697622");
 
-		urlList.add("https://hal.umontpellier.fr/hal-01833503");
+		//urlList.add("https://hal.umontpellier.fr/hal-01833503");
 
 		//urlList.add("https://www.cell.com/cell/references/0092-8674(89)90024-X");
 		//urlList.add("https://acikerisim.sakarya.edu.tr/handle/20.500.12619/66006");
+
+		//urlList.add("https://journals.lww.com/spinejournal/Fulltext/2009/04010/Letters.24.aspx");
+
+		//urlList.add("https://archivestsc.com/jvi.aspx?un=TKDA-02761");
+
+		//urlList.add("https://hal-utt.archives-ouvertes.fr/hal-02652183");
+
+		urlList.add("https://fun.repo.nii.ac.jp/?action=pages_view_main&active_action=repository_view_main_item_detail&item_id=4949&item_no=1&page_id=13&block_id=21");
 
 
 		logger.info("Urls to check:");

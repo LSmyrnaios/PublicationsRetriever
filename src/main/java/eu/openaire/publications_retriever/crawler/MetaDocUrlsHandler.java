@@ -20,7 +20,7 @@ public class MetaDocUrlsHandler {
 
     // Order-independent META_DOC_URL-regex.
     // <meta(?:[^<]*name=\"(?:[^<]*citation_pdf|eprints.document)_url\"[^<]*content=\"(http[^\"]+)\"|[^<]*content=\"(http[^\"]+)\"[^<]*name=\"(?:[^<]*citation_pdf|eprints.document)_url\")[^>]*[/]?>
-    private static final String metaName = "name=\"(?:[^<]*citation_pdf|eprints.document)_url\"";
+    private static final String metaName = "name=\"(?:[^<]*(?:citation|wkhealth)_pdf|eprints.document)_url\"";
     private static final String metaContent = "content=\"(http[^\"]+)\"";
     public static final Pattern META_DOC_URL = Pattern.compile("<meta(?:[^<]*" + metaName + "[^<]*" + metaContent + "|[^<]*" + metaContent + "[^<]*" + metaName + ")[^>]*[/]?>");
 
@@ -126,7 +126,7 @@ public class MetaDocUrlsHandler {
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return false;   // Continue crawling the page..
         } catch (Exception e) {
-            logger.debug("The MetaDocUrl < " + metaDocUrl + " > had connectivity problems!");
+            logger.warn("The MetaDocUrl < " + metaDocUrl + " > had connectivity or redirection problems!");
             return false;   // Continue crawling the page..
         }
     }
