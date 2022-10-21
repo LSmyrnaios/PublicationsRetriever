@@ -65,9 +65,9 @@ public class PageCrawler
 																		+ "|pdf-viewer|conflicts" + space + "of" + space + "interest|(?:recommendation|order)" + space + "form|adverti[sz]e|mandatory" + space + "open" + space + "access|recommandations" + space + "pour" + space + "s'affilier|hal.*collections|terms|conditions|hakuohjeet|logigramme|export_liste_publi|yearbook|pubs_(?:brochure|overview)"
 																		+ "|procedure|規程|運営規程"	// 規程 == procedure, 運営規程 = Operating regulations  (in japanese)
 																		+ "|(?:peer|mini)" + space + "review|(?:case|annual)" + space + "report|review" + space + "article|short" + space + "communication|letter" + space + "to" + space + "editor"
-																		+ "|data-sharing-guidance|rate(?:" + space + ")?cards|press" + space + "release|liability" + space + "disclaimer|(?:avec|dans)" + space + "(?:ocd|x2)?hal|online(?:" + space + "|_)flyer"
-																		+ "|^(?:licen[cs]e|help|reprints|politik[sa]|for" + space + "recruiters|charte" + space + "de" + space + "signature)$"	// Single words/phrases inside the html-text.
-																		+ "|/(?:entry|information|opinion|rapportannuel|accesorestringido|library_recommendation_form|research-article|publerkl[\\w]*|utt_so_[\\w_]*|loi_republique_numerique_publis).pdf$"	// The plain "research-article.pdf" is the template provided by journals.
+																		+ "|data-sharing-guidance|rate(?:" + space + ")?cards|press" + space + "release|liability" + space + "disclaimer|(?:avec|dans)" + space + "(?:ocd|x2)?hal|online(?:" + space + "|_)flyer|publishing" + space + "process"
+																		+ "|^(?:licen[cs]e|help|reprints|politik[sa]|for" + space + "recruiters|charte" + space + "de" + space + "signature|weekly" + space + "visitors|publication" + space + "ethics" + space + "and" + space + "malpractice)$"	// Single words/phrases inside the html-text.
+																		+ "|/(?:entry|information|opinion|(?:rapportannuel|publerkl|utt_so_|atsc_)[\\w-_()]*|accesorestringido|library_recommendation_form|research-article|loi_republique_numerique_publis).pdf$"	// The plain "research-article.pdf" is the template provided by journals.
 																		+ "|(?:公表|登録)届出書|取扱要領).*");	// registration/notification form/statement, instructions (in japanese)
 
 	// Example of docUrl having the "editorial" keyword: https://publikationen.ub.uni-frankfurt.de/opus4/frontdoor/deliver/index/docId/45461/file/daek_et_al_2017_editorial.pdf

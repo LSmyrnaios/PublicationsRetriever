@@ -251,14 +251,14 @@ public class HttpConnUtils
 		//ConnSupportUtils.printConnectionDebugInfo(conn, true);	// DEBUG!
 
 		int responseCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP response), inside openHttpConnection().
-		if ( (responseCode >= 300) && (responseCode <= 399) ) {   // If we have redirections..
+		if ( (responseCode >= 300) && (responseCode <= 399) && (responseCode != 304) ) {   // If we have redirections..
 			conn = handleRedirects(urlId, sourceUrl, pageUrl, resourceURL, conn, responseCode, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // Take care of redirects.
 		}
 		else if ( (responseCode < 200) || (responseCode >= 400) ) {	// If we have error codes.
 			String errorMessage = ConnSupportUtils.onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode, calledForPageUrl);
 			throw new RuntimeException(errorMessage);	// This is only thrown if a "DomainBlockedException" is caught.
 		}
-		// Else it's an HTTP 2XX SUCCESS CODE.
+		// Else it's an HTTP 2XX SUCCESS CODE or an HTTP 304 NOT MODIFIED
 		return conn;
 	}
 
@@ -355,7 +355,7 @@ public class HttpConnUtils
 			if ( (responseCode = conn.getResponseCode()) == -1 )
 				throw new RuntimeException("Invalid HTTP response for \"" + resourceURL + "\"");
 
-			if ( responseCode == 406 )	// It's possible that the server does not support the "Accept-Language" parameter.
+			if ( responseCode == 406 )	// It's possible that the server does not support the "Accept-Language" parameter. Try again without it.
 			{
 				logger.warn("The server \"" + domainStr + "\" probably does not support the \"Accept-Language\" parameter. Going to reconnect without it");
 				domainsWithUnsupportedAcceptLanguageParameter.add(domainStr);	// Take note that this domain does not support it..
@@ -531,7 +531,7 @@ public class HttpConnUtils
 				String location = conn.getHeaderField("Location");
 				if ( location == null )
 				{
-					if ( responseCode == 300 ) {	// The "Location"-header MAY be provided, giving the proposed link by the server.
+					if ( responseCode == 300 ) {	// The "Location"-data MAY be provided, inside the html-response, giving the proposed link by the server.
 						// Go and parse the page and select one of the links to redirect to. Assign it to the "location".
 						if ( (location = ConnSupportUtils.getInternalLinkFromHTTP300Page(conn)) == null )
 							throw new RuntimeException("No \"link\" was retrieved from the HTTP-300-page: \"" + currentUrl + "\".");
@@ -587,9 +587,9 @@ public class HttpConnUtils
 
 				responseCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
 
-				if ( (responseCode >= 200) && (responseCode <= 299) ) {
+				if ( ((responseCode >= 200) && (responseCode <= 299)) || (responseCode == 304) ) {
 					//ConnSupportUtils.printFinalRedirectDataForWantedUrlType(initialUrl, currentUrl, null, curRedirectsNum);	// DEBUG!
-					return conn;	// It's an "HTTP SUCCESS", return immediately.
+					return conn;	// It's an "HTTP SUCCESS" or "NOT MODIFIED" (the content is cached), return immediately.
 				}
 			} while ( (responseCode >= 300) && (responseCode <= 399) );
 			

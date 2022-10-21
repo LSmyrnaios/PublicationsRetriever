@@ -387,15 +387,14 @@ public class ConnSupportUtils
 					elapsedTimeMillis = Duration.between(currentTime, newCurrentTime).toMillis();
 				} catch (Exception e) {
 					logger.warn("An exception was thrown when tried to obtain the time elapsed from the last time the \"currentTime\" was updated: " + e.getMessage());
-					domainConnectionData.updateAndUnlock(newCurrentTime);
+					domainConnectionData.updateAndUnlock(newCurrentTime);	// Update the time and connect.
 					return;
 				}
 				if ( elapsedTimeMillis < minPolitenessDelay ) {
 					finalPolitenessDelay -= elapsedTimeMillis;
 					try {
 						Thread.sleep(finalPolitenessDelay);
-					} catch (InterruptedException ignored) {
-					}
+					} catch (InterruptedException ignored) {}
 				}
 			}	// At this point, if both sleeps were interrupted, some time has already passed, so it's ok to connect to the same domain.
 			currentTime = Instant.now();	// Update, after the sleep.
@@ -807,7 +806,7 @@ public class ConnSupportUtils
 				return new DetectedContentType("html", inputLine, br);
 			else {
 				br.close();	// We close the stream here, since if we got a pdf we should reconnect in order to get the very first bytes (we don't read "lines" when downloading PDFs).
-				if ( lowerCaseInputLine.startsWith("%pdf-", 0) )
+				if ( lowerCaseInputLine.startsWith("%pdf-", 0) )	// After the "-", the pdf-specification version follows.
 					return new DetectedContentType("pdf", null, null);	// For PDFs we just going to re-connect in order to download the, since we read plain bytes for them and not String-lines, so we re-connect just to be sure we don't corrupt them.
 				else
 					return new DetectedContentType("undefined", inputLine, null);

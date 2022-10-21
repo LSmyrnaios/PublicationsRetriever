@@ -716,7 +716,25 @@ public class UrlChecker {
 
 		//urlList.add("https://hal-utt.archives-ouvertes.fr/hal-02652183");
 
-		urlList.add("https://fun.repo.nii.ac.jp/?action=pages_view_main&active_action=repository_view_main_item_detail&item_id=4949&item_no=1&page_id=13&block_id=21");
+		//urlList.add("https://fun.repo.nii.ac.jp/?action=pages_view_main&active_action=repository_view_main_item_detail&item_id=4949&item_no=1&page_id=13&block_id=21");
+
+		//urlList.add("https://medcraveonline.com/EMIJ/EMIJ-03-00046");
+
+		//urlList.add("https://www.erudit.org/fr/revues/rs/2014-v55-n3-rs01677/1028377ar/");
+
+		//urlList.add("https://www.sciencedirect.com/science/article/pii/0093934X9290124W");
+		//urlList.add("https://www.sciencedirect.com/science/article/pii/0093934X9290124W/pdfft?isDTMRedir=true&download=true");
+		//urlList.add("https://www.sciencedirect.com/science/article/pii/0093934X9290124W?ref=cra_js_challenge&fr=rjs");
+		//urlList.add("https://www.sciencedirect.com/science/article/pii/0093934X9290124W/pdf?md5=7e526c323fd77b05f0a292d5c29a6fcc&pid=1-s2.0-0093934X9290124W-main.pdf");
+
+		//urlList.add("https://www.sciencedirect.com/science/article/pii/S0272884219300720/pdf");
+
+		//urlList.add("https://openaccess.marmara.edu.tr/entities/publication/959ebf2d-4e2f-4f4f-a397-b0c2793170ee");
+
+		//urlList.add("https://openaccess.marmara.edu.tr/bitstreams/98e649e7-a656-4a90-ad69-534178e63fbb/download");
+		//urlList.add("https://www.tse-fr.eu/publications/information-and-equity-premium");
+
+		urlList.add("https://www.ihtcdigitallibrary.com/conferences/ihtc15,4c2dcddc71dca90e,0f04728459e30e1c.html");
 
 
 		logger.info("Urls to check:");

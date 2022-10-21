@@ -40,6 +40,9 @@ public class MetaDocUrlsHandler {
         COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS = Pattern.compile(regex);
     }
 
+
+    public static Pattern DOMAIN_REPLACEMENT_PATTERN = Pattern.compile("://(?:localhost|127.0.0.1)(?:\\:[\\d]+)?");
+
     public static AtomicInteger numOfMetaDocUrlsFound = new AtomicInteger(0);
 
 
@@ -108,6 +111,12 @@ public class MetaDocUrlsHandler {
             PageCrawler.contentProblematicUrls.incrementAndGet();
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return true;
+        }
+
+        if ( metaDocUrl.contains("://localhost") || metaDocUrl.contains("://127.0.0.1") )  // For example: http://localhost:4000/bitstreams/98e649e7-a656-4a90-ad69-534178e63fbb/download
+        {
+            // In this case, we have to replace the "localhost" domain (and possible port) with the page's domain.
+            metaDocUrl = DOMAIN_REPLACEMENT_PATTERN.matcher(metaDocUrl).replaceFirst("://" +  pageDomain);
         }
 
         if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(metaDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
