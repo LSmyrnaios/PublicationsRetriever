@@ -174,7 +174,8 @@ public class PageCrawler
 					String blockedDomain = dbe.getMessage();
 					if ( (blockedDomain != null) && blockedDomain.contains(pageDomain) ) {
 						logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
-						UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Logged in 'PageCrawler.visit()' method, as its domain was blocked during crawling.", null, true, "true", "true", "false", "false", "false", null, "null");
+						String couldRetry = (LoaderAndChecker.COULD_RETRY_URLS.matcher(pageUrl).matches() ? "true" : "false");
+						UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Logged in 'PageCrawler.visit()' method, as its domain was blocked during crawling.", null, true, "true", "true", "false", "false", couldRetry, null, "null");
 						LoaderAndChecker.connProblematicUrls.incrementAndGet();
 						return;
 					}
@@ -558,7 +559,8 @@ public class PageCrawler
 				String blockedDomain = dbe.getMessage();
 				if ( (blockedDomain != null) && blockedDomain.contains(pageDomain) ) {
 					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.checkRemainingInternalLinks()\" after it's domain was blocked.");
-					UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Logged in 'PageCrawler.checkRemainingInternalLinks()' method, as its domain was blocked during crawling.", null, true, "true", "true", "false", "false", "false", null, "null");
+					String couldRetry = (LoaderAndChecker.COULD_RETRY_URLS.matcher(pageUrl).matches() ? "true" : "false");
+					UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Logged in 'PageCrawler.checkRemainingInternalLinks()' method, as its domain was blocked during crawling.", null, true, "true", "true", "false", "false", couldRetry, null, "null");
 					LoaderAndChecker.connProblematicUrls.incrementAndGet();
 					return false;
 				}

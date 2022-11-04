@@ -101,6 +101,7 @@ public class UrlTypeChecker
 	public static boolean matchesUnwantedUrlType(String urlId, String retrievedUrl, String lowerCaseUrl)
 	{
 		String loggingMessage = null;
+		String wasUrlValid = "N/A";	// Default value to be used, in case the given url matches an unwanted type. We do not know if the url is valid (i.e if it can be connected and give a non 4XX response) at this point.
 		
 		// Avoid JavaScript-powered domains, other than the "sciencedirect.com", which is handled separately.
 		// We could "guess" the pdf-link for some of them, but for "persee.fr" for ex. there's also a captcha requirement for the connection.
@@ -110,7 +111,7 @@ public class UrlTypeChecker
 		{
 			loggingMessage = "Discarded after matching to a JavaScript-using domain, other than the 'sciencedirect.com'.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", "N/A", "false", "false", "false", null, "null");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 			if ( !LoaderAndChecker.useIdUrlPairs )
 				javascriptPageUrls.incrementAndGet();
 			return true;
@@ -119,7 +120,7 @@ public class UrlTypeChecker
 		else if ( lowerCaseUrl.contains("doaj.org/toc/") ) {
 			loggingMessage = "Discarded after matching to the Results-directory: 'doaj.org/toc/'.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", "N/A", "false", "false", "false", null, "null");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 			if ( !LoaderAndChecker.useIdUrlPairs )
 				doajResultPageUrls.incrementAndGet();
 			return true;
@@ -128,7 +129,7 @@ public class UrlTypeChecker
 		else if ( lowerCaseUrl.contains("dlib.org") || lowerCaseUrl.contains("saberes.fcecon.unr.edu.ar") || lowerCaseUrl.contains("eumed.net") ) {
 			loggingMessage = "Discarded after matching to a site containing the full-text as plain-text inside its HTML.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", "N/A", "false", "false", "false", null, "null");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 			if ( !LoaderAndChecker.useIdUrlPairs )
 				pagesWithHtmlDocUrls.incrementAndGet();
 			return true;
@@ -138,7 +139,7 @@ public class UrlTypeChecker
 				|| lowerCaseUrl.contains("cam.ac.uk") || lowerCaseUrl.contains("scindeks.ceon.rs") || lowerCaseUrl.contains("egms.de") ) {
 			loggingMessage = "Discarded after matching to a domain which doesn't provide docUrls.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", "N/A", "false", "false", "false", null, "null");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 			if ( !LoaderAndChecker.useIdUrlPairs )
 				pagesNotProvidingDocUrls.incrementAndGet();
 			return true;
@@ -147,7 +148,7 @@ public class UrlTypeChecker
 		else if ( lowerCaseUrl.contains("bibliotecadigital.uel.br") || lowerCaseUrl.contains("cepr.org") ) {
 			loggingMessage = "Discarded after matching to a domain which needs login to access docFiles.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", "N/A", "false", "false", "false", null, "null");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 			if ( !LoaderAndChecker.useIdUrlPairs )
 				pagesRequireLoginToAccessDocFiles.incrementAndGet();
 			return true;
@@ -157,7 +158,7 @@ public class UrlTypeChecker
 				|| lowerCaseUrl.contains("jorr.org") || lowerCaseUrl.contains("rwth-aachen.de") || lowerCaseUrl.contains("pubmed.ncbi.nlm.nih.gov") ) {
 			loggingMessage = "Discarded after matching to a site having its DocUrls in larger depth.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", "N/A", "false", "false", "false", null, "null");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 			if ( !LoaderAndChecker.useIdUrlPairs )
 				pagesWithLargerCrawlingDepth.incrementAndGet();
 			return true;
@@ -166,7 +167,7 @@ public class UrlTypeChecker
 		else if ( lowerCaseUrl.contains("doi.org/https://doi.org/") && lowerCaseUrl.contains("pangaea.") ) {
 			loggingMessage = "Discarded after matching to 'PANGAEA.' urls with invalid form and non-docUrls in their internal links.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", "N/A", "false", "false", "false", null, "null");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 			if ( !LoaderAndChecker.useIdUrlPairs )
 				pangaeaUrls.incrementAndGet();
 			return true;
@@ -175,7 +176,7 @@ public class UrlTypeChecker
 		else if ( lowerCaseUrl.contains("200.17.137.108") ) {
 			loggingMessage = "Discarded after matching to known urls with connectivity problems.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", "N/A", "false", "false", "false", null, "null");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 			if ( !LoaderAndChecker.useIdUrlPairs )
 				LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			return true;
@@ -185,7 +186,7 @@ public class UrlTypeChecker
 		else if ( lowerCaseUrl.contains("handle.net") || lowerCaseUrl.contains("doors.doshisha.ac.jp") || lowerCaseUrl.contains("opac-ir.lib.osaka-kyoiku.ac.jp") ) {
 			loggingMessage = "Discarded after matching to domain, known to take long to respond.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", "N/A", "false", "false", "false", null, null);
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, null);
 			if ( !LoaderAndChecker.useIdUrlPairs )
 				longToRespondUrls ++;
 			return true;
@@ -195,7 +196,7 @@ public class UrlTypeChecker
 			ConnSupportUtils.blockSharedSiteSessionDomains(retrievedUrl, null);
 			loggingMessage = "It was discarded after participating in a 'sharedSiteSession-endlessRedirectionPack'.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", "N/A", "false", "false", "false", null, "null");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 			if ( !LoaderAndChecker.useIdUrlPairs )
 				LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			return true;
@@ -204,7 +205,8 @@ public class UrlTypeChecker
 		else if ( shouldNotAcceptPageUrl(retrievedUrl, lowerCaseUrl) ) {
 			loggingMessage = "Discarded after matching to unwantedType-regex-rules.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", "N/A", "false", "false", "false", null, "null");
+			String couldRetry = (LoaderAndChecker.COULD_RETRY_URLS.matcher(retrievedUrl).matches() ? "true" : "false");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
 			if ( !LoaderAndChecker.useIdUrlPairs )
 				urlsWithUnwantedForm.incrementAndGet();
 			return true;

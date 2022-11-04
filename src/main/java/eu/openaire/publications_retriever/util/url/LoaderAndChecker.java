@@ -19,6 +19,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
@@ -135,7 +136,7 @@ public class LoaderAndChecker
 					try {	// We sent the < null > into quotes to avoid causing NPEs in the thread-safe datastructures that do not support null input.
 						HttpConnUtils.connectAndCheckMimeType("null", retrievedUrlToCheck, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
 					} catch (Exception e) {
-						List<String> list = getWasValidAndCouldRetry(e);
+						List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
 						String wasUrlValid = list.get(0);
 						String couldRetry = list.get(1);
 						UrlUtils.logOutputData("null", retrievedUrlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
@@ -288,7 +289,7 @@ public class LoaderAndChecker
 						if ( !isSingleIdUrlPair )	// Otherwise it's already logged.
 							loggedUrlsOfCurrentId.add(urlToCheck);
 					} catch (Exception e) {
-						List<String> list = getWasValidAndCouldRetry(e);
+						List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
 						String wasUrlValid = list.get(0);
 						String couldRetry = list.get(1);
 						UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
@@ -390,7 +391,7 @@ public class LoaderAndChecker
 					try {    // Check if it's a docUrl, if not, it gets crawled.
 						HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
 					} catch (Exception e) {
-						List<String> list = getWasValidAndCouldRetry(e);
+						List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
 						String wasUrlValid = list.get(0);
 						String couldRetry = list.get(1);
 						UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
@@ -482,7 +483,7 @@ public class LoaderAndChecker
 						try {    // Check if it's a docUrl, if not, it gets crawled.
 							HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
 						} catch (Exception e) {
-							List<String> list = getWasValidAndCouldRetry(e);
+							List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
 							String wasUrlValid = list.get(0);
 							String couldRetry = list.get(1);
 							UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
@@ -568,7 +569,7 @@ public class LoaderAndChecker
 					loggedUrlsOfThisId.add(urlToCheck);
 				return true;	// A url was checked and didn't have any problems, return and log the remaining urls.
 			} catch (Exception e) {
-				List<String> list = getWasValidAndCouldRetry(e);
+				List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
 				String wasUrlValid = list.get(0);
 				String couldRetry = list.get(1);
 				UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, in checkRemainingUrls(), due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
@@ -703,7 +704,7 @@ public class LoaderAndChecker
 	public static void setCouldRetryRegex()
 	{
 		String debugLog;
-		String couldRetryRegexString = ".*(?:HTTP 4(?:08|2[569]) Client|";	// This is the "starting" pattern.
+		String couldRetryRegexString = ".*(?:HTTP 4(?:0[38]|2[569]) Client|";	// This is the "starting" pattern.
 		if ( ConnSupportUtils.shouldBlockMost5XXDomains ) {
 			couldRetryRegexString += "503";    // Only retry for 503-urls. The 503-domains are also excluded from been blocked.
 			debugLog = "Going to block most of the 5XX domains, except from the 503-domains.";
@@ -717,12 +718,18 @@ public class LoaderAndChecker
 	}
 
 
-	public static List<String> getWasValidAndCouldRetry(Exception e)
+	public static Pattern COULD_RETRY_URLS = Pattern.compile("[^/]+://[^/]*(?:sciencedirect|elsevier).com[^/]*/.*");
+	// The urls having the aforementioned domains are likely to be specially-handled in future updates, so we want to keep their urls available for retrying.
+
+	public static List<String> getWasValidAndCouldRetry(Exception e, String pageUrl)
 	{
 		List<String> list = new ArrayList<>(2);
+
+		// Set default values.
 		String wasUrlValid = "true";
 		String couldRetry = "false";
-		if ( e instanceof RuntimeException ) {
+
+		if ( e instanceof RuntimeException ) {	// This check also covers the: (e != null) check.
 			String message = e.getMessage();
 			if ( message != null) {
 				if ( INVALID_URL_HTTP_STATUS.matcher(message).matches() )
@@ -731,6 +738,13 @@ public class LoaderAndChecker
 					couldRetry = "true";	// 	We could retry at a later time, since some errors might be temporal.
 			}
 		}
+
+		// Ultimately, if this url is not valid, there is no point in retrying in the future, no matter if it belongs to a future-handled domain.
+		if ( wasUrlValid.equals("false") )
+			couldRetry = "false";
+		else if ( (pageUrl != null) && COULD_RETRY_URLS.matcher(pageUrl).matches() )
+			couldRetry = "true";
+
 		list.add(0, wasUrlValid);
 		list.add(1, couldRetry);
 		return list;
