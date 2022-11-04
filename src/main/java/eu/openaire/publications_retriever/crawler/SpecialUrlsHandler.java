@@ -6,9 +6,6 @@ import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,11 +22,6 @@ import java.util.regex.Pattern;
 public class SpecialUrlsHandler
 {
 	private static final Logger logger = LoggerFactory.getLogger(SpecialUrlsHandler.class);
-	
-	// The following regex-pattern was used in ScienceDirect-handling in early days. Keep it here, as it may be of need in any domain in the future..
-	// public static final Pattern JAVASCRIPT_REDIRECT_URL = Pattern.compile("(?:window.location[\\s]+\\=[\\s]+\\')(.*)(?:\\'\\;)");
-
-	private static final String scienceDirectBasePath = "https://www.sciencedirect.com/science/article/pii/";
 
 	private static final String europepmcPageUrlBasePath = "https://europepmc.org/backend/ptpmcrender.fcgi?accid=";
 
@@ -41,12 +33,12 @@ public class SpecialUrlsHandler
 	{
 		String updatedUrl = null;
 
-		if ( (updatedUrl = checkAndGetScienceDirectUrl(resourceUrl)) != null ) {
-			//logger.debug("ScienceDirect-PageURL to try: " + updatedUrl);	// DEBUG!
+		if ( (updatedUrl = checkAndGetEuropepmcDocUrl(resourceUrl)) != null ) {
+			//logger.debug("Europepmc-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		}
-		else if ( (updatedUrl = checkAndGetEuropepmcDocUrl(resourceUrl)) != null ) {
-			//logger.debug("Europepmc-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+		else if ( (updatedUrl = checkAndDowngradeManuscriptElsevierUrl(resourceUrl)) != null ) {
+			//logger.debug("ManuscriptElsevier-URL: " + resourceURL + " to acceptable-Url: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		}
 		else if ( (updatedUrl = checkAndGetNasaDocUrl(resourceUrl)) != null ) {
@@ -67,43 +59,6 @@ public class SpecialUrlsHandler
 	}
 
 
-	/////////// sciencedirect.com //// "linkinghub.elsevier.com //// api.elsevier.com ////////////////////
-	/**
-	 * This method checks if the given url belongs to the "scienceDirect-family"-urls and if so it handles it.
-	 * If the given url is not a kindOf-scienceDirect-url, then it
-	 * @param pageUrl
-	 * @return
-	 */
-	public static String checkAndGetScienceDirectUrl(String pageUrl)
-	{
-		boolean wasLinkinghubElsevier = false;
-		if ( pageUrl.contains("linkinghub.elsevier.com") || pageUrl.contains("api.elsevier.com") )	// Avoid plain "elsevier.com"-rule as there are: "www.elsevier.com" and "journals.elsevier.com" which don't give docUrls and are handled differently.
-		{
-			// Offline-redirect Elsevier to ScienceDirect.
-			// The "linkinghub.elsevier.com" urls have a javaScript redirect inside which we are not able to handle without doing html scraping.
-			// The "api.elsevier.com" contains xml which contains the docUrl, but we can go there faster by "offlineRedirect".
-			String idStr = UrlUtils.getDocIdStr(pageUrl, null);
-			if ( idStr != null ) {
-				idStr = StringUtils.replace(idStr, "PII:", "", 1);	// In case of an "api.elsevier.com" pageUrl.
-				pageUrl = scienceDirectBasePath + idStr;
-			}
-			else
-				throw new RuntimeException("Problem when handling the \"elsevier\"-family-url: " + pageUrl);
-
-			//logger.debug("Produced ScienceDirect-url: " + pageUrl);	// DEBUG!
-			wasLinkinghubElsevier = true;
-		}
-
-		if ( wasLinkinghubElsevier || pageUrl.contains("sciencedirect.com") ) {
-			if ( !pageUrl.endsWith("/pdf") )
-				return (pageUrl + (pageUrl.endsWith("/") ? "pdf" : "/pdf"));    // Add a "/pdf" in the end. That will indicate we are asking for the docUrl.
-			else
-				return pageUrl;	// It's already a docUrl..
-		} else
-			return null;	// It's from another domain..
-	}
-
-
 	/////////// europepmc.org ////////////////////
 	public static String checkAndGetEuropepmcDocUrl(String europepmcUrl)
 	{
@@ -120,23 +75,15 @@ public class SpecialUrlsHandler
 	}
 
 
-	private static boolean verifyMicrosoftAcademicPossibleDocLink(String urlId, String sourceUrl, String pageUrl, String possibleDocUrl)
+	/////////// manuscript.elsevier ////////////////////
+	// These urls, try to connect with HTTPS, but their certificate is due from 2018. So, we downgrade them to plain HTTP.
+	public static String checkAndDowngradeManuscriptElsevierUrl(String manuscriptElsevierUrl)
 	{
-		//logger.debug("AcademicMicrosoft PossibleDocUrl: " + possibleDocUrl);	// DEBUG!
-
-		if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(possibleDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
-			ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, possibleDocUrl, false);
-			return true;
-		}
-
-		try {    // Check if it's a docUrl, if not, check for other possible ones.
-			if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, possibleDocUrl, null, false, true) )
-				return true;
-			// Else continue as there might be more than one possible docUrls.
-		} catch ( Exception e ) {
-			// No handling here, go check for other docUrls.
-		}
-		return false;
+		if ( manuscriptElsevierUrl.contains("manuscript.elsevier.com") ) {
+			manuscriptElsevierUrl = StringUtils.replace(manuscriptElsevierUrl, "https", "http", 1);
+			return manuscriptElsevierUrl;
+		} else
+			return null;
 	}
 
 

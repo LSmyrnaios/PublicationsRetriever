@@ -52,18 +52,28 @@ public class UrlTypeChecker
 	
 	public static final Pattern INTERNAL_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+format=(?:xml|" + htExtensionsPattern + "|rss|ris|bib).*");	// This exists as a url-parameter.
 
-	public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile("[^/]+://.*(?:(?<!drive.)google\\.|goo.gl|gstatic|facebook|twitter|insta(?:gram|paper)|youtube|vimeo|linkedin|ebay|bing|(?:amazon|[./]analytics)\\.|s.w.org|wikipedia|myspace|yahoo|mail|pinterest|reddit|tumblr"
+	public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile("[^/]+://[^/]*(?:(?<!drive.)google\\.|goo.gl|gstatic|facebook|twitter|insta(?:gram|paper)|youtube|vimeo|linkedin|ebay|bing|(?:amazon|[./]analytics)\\.|s.w.org|wikipedia|myspace|yahoo|mail|pinterest|reddit|tumblr"
 			+ "|www.ccdc.cam.ac.uk|figshare.com/collections/|datadryad.org/stash/dataset/"
 			+ "|evernote|skype|microsoft|adobe|buffer|digg|stumbleupon|addthis|delicious|dailymotion|gostats|blog(?:ger)?|copyright|friendfeed|newsvine|telegram|getpocket"
 			+ "|flipboard|line.me|vk|ok.rudouban|baidu|qzone|xing|renren|weibo|doubleclick|bit.ly|github|reviewofbooks"
 			+ "|(?<!files.)wordpress"
-			+ "|(?<!(?:linkinghub|manuscript).)elsevier.com"	// Avoid pageUrls redirecting to plain "elsevier.com"  ("(www|journals).elsevier.com", coming mostly from "doi.org"-urls).
+
+			// Block nearly all the "elsevier.com" urls, as well as the "sciencedirect.com" urls.
+			// The "(linkinghub|api).elsevier.com" urls redirect -automatically or can be redirected manually- to the "sciencedirect.com", where the pdf is provided, BUT they cannot be retrieved.
+			// The "sciencedirect.com" urls provide the pdf BUT! since some time now they require auth-tokens and decoding by javascript methods.
+			// The ideal approach is to acquire an official api-key in order to retrieve the full-text in xml-format. Check: https://dev.elsevier.com/documentation/FullTextRetrievalAPI.wadl
+
+			// The "<...>.pure.elsevier.com" urls give a page which does not contain the docUrl, but a doi-link instead, which leads to another page which contains the docUrl.
+			// The "manuscript.elsevier.com" gives pdfs right away, so it should be allowed.
+			// The "(www|journals).elsevier.com", come mostly from "doi.org"-urls.
+			+ "|(?<!manuscript.)elsevier.com|sciencedirect.com"
+
 			+ "|arvojournals.org"	// Avoid this problematic domain, which redirects to another domain, but also adds a special token, which cannot be replicated. Also, it has cookies issues.
 			+ "|books.openedition.org"	// Avoid this closed-access sub-domain. (other subdomains, like "journals.openedition.org" are fine).
 			+ "|perfdrive."	// Avoid "robot-check domain". It blocks quickly and redirect us to "validate.perfdrive.com".
 			+ "|services.bepress.com"	// Avoid potential malicious domain (Avast had some urls of this domain in the Blacklist).
 			+ "|(?:careers|shop)."
-			+ ").*/.*");
+			+ ")[^/]*/.*");
 
 	public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile("[^/]+://[\\w.:-]+(?:/[\\w]{2})?(?:/index.(?:" + htExtensionsPattern + "|" + phpExtensionsPattern + "))?[/]?(?:\\?(?:locale(?:-attribute)?|ln)=[\\w_-]+)?$");	// Exclude plain domains' urls. Use "ISO 639-1" for language-codes (2 letters directory).
 
