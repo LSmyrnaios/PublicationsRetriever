@@ -58,20 +58,19 @@ public class PageCrawler
 	public static final Pattern DOCUMENT_TEXT = Pattern.compile("pdf|télécharger|texte" + space + "intégral");
 
 	// The following regex is used both in the text around the links and in the links themselves. Everything should be LOWERCASE, from the regex-rules to the link to be matched against them.
-	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:[^e]manu[ae]l|(?:\\|\\|" + space + ")?gu[ií](?:de|a)|preview|leaflet|agreement(?!.*thesis" + space + "(?:19|20)[\\d]{2}.*)|accessibility|journal" + space + "catalog|disclose" + space + "file|poli(?:c(?:y|ies)|tika)"	// "policy" can be a lone word or a word after: repository|embargo|privacy|data protection|take down|supplement|access
+	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:[^e]manu[ae]l|(?:\\|\\|" + space + ")?gu[ií](?:de|a)|directive[s]?|preview|leaflet|agreement(?!.*thesis" + space + "(?:19|20)[\\d]{2}.*)|accessibility|journal" + space + "catalog|disclose" + space + "file|poli(?:c(?:y|ies)|tika)"	// "policy" can be a lone word or a word after: repository|embargo|privacy|data protection|take down|supplement|access
 																		// We may have the "Emanuel" writer's name in the url-string. Also, we may have the "agreement"-keyword in a valid pub-url like: https://irep.ntu.ac.uk/id/eprint/40188/1/__Opel.ads.ntu.ac.uk_IRep-PGR%24_2020%20Theses%20and%20deposit%20agreement%20forms_BLSS_NBS_FARRIER-WILLIAMS%2C%20Elizabeth_EFW%20Thesis%202020.pdf
-																		+ "|licen(?:se|cia)" + space + "(?:of|de)" + space + "us[eo]|(?:governance|safety)" + space + "statement|normativa|(?:consumer|hazard|copyright)" + space + "information|permission|editorial" + space + "board|dé(?:p(?:ôt[s]?|oser)|butez)|créer" + space + "votre|orcid|subscription|instruction|code" + space + "of" + space + "conduct|request|join|compte|[^_]account"
+																		+ "|licen(?:se|cia)" + space + "(?:of|de)" + space + "us[eo]|(?:governance|safety)" + space + "statement|normativa|(?:consumer|hazard|copyright)" + space + "information|permission|(?:editorial|review)" + space + "board|dé(?:p(?:ôt[s]?|oser)|butez)|créer" + space + "votre|orcid|subscription|instruction|code" + space + "of" + space + "conduct|request|join|compte|[^_]account"
 																		+ "|table" + space + "of" + space + "contents|front" + space + "matter|information" + space + "for" + space + "authors|pdf(?:/a)?" + space + "conversion|catalogue|classifieds"	// classifieds = job-ads
 																		+ "|pdf-viewer|conflicts" + space + "of" + space + "interest|(?:recommendation|order)" + space + "form|adverti[sz]e|mandatory" + space + "open" + space + "access|recommandations" + space + "pour" + space + "s'affilier|hal.*collections|terms|conditions|hakuohjeet|logigramme|export_liste_publi|yearbook|pubs_(?:brochure|overview)"
 																		+ "|procedure|規程|運営規程"	// 規程 == procedure, 運営規程 = Operating regulations  (in japanese)
-																		+ "|(?:peer|mini)" + space + "review|(?:case|annual)" + space + "report|review" + space + "article|short" + space + "communication|letter" + space + "to" + space + "editor"
+																		+ "|(?:peer|mini)" + space + "review|(?:case|annual)" + space + "report|review" + space + "article|short" + space + "communication|letter" + space + "to" + space + "editor|how" + space + "to" + space + "(?:create|submit)|tutori[ae]l"
 																		+ "|data-sharing-guidance|rate(?:" + space + ")?cards|press" + space + "release|liability" + space + "disclaimer|(?:avec|dans)" + space + "(?:ocd|x2)?hal|online(?:" + space + "|_)flyer|publishing" + space + "process"
-																		+ "|^(?:licen[cs]e|help|reprints|politik[sa]|for" + space + "recruiters|charte" + space + "de" + space + "signature|weekly" + space + "visitors|publication" + space + "ethics" + space + "and" + space + "malpractice)$"	// Single words/phrases inside the html-text.
-																		+ "|/(?:entry|information|opinion|(?:rapportannuel|publerkl|utt_so_|atsc_)[\\w-_()]*|accesorestringido|library_recommendation_form|research-article|loi_republique_numerique_publis).pdf$"	// The plain "research-article.pdf" is the template provided by journals.
-																		+ "|(?:公表|登録)届出書|取扱要領).*");	// registration/notification form/statement, instructions (in japanese)
+																		+ "|^(?:licen[cs]e|help|reprints|pol[ií]ti[kc][sa](?:" + space + "de" + space + "informação)?|for" + space + "recruiters|charte" + space + "de" + space + "signature|weekly" + space + "visitors|publication" + space + "ethics" + space + "and" + space + "malpractice)$"	// Single words/phrases inside the html-text.
+																		+ "|/(?:entry|information|opinion|(?:rapportannuel|publerkl|utt_so_|atsc_|tjg_|oproep_voor_artikels_|[^/]*call_for_contributions_)[\\w-_()]*|accesorestringido|library_recommendation_form|research-article|loi_republique_numerique_publis|nutzungsbedingungen|autorenhinweise|mediadaten|canceledpresentations).pdf$"	// The plain "research-article.pdf" is the template provided by journals.
+																		+ "|(?:公表|登録)届出書|取扱要領|リポジトリ要項|検索のポイント|について).*");	// registration/notification form/statement, instructions, repository requirements, search point (in japanese)
 
 	// Example of docUrl having the "editorial" keyword: https://publikationen.ub.uni-frankfurt.de/opus4/frontdoor/deliver/index/docId/45461/file/daek_et_al_2017_editorial.pdf
-
 
 	public static void visit(String urlId, String sourceUrl, String pageUrl, String pageContentType, HttpURLConnection conn, String firstHTMLlineFromDetectedContentType, BufferedReader bufferedReader)
 	{
@@ -96,8 +95,12 @@ public class PageCrawler
 		else if ( firstHTMLlineFromDetectedContentType != null ) {
 			pageHtml = firstHTMLlineFromDetectedContentType + pageHtml;
 		}
-
 		//logger.debug(pageHtml);	// DEBUG!
+
+		if ( pageDomain.contains("turkjgastroenterol.org") ) {
+			SpecialUrlsHandler.extractAndCheckTurkjgastroenterolDocUrl(pageHtml, urlId, sourceUrl, pageUrl, pageDomain);
+			return;
+		}
 
 		// Check if the docLink is provided in a metaTag and connect to it directly.
 		if ( MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl(urlId, sourceUrl, pageUrl, pageDomain, pageHtml) )
@@ -320,7 +323,7 @@ public class PageCrawler
 				String parentClassName = parentElement.className().trim();
 				if ( !parentClassName.isEmpty() ) {
 					//logger.debug("Parent's classname: " + parentClassName);
-					if ( parentClassName.equals("tab") )
+					if ( parentClassName.equals("tab") || parentClassName.equals("product-head-bnrs") )
 						continue;
 				}
 			}
@@ -337,36 +340,14 @@ public class PageCrawler
 					}
 				}
 
-				linkAttr = el.text();
-				if ( !linkAttr.isEmpty() ) {
-					String lowerCaseLinkAttr = linkAttr.toLowerCase();
-					if ( NON_VALID_DOCUMENT.matcher(lowerCaseLinkAttr).matches() ) {	// If it's not a valid full-text..
-						//logger.debug("Avoiding invalid full-text with context: \"" + linkAttr + "\", internalLink: " + el.attr("href"));	// DEBUG!
-						continue;	// Avoid collecting it..
-					}
-					else if ( DOCUMENT_TEXT.matcher(lowerCaseLinkAttr).matches() ) {
-						internalLink = el.attr("href").trim();
-						if ( internalLink.isEmpty() || internalLink.equals("#") )
-							if ( (internalLink = getInternalDataLink(el)) == null )
-								continue;	// This means that no attributes containing the word "data" was found in this element.
+				// Check the text appearing next-to or as the link, inside the html.
+				linkAttr = el.text().trim();
+				if ( !linkAttr.isEmpty() && checkTextOrTitleAlongWithLink(el, linkAttr) )
+					continue;
 
-						if ( !UrlTypeChecker.shouldNotAcceptInternalLink(internalLink, null) ) {
-							//logger.debug("Found the docLink < " + internalLink + " > from link-text: \"" + linkAttr + "\"");	// DEBUG
-							throw new DocLinkFoundException(internalLink);
-						}
-						throw new DocLinkInvalidException(internalLink);
-					}
-				}
-
-				linkAttr = el.attr("title");
-				if ( !linkAttr.isEmpty() && DOCUMENT_TEXT.matcher(linkAttr.toLowerCase()).matches() ) {
-					internalLink = el.attr("href").trim();
-					if ( !internalLink.isEmpty() && !internalLink.equals("#") ) {
-						//logger.debug("Found the docLink < " + internalLink + " > from link-title: \"" + linkAttr + "\"");	// DEBUG
-						throw new DocLinkFoundException(internalLink);
-					}
-					throw new DocLinkInvalidException(internalLink);
-				}
+				linkAttr = el.attr("title").trim();
+				if ( !linkAttr.isEmpty() && checkTextOrTitleAlongWithLink(el, linkAttr) )
+					continue;
 
 				// Check if we have a "link[href][type*=pdf]" get the docUrl. This also check all the "types" even from the HTML-"a" elements.
 				linkAttr = el.attr("type").trim();
@@ -392,6 +373,30 @@ public class PageCrawler
 			}
 		}
 		return urls;
+	}
+
+
+	private static boolean checkTextOrTitleAlongWithLink(Element el, String linkAttr) throws DocLinkFoundException, DocLinkInvalidException
+	{
+		String lowerCaseLinkAttr = linkAttr.toLowerCase();
+		if ( NON_VALID_DOCUMENT.matcher(lowerCaseLinkAttr).matches() ) {	// If it's not a valid full-text, by checking the TEXT in the html..
+			//logger.debug("Avoiding invalid full-text with context: \"" + linkAttr + "\", internalLink: " + el.attr("href"));	// DEBUG!
+			return true;	// Avoid collecting it. continue with the next element.
+		}
+		else if ( DOCUMENT_TEXT.matcher(lowerCaseLinkAttr).matches() ) {
+			String internalLink = el.attr("href").trim();
+			if ( internalLink.isEmpty() || internalLink.equals("#") )
+				if ( (internalLink = getInternalDataLink(el)) == null )
+					return true;	// This means that no attributes containing the word "data" was found in this element.
+
+			if ( !UrlTypeChecker.shouldNotAcceptInternalLink(internalLink, null) ) {
+				//logger.debug("Found the docLink < " + internalLink + " > from link-text: \"" + linkAttr + "\"");	// DEBUG
+				throw new DocLinkFoundException(internalLink);	// This will be connected and tested by the caller-method.
+			}
+			throw new DocLinkInvalidException(internalLink);
+		}
+		else
+			return false;
 	}
 
 

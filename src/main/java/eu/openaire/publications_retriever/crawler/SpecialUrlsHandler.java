@@ -1,6 +1,7 @@
 package eu.openaire.publications_retriever.crawler;
 
 
+import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
@@ -9,8 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.HttpURLConnection;
-import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -160,6 +160,66 @@ public class SpecialUrlsHandler
 	public static String checkAndHandleDergipark(String pageUrl)
 	{
 		return StringUtils.replace(pageUrl, "dergipark.gov.tr", "dergipark.org.tr");
+	}
+
+	public static Pattern Turkjgastroenterol_docUrl_pattern = Pattern.compile("<div[\\s]*>[\\s]*(/content/files/[^<>]+.pdf)[\\s]*</div>");
+
+
+	/////// www.turkjgastroenterol.org //////
+	// This is used when the url has already arrived in the "PageCrawler.visit()" method.
+	public static boolean extractAndCheckTurkjgastroenterolDocUrl(String pageHtml, String urlId, String sourceUrl, String pageUrl, String pageDomain)
+	{
+		Matcher matcher = Turkjgastroenterol_docUrl_pattern.matcher(pageHtml);
+		if ( !matcher.find() ) {
+			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving the \"turkjgastroenterol\"-pdf-url from its html.", pageDomain, true, "true", "true", "false", "false", "false", null, "null");
+			return false;
+		}
+
+		String pdfUrl = null;
+		try {
+			pdfUrl = matcher.group(1);
+		} catch (Exception e) {
+			logger.warn("No pdf-url was found inside the html of page: " + pageUrl, e);
+			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving the \"turkjgastroenterol\"-pdf-url from its html.", pageDomain, true, "true", "true", "false", "false", "false", null, "null");
+			PageCrawler.contentProblematicUrls.incrementAndGet();
+			return false;
+		}
+		if ( (pdfUrl == null) || pdfUrl.isEmpty() ) {
+			logger.warn("No pdf-url was found inside the html of page: " + pageUrl);
+			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving the \"turkjgastroenterol\"-pdf-url from its html.", pageDomain, true, "true", "true", "false", "false", "false", null, "null");
+			PageCrawler.contentProblematicUrls.incrementAndGet();
+			return false;
+		}
+
+		String urlToCheck = pdfUrl;
+		if ( !urlToCheck.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(pdfUrl, pageUrl, StandardCharsets.UTF_8)) == null ) {
+			logger.warn("Could not canonicalize url: " + pdfUrl);
+			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as the retrievied \"turkjgastroenterol\"-pdf-url had canonicalization's problems.", pageDomain, true, "true", "true", "false", "false", "false", null, "null");
+			LoaderAndChecker.connProblematicUrls.incrementAndGet();
+			return false;
+		}
+
+		if ( (urlToCheck = LoaderAndChecker.handleUrlChecks(urlId, urlToCheck)) == null )
+			return false;	// The output-data was logged inside.
+
+		if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
+			ConnSupportUtils.handleReCrossedDocUrl(urlId, urlToCheck, urlToCheck, urlToCheck, true);	// The output-data was logged inside.
+			return false;
+		}
+
+		boolean isPossibleDocOrDatasetUrl = true;
+
+		try {	// We sent the < null > into quotes to avoid causing NPEs in the thread-safe datastructures that do not support null input.
+			HttpConnUtils.connectAndCheckMimeType(urlId, urlToCheck, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
+		} catch (Exception e) {
+			List<String> list = LoaderAndChecker.getWasValidAndCouldRetry(e, urlToCheck);
+			// The pageUrl is a VALID-URL, but whether we couldRetry or not, it depends on the error of the docUrl.. So if it is a 404, then we can never get the fulltext. On the contrary, if it is a 503, then in the future wy might get it.
+			String wasValid = list.get(0);
+			String couldRetry = list.get(1);
+			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem in checking the retrieved \"turkjgastroenterol\"-pdf-url.", pageDomain, true, "true", wasValid, "false", "false", couldRetry, null, "null");
+		}
+
+		return true;
 	}
 
 }
