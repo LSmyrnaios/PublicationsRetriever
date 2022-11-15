@@ -33,7 +33,7 @@ public class LoaderAndChecker
 	
 	public static boolean useIdUrlPairs = true;
 	
-	public static final Pattern DOC_URL_FILTER = Pattern.compile(".+(pdf|download|/doc|document|(?:/|[?]|&)file|/fulltext|attachment|/paper|viewfile|viewdoc|/get|cgi/viewcontent.cgi?).*");
+	public static final Pattern DOC_URL_FILTER = Pattern.compile(".+(pdf|download|/doc|document|(?:/|[?]|&)file|/fulltext|attachment|/paper|viewfile|viewdoc|/get|cgi/viewcontent.cgi\\?|t[ée]l[ée]charger).*");
 	// "DOC_URL_FILTER" works for lowerCase Strings (we make sure they are in lowerCase before we check).
 	// Note that we still need to check if it's an alive link and if it's actually a docUrl (though it's mimeType).
 
@@ -111,7 +111,7 @@ public class LoaderAndChecker
 				callableTasks.add(() -> {
 					String retrievedUrlToCheck = retrievedUrl;	// This is used because: "local variables referenced from a lambda expression must be final or effectively final".
 
-					if ( (retrievedUrlToCheck = (handleUrlChecks("null", retrievedUrlToCheck))) == null )
+					if ( (retrievedUrlToCheck = handleUrlChecks("null", retrievedUrlToCheck)) == null )
 						return false;
 
 					String urlToCheck = retrievedUrlToCheck;

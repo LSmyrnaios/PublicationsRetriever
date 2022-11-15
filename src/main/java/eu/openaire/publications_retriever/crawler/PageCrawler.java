@@ -55,7 +55,7 @@ public class PageCrawler
 
 	private static final String space = "(?:\\s|%20)*";	// This includes the encoded space inside the url-string.
 
-	public static final Pattern DOCUMENT_TEXT = Pattern.compile("pdf|télécharger|texte" + space + "intégral");
+	public static final Pattern DOCUMENT_TEXT = Pattern.compile("pdf|t[ée]l[ée]charger|texte" + space + "intégral");
 
 	// The following regex is used both in the text around the links and in the links themselves. Everything should be LOWERCASE, from the regex-rules to the link to be matched against them.
 	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:[^e]manu[ae]l|(?:\\|\\|" + space + ")?gu[ií](?:de|a)|directive[s]?|preview|leaflet|agreement(?!.*thesis" + space + "(?:19|20)[\\d]{2}.*)|accessibility|journal" + space + "catalog|disclose" + space + "file|poli(?:c(?:y|ies)|tika)"	// "policy" can be a lone word or a word after: repository|embargo|privacy|data protection|take down|supplement|access
@@ -238,8 +238,10 @@ public class PageCrawler
 		try {
 			currentPageLinks = extractInternalLinksFromHtml(pageHtml, pageUrl);
 		} catch (RuntimeException re) {
-			logger.warn("Avoid checking more than " + MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE + " internal links which were found in pageUrl \"" + pageUrl + "\". This page was discarded.");
-			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.retrieveInternalLinks()' method, as it has more than " + MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE + " internal links.", null, true, "true", "true", "false", "false", "false", null, "null");
+			String exceptionMessage = re.getMessage();
+			exceptionMessage = ((exceptionMessage == null) ? "No reason was given!" : exceptionMessage);
+			logger.warn(exceptionMessage + " This page was discarded.");
+			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.retrieveInternalLinks()' method, with reason: " + exceptionMessage, null, true, "true", "true", "false", "false", "false", null, "null");
 			contentProblematicUrls.incrementAndGet();
 			return null;
 		} catch (DynamicInternalLinksFoundException dilfe) {
@@ -302,8 +304,8 @@ public class PageCrawler
 	public static HashSet<String> extractInternalLinksFromHtml(String pageHtml, String pageUrl) throws DocLinkFoundException, DynamicInternalLinksFoundException, DocLinkInvalidException, RuntimeException
 	{
 		Document document = Jsoup.parse(pageHtml);
-		Elements elementLinksOnPage = document.select("a, link[href][type*=pdf]");
-		if ( elementLinksOnPage.isEmpty() ) {	// It will surely not be null, by Jsoup-documentation.
+		Elements elementLinksOnPage = document.select("a, link[href][type*=pdf], form[action]");
+		if ( elementLinksOnPage.isEmpty() ) {	// It will surely NOT be null, by Jsoup-documentation.
 			//logger.warn("Jsoup did not extract any links from pageUrl: \"" + pageUrl + "\"");	// DEBUG!
 			return null;
 		}
@@ -314,6 +316,11 @@ public class PageCrawler
 
 		// Iterate through the elements and extract the internal link.
 		// The internal link might be half-link, or it may have canonicalization issues. That's ok, it is made whole and cannonicalized later, if needed.
+
+		if ( pageUrl.contains("aup-online.com") ) {
+			SpecialUrlsHandler.handleAupOnlinePage(pageUrl, elementLinksOnPage);
+			// The above method will always throw an exception, either a "DocLinkFoundException" or a "RuntimeException".
+		}
 
 		for ( Element el : elementLinksOnPage )
 		{
@@ -330,10 +337,16 @@ public class PageCrawler
 
 			if ( LoaderAndChecker.retrieveDocuments)	// Currently, these smart-checks are only available for specific docFiles (not for datasets).
 			{
+				// TODO - Somehow I need to detect if a link has the parameter "?isAllowd=n" or "&isAllowd=n".
+				// In that case the whole page should be discarded as not having any docUrls!
+
+				// TODO - ALso, each individual link coming in the program, containing the above, should be discarded, so such rules should be added in some regex.
+
+
 				// Exclude links which have the class "state-published", are full-links AND have a different domain, than the pageUrl.
 				if ( el.className().trim().equals("state-published") ) {
 					internalLink = el.attr("href").trim();
-					if ( internalLink.startsWith("http", 0) ) {
+					if ( internalLink.startsWith("http", 0) ) {	// This check covers the case were the "internalLink" may be empty.
 						String linkDomain = UrlUtils.getDomainStr(internalLink, null);
 						if ( (linkDomain != null) && !pageUrl.contains(linkDomain) )
 							continue;
@@ -362,14 +375,30 @@ public class PageCrawler
 			}
 
 			internalLink = el.attr("href").trim();
-			if ( internalLink.isEmpty() || internalLink.equals("#") )
-				if ( (internalLink = getInternalDataLink(el)) == null )
-					continue;
+			if ( internalLink.isEmpty() || internalLink.equals("#") ) {
+				// In case there is no "href" attribute inside the "a"-tag, try to extract the rare "data"-like attribute.
+				if ( (internalLink = getInternalDataLink(el)) == null ) {
+					// Check if we have a "form"-tag, if so, then go and check the "action" attribute.
+					internalLink = el.attr("action").trim();
+					if ( internalLink.isEmpty() || internalLink.equals("#") )	// If this element is not a "form" or it's a form without a worthy "action".
+						continue;
+
+					String lowerCaseLink = internalLink.toLowerCase();
+					if ( LoaderAndChecker.DOC_URL_FILTER.matcher(lowerCaseLink).matches() ) {
+						if ( NON_VALID_DOCUMENT.matcher(lowerCaseLink).matches() ) {
+							//logger.debug("Avoiding invalid full-text with context: \"" + linkAttr + "\", internalLink: " + el.attr("href"));	// DEBUG!
+							throw new DocLinkInvalidException(internalLink);
+						} else
+							throw new DocLinkFoundException(internalLink);
+					} else
+						continue;	// Do NOT retrieve non-doc-like form-links, as they are mostly unrelated with full-texts and they will just increase the amount of links to search.
+				}
+			}
 
 			if ( (internalLink = gatherInternalLink(internalLink)) != null ) {	// Throws exceptions which go to the caller method.
 				urls.add(internalLink);
 				if ( (++curNumOfInternalLinks) > MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE )
-					throw new RuntimeException();
+					throw new RuntimeException("Avoid checking more than " + MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE + " internal links which were found in pageUrl \"" + pageUrl + "\".");
 			}
 		}
 		return urls;
@@ -379,7 +408,7 @@ public class PageCrawler
 	private static boolean checkTextOrTitleAlongWithLink(Element el, String linkAttr) throws DocLinkFoundException, DocLinkInvalidException
 	{
 		String lowerCaseLinkAttr = linkAttr.toLowerCase();
-		if ( NON_VALID_DOCUMENT.matcher(lowerCaseLinkAttr).matches() ) {	// If it's not a valid full-text, by checking the TEXT in the html..
+		if ( NON_VALID_DOCUMENT.matcher(lowerCaseLinkAttr).matches() ) {	// If it's not a valid full-text, by checking the TEXT or the TITLE in the html..
 			//logger.debug("Avoiding invalid full-text with context: \"" + linkAttr + "\", internalLink: " + el.attr("href"));	// DEBUG!
 			return true;	// Avoid collecting it. continue with the next element.
 		}

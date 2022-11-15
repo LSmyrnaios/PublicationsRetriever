@@ -88,7 +88,8 @@ public class LinkExtraction {
 		//exampleUrl = "https://science-of-synthesis.thieme.com/app/text/?id=SD-139-00109";
 		//exampleUrl = "https://acikerisim.sakarya.edu.tr/handle/20.500.12619/66006";
 		//exampleUrl = "https://www.sciencedirect.com/science/article/pii/0093934X9290124W";
-		exampleUrl = "https://openaccess.marmara.edu.tr/entities/publication/959ebf2d-4e2f-4f4f-a397-b0c2793170ee";
+		//exampleUrl = "https://openaccess.marmara.edu.tr/entities/publication/959ebf2d-4e2f-4f4f-a397-b0c2793170ee";
+		exampleUrl = "https://www.aup-online.com/content/journals/10.5117/MEM2015.4.JANS";
 	}
 
 	

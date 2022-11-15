@@ -45,7 +45,7 @@ public class HttpConnUtils
 
 	public static AtomicInteger numOfDomainsBlockedDueToSSLException = new AtomicInteger(0);
 
-	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0";	// This should not be "final", another program should be able to set its own "UserAgent".
+	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:106.0) Gecko/20100101 Firefox/106.0";	// This should not be "final", another program should be able to set its own "UserAgent".
 	public static String acceptLanguage = "en-US,en;q=0.5";
 
 	public static final int maxConnGETWaitingTime = 15000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
@@ -78,8 +78,8 @@ public class HttpConnUtils
 
 	public static final CookieManager cookieManager = new java.net.CookieManager();
 	static {
-		CookieHandler.setDefault(cookieManager);
 		cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER);
+		CookieHandler.setDefault(cookieManager);
 	}
 
 
@@ -256,7 +256,7 @@ public class HttpConnUtils
 		}
 		else if ( (responseCode < 200) || (responseCode >= 400) ) {	// If we have error codes.
 			String errorMessage = ConnSupportUtils.onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode, calledForPageUrl);
-			throw new RuntimeException(errorMessage);	// This is only thrown if a "DomainBlockedException" is caught.
+			throw new RuntimeException(errorMessage);	// This is not thrown, if a "DomainBlockedException" is thrown from the previous method-call.
 		}
 		// Else it's an HTTP 2XX SUCCESS CODE or an HTTP 304 NOT MODIFIED
 		return conn;

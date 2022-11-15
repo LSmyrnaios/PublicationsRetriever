@@ -415,9 +415,9 @@ public class PublicationsRetriever
 			int failedTasks = LoaderAndChecker.totalNumFailedTasks.get();
 			if ( failedTasks > 0 ) {
 				remainingNonProblematicUrls -= failedTasks;
-				logger.info("The rest " + remainingNonProblematicUrls + " urls were either not docUrls or their status is unknown since " + failedTasks + " of them failed.");
+				logger.info("The rest " + remainingNonProblematicUrls + " urls either did not provide a fulltext or their status is unknown since " + failedTasks + " of them failed.");
 			} else
-				logger.info("The rest " + remainingNonProblematicUrls + " urls were not docUrls.");
+				logger.info("The rest " + remainingNonProblematicUrls + " urls did not provide a fulltext.");
 		}
 
 		logger.debug("The number of offline-redirects to HTTPS (reducing the online-redirection-overhead), was: " + HttpConnUtils.timesDidOfflineHTTPSredirect.get());

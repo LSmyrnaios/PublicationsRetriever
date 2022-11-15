@@ -2,11 +2,14 @@ package eu.openaire.publications_retriever.crawler;
 
 
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
+import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -220,6 +223,25 @@ public class SpecialUrlsHandler
 		}
 
 		return true;
+	}
+
+
+	/////////// aup-online.com ////////////////////
+	public static void handleAupOnlinePage(String pageUrl, Elements elementLinksOnPage) throws DocLinkFoundException, RuntimeException
+	{
+		// This domain gives the fulltext-urls inside the "action" attribute of a "form"-element.
+		// We handle these elements for every domain, but, this one gives a false-positive ".../download" url, which causes this method to exit early and not reach the desired form-element.
+		for ( Element el : elementLinksOnPage ) {
+			if ( el.attr("data-title").contains("ownload") ) {    // This includes both "Download" and "download". If no such attribute exists, then the check will return "false".
+				String possibleDocUrl = el.attr("action").trim();
+				if ( !possibleDocUrl.isEmpty() ) {
+					//logger.debug(possibleDocUrl);    // DEBUG!
+					throw new DocLinkFoundException(possibleDocUrl);
+				}
+			}
+		}
+		// If we reach here, then no docUrl can be retrieved for this page. We should return immediately.
+		throw new RuntimeException("No docUrl was found inside a form-element, for \"aup-online.com\" pageUrl: " + pageUrl);
 	}
 
 }
