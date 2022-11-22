@@ -313,11 +313,8 @@ public class HttpConnUtils
 				weirdMetaDocUrlWhichNeedsGET = true;
 			}
 
-			boolean havingScienceDirectPDF = false;
 			isSpecialUrl.set(false);	// It will be false until proven to not pass through the "SpecialUrls"
-			if ( "pdf.sciencedirectassets.com".equals(domainStr) )	// Avoiding NPE.
-				havingScienceDirectPDF = true;
-			else if ( calledForPageUrl && !calledForPossibleDocUrl ) {
+			if ( calledForPageUrl && !calledForPossibleDocUrl ) {
 				String tempURL = SpecialUrlsHandler.checkAndHandleSpecialUrls(resourceURL);	// May throw a "RuntimeException".
 				isSpecialUrl.set( !tempURL.equals(resourceURL) );
 				resourceURL = tempURL;
@@ -335,7 +332,6 @@ public class HttpConnUtils
 			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// For just-webPages, we want to use "GET" in order to download the content.
 				|| (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles)	// For docUrls, if we should download them.
 				|| weirdMetaDocUrlWhichNeedsGET	// If we have a weirdMetaDocUrl-case then we need "GET".
-				|| havingScienceDirectPDF	// If we got the new scienceDirect-DocUrl, then we should go only with "GET".
 				|| domainsWithUnsupportedHeadMethod.contains(domainStr) )	// If the domain doesn't support "HEAD", then we only do "GET".
 			{
 				conn.setRequestMethod("GET");	// Go directly with "GET".
