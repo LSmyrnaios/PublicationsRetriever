@@ -37,25 +37,24 @@ public class SpecialUrlsHandler
 		String updatedUrl = null;
 
 		if ( (updatedUrl = checkAndGetEuropepmcDocUrl(resourceUrl)) != null ) {
-			//logger.debug("Europepmc-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+			//logger.debug("Europepmc-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
-		}
-		else if ( (updatedUrl = checkAndDowngradeManuscriptElsevierUrl(resourceUrl)) != null ) {
-			//logger.debug("ManuscriptElsevier-URL: " + resourceURL + " to acceptable-Url: " + updatedUrl);	// DEBUG!
+		} else if ( (updatedUrl = checkAndDowngradeManuscriptElsevierUrl(resourceUrl)) != null ) {
+			//logger.debug("ManuscriptElsevier-URL: " + resourceUrl + " to acceptable-Url: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
-		}
-		else if ( (updatedUrl = checkAndGetNasaDocUrl(resourceUrl)) != null ) {
-			//logger.debug("Nasa-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+		} else if ( (updatedUrl = checkAndGetNasaDocUrl(resourceUrl)) != null ) {
+			//logger.debug("Nasa-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
-		}
-		else if ( (updatedUrl = checkAndGetFrontiersinDocUrl(resourceUrl)) != null ) {
-			//logger.debug("Frontiersin-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+		} else if ( (updatedUrl = checkAndGetFrontiersinDocUrl(resourceUrl)) != null ) {
+			//logger.debug("Frontiersin-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
-		}
-		else if ( (updatedUrl = checkAndHandlePsyarxiv(resourceUrl)) != null )
-			//logger.debug("Psyarxiv-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+		} else if ( (updatedUrl = checkAndHandlePsyarxiv(resourceUrl)) != null ) {
+			//logger.debug("Psyarxiv-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
-		else
+		} else if ( (updatedUrl = checkAndHandleIjcseonlinePage(resourceUrl)) != null ) {
+			//logger.debug("Ijcseonline-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+			resourceUrl = updatedUrl;
+		} else
 			resourceUrl = checkAndHandleDergipark(resourceUrl);	// It returns the same url if nothing was handled.
 
 		return resourceUrl;
@@ -242,6 +241,47 @@ public class SpecialUrlsHandler
 		}
 		// If we reach here, then no docUrl can be retrieved for this page. We should return immediately.
 		throw new RuntimeException("No docUrl was found inside a form-element, for \"aup-online.com\" pageUrl: " + pageUrl);
+	}
+
+
+	private static final String ijcseonlineBaseUrl = "https://www.ijcseonline.org/pub_paper/";
+	private static final Pattern IJCSEONLINE_PDF_FILENAME = Pattern.compile(".+/[^/]+&(.+)$");
+
+	//////////////////// www.ijcseonline.org /////////////////////
+	/**
+	 * Transform the internal-link pageUrl into a pdfUrl.
+	 *
+	 * An initial pageUrl like this is examined: https://www.ijcseonline.org/full_paper_view.php?paper_id=4547
+	 * Then, an internal pageUrl is extracted: https://www.ijcseonline.org/pdf_paper_view.php?paper_id=4547&48-IJCSE-07375.pdf
+	 * Then, in this method, the final pdfUrl is created: https://www.ijcseonline.org/pub_paper/48-IJCSE-07375.pdf
+	 *
+	 * In case the given url is not a pdf-page-url or if we have an error, this method returns the pageUrl it received.
+	 * */
+	public static String checkAndHandleIjcseonlinePage(String pageUrl)
+	{
+		if ( ! pageUrl.contains("www.ijcseonline.org") )
+			return null;
+
+		if ( ! pageUrl.contains("pdf_paper_view.php") )
+			return pageUrl;
+
+		String pdfFileName = null;
+		try {
+			Matcher matcher = IJCSEONLINE_PDF_FILENAME.matcher(pageUrl);
+			if ( !matcher.matches() )
+				return pageUrl;
+
+			pdfFileName = matcher.group(1);
+			if ( (pdfFileName == null) || pdfFileName.isEmpty() ) {
+				logger.error("No pdf-file-name was extracted from pageUrl: " + pageUrl);
+				return pageUrl;
+			}
+		} catch (Exception e) {
+			logger.error("", e);
+			return pageUrl;
+		}
+
+		return ijcseonlineBaseUrl + pdfFileName;
 	}
 
 }

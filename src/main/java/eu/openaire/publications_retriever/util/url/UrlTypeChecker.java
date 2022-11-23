@@ -29,7 +29,7 @@ public class UrlTypeChecker
 	public static final Pattern URL_DIRECTORY_FILTER =
 			Pattern.compile("[^/]+://.*/(?:(discover|profile|user|survey|index|media|theme|product|deposit|default|shop|view)/" + docOrDatasetNegativeLookAroundPattern	// Avoid blocking these if the url is likely to give a file.
 					+ "|(?:(?:ldap|password)-)?login|auth(?:entication)?\\.|ac[c]?ess(?!\\.)|sign[-]?(?:in|out|up)|session|(?:how-to-)?(:?join|subscr)|regist(?:er|ration)|submi(?:t|ssion)|(?:post|send|export|(?:wp-)?admin|home|form)/|watch|browse|import|bookmark|announcement|feedback|share[^d]|about|(?:[^/]+-)?faq|wiki|news|events|cart|support|(?:site|html)map|documentation|help|license|disclaimer|copyright|(?:site-)?polic(?:y|ies)|privacy|terms|law|principles"
-					+ "|(?:my|your|create)?[-]?account|mydspace|(?:service|help)[-]?desk|settings|fund|aut[h]?or|(?:journal-)?editor|author:|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic(s)?/.*/view/|conta[c]?t|wallet|contribute|donate|our[_-][\\w]+|template|logo|image|photo/|video|advertiser|most-popular|people|(?:the)?press|for-authors|customer-service[s]?|captcha|clipboard|dropdown"
+					+ "|(?:my|your|create)?[-]?account|mydspace|(?:service|help)[-]?desk|settings|fund|aut[h]?or|journal/key|(?:journal-)?editor|author:|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic(s)?/.*/view/|conta[c]?t|wallet|contribute|donate|our[_-][\\w]+|template|logo|image|photo/|video|advertiser|most-popular|people|(?:the)?press|for-authors|customer-service[s]?|captcha|clipboard|dropdown"
 					+ "|(?:forum|blog|column|row|js|css|rss|legal)/"	// These are absolute directory names.
 					+ "|(?:(?:advanced[-]?)?search|search/advanced|search-results|(?:[e]?books|journals)(?:-catalog)?|issue|docs|oai|(?:abstracting-)?indexing|online[-]?early|honors|awards|careers|meetings|calendar|diversity|scholarships|invo(?:ice|lved)|errata|classroom|publish|upload|products|forgot|home|ethics)[/]?$"	// Url ends with these.
 					// TODO - In case we have just DocUrls (not datasetUrls), exclude the following as well: "/(?:bibtext|dc(?:terms)?|tei|endnote)$", it could be added in another regex.. or do an initialization check and construct this regex based on the url-option provided.
@@ -48,7 +48,7 @@ public class UrlTypeChecker
 	// The diff with the "login" being here, in compare with being in "URL_DIRECTORY_FILTER"-regex, is that it can be found in a random place inside a url.. not just as a directory..
 
 	// So, we make a new REGEX for these extensions, this time, without a potential argument in the end (e.g. ?id=XXX..), except for the potential "lang".
-	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:" + phpExtensionsPattern + "|" + htExtensionsPattern + "|[aj]sp[x]*|jsf|do|asc|cgi)(?:\\?.+)?$");
+	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:" + phpExtensionsPattern + "|" + htExtensionsPattern + "|[aj]sp[x]*|jsf|do|asc|cgi)(?:\\?(?!.*pdf).*)?$");	// We may have this page, which runs a script to return the pdf: "https://www.ijcseonline.org/pdf_paper_view.php?paper_id=4547&48-IJCSE-07375.pdf" or this pdf-internal-link: "https://meetingorganizer.copernicus.org/EGU2020/EGU2020-6296.html?pdf"
 	
 	public static final Pattern INTERNAL_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+format=(?:xml|" + htExtensionsPattern + "|rss|ris|bib).*");	// This exists as a url-parameter.
 

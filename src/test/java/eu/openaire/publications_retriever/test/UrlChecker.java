@@ -734,7 +734,53 @@ public class UrlChecker {
 		//urlList.add("https://openaccess.marmara.edu.tr/bitstreams/98e649e7-a656-4a90-ad69-534178e63fbb/download");
 		//urlList.add("https://www.tse-fr.eu/publications/information-and-equity-premium");
 
-		urlList.add("https://www.ihtcdigitallibrary.com/conferences/ihtc15,4c2dcddc71dca90e,0f04728459e30e1c.html");
+		//urlList.add("https://www.ihtcdigitallibrary.com/conferences/ihtc15,4c2dcddc71dca90e,0f04728459e30e1c.html");
+
+		//urlList.add("https://www.turkjgastroenterol.org/en/transplant-associated-thrombotic-microangiopathy-after-liver-transplantation-a-case-report-135661");
+
+		//urlList.add("https://manuscript.elsevier.com/S0022231314007443/pdf/S0022231314007443.pdf");
+		//urlList.add("https://manuscript.elsevier.com/S0010218014003332/pdf/S0010218014003332.pdf");
+
+		//urlList.add("https://naruto.repo.nii.ac.jp/?action=pages_view_main&active_action=repository_view_main_item_detail&item_id=26142&item_no=1&page_id=13&block_id=40");
+		//urlList.add("https://academic.oup.com/aob/article-abstract/74/5/519/2587361");
+		//urlList.add("https://www.locus.ufv.br/handle/123456789/22238");
+
+		//urlList.add("https://openaccess.marmara.edu.tr/entities/publication/959ebf2d-4e2f-4f4f-a397-b0c2793170ee");
+
+		//urlList.add("https://pingdigital.de/ce/besprechung-zu-bgh-urt-v-12-07-2018-iii-zr-183-17-neue-rechtsprechung-zu-den-rechten-an-den-daten-verstorbener-hoechstrichterlicher-grundsatzentscheid-fuer-ein-digitales-erbe/detail.html");
+
+		//urlList.add("https://hal-paris1.archives-ouvertes.fr/hal-01164542");
+
+		//urlList.add("https://ritsumei.repo.nii.ac.jp/?action=pages_view_main&active_action=repository_view_main_item_detail&item_id=6215&item_no=1&page_id=13&block_id=21");
+
+		//urlList.add("https://ecs.confex.com/ecs/229/webprogram/Paper67265.html");
+
+		//urlList.add("https://www.dl.begellhouse.com/references/1bb331655c289a0a,7c69ce3452e09525,068c95246808f6e8.html");
+
+		//urlList.add("https://corpus.ulaval.ca/entities/publication/4d72ec44-ca4c-2b71-e053-2528090a90b1");
+
+		//urlList.add("https://www.aup-online.com/content/journals/10.5117/MEM2015.4.JANS");
+
+		//urlList.add("https://www.jstage.jst.go.jp/sblogin/jsmemecjo/2000.3/0/2000.3_517/-char/en?sourceurl=%2Farticle%2Fjsmemecjo%2F2000.3%2F0%2F2000.3_517%2F_pdf&backurl=%2Fbrowse%2F-char%2Fen");
+		//urlList.add("https://www.elsevier.es/es-revista-cirugia-espanola-36");
+
+		//urlList.add("https://www.ihtcdigitallibrary.com/conferences/ihtc15,4c2dcddc71dca90e,0f04728459e30e1c.html");
+
+		//urlList.add("https://zfdphdigital.de/ce/geschlossene-formen-besetzung-und-umbesetzung-eines-literaturhistorischen-sachverhalts-berlin-15-16-dezember-2000/detail.html");
+
+		//urlList.add("https://www.egms.de/static/en/meetings/esm2011/11esm123.shtml");
+
+		//urlList.add("https://meridian.allenpress.com/jcr/article-abstract/91/SI/36/428271/In-Situ-Observations-of-Ripples-on-the-Surf-Zone?redirectedFrom=fulltext");
+
+		//urlList.add("https://hal.laas.fr/hal-01590779");
+
+		//urlList.add("https://www.degruyter.com/journal/key/stuf/html");
+
+		urlList.add("https://www.ijcseonline.org/full_paper_view.php?paper_id=4547");
+		//urlList.add("https://www.ijcseonline.org/pdf_paper_view.php?paper_id=4547&48-IJCSE-07375.pdf");
+
+		urlList.add("https://meetingorganizer.copernicus.org/EGU2020/EGU2020-6296.html");
+		//urlList.add("https://meetingorganizer.copernicus.org/EGU2020/EGU2020-6296.html?pdf");
 
 
 		logger.info("Urls to check:");

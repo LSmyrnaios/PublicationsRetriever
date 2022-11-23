@@ -34,6 +34,7 @@ public class HttpConnUtils
 	public static final Set<String> domainsWithUnsupportedHeadMethod = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 	static {	// Add domains which were manually observed to act strangely and cannot be detected automatically at run-time.
 		domainsWithUnsupportedHeadMethod.add("os.zhdk.cloud.switch.ch");	// This domain returns "HTTP-403-ERROR" when it does not support the "HEAD" method, at least when checking an actual file.
+		// More domains are automatically detected and added to this Set.
 	}
 
 	public static final Set<String> domainsWithUnsupportedAcceptLanguageParameter = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
@@ -133,7 +134,7 @@ public class HttpConnUtils
 				if ( contentDisposition == null ) {
 					ArrayList<Object> detectionList = ConnSupportUtils.detectContentTypeFromResponseBody(finalUrlStr, domainStr, conn, calledForPageUrl);
 					mimeType = (String)detectionList.get(0);
-					foundDetectedContentType = (boolean)detectionList.get(1);
+					foundDetectedContentType = (boolean) detectionList.get(1);
 					firstHtmlLine = (String)detectionList.get(2);
 					bufferedReader = (BufferedReader) detectionList.get(3);
 					calledForPossibleDocOrDatasetUrl = (boolean) detectionList.get(4);
@@ -314,7 +315,7 @@ public class HttpConnUtils
 			}
 
 			isSpecialUrl.set(false);	// It will be false until proven to not pass through the "SpecialUrls"
-			if ( calledForPageUrl && !calledForPossibleDocUrl ) {
+			if ( calledForPageUrl || calledForPossibleDocUrl ) {
 				String tempURL = SpecialUrlsHandler.checkAndHandleSpecialUrls(resourceURL);	// May throw a "RuntimeException".
 				isSpecialUrl.set( !tempURL.equals(resourceURL) );
 				resourceURL = tempURL;
@@ -332,7 +333,8 @@ public class HttpConnUtils
 			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// For just-webPages, we want to use "GET" in order to download the content.
 				|| (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles)	// For docUrls, if we should download them.
 				|| weirdMetaDocUrlWhichNeedsGET	// If we have a weirdMetaDocUrl-case then we need "GET".
-				|| domainsWithUnsupportedHeadMethod.contains(domainStr) )	// If the domain doesn't support "HEAD", then we only do "GET".
+				|| domainsWithUnsupportedHeadMethod.contains(domainStr)	// If the domain doesn't support "HEAD", then we only do "GET".
+				|| domainStr.contains("meetingorganizer.copernicus.org") )	// This domain has pdf-urls which are discovered (via their ContentType) only when using "GET".
 			{
 				conn.setRequestMethod("GET");	// Go directly with "GET".
 				conn.setConnectTimeout(maxConnGETWaitingTime);
