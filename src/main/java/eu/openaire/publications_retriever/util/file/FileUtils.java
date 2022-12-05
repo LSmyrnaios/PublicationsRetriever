@@ -256,7 +256,7 @@ public class FileUtils
 				continue;
 			}
 
-			if ( (inputIdUrlTuple = jsonDecoder(retrievedLineStr)) == null ) {	// Decode the jsonLine and take the two attributes.
+			if ( (inputIdUrlTuple = getDecodedJson(retrievedLineStr)) == null ) {	// Decode the jsonLine and take the two attributes.
 				logger.warn("A problematic inputLine found: \t" + retrievedLineStr);
 				FileUtils.unretrievableInputLines ++;
 				continue;
@@ -277,7 +277,7 @@ public class FileUtils
 	 * @param jsonLine String
 	 * @return HashMap<String,String>
 	 */
-	public static IdUrlTuple jsonDecoder(String jsonLine)
+	public static IdUrlTuple getDecodedJson(String jsonLine)
 	{
 		// Get ID and url and put them in the HashMap
 		String idStr = null;
@@ -351,6 +351,15 @@ public class FileUtils
 			} catch (FileNotFoundException fnfe) {
 				logger.error("", fnfe);
 				numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
+
+				// The file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
+				try {
+					if ( docFile.exists() )
+						FileDeleteStrategy.FORCE.delete(docFile);
+				} catch (Exception e) {
+					logger.error("Error when deleting the half-created file from docUrl: " + docUrl);
+				}
+
 				throw new DocFileNotRetrievedException(fnfe.getMessage());
 			}
 
