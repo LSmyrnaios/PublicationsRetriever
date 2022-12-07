@@ -55,7 +55,7 @@ public class PageCrawler
 
 	private static final String space = "(?:\\s|%20)*";	// This includes the encoded space inside the url-string.
 
-	public static final Pattern DOCUMENT_TEXT = Pattern.compile("pdf|t[ée]l[ée]charger|texte" + space + "intégral");
+	public static final Pattern DOCUMENT_TEXT = Pattern.compile("pdf|download|t[ée]l[ée]charger|descargar|texte" + space + "intégral");
 
 	// The following regex is used both in the text around the links and in the links themselves. Everything should be LOWERCASE, from the regex-rules to the link to be matched against them.
 	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:[^e]manu[ae]l|(?:\\|\\|" + space + ")?gu[ií](?:de|a)|directive[s]?|preview|leaflet|agreement(?!.*thesis" + space + "(?:19|20)[\\d]{2}.*)|accessibility|journal" + space + "catalog|disclose" + space + "file|poli(?:c(?:y|ies)|tika)"	// "policy" can be a lone word or a word after: repository|embargo|privacy|data protection|take down|supplement|access

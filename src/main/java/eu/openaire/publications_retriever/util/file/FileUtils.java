@@ -124,8 +124,11 @@ public class FileUtils
 			try {
 				deleteDirectory(dir);	// org.apache.commons.io.FileUtils
 			} catch (IOException ioe) {
-				logger.error(ioe.getMessage(), ioe);
+				logger.error("The following directory could not be deleted: " + storeDocFilesDir, ioe);
 				FileUtils.shouldDownloadDocFiles = false;	// Continue without downloading the docFiles, just create the jsonOutput.
+				return;
+			} catch (IllegalArgumentException iae) {
+				logger.error("This directory does not exist: " + storeDocFilesDir + "\n" + iae.getMessage());
 				return;
 			}
 		}
