@@ -92,7 +92,7 @@ public class SpecialUrlsHandler
 	/////////// ntrs.nasa.gov ////////////////////
 	public static String checkAndGetNasaDocUrl(String nasaPageUrl)
 	{
-		if ( nasaPageUrl.contains("ntrs.nasa.gov") && ! nasaPageUrl.contains("api/") )
+		if ( nasaPageUrl.contains("ntrs.nasa.gov/citations") && ! nasaPageUrl.contains("api/") )
 		{
 			// Offline-redirect to the docUrl.
 			String idStr = UrlUtils.getDocIdStr(nasaPageUrl, null);

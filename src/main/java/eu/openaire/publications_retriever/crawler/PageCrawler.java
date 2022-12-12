@@ -33,7 +33,7 @@ public class PageCrawler
 {
 	private static final Logger logger = LoggerFactory.getLogger(PageCrawler.class);
 
-	private static final Pattern INTERNAL_LINKS_STARTING_FROM_FILTER = Pattern.compile("^(?:(?:mailto|tel|fax|file|data):|\\{openurl}|[/]*\\?(?:locale(?:-attribute)?|ln)=).*");
+	private static final Pattern INTERNAL_LINKS_STARTING_FROM_FILTER = Pattern.compile("^(?:(?:mailto|tel|fax|file|data|whatsapp|visible|click|text|attr):|\\{openurl}|[/]*\\?(?:locale(?:-attribute)?|ln)=).*");
 
 	public static final Pattern JAVASCRIPT_DOC_LINK = Pattern.compile("javascript:pdflink.*'(http.+)'[\\s]*,.*", Pattern.CASE_INSENSITIVE);
 
@@ -366,11 +366,16 @@ public class PageCrawler
 				linkAttr = el.attr("type").trim();
 				if ( !linkAttr.isEmpty() && ConnSupportUtils.knownDocMimeTypes.contains(linkAttr) ) {
 					internalLink = el.attr("href").trim();
-					if ( !internalLink.isEmpty() && !internalLink.equals("#") ) {
+					String tempInternalLink;
+					if ( internalLink.isEmpty() || internalLink.equals("#")
+						|| ( ((tempInternalLink = ConnSupportUtils.getFullyFormedUrl(pageUrl, internalLink, null)) != null)
+							&& UrlTypeChecker.shouldNotAcceptInternalLink(tempInternalLink, null) )) {
+						//logger.debug("Avoiding invalid full-text with context: \"" + linkAttr + "\", internalLink: " + el.attr("href"));	// DEBUG!
+						throw new DocLinkInvalidException(internalLink);
+					} else {
 						//logger.debug("Found the docLink < " + internalLink + " > from link-type: \"" + linkAttr + "\"");	// DEBUG
 						throw new DocLinkFoundException(internalLink);
 					}
-					throw new DocLinkInvalidException(internalLink);
 				}
 			}
 
@@ -380,18 +385,19 @@ public class PageCrawler
 				if ( (internalLink = getInternalDataLink(el)) == null ) {
 					// Check if we have a "form"-tag, if so, then go and check the "action" attribute.
 					internalLink = el.attr("action").trim();
-					if ( internalLink.isEmpty() || internalLink.equals("#") )	// If this element is not a "form" or it's a form without a worthy "action".
+					if ( internalLink.isEmpty() || internalLink.equals("#")	// If this element is not a "form" or just a "#".
+						|| !LoaderAndChecker.DOC_URL_FILTER.matcher(internalLink.toLowerCase()).matches() )	// If it's a form without a worthy "action".
 						continue;
 
-					String lowerCaseLink = internalLink.toLowerCase();
-					if ( LoaderAndChecker.DOC_URL_FILTER.matcher(lowerCaseLink).matches() ) {
-						if ( NON_VALID_DOCUMENT.matcher(lowerCaseLink).matches() ) {
-							//logger.debug("Avoiding invalid full-text with context: \"" + linkAttr + "\", internalLink: " + el.attr("href"));	// DEBUG!
-							throw new DocLinkInvalidException(internalLink);
-						} else
-							throw new DocLinkFoundException(internalLink);
-					} else
-						continue;	// Do NOT retrieve non-doc-like form-links, as they are mostly unrelated with full-texts and they will just increase the amount of links to search.
+					String tempInternalLink;
+					if ( ((tempInternalLink = ConnSupportUtils.getFullyFormedUrl(pageUrl, internalLink, null)) != null)
+							&& UrlTypeChecker.shouldNotAcceptInternalLink(tempInternalLink, null) ) {
+						//logger.debug("Avoiding invalid full-text with context: \"" + linkAttr + "\", internalLink: " + el.attr("href"));	// DEBUG!
+						throw new DocLinkInvalidException(internalLink);
+					} else {
+						//logger.debug("Found the docLink < " + internalLink + " > from link-type: \"" + linkAttr + "\"");	// DEBUG
+						throw new DocLinkFoundException(internalLink);
+					}
 				}
 			}
 
@@ -489,8 +495,6 @@ public class PageCrawler
 			} catch (Exception e) { logger.error("", e); }	// Do not "return null;" here, as we want the page-search to stop, not just for this link to not be connected..
 			throw new DocLinkFoundException(pdfLink);    // If it's 'null' or 'empty', we treat it when handling this exception.
 		}
-		else if ( lowerCaseInternalLink.startsWith("whatsapp:") )
-			return null;
 
 		return internalLink;
 	}
