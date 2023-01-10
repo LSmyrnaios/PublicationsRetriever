@@ -1,8 +1,9 @@
 # PublicationsRetriever    ![Build Status](https://github.com/LSmyrnaios/PublicationsRetriever/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
 
-A Java-program which retrieves the Document and Dataset Urls from the given Publication-Web-Pages and if wanted, it can also download the full-texts.<br>
-It is being developed for the European organization: [**OpenAIRE**](https://www.openaire.eu/). <br>
-Afterwards, these full-text documents are mined, in order to enrich a much more complete set of OpenAIRE publications with inference links.<br>
+A Java-program which retrieves the Document and Dataset Urls from the given Publication-Web-Pages and if wanted, it can also download the full-texts and/or upload them to an **S3 Object Store**.<br>
+Afterwards, these full-text documents are mined, in order to enrich a much more complete set of OpenAIRE publications with inference links, in the [**OpenAIRE Research Graph**](https://graph.openaire.eu/).<br>
+
+This program is used either as a stand-alone download-tool for full-texts and datasets, or as a library for the [UrlsWorker](https://code-repo.d4science.org/lsmyrnaios/UrlsWorker) code, of OpenAIRE's "**PDF Aggregation Service**". <br>
 
 The **PublicationsRetriever** takes as input the PubPages with their IDs -in JSON format- and gives an output -also in JSON format,
 which contains the IDs, the PubPages, the Document or Dataset Urls, a series of informative booleans, the *MD5* "fileHash", the "fileSize" and a "comment".<br>
@@ -21,6 +22,17 @@ The "comment" can have the following values:
 - the ErrorCause, if there was any error which prevented the discovery of the DocOrDatasetUrl (in that case, the DocOrDatasetUrl is set to "unreachable")
 <br>
 
+Sample JSON-input:
+```
+{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","url":"https://zenodo.org/record/884160"}
+```
+Sample JSON-output (with downloading of the full-texts):
+```
+{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","sourceUrl":"https://zenodo.org/record/884160","docUrl":"https://zenodo.org/record/884160/files/Data_for_Policy_2017_paper_55.pdf","wasUrlChecked":"true","wasUrlValid":"true","wasDocumentOrDatasetAccessible":"true","wasDirectLink":"false","couldRetry":"true","fileHash":"4e38a82fe1182e62b1c752b50f5ea59b","fileSize":"263917","comment":"/home/lampros/PublicationsRetriever/target/../example/sample_output/DocFiles/dedup_wf_001::83872a151fd78b045e62275ca626ec94.pdf"}
+```
+<br>
+
+Explanation of some keywords: <br>
 PubPage: *the web page with the publication's information.*<br> 
 DocUrl: *the url of the fulltext-document-file.*<br>
 DatasetUrl: *the url of the dataset-file.*<br>
@@ -28,18 +40,9 @@ DocOrDatasetUrl: *the url of the document or the dataset file.*<br>
 Full-text: *the document containing all the text of a publication.*<br>
 DocFileFullPath: *the full-storage-path of the fulltext-document-file.*<br>
 ErrorCause: *the cause of the failure of retrieving the docUrl or the docFile.*<br>
-
-Sample JSON-input:
-```
-{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","url":"https://zenodo.org/record/884160"}
-```
-Sample JSON-output (with downloading of the DocFile):
-```
-{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","sourceUrl":"https://zenodo.org/record/884160","docUrl":"https://zenodo.org/record/884160/files/Data_for_Policy_2017_paper_55.pdf","wasUrlChecked":"true","wasUrlValid":"true","wasDocumentOrDatasetAccessible":"true","wasDirectLink":"false","couldRetry":"true","fileHash":"4e38a82fe1182e62b1c752b50f5ea59b","fileSize":"263917","comment":"/home/lampros/PublicationsRetriever/target/../example/sample_output/DocFiles/dedup_wf_001::83872a151fd78b045e62275ca626ec94.pdf"}
-```
 <br>
 
-This program utilizes multiple threads to speed up the process, while using politeness delays between same-domain connections, in order to avoid overloading the data-providers.
+This program utilizes multiple threads to speed up the process, while using politeness-delays between same-domain connections, in order to avoid overloading the data-providers.
 <br>
 In case no IDs are available to be used in the input, the user should provide a file containing just urls (one url per line)
 and specify that wishes to process a data-set with no IDs, by changing the "**util.url.LoaderAndChecker.useIdUrlPairs**"-variable to "*false*".
