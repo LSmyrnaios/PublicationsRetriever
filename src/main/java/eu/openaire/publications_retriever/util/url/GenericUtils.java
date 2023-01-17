@@ -57,7 +57,7 @@ public class GenericUtils {
      * It empties all those data-structures without de-allocating the existing space.
      * This guarantees than the memory-space will not get infinitely large, while avoiding re-allocation of the memory for the next id-url pairs to be handled.
      */
-    public static void clearDomainAndPathTrackingData()
+    public static void clearTrackingData()
     {
         clearDomainAndPathBlockingData();
 
@@ -66,6 +66,11 @@ public class GenericUtils {
         HttpConnUtils.domainsWithSlashRedirect.clear();
         HttpConnUtils.domainsWithUnsupportedHeadMethod.clear();
         HttpConnUtils.domainsWithUnsupportedAcceptLanguageParameter.clear();
+
+        // Clear tracking data for the "check_remaining_links"-procedure.
+        PageCrawler.should_check_remaining_links = true;
+        PageCrawler.timesCheckedRemainingLinks.set(0);
+        PageCrawler.timesFoundDocOrDatasetUrlFromRemainingLinks.set(0);
 
         // Other data which is handled per-batch by the PDF-AggregationService. These are commented-out here, as they will be cleared anyway.
         //ConnSupportUtils.domainsWithConnectionData.clear();
