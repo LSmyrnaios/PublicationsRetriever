@@ -324,16 +324,8 @@ public class PageCrawler
 
 		for ( Element el : elementLinksOnPage )
 		{
-			// Exclude links which are "tabs". For example those hidden in submenus.
-			Element parentElement = el.parent();
-			if ( parentElement != null ) {
-				String parentClassName = parentElement.className().trim();
-				if ( !parentClassName.isEmpty() ) {
-					//logger.debug("Parent's classname: " + parentClassName);
-					if ( parentClassName.equals("tab") || parentClassName.equals("product-head-bnrs") )
-						continue;
-				}
-			}
+			if ( hasUnacceptableClass(el, pageUrl) )
+				continue;
 
 			if ( LoaderAndChecker.retrieveDocuments)	// Currently, these smart-checks are only available for specific docFiles (not for datasets).
 			{
@@ -341,17 +333,6 @@ public class PageCrawler
 				// In that case the whole page should be discarded as not having any docUrls!
 
 				// TODO - ALso, each individual link coming in the program, containing the above, should be discarded, so such rules should be added in some regex.
-
-
-				// Exclude links which have the class "state-published", are full-links AND have a different domain, than the pageUrl.
-				if ( el.className().trim().equals("state-published") ) {
-					internalLink = el.attr("href").trim();
-					if ( internalLink.startsWith("http", 0) ) {	// This check covers the case were the "internalLink" may be empty.
-						String linkDomain = UrlUtils.getDomainStr(internalLink, null);
-						if ( (linkDomain != null) && !pageUrl.contains(linkDomain) )
-							continue;
-					}
-				}
 
 				// Check the text appearing next-to or as the link, inside the html.
 				linkAttr = el.text().trim();
@@ -451,6 +432,33 @@ public class PageCrawler
 	}
 
 
+	private static boolean hasUnacceptableClass(Element element, String pageUrl)
+	{
+		// Exclude links which are "tabs". For example those hidden in submenus.
+		Element parentElement = element.parent();
+		if ( parentElement != null ) {
+			String parentClassName = parentElement.className().trim();
+			if ( !parentClassName.isEmpty() ) {
+				//logger.debug("Parent's classname: " + parentClassName);
+				if ( parentClassName.equals("tab") || parentClassName.equals("product-head-bnrs") )
+					return true;
+			}
+		}
+
+		// Exclude links which have the class "state-published", are full-links AND have a different domain, than the pageUrl.
+		if ( element.className().trim().equals("state-published") ) {	// The  equality will fail if the className does not exist.
+			String internalLink = element.attr("href").trim();
+			if ( internalLink.startsWith("http", 0) ) {	// This check covers the case were the "internalLink" may be empty.
+				String linkDomain = UrlUtils.getDomainStr(internalLink, null);
+				if ( (linkDomain != null) && !pageUrl.contains(linkDomain) )
+					return true;
+			}
+		}
+
+		return false;
+	}
+
+
 	public static String gatherInternalLink(String internalLink) throws DynamicInternalLinksFoundException, DocLinkFoundException
 	{
 		if ( internalLink.equals("/") )
@@ -541,8 +549,8 @@ public class PageCrawler
 
 
 	public static final int timesToCheckInternalLinksBeforeEvaluate = 20;
-	private static final AtomicInteger timesCheckedRemainingLinks = new AtomicInteger(0);
-	private static final AtomicInteger timesFoundDocOrDatasetUrlFromRemainingLinks = new AtomicInteger(0);
+	public static final AtomicInteger timesCheckedRemainingLinks = new AtomicInteger(0);
+	public static final AtomicInteger timesFoundDocOrDatasetUrlFromRemainingLinks = new AtomicInteger(0);
 	private static final double leastPercentageOfHitsFromRemainingLinks = 0.20;
 
 	public static boolean checkRemainingInternalLinks(String urlId, String sourceUrl, String pageUrl, String pageDomain, HashSet<String> remainingLinks)
