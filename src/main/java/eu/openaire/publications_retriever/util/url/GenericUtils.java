@@ -31,7 +31,7 @@ public class GenericUtils {
      * This method deletes all data related to blocking domains.
      * This is useful, when the app is processing hundreds of thousands of urls, and we want to give a "second chance", every now and then.
      * */
-    public static void clearDomainAndPathBlockingData()
+    public static void clearBlockingData()
     {
         // Domains' blocking data.
         HttpConnUtils.blacklistedDomains.clear();
@@ -47,6 +47,11 @@ public class GenericUtils {
         // Paths' data, which also contribute to domain-blocking.
         ConnSupportUtils.timesPathsReturned403.clear();
         ConnSupportUtils.domainsMultimapWithPaths403BlackListed.clear();
+
+        // Clear tracking data for the "check_remaining_links"-procedure, which BLOCKS the search of the remaining-internal-links FOR EACH page.
+        PageCrawler.should_check_remaining_links = true;
+        PageCrawler.timesCheckedRemainingLinks.set(0);
+        PageCrawler.timesFoundDocOrDatasetUrlFromRemainingLinks.set(0);
     }
 
 
@@ -59,18 +64,13 @@ public class GenericUtils {
      */
     public static void clearTrackingData()
     {
-        clearDomainAndPathBlockingData();
+        clearBlockingData();
 
         // Domain additional data, which does not contribute in blocking the domains, but they do contribute in performance.
         HttpConnUtils.domainsSupportingHTTPS.clear();
         HttpConnUtils.domainsWithSlashRedirect.clear();
         HttpConnUtils.domainsWithUnsupportedHeadMethod.clear();
         HttpConnUtils.domainsWithUnsupportedAcceptLanguageParameter.clear();
-
-        // Clear tracking data for the "check_remaining_links"-procedure.
-        PageCrawler.should_check_remaining_links = true;
-        PageCrawler.timesCheckedRemainingLinks.set(0);
-        PageCrawler.timesFoundDocOrDatasetUrlFromRemainingLinks.set(0);
 
         // Other data which is handled per-batch by the PDF-AggregationService. These are commented-out here, as they will be cleared anyway.
         //ConnSupportUtils.domainsWithConnectionData.clear();

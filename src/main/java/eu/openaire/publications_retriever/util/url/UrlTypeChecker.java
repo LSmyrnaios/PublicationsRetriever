@@ -17,8 +17,7 @@ public class UrlTypeChecker
 {
 	private static final Logger logger = LoggerFactory.getLogger(UrlTypeChecker.class);
 
-	private static final String htExtensionsPattern = "[\\w]?ht(?:[\\w]{1,2})?";
-	private static final String phpExtensionsPattern = "php[\\d]?";
+	private static final String htOrPhpExtensionsPattern = "(?:[\\w]?ht(?:[\\w]{1,2})?|php[\\d]?)";
 	private static final String mediaExtensionsPattern = "ico|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov";
 
 
@@ -34,7 +33,7 @@ public class UrlTypeChecker
 					+ "|(?:(?:advanced[-]?)?search|search/advanced|search-results|(?:[e]?books|journals)(?:-catalog)?|issue|docs|oai|(?:abstracting-)?indexing|online[-]?early|honors|awards|careers|meetings|calendar|diversity|scholarships|invo(?:ice|lved)|errata|classroom|publish|upload|products|forgot|home|ethics)[/]?$"	// Url ends with these.
 					// TODO - In case we have just DocUrls (not datasetUrls), exclude the following as well: "/(?:bibtext|dc(?:terms)?|tei|endnote)$", it could be added in another regex.. or do an initialization check and construct this regex based on the url-option provided.
 					+ "|rights[-]?permissions|publication[-]?ethics|advertising|reset[-]?password|\\*/|communit(?:y|ies)"
-					+ "|restricted|noaccess|crawlprevention|error|(?:mis|ab)use|\\?denied|gateway|defaultwebpage|sorryserver|cookie|notfound|(?:404|accessibility|invalid|catalog(?:ue|ar|o)?)\\." + htExtensionsPattern + ").*");
+					+ "|restricted|noaccess|crawlprevention|error|(?:mis|ab)use|\\?denied|gateway|defaultwebpage|sorryserver|cookie|notfound|(?:404|accessibility|invalid|catalog(?:ue|ar|o)?)\\." + htOrPhpExtensionsPattern + ").*");
 
 	// We check them as a directory to avoid discarding publications' urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
 
@@ -48,9 +47,9 @@ public class UrlTypeChecker
 	// The diff with the "login" being here, in compare with being in "URL_DIRECTORY_FILTER"-regex, is that it can be found in a random place inside a url.. not just as a directory..
 
 	// So, we make a new REGEX for these extensions, this time, without a potential argument in the end (e.g. ?id=XXX..), except for the potential "lang".
-	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:" + phpExtensionsPattern + "|" + htExtensionsPattern + "|[aj]sp[x]*|jsf|do|asc|cgi)(?:\\?(?!.*pdf).*)?$");	// We may have this page, which runs a script to return the pdf: "https://www.ijcseonline.org/pdf_paper_view.php?paper_id=4547&48-IJCSE-07375.pdf" or this pdf-internal-link: "https://meetingorganizer.copernicus.org/EGU2020/EGU2020-6296.html?pdf"
+	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:" + htOrPhpExtensionsPattern+ "|[aj]sp[x]*|jsf|do|asc|cgi)(?:\\?(?!.*pdf).*)?$");	// We may have this page, which runs a script to return the pdf: "https://www.ijcseonline.org/pdf_paper_view.php?paper_id=4547&48-IJCSE-07375.pdf" or this pdf-internal-link: "https://meetingorganizer.copernicus.org/EGU2020/EGU2020-6296.html?pdf"
 	
-	public static final Pattern INTERNAL_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+format=(?:xml|" + htExtensionsPattern + "|rss|ris|bib).*");	// This exists as a url-parameter.
+	public static final Pattern INTERNAL_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+format=(?:xml|" + htOrPhpExtensionsPattern + "|rss|ris|bib).*");	// This exists as a url-parameter.
 
 	public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile("[^/]+://[^/]*(?:(?<!drive.)google\\.|goo.gl|gstatic|facebook|twitter|insta(?:gram|paper)|youtube|vimeo|linkedin|ebay|bing|(?:amazon|[./]analytics)\\.|s.w.org|wikipedia|myspace|yahoo|mail|pinterest|reddit|tumblr"
 			+ "|www.ccdc.cam.ac.uk|figshare.com/collections/|datadryad.org/stash/dataset/"
@@ -75,7 +74,7 @@ public class UrlTypeChecker
 			+ "|(?:careers|shop)."
 			+ ")[^/]*/.*");
 
-	public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile("[^/]+://[\\w.:-]+(?:/[\\w]{2})?(?:/index.(?:" + htExtensionsPattern + "|" + phpExtensionsPattern + "))?[/]?(?:\\?(?:locale(?:-attribute)?|ln)=[\\w_-]+)?$");	// Exclude plain domains' urls. Use "ISO 639-1" for language-codes (2 letters directory).
+	public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile("[^/]+://[\\w.:-]+(?:/[\\w]{2})?(?:/index." + htOrPhpExtensionsPattern + ")?[/]?(?:\\?(?:locale(?:-attribute)?|ln)=[\\w_-]+)?$");	// Exclude plain domains' urls. Use "ISO 639-1" for language-codes (2 letters directory).
 
 	// Counters for certain unwanted domains. We show statistics in the end.
 	public static AtomicInteger javascriptPageUrls = new AtomicInteger(0);
@@ -101,7 +100,7 @@ public class UrlTypeChecker
 	public static boolean matchesUnwantedUrlType(String urlId, String retrievedUrl, String lowerCaseUrl)
 	{
 		String loggingMessage = null;
-		String wasUrlValid = "N/A";	// Default value to be used, in case the given url matches an unwanted type. We do not know if the url is valid (i.e if it can be connected and give a non 4XX response) at this point.
+		String wasUrlValid = "N/A";	// Default value to be used, in case the given url matches an unwanted type. We do not know if the url is valid (i.e. if it can be connected and give a non 4XX response) at this point.
 		
 		// Avoid JavaScript-powered domains, other than the "sciencedirect.com", which is handled separately.
 		// We could "guess" the pdf-link for some of them, but for "persee.fr" for ex. there's also a captcha requirement for the connection.
