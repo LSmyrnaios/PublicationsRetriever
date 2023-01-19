@@ -507,6 +507,8 @@ public class ConnSupportUtils
 			// Block the whole domain if it has more than a certain number of blocked paths.
 			if ( domainsMultimapWithPaths403BlackListed.get(domainStr).size() > numberOf403BlockedPathsBeforeDomainBlocked )	// It will not throw an NPE, as the domain is inserted by the previous method.
 			{
+				// Note that the result of "domainsMultimapWithPaths403BlackListed.get(domainStr)" cannot be null! It may only be empty,
+
 				HttpConnUtils.blacklistedDomains.add(domainStr);	// Block the whole domain itself.
 				logger.debug("Domain: \"" + domainStr + "\" was blocked, after having more than " + numberOf403BlockedPathsBeforeDomainBlocked + " of its paths 403blackListed.");
 				domainsMultimapWithPaths403BlackListed.removeAll(domainStr);	// No need to keep this anymore.
@@ -522,7 +524,7 @@ public class ConnSupportUtils
 		{
 			// If we use MLA, we are storing the docPage-successful-paths, so check if this is one of them, if it is then don't block it.
 			// If it's an internal-link, then.. we can't iterate over every docUrl-successful-path of every docPage-successful-path.. it's too expensive O(5*n), not O(1)..
-			if ( calledForPageUrl && MachineLearning.useMLA && MachineLearning.successPathsHashMultiMap.containsKey(pathStr) )
+			if ( MachineLearning.useMLA && calledForPageUrl && MachineLearning.successPathsHashMultiMap.containsKey(pathStr) )
 				return false;
 
 			domainsWithPaths.put(domainStr, pathStr);	// Add this path in the list of blocked paths of this domain.
@@ -606,7 +608,8 @@ public class ConnSupportUtils
 		{
 			if ( checkAgainstDocUrlsHits ) {	// This will not be the case for MLA-blocked-domains.
 				Integer goodTimes = UrlUtils.domainsAndHits.get(domainStr);
-				if ( (goodTimes != null) && (goodTimes >= badTimes) )
+				if ( (goodTimes != null)
+						&& (badTimes <= (goodTimes + timesBeforeBlock)) )	// If the badTimes are less/equal to the goodTimes PLUS the predefined "bufferZone", do not block this domain.
 					return false;
 			}
 
@@ -618,13 +621,14 @@ public class ConnSupportUtils
 	}
 	
 	
-	public static int countInsertAndGetTimes(Hashtable<String, Integer> itemWithTimes, String itemToCount)
+	public static int countInsertAndGetTimes(Hashtable<String, Integer> itemsWithTimes, String itemToCount)
 	{
 		int curTimes = 1;
-		if ( itemWithTimes.containsKey(itemToCount) )
-			curTimes += itemWithTimes.get(itemToCount);
+		Integer prevTimes = itemsWithTimes.get(itemToCount);
+		if ( prevTimes != null )
+			curTimes += prevTimes;
 		
-		itemWithTimes.put(itemToCount, curTimes);
+		itemsWithTimes.put(itemToCount, curTimes);
 		
 		return curTimes;
 	}

@@ -163,8 +163,17 @@ public class UrlTypeChecker
 			return true;
 		}
 		// Avoid "PANGAEA."-urls with problematic form and non docUrl internal links (yes WITH the "DOT").
+		// Some pangaea urls are fine and they give datasets: https://doi.pangaea.de/10.1594/PANGAEA.806440
 		else if ( lowerCaseUrl.contains("doi.org/https://doi.org/") && lowerCaseUrl.contains("pangaea.") ) {
-			loggingMessage = "Discarded after matching to 'PANGAEA.' urls with invalid form and non-docUrls in their internal links.";
+			loggingMessage = "Discarded after matching to a 'PANGAEA.' url with invalid form and non-docUrls in their internal links.";
+			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+			if ( !LoaderAndChecker.useIdUrlPairs )
+				pangaeaUrls.incrementAndGet();
+			return true;
+		}
+		else if ( !LoaderAndChecker.retrieveDatasets && lowerCaseUrl.contains("pangaea.") ) {
+			loggingMessage = "Discarded after matching to a 'PANGAEA.' url which gives only datasets, not full-texts.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 			if ( !LoaderAndChecker.useIdUrlPairs )
