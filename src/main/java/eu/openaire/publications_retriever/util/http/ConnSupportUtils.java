@@ -731,8 +731,9 @@ public class ConnSupportUtils
 		if ( wasConnectedWithHTTPGET ) {
 			DetectedContentType detectedContentType = ConnSupportUtils.extractContentTypeFromResponseBody(conn);
 			if ( detectedContentType != null ) {
-				if ( calledForPageUrl && detectedContentType.detectedContentType.equals("html") ) {
-					logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have HTML contentType! Going to visit the page.");
+				if ( detectedContentType.detectedContentType.equals("html") ) {
+					if ( calledForPageUrl )	// Do not show logs for dozens of internal-links.. Normally this check is not needed, as the non-possible-docUrl-internal-links are connected only with GET, but maybe a possible-docUrls is connected with GET and it is just a page. Also, later things may change even for internal-links.
+						logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have HTML contentType! Going to visit the page.");
 					mimeType = "text/html";
 					foundDetectedContentType = true;
 					firstHtmlLine = detectedContentType.firstHtmlLine;
@@ -753,7 +754,7 @@ public class ConnSupportUtils
 		else	// ( connection-method == "HEAD" )
 			warnMsg += "\nThe initial connection was made with the \"HTTP-HEAD\" method, so there is no response-body to use to detect the content-type.";
 
-		if ( !foundDetectedContentType && wasConnectedWithHTTPGET ) {	// If it could be detected but was not, only then go and check if it should be blocked.
+		if ( !foundDetectedContentType && wasConnectedWithHTTPGET ) {	// If it could be detected (by using the "GET"  method to take the response-body), but it was not, only then go and check if it should be blocked.
 			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, HttpConnUtils.timesDomainsReturnedNoType, domainStr, timesToReturnNoTypeBeforeDomainBlocked, true) ) {
 				logger.warn(warnMsg);
 				logger.warn("Domain: \"" + domainStr + "\" was blocked after returning no Type-info more than " + timesToReturnNoTypeBeforeDomainBlocked + " times.");
@@ -776,6 +777,7 @@ public class ConnSupportUtils
 	 * This method examines the first line of the Response-body and returns the content-type.
 	 * TODO - The only "problem" is that after the "inputStream" closes, it cannot be opened again. So, we cannot parse the HTML afterwards nor download the pdf.
 	 * TODO - I guess it's fine to just re-connect but we should search for a way to reset the stream without the overhead of re-connecting.. (keeping the first line and using it later is the solution I use, but only for the html-type, since the pdf-download reads bytes and not lines)
+	 * The "br.reset()" is not supported, since the given input-stream does not support the "mark" operation.
 	 * @param conn
 	 * @return "html", "pdf", "undefined", null
 	 */
