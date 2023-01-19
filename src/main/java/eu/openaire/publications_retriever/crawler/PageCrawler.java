@@ -1,6 +1,7 @@
 package eu.openaire.publications_retriever.crawler;
 
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
+import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.exceptions.*;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
@@ -125,7 +126,7 @@ public class PageCrawler
 		int possibleDocOrDatasetUrlsCounter = 0;
 
 		// Do a fast-loop, try connecting only to a handful of promising links first.
-		// Check if urls inside this page, match to a docUrl regex, if they do, try connecting with them and see if they truly are docUrls. If they are, return.
+		// Check if urls inside this page, match to a docUrl or to a datasetUrl regex, if they do, try connecting with them and see if they truly are docUrls. If they are, return.
 		for ( String currentLink : currentPageLinks )
 		{
 			// Produce fully functional internal links, NOT internal paths or non-canonicalized (if possible).
@@ -203,7 +204,7 @@ public class PageCrawler
 
 		// If we reached here, it means that we couldn't find a docUrl the quick way.. so we have to check some (we exclude lots of them) of the internal links one by one.
 
-		if ( should_check_remaining_links )
+		if ( should_check_remaining_links && (remainingLinks.size() > 0) )
 			checkRemainingInternalLinks(urlId, sourceUrl, pageUrl, pageDomain, remainingLinks);
 		else
 			handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false, false);
@@ -227,7 +228,8 @@ public class PageCrawler
 
 		UrlTypeChecker.pagesNotProvidingDocUrls.incrementAndGet();
 		if ( !isAlreadyLoggedToOutput )	// This check is used in error-cases, where we have already logged the Quadruple.
-			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Logged in 'PageCrawler.visit()' method, as no docUrl was found inside.", null, true, "true", "true", "false", "false", "false", null, "null");
+			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Logged in 'PageCrawler.visit()' method, as no " + PublicationsRetriever.targetUrlType + " was found inside.", null, true, "true", "true", "false", "false", "false", null, "null");
+
 		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingDocUrls, pageDomain, PageCrawler.timesToGiveNoDocUrlsBeforeBlocked, true) )
 			logger.warn("Domain: \"" + pageDomain + "\" was blocked after giving no docUrls more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
 	}
@@ -556,11 +558,6 @@ public class PageCrawler
 
 	public static boolean checkRemainingInternalLinks(String urlId, String sourceUrl, String pageUrl, String pageDomain, HashSet<String> remainingLinks)
 	{
-		if ( remainingLinks.isEmpty() ) {
-			handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false, false);
-			return false;	// We reached here, after no DocUrl is found, and now we surely won't find it.
-		}
-
 		int temp_timesCheckedRemainingLinks = timesCheckedRemainingLinks.incrementAndGet();
 		if ( temp_timesCheckedRemainingLinks >= timesToCheckInternalLinksBeforeEvaluate ) {
 			// After this threshold, evaluate the percentage of found docUrls, if it's too low, then stop handling the remaining-links for any pageUrl.
@@ -595,6 +592,8 @@ public class PageCrawler
 				return false;
 			}
 
+			// We have already checked for "already-found-docOrDatasetUrl", in the previous loop in side the "visit" method. So here we just go ahead and connect.
+
 			//logger.debug("InternalLink to connect with: " + currentLink);	// DEBUG!
 			try {
 				if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, currentLink, null, false, false) )    // We log the docUrl inside this method.
@@ -619,6 +618,7 @@ public class PageCrawler
 					UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Logged in 'PageCrawler.checkRemainingInternalLinks()' method, as its domain was caught to not support the HTTP HEAD method.", null, true, "true", "true", "false", "false", "false", null, "null");
 					LoaderAndChecker.connProblematicUrls.incrementAndGet();
 					return false;
+					// This domain is not blocked, because we do not want to lose all the urls of this domain; maybe next time, we get the docUrl itself and not the pageUrl, in that case, the "GET" method will be used.
 				}
 			} catch (ConnTimeoutException cte) {    // In this case, it's unworthy to stay and check other internalLinks here.
 				if ( currentLink.contains(pageDomain) ) {
@@ -626,6 +626,7 @@ public class PageCrawler
 					UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Logged in 'PageCrawler.checkRemainingInternalLinks()' method, as an internalLink of this page caused 'ConnTimeoutException'.", null, true, "true", "true", "false", "false", "true", null, "null");
 					LoaderAndChecker.connProblematicUrls.incrementAndGet();
 					return false;
+					// This domain is not blocked, because the "timeout-exception" is usually temporal.
 				}
 			} catch (RuntimeException e) {
 				// No special handling here.. nor logging..

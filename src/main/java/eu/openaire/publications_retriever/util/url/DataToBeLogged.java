@@ -12,7 +12,7 @@ import java.util.LinkedHashMap;
 
 
 /**
- * This class is responsible to store the quadruple <urlId, sourceUrl, docUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, errorCause / comment> for it to be written in the outputFile.
+ * This class is responsible to store the quadruple <urlId, sourceUrl, docOrDatasetUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, errorCause / comment> for it to be written in the outputFile.
  * @author Lampros Smyrnaios
  */
 public class DataToBeLogged
