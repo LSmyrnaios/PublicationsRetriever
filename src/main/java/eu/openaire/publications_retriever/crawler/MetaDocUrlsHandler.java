@@ -62,11 +62,7 @@ public class MetaDocUrlsHandler {
     {
         // Check if the docLink is provided in a metaTag and connect to it directly.
         String metaDocUrl = null;
-        Matcher metaDocUrlMatcher = META_DOC_URL.matcher(pageHtml);
-        if ( !metaDocUrlMatcher.find() )
-            return false;    // It was not found and so it was not handled. We don't log the sourceUrl, since it will be handled later.
-
-        if ( (metaDocUrl = getMetaDocUrlFromMatcher(metaDocUrlMatcher)) == null ) {
+        if ( (metaDocUrl = getMetaDocUrlFromHTML(pageHtml)) == null ) {
             logger.error("Could not retrieve the metaDocUrl, continue by crawling the pageUrl.");
             return false;   // We don't log the sourceUrl, since it will be handled later.
         }
@@ -85,7 +81,7 @@ public class MetaDocUrlsHandler {
             logger.debug("Domain: \"" + pageDomain + "\" was blocked, after giving a dynamic metaDocUrl: " + metaDocUrl);
             UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was a dynamic-link.", null, true, "true", "true", "false", "false", "false", null, "null");  // We log the source-url, and that was discarded in "PageCrawler.visit()".
             PageCrawler.contentProblematicUrls.incrementAndGet();
-            return true;
+            return true;    // Since the domian is blocked, there is no point in continuing to crawl.
         }
 
         String lowerCaseMetaDocUrl = metaDocUrl.toLowerCase();
@@ -101,7 +97,7 @@ public class MetaDocUrlsHandler {
             UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was unsupported.", null, true, "true", "true", "false", "false", (hasUnsupportedDocExtension ? "true" : "false"), null, "null");  // We log the source-url, and that was discarded in "PageCrawler.visit()".
             PageCrawler.contentProblematicUrls.incrementAndGet();
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
-            return true;    // It was found and handled. Do not continue crawling as we won't find any docUrl..
+            return false;   // Continue crawling the page.. The page may give the correct file inside, like this one: https://scholarlypublications.universiteitleiden.nl/handle/1887/66271
         }
 
         String tempMetaDocUrl = metaDocUrl;
@@ -110,14 +106,12 @@ public class MetaDocUrlsHandler {
             UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'checkIfAndHandleMetaDocUrl()', due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
             PageCrawler.contentProblematicUrls.incrementAndGet();
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
-            return true;
+            return false;   // Continue crawling the page..
         }
 
-        if ( metaDocUrl.contains("://localhost") || metaDocUrl.contains("://127.0.0.1") )  // For example: http://localhost:4000/bitstreams/98e649e7-a656-4a90-ad69-534178e63fbb/download
-        {
-            // In this case, we have to replace the "localhost" domain (and possible port) with the page's domain.
-            metaDocUrl = DOMAIN_REPLACEMENT_PATTERN.matcher(metaDocUrl).replaceFirst("://" +  pageDomain);
-        }
+        // Sometimes, the metaDocUrl contains the "localhost" instead of the page' domain. So we have to search and replace.
+        // For example: http://localhost:4000/bitstreams/98e649e7-a656-4a90-ad69-534178e63fbb/download
+        metaDocUrl = DOMAIN_REPLACEMENT_PATTERN.matcher(metaDocUrl).replaceFirst("://" +  pageDomain);
 
         if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(metaDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
             ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, metaDocUrl, false);
@@ -141,12 +135,11 @@ public class MetaDocUrlsHandler {
     }
 
 
-    public static String getMetaDocUrlFromMatcher(Matcher metaDocUrlMatcher)
+    public static String getMetaDocUrlFromHTML(String pageHtml)
     {
-        if ( metaDocUrlMatcher == null ) {
-            logger.error("\"PageCrawler.getMetaDocUrlMatcher()\" received a \"null\" matcher!");
-            return null;
-        }
+        Matcher metaDocUrlMatcher = META_DOC_URL.matcher(pageHtml);
+        if ( !metaDocUrlMatcher.find() )
+            return null;    // It was not found and so it was not handled. We don't log the sourceUrl, since it will be handled later.
 
         //logger.debug("Matched meta-doc-url-line: " + metaDocUrlMatcher.group(0));	// DEBUG!!
 
