@@ -47,8 +47,8 @@ public class FileUtils
 	public static boolean skipFirstRow = false;	// Use this to skip the HeaderLine in a csv-kindOf-File.
 	public static final String endOfLine = System.lineSeparator();
 	public static int unretrievableInputLines = 0;	// For better statistics in the end.
-    public static final int maxStoringWaitingTime = 45000;	// 45sec (some files can take several minutes or even half an hour)
-	
+
+
 	public static final List<DataToBeLogged> dataToBeLoggedList = Collections.synchronizedList(new ArrayList<>(jsonBatchSize));
 	
 	public static final Hashtable<String, Integer> numbersOfDuplicateDocFileNames = new Hashtable<>();	// Holds docFileNa,es with their duplicatesNum.
@@ -331,13 +331,15 @@ public class FileUtils
 	/**
 	 * This method is responsible for storing the docFiles and store them in permanent storage.
 	 * It is synchronized, in order to avoid files' numbering inconsistency.
+	 *
 	 * @param inStream
 	 * @param docUrl
 	 * @param id
 	 * @param contentDisposition
+	 * @param contentSize
 	 * @throws DocFileNotRetrievedException
 	 */
-	public static synchronized DocFileData storeDocFile(InputStream inStream, String docUrl, String id, String contentDisposition) throws DocFileNotRetrievedException
+	public static synchronized DocFileData storeDocFile(InputStream inStream, String docUrl, String id, String contentDisposition, int contentSize) throws DocFileNotRetrievedException
 	{
 		File docFile;
 		FileOutputStream outStream = null;
@@ -366,13 +368,14 @@ public class FileUtils
 				throw new DocFileNotRetrievedException(fnfe.getMessage());
 			}
 
+			int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);
 			int readByte = -1;
 			long startTime = System.nanoTime();
 			while ( (readByte = inStream.read()) != -1 )
 			{
 				long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
-				if ( (elapsedTime > FileUtils.maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {
-					String errMsg = "Storing docFile from docUrl: \"" + docUrl + "\" is taking over "+ TimeUnit.MILLISECONDS.toSeconds(FileUtils.maxStoringWaitingTime) + "seconds! Aborting..";
+				if ( (elapsedTime > maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {
+					String errMsg = "Storing docFile from docUrl: \"" + docUrl + "\" is taking over "+ TimeUnit.MILLISECONDS.toSeconds(maxStoringWaitingTime) + "seconds! Aborting..";
 					logger.warn(errMsg);
 					try {
 						FileDeleteStrategy.FORCE.delete(docFile);
@@ -547,7 +550,6 @@ public class FileUtils
 					}
 				}
 			}
-
 			FileUtils.numOfDocFile ++;	// This is applied only if none exception is thrown, so in case of an exception, we don't have to revert the incremented value.
 			return docFile;
 
@@ -558,6 +560,28 @@ public class FileUtils
 			logger.error(errMsg, e);
 			throw new DocFileNotRetrievedException(errMsg);
 		}
+	}
+
+
+	static final int fiftyMBInBytes = (50 * 1_048_576);
+	static final int oneHundredMBInBytes = (100 * 1_048_576);
+	static final int threeHundredMBInBytes = (300 * 1_048_576);
+
+
+	private static int getMaxStoringWaitingTime(int contentSize)
+	{
+		if ( contentSize != -2 ) {
+			if ( contentSize <= fiftyMBInBytes )
+				return 30_000;	// 30 seconds
+			else if ( contentSize <= oneHundredMBInBytes )
+				return 60_000;	// 1 min.
+			else if ( contentSize <= threeHundredMBInBytes )
+				return 120_000;	// 2 mins.
+			else
+				return 180_000;	// 3 mins.
+		}
+		else	// In case the server did not provide
+			return 45_000;	// 45 seconds
 	}
 
 	

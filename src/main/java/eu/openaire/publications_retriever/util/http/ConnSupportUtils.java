@@ -67,7 +67,7 @@ public class ConnSupportUtils
 	private static final int timesToHave403errorCodeBeforePathBlocked = 10;	// If a path leads to 403 with different urls, more than 5 times, then this path gets blocked.
 	private static final int numberOf403BlockedPathsBeforeDomainBlocked = 50;	// If a domain has more than 5 different 403-blocked paths, then the whole domain gets blocked.
 
-	public static boolean shouldBlockMost5XXDomains = true;	// In General, if we decide to block, then the 503 will be excluded. If we decide to not block, then only the 511 will be blocked.
+	public static boolean shouldBlockMost5XXDomains = true;	// In General, if we decide to block, then the 503 will be excluded. If we decide to NOT block, then only the 511 will be blocked.
 	// Keep the above as "public" and "non-final", in order to be set by external services.
 	private static final int timesToHave5XXerrorCodeBeforeDomainBlocked = 10;
 	private static final int timesToHaveTimeoutExBeforeDomainBlocked = 25;
@@ -304,11 +304,12 @@ public class ConnSupportUtils
 			}
 
 			// Check if we should abort the download based on its content-size.
-			if ( getContentSize(conn, true) == -1 )	// "Unacceptable size"-code..
+			int contentSize = 0;
+			if ( (contentSize = getContentSize(conn, true)) == -1 )	// "Unacceptable size"-code..
 				throw new DocFileNotRetrievedException("The HTTP-reported size of this file was unacceptable!");
 
 			// Write the downloaded bytes to the docFile and return the docFileName.
-			DocFileData docFileData = FileUtils.storeDocFile(conn.getInputStream(), docUrl, id, conn.getHeaderField("Content-Disposition"));
+			DocFileData docFileData = FileUtils.storeDocFile(conn.getInputStream(), docUrl, id, conn.getHeaderField("Content-Disposition"), contentSize);
 			if ( docFileData == null ) {
 				String errMsg = "The file could not be " + (FileUtils.shouldUploadFilesToS3 ? "uploaded to S3" : "downloaded") + " from the docUrl " + docUrl;
 				logger.warn(errMsg);
@@ -845,13 +846,13 @@ public class ConnSupportUtils
 			}
 			//logger.debug("Content-length of \"" + conn.getURL().toString() + "\" is: " + contentSize);	// DEBUG!
 			return contentSize;
-		} catch (NumberFormatException nfe) {
+		} catch (NumberFormatException nfe) {	// This is also thrown if the "contentLength"-field does not exist inside the headers-list.
 			if ( calledForFullTextDownload )	// It's not useful to show a logging-message otherwise.
 				logger.warn("No \"Content-Length\" was retrieved from docUrl: \"" + conn.getURL().toString() + "\"! We will store the docFile anyway..");	// No action is needed.
-			return -2;
+			return -2;	// The content size could not be retrieved.
 		} catch ( Exception e ) {
 			logger.error("", e);
-			return -2;
+			return -2;	// The content size could not be retrieved.
 		}
 	}
 

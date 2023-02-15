@@ -155,7 +155,7 @@
     <dependency>
       <groupId>de.hs-heilbronn.mi</groupId>
       <artifactId>crawler4j-commons</artifactId>
-      <version>4.8.0</version>
+      <version>5.0.1</version>
     </dependency>
 -->
 

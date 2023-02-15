@@ -339,11 +339,11 @@ public class PageCrawler
 
 				// Check the text appearing next-to or as the link, inside the html.
 				linkAttr = el.text().trim();
-				if ( !linkAttr.isEmpty() && checkTextOrTitleAlongWithLink(el, linkAttr) )
+				if ( !linkAttr.isEmpty() && checkTextOrTitleAlongWithLink(el, linkAttr) )	// This may throw "DocLinkFoundException" or "DocLinkInvalidException".
 					continue;
 
 				linkAttr = el.attr("title").trim();
-				if ( !linkAttr.isEmpty() && checkTextOrTitleAlongWithLink(el, linkAttr) )
+				if ( !linkAttr.isEmpty() && checkTextOrTitleAlongWithLink(el, linkAttr) )	// This may throw "DocLinkFoundException" or "DocLinkInvalidException".
 					continue;
 
 				// Check if we have a "link[href][type*=pdf]" get the docUrl. This also check all the "types" even from the HTML-"a" elements.
@@ -358,6 +358,7 @@ public class PageCrawler
 						throw new DocLinkInvalidException(internalLink);
 					} else {
 						//logger.debug("Found the docLink < " + internalLink + " > from link-type: \"" + linkAttr + "\"");	// DEBUG
+						internalLink = internalLink.replace("/view/", "/download/");	// It may be the case, where the provided PDF-link is the view and not the download-url.
 						throw new DocLinkFoundException(internalLink);
 					}
 				}
@@ -410,6 +411,7 @@ public class PageCrawler
 
 			if ( !UrlTypeChecker.shouldNotAcceptInternalLink(internalLink, null) ) {
 				//logger.debug("Found the docLink < " + internalLink + " > from link-text: \"" + linkAttr + "\"");	// DEBUG
+				internalLink = internalLink.replace("/view/", "/download/");	// It may be the case, where the provided PDF-link is the view and not the download-url.
 				throw new DocLinkFoundException(internalLink);	// This will be connected and tested by the caller-method.
 			}
 			throw new DocLinkInvalidException(internalLink);

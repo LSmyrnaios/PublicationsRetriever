@@ -47,7 +47,7 @@ public class HttpConnUtils
 
 	public static AtomicInteger numOfDomainsBlockedDueToSSLException = new AtomicInteger(0);
 
-	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:106.0) Gecko/20100101 Firefox/106.0";	// This should not be "final", another program should be able to set its own "UserAgent".
+	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0";	// This should not be "final", another program should be able to set its own "UserAgent".
 	public static String acceptLanguage = "en-US,en;q=0.5";
 
 	public static final int maxConnGETWaitingTime = 15000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
