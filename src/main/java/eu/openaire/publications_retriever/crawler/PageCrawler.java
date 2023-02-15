@@ -327,7 +327,7 @@ public class PageCrawler
 
 		for ( Element el : elementLinksOnPage )
 		{
-			if ( hasUnacceptableClass(el, pageUrl) )
+			if ( hasUnacceptableStructure(el, pageUrl) )
 				continue;
 
 			if ( LoaderAndChecker.retrieveDocuments)	// Currently, these smart-checks are only available for specific docFiles (not for datasets).
@@ -435,20 +435,9 @@ public class PageCrawler
 	}
 
 
-	private static boolean hasUnacceptableClass(Element element, String pageUrl)
+	private static boolean hasUnacceptableStructure(Element element, String pageUrl)
 	{
-		// Exclude links which are "tabs". For example those hidden in submenus.
-		Element parentElement = element.parent();
-		if ( parentElement != null ) {
-			String parentClassName = parentElement.className().trim();
-			if ( !parentClassName.isEmpty() ) {
-				//logger.debug("Parent's classname: " + parentClassName);
-				if ( parentClassName.equals("tab") || parentClassName.equals("product-head-bnrs") )
-					return true;
-			}
-		}
-
-		// Exclude links which have the class "state-published", are full-links AND have a different domain, than the pageUrl.
+		// Exclude links which have the class "state-published" and have a different domain, than the pageUrl.
 		if ( element.className().trim().equals("state-published") ) {	// The  equality will fail if the className does not exist.
 			String internalLink = element.attr("href").trim();
 			if ( internalLink.startsWith("http", 0) ) {	// This check covers the case were the "internalLink" may be empty.
@@ -456,6 +445,18 @@ public class PageCrawler
 				if ( (linkDomain != null) && !pageUrl.contains(linkDomain) )
 					return true;
 			}
+		}
+
+		// Avoid collecting internal-links which are inside the "footer" or the "article-references" section (we make it more general with the ending-s).
+		Element parentElement = element.parent();
+		while ( parentElement != null ) {
+			String parentClassName = parentElement.className().trim();
+			if ( parentElement.tagName().trim().equals("footer")
+				|| parentClassName.equals("tab") || parentClassName.equals("product-head-bnrs")	// Exclude links which are "tabs". For example those hidden in submenus, of the main-menu (not submenus of fulltext-choices).
+				|| parentClassName.contains("article-reference") || parentElement.id().contains("article-reference"))	// The class-name may include other class-types as well.
+				return true;
+
+			parentElement = parentElement.parent();	// Climb up to the ancestor.
 		}
 
 		return false;
