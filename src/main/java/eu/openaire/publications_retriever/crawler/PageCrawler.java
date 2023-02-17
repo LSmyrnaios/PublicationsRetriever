@@ -8,6 +8,7 @@ import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlTypeChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.Document;
@@ -358,7 +359,7 @@ public class PageCrawler
 						throw new DocLinkInvalidException(internalLink);
 					} else {
 						//logger.debug("Found the docLink < " + internalLink + " > from link-type: \"" + linkAttr + "\"");	// DEBUG
-						internalLink = internalLink.replace("/view/", "/download/");	// It may be the case, where the provided PDF-link is the view and not the download-url.
+						internalLink = StringUtils.replace(internalLink, "/view/", "/download/", 1);	// It may be the case, where the provided PDF-link is the view and not the download-url.
 						throw new DocLinkFoundException(internalLink);
 					}
 				}
@@ -411,7 +412,7 @@ public class PageCrawler
 
 			if ( !UrlTypeChecker.shouldNotAcceptInternalLink(internalLink, null) ) {
 				//logger.debug("Found the docLink < " + internalLink + " > from link-text: \"" + linkAttr + "\"");	// DEBUG
-				internalLink = internalLink.replace("/view/", "/download/");	// It may be the case, where the provided PDF-link is the view and not the download-url.
+				internalLink = StringUtils.replace(internalLink, "/view/", "/download/", 1);	// It may be the case, where the provided PDF-link is the view and not the download-url.
 				throw new DocLinkFoundException(internalLink);	// This will be connected and tested by the caller-method.
 			}
 			throw new DocLinkInvalidException(internalLink);
