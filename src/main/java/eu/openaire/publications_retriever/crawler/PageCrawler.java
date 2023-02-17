@@ -478,7 +478,7 @@ public class PageCrawler
 			String parentClassName = parentElement.className().trim();
 			if ( parentElement.tagName().trim().equals("footer")
 				|| parentClassName.equals("tab") || parentClassName.equals("product-head-bnrs")	// Exclude links which are "tabs". For example those hidden in submenus, of the main-menu (not submenus of fulltext-choices).
-				|| parentClassName.contains("article-reference") || parentElement.id().contains("article-reference"))	// The class-name may include other class-types as well.
+				|| parentClassName.contains("reference") || parentElement.id().contains("reference"))	// The class-name may include other class-types as well.
 				return true;
 
 			parentElement = parentElement.parent();	// Climb up to the ancestor.
