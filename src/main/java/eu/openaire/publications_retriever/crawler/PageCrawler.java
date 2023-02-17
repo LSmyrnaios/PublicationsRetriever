@@ -109,20 +109,39 @@ public class PageCrawler
 		if ( MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl(urlId, sourceUrl, pageUrl, pageDomain, pageHtml) )
 			return;	// The sourceUrl is already logged inside the called method.
 
-		// Check if we want to use AND if so, if we should run, the MLA.
-		if ( MachineLearning.useMLA ) {
-			MachineLearning.totalPagesReachedMLAStage.incrementAndGet();	// Used for M.L.A.'s execution-manipulation.
-			if ( MachineLearning.shouldRunPrediction() )
-				if ( MachineLearning.predictInternalDocUrl(urlId, sourceUrl, pageUrl, pageDomain) )	// Check if we can find the docUrl based on previous runs. (Still in experimental stage)
-					return;	// If we were able to find the right path.. and hit a docUrl successfully.. return. The Quadruple is already logged.
-		}
-
 		HashSet<String> currentPageLinks = null;	// We use "HashSet" to avoid duplicates.
 		if ( (currentPageLinks = retrieveInternalLinks(urlId, sourceUrl, pageUrl, pageDomain, pageHtml, pageContentType)) == null )
 			return;	// The necessary logging is handled inside.
 
-		HashSet<String> remainingLinks = new HashSet<>(currentPageLinks.size());	// Used later. Initialize with the total num of links (less will actually get stored there, but their num is unknown).
 		String urlToCheck = null;
+		boolean shouldRunPrediction = false;
+
+		// Check if we want to use AND if so, if we should run, the MLA.
+		if ( MachineLearning.useMLA ) {
+			MachineLearning.totalPagesReachedMLAStage.incrementAndGet();	// Used for M.L.A.'s execution-manipulation.
+			shouldRunPrediction = MachineLearning.shouldRunPrediction();
+			if ( shouldRunPrediction ) {
+				HashSet<String> newPageLinks = new HashSet<>(currentPageLinks.size());	// We use "HashSet" to avoid duplicates.
+				for ( String currentLink : currentPageLinks )
+				{
+					// Produce fully functional internal links, NOT internal paths or non-canonicalized (if possible). The M.L.A. will evaluate whether the predictedDocUrls exist in the Set of internal-links.
+					if ( currentLink.contains("[") ) { // This link cannot be canonicalized, go and make it a full-link, at least.
+						if ( (urlToCheck = ConnSupportUtils.getFullyFormedUrl(pageUrl, currentLink, null)) == null )
+							continue;
+					} else if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl, StandardCharsets.UTF_8)) == null ) {
+						logger.warn("Could not canonicalize internal url: " + currentLink);
+						continue;
+					}
+					newPageLinks.add(urlToCheck);
+				}
+				currentPageLinks = newPageLinks;
+
+				if ( MachineLearning.predictInternalDocUrl(urlId, sourceUrl, pageUrl, pageDomain, currentPageLinks) )    // Check if we can find the docUrl based on previous runs. (Still in experimental stage)
+					return;	// If we were able to find the right path.. and hit a docUrl successfully.. return. The Quadruple is already logged.
+			}
+		}
+
+		HashSet<String> remainingLinks = new HashSet<>(currentPageLinks.size());	// Used later. Initialize with the total num of links (less will actually get stored there, but their num is unknown).
 		String lowerCaseLink = null;
 		int possibleDocOrDatasetUrlsCounter = 0;
 
@@ -130,15 +149,18 @@ public class PageCrawler
 		// Check if urls inside this page, match to a docUrl or to a datasetUrl regex, if they do, try connecting with them and see if they truly are docUrls. If they are, return.
 		for ( String currentLink : currentPageLinks )
 		{
-			// Produce fully functional internal links, NOT internal paths or non-canonicalized (if possible).
-			if ( currentLink.contains("[") ) { // This link cannot be canonicalized, go and make it a full-link, at least.
-				if ( (urlToCheck = ConnSupportUtils.getFullyFormedUrl(pageUrl, currentLink, null)) == null )
+			if ( !shouldRunPrediction) {	// If we used the MLA for this pageUrl, then this process is already handled for all urls. Otherwise, here we canonicalize only few links at best.
+				// Produce fully functional internal links, NOT internal paths or non-canonicalized (if possible).
+				if ( currentLink.contains("[") ) { // This link cannot be canonicalized, go and make it a full-link, at least.
+					if ( (urlToCheck = ConnSupportUtils.getFullyFormedUrl(pageUrl, currentLink, null)) == null )
+						continue;
+				}
+				else if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl, StandardCharsets.UTF_8)) == null ) {
+					logger.warn("Could not canonicalize internal url: " + currentLink);
 					continue;
-			}
-			else if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl, StandardCharsets.UTF_8)) == null ) {
-				logger.warn("Could not canonicalize internal url: " + currentLink);
-				continue;
-			}
+				}
+			} else
+				urlToCheck = currentLink;
 
             if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
 				ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, urlToCheck, false);

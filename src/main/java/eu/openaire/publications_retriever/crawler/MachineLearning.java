@@ -43,8 +43,8 @@ public class MachineLearning
 	private static int endOfSleepNumOfUrls = 0;
 	private static int latestSuccessBreakPoint = 0;
 	private static int latestUrlsMLAChecked = 0;
-	public static AtomicInteger timesGatheredData = new AtomicInteger(0);	// Used also for statistics.
-	private static AtomicInteger urlsCheckedWithMLA = new AtomicInteger(0);
+	public static final AtomicInteger timesGatheredData = new AtomicInteger(0);	// Used also for statistics.
+	private static final AtomicInteger pageUrlsCheckedWithMLA = new AtomicInteger(0);
 	private static boolean isInSleepMode = false;
 
 	public static AtomicInteger totalPagesReachedMLAStage = new AtomicInteger(0);	// This counts the pages which reached the crawlingStage, i.e: were not discarded in any case and waited to have their internalLinks checked.
@@ -172,7 +172,7 @@ public class MachineLearning
 	 */
 	public static double getCurrentSuccessRate()
 	{
-		return ((docUrlsFoundByMLA.get() - latestMLADocUrlsFound) * 100.0 / (urlsCheckedWithMLA.get() - latestUrlsMLAChecked));
+		return ((docUrlsFoundByMLA.get() - latestMLADocUrlsFound) * 100.0 / (pageUrlsCheckedWithMLA.get() - latestUrlsMLAChecked));
 	}
 
 
@@ -232,7 +232,7 @@ public class MachineLearning
 		logger.debug("MLA's success-rate is lower than the satisfying one (" + leastSuccessPercentageForMLA + "). Entering \"sleep-mode\", but continuing to gather ML-data...");
 		endOfSleepNumOfUrls = totalPagesReachedMLAStage.get() + urlsToWaitUntilRestartMLA;	// Update num of urls to reach before the "sleep period" ends.
 		latestMLADocUrlsFound = docUrlsFoundByMLA.get();	// Keep latest num of docUrls found by the MLA, in order to calculate the success rate only for up-to-date data.
-		latestUrlsMLAChecked = urlsCheckedWithMLA.get();	// Keep latest num of urls checked by MLA...
+		latestUrlsMLAChecked = pageUrlsCheckedWithMLA.get();	// Keep latest num of urls checked by MLA...
 		latestSuccessBreakPoint ++;	// Stop keeping successBreakPoint as we get in "sleepMode".
 		isInSleepMode = true;
 		return false;
@@ -249,7 +249,7 @@ public class MachineLearning
 	 * @param pageDomain
 	 * @return true / false
 	 */
-	public static boolean predictInternalDocUrl(String urlId, String sourceUrl, String pageUrl, String pageDomain)
+	public static boolean predictInternalDocUrl(String urlId, String sourceUrl, String pageUrl, String pageDomain, HashSet<String> currentPageLinks)
 	{
 		if ( domainsBlockedFromMLA.contains(pageDomain) ) {    // Check if this domain is not compatible with the MLA.
 			logger.debug("Avoiding the MLA-prediction for incompatible domain: \"" + pageDomain + "\".");
@@ -270,13 +270,11 @@ public class MachineLearning
 		if ( pathsSize == 0 )	// If this path cannot be handled by the MLA (no known data in our model), then return.
 			return false;
 		else if ( pathsSize > 5 ) {	// Too many docPaths for this pagePath, means that there's probably only one pagePath we get for this domain (paths are not mapped to domains, so we can't actually check).
-			logger.debug("Domain: \"" + pageDomain + "\" was blocked from being accessed again by the MLA, after retrieving a proved-to-be incompatible pagePath.");
+			logger.debug("Domain: \"" + pageDomain + "\" was blocked from being accessed again by the MLA, after retrieving a proved-to-be incompatible pagePath (having more than 5 possible docUrl-paths).");
 			domainsBlockedFromMLA.add(pageDomain);
 			successPathsHashMultiMap.removeAll(pagePath);	// This domain was blocked, remove current non-needed paths-data.
 			return false;
 		}
-		else if ( pathsSize > 3 )    // It's not worth risking connecting with more than 3 "predictedDocUrl"s, for which their success is non-granted.
-			return false;    // The difference here is that we avoid making the connections but we leave the data as it is.. this way we allow whole domains to be blocked based on docPaths' size being larger than 5.
 
 		String docIdStr = UrlUtils.getDocIdStr(pageUrl, urlMatcher);
 		if ( docIdStr == null )
@@ -286,7 +284,7 @@ public class MachineLearning
 			docIdStr = FileUtils.EXTENSION_PATTERN.matcher(docIdStr).replaceAll("");	// This version of "replaceAll" uses a pre-compiled regex-pattern for better performance.
 		}
 
-		MachineLearning.urlsCheckedWithMLA.incrementAndGet();
+		MachineLearning.pageUrlsCheckedWithMLA.incrementAndGet();
 
 		String predictedDocUrl = null;
 		String extension = null;
@@ -304,8 +302,20 @@ public class MachineLearning
 			predictedDocUrl = strB.toString();
 			//logger.debug("Constructed \"predictedDocUrl\": " + predictedDocUrl);	// DEBUG!
 
+			// Check if the "predictedDocUrl" exists inside the list of the internal-links, thus avoiding connecting with non-existed urls.
+			// There should be no difference in the protocol, since the internal-links are made fully-formed-urls by using the base from the pageUrl.
+
+			// TODO - There's the chance that the "predictedDocUrl" has HTTPS, but the corresponding internalLink has HTTP, so no match will be found.
+			// TODO -We were about to make the check more "fair" then more overhead will be added: O(n) instead of O(1), while each check will be expensive.
+
 			strB.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
 
+			if ( !currentPageLinks.contains(predictedDocUrl) )
+				continue;
+
+			logger.debug("Found a \"predictedDocUrl\" which exists in the \"currentPageLinks\": " + predictedDocUrl);	// DEBUG!
+
+			// Check if the "predictedDocUrl" has been found before, but only if it exists in the set of this page's internal-links, as we may end up with a "docUrl" which is not related with this pageUrl.
 			if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(predictedDocUrl) ) {	// If we got into an already-found docUrl, log it and return true.
 				logger.info("MachineLearningAlgorithm got a hit for pageUrl: \""+ pageUrl + "\"! Resulted (already found before) docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
 				ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, predictedDocUrl, false);
@@ -313,11 +323,7 @@ public class MachineLearning
 				return true;
 			}
 
-			// Check if it's a truly-alive docUrl.
-			// TODO - Before doing this we should check if it exists inside the list of the internal-links, thus avoiding connecting with non-existed urls..
-			// Todo this we will have to re-think where the MLA's code should be called for optimal usage.
-			// todo - then, remove the (<= 3) paths restriction some lines above.. as now the process will be 1000 times faster and we really want to find a match in the internal-links.
-			try {
+			try {	// Check if it's a truly-alive docUrl.
 				logger.debug("Going to connect & check predictedDocUrl: \"" + predictedDocUrl +"\", made out from pageUrl: \"" + pageUrl + "\"");	// DEBUG!
 				if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, predictedDocUrl, null, false, true) ) {
 					logger.info("MachineLearningAlgorithm got a hit for pageUrl: \""+ pageUrl + "\"! Resulted docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
