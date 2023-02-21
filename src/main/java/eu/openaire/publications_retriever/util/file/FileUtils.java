@@ -356,15 +356,14 @@ public class FileUtils
 			} catch (FileNotFoundException fnfe) {
 				logger.error("", fnfe);
 				numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
-
-				// The file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
+				// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
+				// So the empty file may exist, but we will also get the "FileNotFoundException".
 				try {
 					if ( docFile.exists() )
 						FileDeleteStrategy.FORCE.delete(docFile);
 				} catch (Exception e) {
 					logger.error("Error when deleting the half-created file from docUrl: " + docUrl);
 				}
-
 				throw new DocFileNotRetrievedException(fnfe.getMessage());
 			}
 
@@ -399,12 +398,8 @@ public class FileUtils
 					// So if the other naming methods were used with S3, we would have to check if the file existed online and then rename of needed and upload back.
 				} else
 					numOfDocFile --;
-			} else {
-				if ( FileUtils.shouldLogFullPathName )
-					docFileData = new DocFileData(docFile, null, null, docFile.getAbsolutePath());
-				else
-					docFileData = new DocFileData(docFile, null, null, docFile.getName());
-			}
+			} else
+				docFileData = new DocFileData(docFile, null, null, ((FileUtils.shouldLogFullPathName) ? docFile.getAbsolutePath() : docFile.getName()));
 
 			// TODO - HOW TO SPOT DUPLICATE-NAMES IN THE S3 MODE?
 			// The local files are deleted after uploaded.. (as they should be)
@@ -429,6 +424,10 @@ public class FileUtils
 			try {
 				if ( inStream != null )
 					inStream.close();
+			} catch (Exception e) {
+				logger.error("", e);
+			}
+			try {
 				if ( outStream != null )
 					outStream.close();
 			} catch (Exception e) {

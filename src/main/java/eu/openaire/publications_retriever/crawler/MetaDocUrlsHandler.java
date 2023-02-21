@@ -94,8 +94,6 @@ public class MetaDocUrlsHandler {
             || PageCrawler.NON_VALID_DOCUMENT.matcher(lowerCaseMetaDocUrl).matches() )
         {
             logger.debug("The retrieved metaDocUrl ( " + metaDocUrl + " ) is pointing to an unsupported file.");
-            UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was unsupported.", null, true, "true", "true", "false", "false", (hasUnsupportedDocExtension ? "true" : "false"), null, "null");  // We log the source-url, and that was discarded in "PageCrawler.visit()".
-            PageCrawler.contentProblematicUrls.incrementAndGet();
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return false;   // Continue crawling the page.. The page may give the correct file inside, like this one: https://scholarlypublications.universiteitleiden.nl/handle/1887/66271
         }
@@ -103,8 +101,6 @@ public class MetaDocUrlsHandler {
         String tempMetaDocUrl = metaDocUrl;
         if ( (metaDocUrl = URLCanonicalizer.getCanonicalURL(metaDocUrl, null, StandardCharsets.UTF_8)) == null ) {
             logger.warn("Could not canonicalize metaDocUrl: " + tempMetaDocUrl);
-            UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'checkIfAndHandleMetaDocUrl()', due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
-            PageCrawler.contentProblematicUrls.incrementAndGet();
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return false;   // Continue crawling the page..
         }
@@ -125,7 +121,7 @@ public class MetaDocUrlsHandler {
                 numOfMetaDocUrlsFound.incrementAndGet();
                 return true;    // It should be the docUrl, and it was handled.. so we don't continue checking the internalLink even if this wasn't an actual docUrl.
             }
-            logger.warn("The retrieved metaDocUrl was not a docUrl (unexpected): " + metaDocUrl);
+            logger.warn("The retrieved metaDocUrl was NOT a docUrl (unexpected): " + metaDocUrl);
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return false;   // Continue crawling the page..
         } catch (Exception e) {
