@@ -63,7 +63,7 @@ public class MetaDocUrlsHandler {
         // Check if the docLink is provided in a metaTag and connect to it directly.
         String metaDocUrl = null;
         if ( (metaDocUrl = getMetaDocUrlFromHTML(pageHtml)) == null ) {
-            logger.error("Could not retrieve the metaDocUrl, continue by crawling the pageUrl.");
+            logger.warn("Could not retrieve the metaDocUrl, continue by crawling the page..");
             return false;   // We don't log the sourceUrl, since it will be handled later.
         }
         //logger.debug("MetaDocUrl: " + metaDocUrl);  // DEBUG!
@@ -75,10 +75,10 @@ public class MetaDocUrlsHandler {
 
         if ( metaDocUrl.contains("{{") || metaDocUrl.contains("<?") )   // Dynamic link! The only way to handle it is by blocking the "currentPageUrlDomain".
         {
-            logger.debug("The metaDocUrl is a dynamic-link. Abort the process and block the domain of the pageUrl.");
+            logger.warn("The metaDocUrl is a dynamic-link. Abort the process and block the domain of the pageUrl.");
             // Block the domain and return "true" to indicate handled-state.
             HttpConnUtils.blacklistedDomains.add(pageDomain);
-            logger.debug("Domain: \"" + pageDomain + "\" was blocked, after giving a dynamic metaDocUrl: " + metaDocUrl);
+            logger.warn("Domain: \"" + pageDomain + "\" was blocked, after giving a dynamic metaDocUrl: " + metaDocUrl);
             UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was a dynamic-link.", null, true, "true", "true", "false", "false", "false", null, "null");  // We log the source-url, and that was discarded in "PageCrawler.visit()".
             PageCrawler.contentProblematicUrls.incrementAndGet();
             return true;    // Since the domian is blocked, there is no point in continuing to crawl.
@@ -93,14 +93,14 @@ public class MetaDocUrlsHandler {
             || COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS.matcher(lowerCaseMetaDocUrl).matches()
             || PageCrawler.NON_VALID_DOCUMENT.matcher(lowerCaseMetaDocUrl).matches() )
         {
-            logger.debug("The retrieved metaDocUrl ( " + metaDocUrl + " ) is pointing to an unsupported file.");
+            logger.warn("The retrieved metaDocUrl ( " + metaDocUrl + " ) is pointing to an unsupported file, continue by crawling the page..");
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return false;   // Continue crawling the page.. The page may give the correct file inside, like this one: https://scholarlypublications.universiteitleiden.nl/handle/1887/66271
         }
 
         String tempMetaDocUrl = metaDocUrl;
         if ( (metaDocUrl = URLCanonicalizer.getCanonicalURL(metaDocUrl, null, StandardCharsets.UTF_8)) == null ) {
-            logger.warn("Could not canonicalize metaDocUrl: " + tempMetaDocUrl);
+            logger.warn("Could not canonicalize metaDocUrl: " + tempMetaDocUrl + " , continue by crawling the page..");
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return false;   // Continue crawling the page..
         }
@@ -121,11 +121,11 @@ public class MetaDocUrlsHandler {
                 numOfMetaDocUrlsFound.incrementAndGet();
                 return true;    // It should be the docUrl, and it was handled.. so we don't continue checking the internalLink even if this wasn't an actual docUrl.
             }
-            logger.warn("The retrieved metaDocUrl was NOT a docUrl (unexpected): " + metaDocUrl);
+            logger.warn("The retrieved metaDocUrl was NOT a docUrl (unexpected): " + metaDocUrl + " , continue by crawling the page..");
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return false;   // Continue crawling the page..
         } catch (Exception e) {
-            logger.warn("The MetaDocUrl < " + metaDocUrl + " > had connectivity or redirection problems!");
+            logger.warn("The MetaDocUrl < " + metaDocUrl + " > had connectivity or redirection problems! Continue by crawling the page..");
             return false;   // Continue crawling the page..
         }
     }

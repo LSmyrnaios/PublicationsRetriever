@@ -270,7 +270,7 @@ public class MachineLearning
 		if ( pathsSize == 0 )	// If this path cannot be handled by the MLA (no known data in our model), then return.
 			return false;
 		else if ( pathsSize > 5 ) {	// Too many docPaths for this pagePath, means that there's probably only one pagePath we get for this domain (paths are not mapped to domains, so we can't actually check).
-			logger.debug("Domain: \"" + pageDomain + "\" was blocked from being accessed again by the MLA, after retrieving a proved-to-be incompatible pagePath (having more than 5 possible docUrl-paths).");
+			logger.warn("Domain: \"" + pageDomain + "\" was blocked from being accessed again by the MLA, after retrieving a proved-to-be incompatible pagePath (having more than 5 possible docUrl-paths).");
 			domainsBlockedFromMLA.add(pageDomain);
 			successPathsHashMultiMap.removeAll(pagePath);	// This domain was blocked, remove current non-needed paths-data.
 			return false;
@@ -338,7 +338,7 @@ public class MachineLearning
 
 		// If we reach here, it means that all of the predictions have failed.
 		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(domainsBlockedFromMLA, timesDomainsFailedInMLA, pageDomain, timesToFailBeforeBlockedFromMLA, false) ) {
-			logger.debug("Domain: \"" + pageDomain + "\" was blocked from being accessed again by the MLA, after proved to be incompatible " + timesToFailBeforeBlockedFromMLA + " times.");
+			logger.warn("Domain: \"" + pageDomain + "\" was blocked from being accessed again by the MLA, after proved to be incompatible " + timesToFailBeforeBlockedFromMLA + " times.");
 
 			// This domain was blocked, remove current non-needed paths-data. Note that we can't remove all of this domain's paths, since there is no mapping between a domain and its paths.
 			for ( String docPath : successPathsHashMultiMap.get(pagePath) )

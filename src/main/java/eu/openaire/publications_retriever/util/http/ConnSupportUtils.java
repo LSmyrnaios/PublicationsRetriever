@@ -469,7 +469,7 @@ public class ConnSupportUtils
 				logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Received unexpected responseCode: " + errorStatusCode);
 				if ( domainStr != null ) {
 					HttpConnUtils.blacklistedDomains.add(domainStr);
-					logger.debug("Domain: \"" + domainStr + "\" was blocked, after giving a " + errorStatusCode + " HTTP-status-code.");
+					logger.warn("Domain: \"" + domainStr + "\" was blocked, after giving a " + errorStatusCode + " HTTP-status-code.");
 				}
 				
 				throw new DomainBlockedException(domainStr);	// Throw this even if there was an error preventing the domain from getting blocked.
@@ -504,14 +504,14 @@ public class ConnSupportUtils
 		
 		if ( countAndBlockPathAfterTimes(domainsMultimapWithPaths403BlackListed, timesPathsReturned403, pathStr, domainStr, timesToHave403errorCodeBeforePathBlocked, calledForPageUrl) )
 		{
-			logger.debug("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code more than " + timesToHave403errorCodeBeforePathBlocked + " times.");
+			logger.warn("Path: \"" + pathStr + "\" of domain: \"" + domainStr + "\" was blocked after returning 403 Error Code more than " + timesToHave403errorCodeBeforePathBlocked + " times.");
 			// Block the whole domain if it has more than a certain number of blocked paths.
 			if ( domainsMultimapWithPaths403BlackListed.get(domainStr).size() > numberOf403BlockedPathsBeforeDomainBlocked )	// It will not throw an NPE, as the domain is inserted by the previous method.
 			{
 				// Note that the result of "domainsMultimapWithPaths403BlackListed.get(domainStr)" cannot be null! It may only be empty,
 
 				HttpConnUtils.blacklistedDomains.add(domainStr);	// Block the whole domain itself.
-				logger.debug("Domain: \"" + domainStr + "\" was blocked, after having more than " + numberOf403BlockedPathsBeforeDomainBlocked + " of its paths 403blackListed.");
+				logger.warn("Domain: \"" + domainStr + "\" was blocked, after having more than " + numberOf403BlockedPathsBeforeDomainBlocked + " of its paths 403blackListed.");
 				domainsMultimapWithPaths403BlackListed.removeAll(domainStr);	// No need to keep this anymore.
 				throw new DomainBlockedException(domainStr);
 			}
@@ -574,7 +574,7 @@ public class ConnSupportUtils
 			return;
 
 		if ( countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsReturned5XX, domainStr, timesToHave5XXerrorCodeBeforeDomainBlocked, true) ) {
-			logger.debug("Domain: \"" + domainStr + "\" was blocked after returning 5XX Error Code " + timesToHave5XXerrorCodeBeforeDomainBlocked + " times.");
+			logger.warn("Domain: \"" + domainStr + "\" was blocked after returning 5XX Error Code " + timesToHave5XXerrorCodeBeforeDomainBlocked + " times.");
 			throw new DomainBlockedException(domainStr);
 		}
 	}
@@ -583,7 +583,7 @@ public class ConnSupportUtils
 	public static void onTimeoutException(String domainStr) throws DomainBlockedException
 	{
 		if ( countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, timesDomainsHadTimeoutEx, domainStr, timesToHaveTimeoutExBeforeDomainBlocked, true) ) {
-			logger.debug("Domain: \"" + domainStr + "\" was blocked after causing TimeoutException " + timesToHaveTimeoutExBeforeDomainBlocked + " times.");
+			logger.warn("Domain: \"" + domainStr + "\" was blocked after causing TimeoutException " + timesToHaveTimeoutExBeforeDomainBlocked + " times.");
 			throw new DomainBlockedException(domainStr);
 		}
 	}
@@ -607,7 +607,7 @@ public class ConnSupportUtils
 
 		if ( badTimes > timesBeforeBlock )
 		{
-			if ( checkAgainstDocUrlsHits ) {	// This will not be the case for MLA-blocked-domains.
+			if ( checkAgainstDocUrlsHits ) {	// This will not be the case for MLA-blocked-domains. We cannot take into account ALL retrieved docUrls when only a part was retrieved by the MLA.
 				Integer goodTimes = UrlUtils.domainsAndHits.get(domainStr);
 				if ( (goodTimes != null)
 						&& (badTimes <= (goodTimes + timesBeforeBlock)) )	// If the badTimes are less/equal to the goodTimes PLUS the predefined "bufferZone", do not block this domain.
@@ -652,13 +652,13 @@ public class ConnSupportUtils
 
 		blockedDomainsToReturn.add(targetUrlDomain);
 		if ( HttpConnUtils.blacklistedDomains.add(targetUrlDomain) )	// If it was added for the first time.
-			logger.debug("Domain: \"" + targetUrlDomain + "\" was blocked after trying to cause a \"sharedSiteSession-redirectionPack\" with url: \"" + targetUrl + "\"!");
+			logger.warn("Domain: \"" + targetUrlDomain + "\" was blocked after trying to cause a \"sharedSiteSession-redirectionPack\" with url: \"" + targetUrl + "\"!");
 
 		if ( (previousFromTargetUrl != null) && !previousFromTargetUrl.equals(targetUrl) ) {
 			if ( (beforeTargetUrlDomain = UrlUtils.getDomainStr(previousFromTargetUrl, null)) != null ) {
 				blockedDomainsToReturn.add(beforeTargetUrlDomain);
 				if ( HttpConnUtils.blacklistedDomains.add(beforeTargetUrlDomain) )    // If it was added for the first time.
-					logger.debug("Domain: \"" + beforeTargetUrlDomain + "\" was blocked after its url : \"" + previousFromTargetUrl + "\" tried to redirect to targetUrl: \"" + targetUrl + "\" and cause a \"sharedSiteSession-redirectionPack\"!");
+					logger.warn("Domain: \"" + beforeTargetUrlDomain + "\" was blocked after its url : \"" + previousFromTargetUrl + "\" tried to redirect to targetUrl: \"" + targetUrl + "\" and cause a \"sharedSiteSession-redirectionPack\"!");
 			}
 		}
 
