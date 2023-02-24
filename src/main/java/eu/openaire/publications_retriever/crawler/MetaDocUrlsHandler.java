@@ -19,7 +19,7 @@ public class MetaDocUrlsHandler {
     private static final Logger logger = LoggerFactory.getLogger(MetaDocUrlsHandler.class);
 
     // Order-independent META_DOC_URL-regex.
-    // <meta(?:[^<]*name=\"(?:[^<]*citation_pdf|eprints.document)_url\"[^<]*content=\"(http[^\"]+)\"|[^<]*content=\"(http[^\"]+)\"[^<]*name=\"(?:[^<]*citation_pdf|eprints.document)_url\")[^>]*[/]?>
+    // <meta(?:[^<]*name=\"(?:[^<]*(?:citation|wkhealth)_pdf|eprints.document)_url\"[^<]*content=\"(http[^\"]+)\"|[^<]*content=\"(http[^\"]+)\"[^<]*name=\"(?:[^<]*(?:citation|wkhealth)_pdf|eprints.document)_url\")[^>]*[/]?>
     private static final String metaName = "name=\"(?:[^<]*(?:citation|wkhealth)_pdf|eprints.document)_url\"";
     private static final String metaContent = "content=\"(http[^\"]+)\"";
     public static final Pattern META_DOC_URL = Pattern.compile("<meta(?:[^<]*" + metaName + "[^<]*" + metaContent + "|[^<]*" + metaContent + "[^<]*" + metaName + ")[^>]*[/]?>");
@@ -62,26 +62,28 @@ public class MetaDocUrlsHandler {
     {
         // Check if the docLink is provided in a metaTag and connect to it directly.
         String metaDocUrl = null;
-        if ( (metaDocUrl = getMetaDocUrlFromHTML(pageHtml)) == null ) {
-            logger.warn("Could not retrieve the metaDocUrl, continue by crawling the page..");
+        if ( (metaDocUrl = getMetaDocUrlFromHTML(pageHtml)) == null ) { // This is mostly the case when the page does not have a docUrl.
+            if ( logger.isTraceEnabled() )
+                logger.trace("Could not retrieve the metaDocUrl, continue by crawling the page..");
             return false;   // We don't log the sourceUrl, since it will be handled later.
-        }
-        //logger.debug("MetaDocUrl: " + metaDocUrl);  // DEBUG!
+        } else if ( logger.isTraceEnabled() )
+            logger.trace("MetaDocUrl: " + metaDocUrl);  // DEBUG!
 
         if ( metaDocUrl.equals(pageUrl) || ConnSupportUtils.haveOnlyProtocolDifference(pageUrl, metaDocUrl) || ConnSupportUtils.isJustASlashRedirect(pageUrl, metaDocUrl) ) {
-            logger.warn("The metaDocUrl was found to be the same as the pageUrl! Continue by crawling the page..");
+            logger.debug("The metaDocUrl was found to be the same as the pageUrl! Continue by crawling the page..");
             return false;   // This metaDocUrl cannot be handled, return to "PageCrawler.visit()" to continue.
         }
 
         if ( metaDocUrl.contains("{{") || metaDocUrl.contains("<?") )   // Dynamic link! The only way to handle it is by blocking the "currentPageUrlDomain".
         {
-            logger.warn("The metaDocUrl is a dynamic-link. Abort the process and block the domain of the pageUrl.");
+            if ( logger.isTraceEnabled() )
+                logger.trace("The metaDocUrl is a dynamic-link. Abort the process and block the domain of the pageUrl.");
             // Block the domain and return "true" to indicate handled-state.
             HttpConnUtils.blacklistedDomains.add(pageDomain);
             logger.warn("Domain: \"" + pageDomain + "\" was blocked, after giving a dynamic metaDocUrl: " + metaDocUrl);
             UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was a dynamic-link.", null, true, "true", "true", "false", "false", "false", null, "null");  // We log the source-url, and that was discarded in "PageCrawler.visit()".
             PageCrawler.contentProblematicUrls.incrementAndGet();
-            return true;    // Since the domian is blocked, there is no point in continuing to crawl.
+            return true;    // Since the domain is blocked, there is no point in continuing to crawl.
         }
 
         String lowerCaseMetaDocUrl = metaDocUrl.toLowerCase();
@@ -148,9 +150,7 @@ public class MetaDocUrlsHandler {
                 metaDocUrl = metaDocUrlMatcher.group(2);    // Try the other group.
             } catch ( Exception e ) { logger.error("", e); }
         }
-
         //logger.debug("MetaDocUrl: " + metaDocUrl);	// DEBUG!
-
         return metaDocUrl;	// IT MAY BE NULL.. Handling happens in the caller method.
     }
 }
