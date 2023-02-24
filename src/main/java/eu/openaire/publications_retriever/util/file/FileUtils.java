@@ -342,7 +342,7 @@ public class FileUtils
 	public static synchronized DocFileData storeDocFile(InputStream inStream, String docUrl, String id, String contentDisposition, int contentSize) throws DocFileNotRetrievedException
 	{
 		File docFile;
-		FileOutputStream outStream = null;
+		BufferedOutputStream outStream = null;
 		try {
 			if ( docFileNameType.equals(DocFileNameType.originalName) )
 				docFile = getDocFileWithOriginalFileName(docUrl, contentDisposition);
@@ -352,8 +352,8 @@ public class FileUtils
 				docFile = new File(storeDocFilesDir + (numOfDocFile++) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
 
 			try {
-				outStream = new FileOutputStream(docFile);
-			} catch (FileNotFoundException fnfe) {
+				outStream = new BufferedOutputStream(new FileOutputStream(docFile), mb);
+			} catch (FileNotFoundException fnfe) {	// This may be thrown in the file cannot be created.
 				logger.error("", fnfe);
 				numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 				// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
@@ -367,6 +367,7 @@ public class FileUtils
 				throw new DocFileNotRetrievedException(fnfe.getMessage());
 			}
 
+			inStream = new BufferedInputStream(inStream, mb);
 			int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);
 			int readByte = -1;
 			long startTime = System.nanoTime();
@@ -374,7 +375,7 @@ public class FileUtils
 			{
 				long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
 				if ( (elapsedTime > maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {
-					String errMsg = "Storing docFile from docUrl: \"" + docUrl + "\" is taking over "+ TimeUnit.MILLISECONDS.toSeconds(maxStoringWaitingTime) + "seconds! Aborting..";
+					String errMsg = "Storing docFile from docUrl: \"" + docUrl + "\" is taking over " + TimeUnit.MILLISECONDS.toSeconds(maxStoringWaitingTime) + " seconds! Aborting..";
 					logger.warn(errMsg);
 					try {
 						FileDeleteStrategy.FORCE.delete(docFile);
@@ -562,9 +563,11 @@ public class FileUtils
 	}
 
 
-	static final int fiftyMBInBytes = (50 * 1_048_576);
-	static final int oneHundredMBInBytes = (100 * 1_048_576);
-	static final int threeHundredMBInBytes = (300 * 1_048_576);
+	static final int mb = 1_048_576;
+	static final int fiftyMBInBytes = (50 * mb);
+	static final int oneHundredMBInBytes = (100 * mb);
+	static final int twoHundredMBInBytes = (200 * mb);
+	static final int threeHundredMBInBytes = (300 * mb);
 
 
 	private static int getMaxStoringWaitingTime(int contentSize)
@@ -574,12 +577,14 @@ public class FileUtils
 				return 30_000;	// 30 seconds
 			else if ( contentSize <= oneHundredMBInBytes )
 				return 60_000;	// 1 min.
-			else if ( contentSize <= threeHundredMBInBytes )
+			else if ( contentSize <= twoHundredMBInBytes )
 				return 120_000;	// 2 mins.
-			else
+			else if ( contentSize <= threeHundredMBInBytes )
 				return 180_000;	// 3 mins.
+			else
+				return 300_000;	// 5 mins.
 		}
-		else	// In case the server did not provide
+		else	// In case the server did not provide the "Content Length" header.
 			return 45_000;	// 45 seconds
 	}
 
