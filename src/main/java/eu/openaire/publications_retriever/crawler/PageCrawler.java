@@ -93,6 +93,7 @@ public class PageCrawler
 			logger.warn("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
 			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", null, true, "true", "true", "false", "false", "true", null, "null");
 			LoaderAndChecker.connProblematicUrls.incrementAndGet();
+			// The "bufferedReader" is closed inside the above method.
 			return;
 		}
 		else if ( firstHTMLlineFromDetectedContentType != null ) {

@@ -677,6 +677,7 @@ public class ConnSupportUtils
 	{
 		if ( getContentSize(conn, false) == -1 ) {	// "Unacceptable size"-code..
 			logger.warn("Aborting HTML-extraction for pageUrl: " + conn.getURL().toString());
+			ConnSupportUtils.closeBufferedReader(bufferedReader);	// This page's content-type was auto-detected, and the process fails before re-requesting the conn-inputStream, then make sure we close the last one.
 			return null;
 		}
 
