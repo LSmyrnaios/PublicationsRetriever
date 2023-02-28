@@ -371,8 +371,8 @@ public class PublicationsRetriever
 		logger.info("Total " + targetUrlType + "s found: " + UrlUtils.sumOfDocUrlsFound + ". That's about: " + df.format(UrlUtils.sumOfDocUrlsFound.get() * 100.0 / inputCheckedUrlNum) + "% from the total numOfUrls checked. The rest were problematic or non-handleable url-cases.");
 		if ( FileUtils.shouldDownloadDocFiles ) {
 			int numOfStoredDocFiles = 0;
-			if ( !FileUtils.docFileNameType.equals(FileUtils.DocFileNameType.numberName) )	// If we have anything than the numberName-type..
-				numOfStoredDocFiles = FileUtils.numOfDocFile;
+			if ( !FileUtils.docFileNameType.equals(FileUtils.DocFileNameType.numberName) )	// If we have anything different from the numberName-type..
+				numOfStoredDocFiles = FileUtils.numOfDocFiles.get();
 			else
 				numOfStoredDocFiles = FileUtils.numOfDocFile - initialNumOfDocFile;
 			logger.info("From which docUrls, we were able to retrieve: " + numOfStoredDocFiles + " distinct docFiles. That's about: " + df.format(numOfStoredDocFiles * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "%."

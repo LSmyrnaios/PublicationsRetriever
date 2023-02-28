@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -328,6 +329,98 @@ public class FileUtils
 	}
 
 
+	public static final AtomicInteger numOfDocFiles = new AtomicInteger(0);
+
+
+	public static DocFileData storeDocFileWithIdOrOriginalFileName(InputStream inStream, String docUrl, String id, String contentDisposition, int contentSize) throws DocFileNotRetrievedException
+	{
+		File docFile;
+		BufferedOutputStream outStream = null;
+		try {
+			if ( docFileNameType.equals(DocFileNameType.idName) )
+				docFile = getDocFileNameAndHandleExisting(id, ".pdf", false);    // TODO - Later, on different fileTypes, take care of the extension properly.
+			else if ( docFileNameType.equals(DocFileNameType.originalName) )
+				docFile = getDocFileWithOriginalFileName(docUrl, contentDisposition);
+			else
+				throw new DocFileNotRetrievedException("The 'docFileNameType' was invalid: " + docFileNameType);
+
+			try {
+				outStream = new BufferedOutputStream(new FileOutputStream(docFile), fiveMb);
+			} catch (FileNotFoundException fnfe) {	// This may be thrown in the file cannot be created.
+				logger.error("", fnfe);
+				// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
+				// So the empty file may exist, but we will also get the "FileNotFoundException".
+				try {
+					if ( docFile.exists() )
+						FileDeleteStrategy.FORCE.delete(docFile);
+				} catch (Exception e) {
+					logger.error("Error when deleting the half-created file from docUrl: " + docUrl);
+				}
+				throw new DocFileNotRetrievedException(fnfe.getMessage());
+			}
+
+			numOfDocFiles.incrementAndGet();
+
+			inStream = new BufferedInputStream(inStream, fiveMb);
+			int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);
+			int readByte = -1;
+			long startTime = System.nanoTime();
+			while ( (readByte = inStream.read()) != -1 )
+			{
+				long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
+				if ( (elapsedTime > maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {
+					String errMsg = "Storing docFile from docUrl: \"" + docUrl + "\" is taking over " + TimeUnit.MILLISECONDS.toSeconds(maxStoringWaitingTime) + " seconds! Aborting..";
+					logger.warn(errMsg);
+					try {
+						FileDeleteStrategy.FORCE.delete(docFile);
+					} catch (Exception e) {
+						logger.error("Error when deleting the half-retrieved file from docUrl: " + docUrl);
+					}
+					numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved.
+					throw new DocFileNotRetrievedException(errMsg);
+				} else
+					outStream.write(readByte);
+			}
+			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
+
+			DocFileData docFileData;
+			if ( shouldUploadFilesToS3 ) {
+				docFileData = S3ObjectStore.uploadToS3(docFile.getName(), docFile.getAbsolutePath());
+				if ( docFileData != null ) {    // Otherwise, the returned object will be null.
+					docFileData.setDocFile(docFile);
+					// In the S3 case, we use IDs or increment-numbers as the names, so no duplicate-overwrite should be a problem here.
+					// as we delete the local files and the online tool just overwrites the file, without responding if it was overwritten.
+					// So if the other naming methods were used with S3, we would have to check if the file existed online and then rename of needed and upload back.
+				} else
+					numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
+			} else
+				docFileData = new DocFileData(docFile, null, null, ((FileUtils.shouldLogFullPathName) ? docFile.getAbsolutePath() : docFile.getName()));
+
+			// TODO - HOW TO SPOT DUPLICATE-NAMES IN THE S3 MODE?
+			// The local files are deleted after uploaded.. (as they should be)
+			// So we will be uploading files with the same filename-KEY.. in that case, they get overwritten.
+			// An option would be to check if an object already exists, then increment a number and upload the object.
+			// From that moment forward, the number will be stored in memory along with the fileKeyName, just like with "originalNames", so next time no online check should be needed..!
+			// Of-course the above fast-check algorithm would work only if the bucket was created or filled for the first time, from this program, in a single machine.
+			// Otherwise, a file-key-name (with incremented number-string) might already exist, from a previous or parallel upload from another run and so it will be overwritten!
+
+			return docFileData;	// It may be null.
+
+		} catch (DocFileNotRetrievedException dfnre) {
+			throw dfnre;	// No reversion of the number needed.
+		} catch (IOException ioe) {
+			numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved.
+			throw new DocFileNotRetrievedException(ioe.getMessage());
+		} catch (Exception e) {
+			numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved.
+			logger.error("", e);
+			throw new DocFileNotRetrievedException(e.getMessage());
+		} finally {
+			closeStreams(inStream, outStream);
+		}
+	}
+
+
 	/**
 	 * This method is responsible for storing the docFiles and store them in permanent storage.
 	 * It is synchronized, in order to avoid files' numbering inconsistency.
@@ -339,17 +432,12 @@ public class FileUtils
 	 * @param contentSize
 	 * @throws DocFileNotRetrievedException
 	 */
-	public static synchronized DocFileData storeDocFile(InputStream inStream, String docUrl, String id, String contentDisposition, int contentSize) throws DocFileNotRetrievedException
+	public static synchronized DocFileData storeDocFileWithNumberName(InputStream inStream, String docUrl, String id, String contentDisposition, int contentSize) throws DocFileNotRetrievedException
 	{
-		File docFile;
 		BufferedOutputStream outStream = null;
 		try {
-			if ( docFileNameType.equals(DocFileNameType.idName) )
-				docFile = getDocFileNameAndHandleExisting(id, ".pdf", false);	// TODO - Later, on different fileTypes, take care of the extension properly.
-			else if ( docFileNameType.equals(DocFileNameType.originalName) )
-				docFile = getDocFileWithOriginalFileName(docUrl, contentDisposition);
-			else	// "numberName"
-				docFile = new File(storeDocFilesDir + (numOfDocFile++) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
+			File docFile = new File(storeDocFilesDir + (numOfDocFile++) + ".pdf");	// First use the "numOfDocFile" and then increment it.
+			// TODO - Later, on different fileTypes, take care of the extension properly.
 
 			try {
 				outStream = new BufferedOutputStream(new FileOutputStream(docFile), fiveMb);
@@ -422,18 +510,7 @@ public class FileUtils
 			logger.error("", e);
 			throw new DocFileNotRetrievedException(e.getMessage());
 		} finally {
-			try {
-				if ( inStream != null )
-					inStream.close();
-			} catch (Exception e) {
-				logger.error("", e);
-			}
-			try {
-				if ( outStream != null )
-					outStream.close();
-			} catch (Exception e) {
-				logger.error("", e);
-			}
+			closeStreams(inStream, outStream);
 		}
 	}
 
@@ -550,7 +627,6 @@ public class FileUtils
 					}
 				}
 			}
-			FileUtils.numOfDocFile ++;	// This is applied only if none exception is thrown, so in case of an exception, we don't have to revert the incremented value.
 			return docFile;
 
 		} catch (DocFileNotRetrievedException dfnre) {
@@ -559,6 +635,22 @@ public class FileUtils
 			String errMsg = "Error when handling the fileName = \"" + docFileName + "\" and dotFileExtension = \"" + dotFileExtension + "\"!";
 			logger.error(errMsg, e);
 			throw new DocFileNotRetrievedException(errMsg);
+		}
+	}
+
+
+	private static void closeStreams(InputStream inStream, BufferedOutputStream outStream) {
+		try {
+			if ( inStream != null )
+				inStream.close();
+		} catch (Exception e) {
+			logger.error("", e);
+		}
+		try {
+			if ( outStream != null )
+				outStream.close();
+		} catch (Exception e) {
+			logger.error("", e);
 		}
 	}
 

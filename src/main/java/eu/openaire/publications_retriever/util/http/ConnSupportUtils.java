@@ -309,7 +309,12 @@ public class ConnSupportUtils
 				throw new DocFileNotRetrievedException("The HTTP-reported size of this file was unacceptable!");
 
 			// Write the downloaded bytes to the docFile and return the docFileName.
-			DocFileData docFileData = FileUtils.storeDocFile(conn.getInputStream(), docUrl, id, conn.getHeaderField("Content-Disposition"), contentSize);
+			DocFileData docFileData =  null;
+			if ( FileUtils.docFileNameType.equals(FileUtils.DocFileNameType.numberName) )
+				docFileData = FileUtils.storeDocFileWithNumberName(conn.getInputStream(), docUrl, id, conn.getHeaderField("Content-Disposition"), contentSize);
+			else
+				docFileData = FileUtils.storeDocFileWithIdOrOriginalFileName(conn.getInputStream(), docUrl, id, conn.getHeaderField("Content-Disposition"), contentSize);
+
 			if ( docFileData == null ) {
 				String errMsg = "The file could not be " + (FileUtils.shouldUploadFilesToS3 ? "uploaded to S3" : "downloaded") + " from the docUrl " + docUrl;
 				logger.warn(errMsg);
