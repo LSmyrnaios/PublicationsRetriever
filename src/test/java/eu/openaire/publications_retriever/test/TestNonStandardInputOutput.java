@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -229,9 +230,9 @@ public class TestNonStandardInputOutput  {
 				if ( PublicationsRetriever.inputFromUrl )
 					PublicationsRetriever.inputStream = ConnSupportUtils.getInputStreamFromInputDataUrl();
 				else
-					PublicationsRetriever.inputStream = new FileInputStream(inputFile);
+					PublicationsRetriever.inputStream = new BufferedInputStream(new FileInputStream(inputFile), FileUtils.fiveMb);
 			} else {
-				try ( Stream<String> linesStream = Files.lines(Paths.get(PublicationsRetriever.inputFileFullPath)) ) {
+				try ( Stream<String> linesStream = Files.lines(Paths.get(PublicationsRetriever.inputFileFullPath), StandardCharsets.UTF_8) ) {
 					FileUtils.numOfLines = linesStream.count();
 					logger.info("The numOfLines in the inputFile is " + FileUtils.numOfLines);
 				} catch (IOException ioe) {
@@ -256,7 +257,7 @@ public class TestNonStandardInputOutput  {
 					outputFile = new File(path + "results_" + inputFileName);
 			}
 
-			new FileUtils(PublicationsRetriever.inputStream, new FileOutputStream(outputFile));
+			new FileUtils(PublicationsRetriever.inputStream, new BufferedOutputStream(new FileOutputStream(outputFile), FileUtils.fiveMb));
 
 			setTypeOfInputData();
 

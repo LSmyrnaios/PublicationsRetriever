@@ -84,7 +84,7 @@ public class PublicationsRetriever
 			if ( PublicationsRetriever.inputFromUrl )
 				PublicationsRetriever.inputStream = ConnSupportUtils.getInputStreamFromInputDataUrl();
 			else
-				PublicationsRetriever.inputStream = System.in;
+				PublicationsRetriever.inputStream = new BufferedInputStream(System.in, FileUtils.fiveMb);
 		} else {
 			try ( Stream<String> linesStream = Files.lines(Paths.get(PublicationsRetriever.inputFileFullPath)) ) {
 				FileUtils.numOfLines = linesStream.count();
@@ -203,7 +203,7 @@ public class PublicationsRetriever
 							inputFileFullPath = System.getProperty("user.dir") + File.separator + inputFileFullPath;	// In case the given path starts with "..", then this also works.
 						}
 						try {
-							inputStream = new FileInputStream(inputFileFullPath);
+							inputStream = new BufferedInputStream(new FileInputStream(inputFileFullPath), FileUtils.fiveMb);
 						} catch (FileNotFoundException fnfe) {
 							String errMessage = "No inputFile was found in \"" + inputFileFullPath + "\"";
 							logger.error(errMessage);

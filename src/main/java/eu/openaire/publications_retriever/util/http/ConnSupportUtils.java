@@ -681,7 +681,7 @@ public class ConnSupportUtils
 			htmlStrB = htmlStrBuilder.get();
 		}
 
-		try (BufferedReader br = (bufferedReader != null ? bufferedReader : new BufferedReader(new InputStreamReader(conn.getInputStream()))) )	// Try-with-resources
+		try (BufferedReader br = (bufferedReader != null ? bufferedReader : new BufferedReader(new InputStreamReader(conn.getInputStream()), FileUtils.fiveMb)) )	// Try-with-resources
 		{
 			String inputLine;
 			while ( (inputLine = br.readLine()) != null )
@@ -789,8 +789,9 @@ public class ConnSupportUtils
 			return null;
 		}
 
+		BufferedReader br = null;
 		try {
-			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+			br = new BufferedReader(new InputStreamReader(conn.getInputStream()), FileUtils.fiveMb);
 			String inputLine;
 
 			// Skip empty lines in the beginning of the HTML-code
@@ -812,17 +813,25 @@ public class ConnSupportUtils
 			if ( HTML_STRING_MATCH.matcher(lowerCaseInputLine).matches() )
 				return new DetectedContentType("html", inputLine, br);
 			else {
-				br.close();	// We close the stream here, since if we got a pdf we should reconnect in order to get the very first bytes (we don't read "lines" when downloading PDFs).
+				try {
+					br.close();	// We close the stream here, since if we got a pdf we should reconnect in order to get the very first bytes (we don't read "lines" when downloading PDFs).
+				} catch (IOException ignored) {}
 				if ( lowerCaseInputLine.startsWith("%pdf-", 0) )	// After the "-", the pdf-specification version follows (e.g. "%pdf-1.6").
 					return new DetectedContentType("pdf", null, null);	// For PDFs we just going to re-connect in order to download the, since we read plain bytes for them and not String-lines, so we re-connect just to be sure we don't corrupt them.
 				else
 					return new DetectedContentType("undefined", inputLine, null);
 			}
-		} catch ( IOException ioe ) {
-			logger.error("IOException when retrieving the HTML-code: " + ioe.getMessage());
-			return null;
-		} catch ( Exception e ) {
-			logger.error("", e);
+		} catch (Exception e) {
+			if ( e instanceof IOException )
+				logger.error("IOException when retrieving the HTML-code: " + e.getMessage());
+			else
+				logger.error("", e);
+
+			if ( br != null ) {
+				try {
+					br.close();
+				} catch (IOException ignored) {}
+			}
 			return null;
 		}
 	}
@@ -976,7 +985,7 @@ public class ConnSupportUtils
 				System.exit(56);
 			}
 
-			inputStream = conn.getInputStream();
+			inputStream = new BufferedInputStream(conn.getInputStream(), FileUtils.fiveMb);
 
 		} catch (Exception e) {
 			String errorMessage = "Unexpected error when retrieving the input-stream from the inputDataUrl:\n" + e.getMessage();
