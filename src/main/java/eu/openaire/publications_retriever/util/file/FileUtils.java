@@ -344,15 +344,15 @@ public class FileUtils
 		File docFile;
 		BufferedOutputStream outStream = null;
 		try {
-			if ( docFileNameType.equals(DocFileNameType.originalName) )
-				docFile = getDocFileWithOriginalFileName(docUrl, contentDisposition);
-			else if ( docFileNameType.equals(DocFileNameType.idName) )
+			if ( docFileNameType.equals(DocFileNameType.idName) )
 				docFile = getDocFileNameAndHandleExisting(id, ".pdf", false);	// TODO - Later, on different fileTypes, take care of the extension properly.
+			else if ( docFileNameType.equals(DocFileNameType.originalName) )
+				docFile = getDocFileWithOriginalFileName(docUrl, contentDisposition);
 			else	// "numberName"
 				docFile = new File(storeDocFilesDir + (numOfDocFile++) + ".pdf");	// TODO - Later, on different fileTypes, take care of the extension properly.
 
 			try {
-				outStream = new BufferedOutputStream(new FileOutputStream(docFile), mb);
+				outStream = new BufferedOutputStream(new FileOutputStream(docFile), fiveMb);
 			} catch (FileNotFoundException fnfe) {	// This may be thrown in the file cannot be created.
 				logger.error("", fnfe);
 				numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
@@ -367,7 +367,7 @@ public class FileUtils
 				throw new DocFileNotRetrievedException(fnfe.getMessage());
 			}
 
-			inStream = new BufferedInputStream(inStream, mb);
+			inStream = new BufferedInputStream(inStream, fiveMb);
 			int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);
 			int readByte = -1;
 			long startTime = System.nanoTime();
@@ -564,6 +564,9 @@ public class FileUtils
 
 
 	static final int mb = 1_048_576;
+
+	static final int fiveMb = 5 * mb;
+
 	static final int fiftyMBInBytes = (50 * mb);
 	static final int oneHundredMBInBytes = (100 * mb);
 	static final int twoHundredMBInBytes = (200 * mb);
