@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.HttpURLConnection;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -332,36 +333,21 @@ public class FileUtils
 	public static final AtomicInteger numOfDocFiles = new AtomicInteger(0);
 
 
-	public static DocFileData storeDocFileWithIdOrOriginalFileName(InputStream inStream, String docUrl, String id, String contentDisposition, int contentSize) throws DocFileNotRetrievedException
+	public static DocFileData storeDocFileWithIdOrOriginalFileName(HttpURLConnection conn, String docUrl, String id, int contentSize) throws DocFileNotRetrievedException
 	{
 		File docFile;
-		BufferedOutputStream outStream = null;
-		try {
-			if ( docFileNameType.equals(DocFileNameType.idName) )
-				docFile = getDocFileNameAndHandleExisting(id, ".pdf", false);    // TODO - Later, on different fileTypes, take care of the extension properly.
-			else if ( docFileNameType.equals(DocFileNameType.originalName) )
-				docFile = getDocFileWithOriginalFileName(docUrl, contentDisposition);
-			else
-				throw new DocFileNotRetrievedException("The 'docFileNameType' was invalid: " + docFileNameType);
+		if ( docFileNameType.equals(DocFileNameType.idName) )
+			docFile = getDocFileNameAndHandleExisting(id, ".pdf", false);    // TODO - Later, on different fileTypes, take care of the extension properly.
+		else if ( docFileNameType.equals(DocFileNameType.originalName) )
+			docFile = getDocFileWithOriginalFileName(docUrl, conn.getHeaderField("Content-Disposition"));
+		else
+			throw new DocFileNotRetrievedException("The 'docFileNameType' was invalid: " + docFileNameType);
 
-			try {
-				outStream = new BufferedOutputStream(new FileOutputStream(docFile), fiveMb);
-			} catch (FileNotFoundException fnfe) {	// This may be thrown in the file cannot be created.
-				logger.error("", fnfe);
-				// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
-				// So the empty file may exist, but we will also get the "FileNotFoundException".
-				try {
-					if ( docFile.exists() )
-						FileDeleteStrategy.FORCE.delete(docFile);
-				} catch (Exception e) {
-					logger.error("Error when deleting the half-created file from docUrl: " + docUrl);
-				}
-				throw new DocFileNotRetrievedException(fnfe.getMessage());
-			}
+		numOfDocFiles.incrementAndGet();
 
-			numOfDocFiles.incrementAndGet();
-
-			inStream = new BufferedInputStream(inStream, fiveMb);
+		try ( BufferedInputStream inStream = new BufferedInputStream(conn.getInputStream(), fiveMb);
+			  BufferedOutputStream outStream = new BufferedOutputStream(new FileOutputStream(docFile), fiveMb) )
+		{
 			int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);
 			int readByte = -1;
 			long startTime = System.nanoTime();
@@ -408,6 +394,18 @@ public class FileUtils
 
 		} catch (DocFileNotRetrievedException dfnre) {
 			throw dfnre;	// No reversion of the number needed.
+		} catch (FileNotFoundException fnfe) {	// This may be thrown in case the file cannot be created.
+			logger.error("", fnfe);
+			numOfDocFiles.decrementAndGet();
+			// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
+			// So the empty file may exist, but we will also get the "FileNotFoundException".
+			try {
+				if ( docFile.exists() )
+					FileDeleteStrategy.FORCE.delete(docFile);
+			} catch (Exception e) {
+				logger.error("Error when deleting the half-created file from docUrl: " + docUrl);
+			}
+			throw new DocFileNotRetrievedException(fnfe.getMessage());
 		} catch (IOException ioe) {
 			numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved.
 			throw new DocFileNotRetrievedException(ioe.getMessage());
@@ -415,8 +413,6 @@ public class FileUtils
 			numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved.
 			logger.error("", e);
 			throw new DocFileNotRetrievedException(e.getMessage());
-		} finally {
-			closeStreams(inStream, outStream);
 		}
 	}
 
@@ -425,37 +421,19 @@ public class FileUtils
 	 * This method is responsible for storing the docFiles and store them in permanent storage.
 	 * It is synchronized, in order to avoid files' numbering inconsistency.
 	 *
-	 * @param inStream
+	 * @param conn
 	 * @param docUrl
-	 * @param id
-	 * @param contentDisposition
 	 * @param contentSize
 	 * @throws DocFileNotRetrievedException
 	 */
-	public static synchronized DocFileData storeDocFileWithNumberName(InputStream inStream, String docUrl, String id, String contentDisposition, int contentSize) throws DocFileNotRetrievedException
+	public static synchronized DocFileData storeDocFileWithNumberName(HttpURLConnection conn, String docUrl, int contentSize) throws DocFileNotRetrievedException
 	{
-		BufferedOutputStream outStream = null;
-		try {
-			File docFile = new File(storeDocFilesDir + (numOfDocFile++) + ".pdf");	// First use the "numOfDocFile" and then increment it.
-			// TODO - Later, on different fileTypes, take care of the extension properly.
+		File docFile = new File(storeDocFilesDir + (numOfDocFile++) + ".pdf");	// First use the "numOfDocFile" and then increment it.
+		// TODO - Later, on different fileTypes, take care of the extension properly.
 
-			try {
-				outStream = new BufferedOutputStream(new FileOutputStream(docFile), fiveMb);
-			} catch (FileNotFoundException fnfe) {	// This may be thrown in the file cannot be created.
-				logger.error("", fnfe);
-				numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
-				// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
-				// So the empty file may exist, but we will also get the "FileNotFoundException".
-				try {
-					if ( docFile.exists() )
-						FileDeleteStrategy.FORCE.delete(docFile);
-				} catch (Exception e) {
-					logger.error("Error when deleting the half-created file from docUrl: " + docUrl);
-				}
-				throw new DocFileNotRetrievedException(fnfe.getMessage());
-			}
-
-			inStream = new BufferedInputStream(inStream, fiveMb);
+		try ( BufferedInputStream inStream = new BufferedInputStream(conn.getInputStream(), fiveMb);
+			BufferedOutputStream outStream = new BufferedOutputStream(new FileOutputStream(docFile), fiveMb))
+		{
 			int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);
 			int readByte = -1;
 			long startTime = System.nanoTime();
@@ -502,6 +480,18 @@ public class FileUtils
 			
 		} catch (DocFileNotRetrievedException dfnre) {
 			throw dfnre;	// No reversion of the number needed.
+		} catch (FileNotFoundException fnfe) {	// This may be thrown in the file cannot be created.
+			logger.error("", fnfe);
+			numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
+			// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
+			// So the empty file may exist, but we will also get the "FileNotFoundException".
+			try {
+				if ( docFile.exists() )
+					FileDeleteStrategy.FORCE.delete(docFile);
+			} catch (Exception e) {
+				logger.error("Error when deleting the half-created file from docUrl: " + docUrl);
+			}
+			throw new DocFileNotRetrievedException(fnfe.getMessage());
 		} catch (IOException ioe) {
 			numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 			throw new DocFileNotRetrievedException(ioe.getMessage());
@@ -509,8 +499,6 @@ public class FileUtils
 			numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 			logger.error("", e);
 			throw new DocFileNotRetrievedException(e.getMessage());
-		} finally {
-			closeStreams(inStream, outStream);
 		}
 	}
 
@@ -635,22 +623,6 @@ public class FileUtils
 			String errMsg = "Error when handling the fileName = \"" + docFileName + "\" and dotFileExtension = \"" + dotFileExtension + "\"!";
 			logger.error(errMsg, e);
 			throw new DocFileNotRetrievedException(errMsg);
-		}
-	}
-
-
-	private static void closeStreams(InputStream inStream, BufferedOutputStream outStream) {
-		try {
-			if ( inStream != null )
-				inStream.close();
-		} catch (Exception e) {
-			logger.error("", e);
-		}
-		try {
-			if ( outStream != null )
-				outStream.close();
-		} catch (Exception e) {
-			logger.error("", e);
 		}
 	}
 

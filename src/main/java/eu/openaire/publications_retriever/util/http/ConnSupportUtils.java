@@ -291,7 +291,7 @@ public class ConnSupportUtils
 	{
 		boolean reconnected = false;
 		try {
-			if ( conn.getRequestMethod().equals("HEAD") ) {    // If the connection happened with "HEAD" we have to re-connect with "GET" to download the docFile
+			if ( conn.getRequestMethod().equals("HEAD") ) {    // If the connection happened with "HEAD" we have to re-connect with "GET" to download the docFile.
 				// No call of "conn.disconnect()" here, as we will connect to the same server.
 				conn = HttpConnUtils.openHttpConnection(docUrl, domainStr, false, true);
 				reconnected = true;
@@ -311,9 +311,9 @@ public class ConnSupportUtils
 			// Write the downloaded bytes to the docFile and return the docFileName.
 			DocFileData docFileData =  null;
 			if ( FileUtils.docFileNameType.equals(FileUtils.DocFileNameType.numberName) )
-				docFileData = FileUtils.storeDocFileWithNumberName(conn.getInputStream(), docUrl, id, conn.getHeaderField("Content-Disposition"), contentSize);
+				docFileData = FileUtils.storeDocFileWithNumberName(conn, docUrl, contentSize);
 			else
-				docFileData = FileUtils.storeDocFileWithIdOrOriginalFileName(conn.getInputStream(), docUrl, id, conn.getHeaderField("Content-Disposition"), contentSize);
+				docFileData = FileUtils.storeDocFileWithIdOrOriginalFileName(conn, docUrl, id, contentSize);
 
 			if ( docFileData == null ) {
 				String errMsg = "The file could not be " + (FileUtils.shouldUploadFilesToS3 ? "uploaded to S3" : "downloaded") + " from the docUrl " + docUrl;
