@@ -143,7 +143,8 @@ public class HttpConnUtils
 					bufferedReader = (BufferedReader) detectionList.get(3);	// This can be reused when getting the html of the page.
 					calledForPossibleDocOrDatasetUrl = (boolean) detectionList.get(4);
 					//logger.debug(mimeType); logger.debug(String.valueOf(foundDetectedContentType)); logger.debug(firstHtmlLine); logger.debug(String.valueOf(bufferedReader)); logger.debug(String.valueOf(calledForPossibleDocUrl));	// DEBUG!
-				}
+				} else
+					contentDisposition = contentDisposition.toLowerCase();
 			}
 
 			String lowerCaseMimeType = mimeType;

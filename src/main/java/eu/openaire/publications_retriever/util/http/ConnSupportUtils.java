@@ -149,16 +149,18 @@ public class ConnSupportUtils
 		{	// The "mimeType" here is in lowercase
 			if ( mimeType.contains("system.io.fileinfo") ) {	// Check this out: "http://www.esocialsciences.org/Download/repecDownload.aspx?fname=Document110112009530.6423303.pdf&fcategory=Articles&AId=2279&fref=repec", ιt has: "System.IO.FileInfo".
 				// In this case, we want first to try the "Content-Disposition", as it's more trustworthy. If that's not available, use the urlStr as the last resort.
-				if ( conn != null )	// Just to be sure we avoid an NPE.
+				if ( conn != null ) {    // Just to be sure we avoid an NPE.
 					contentDisposition = conn.getHeaderField("Content-Disposition");
-				// The "contentDisposition" will be definitely "null", since "mimeType != null" and so, the "contentDisposition" will not have been retrieved by the caller method.
-				
-				if ( (contentDisposition != null) && !contentDisposition.equals("attachment") )
-					typeToReturn = contentDisposition.toLowerCase().contains("pdf") ? "document" : null;	// TODO - add more types as needed. Check: "http://www.esocialsciences.org/Download/repecDownload.aspx?qs=Uqn/rN48N8UOPcbSXUd2VFI+dpOD3MDPRfIL8B3DH+6L18eo/yEvpYEkgi9upp2t8kGzrjsWQHUl44vSn/l7Uc1SILR5pVtxv8VYECXSc8pKLF6QJn6MioA5dafPj/8GshHBvLyCex2df4aviMvImCZpwMHvKoPiO+4B7yHRb97u1IHg45E+Z6ai0Z/0vacWHoCsNT9O4FNZKMsSzen2Cw=="
-				else
-					typeToReturn = urlStr.toLowerCase().contains("pdf") ? "document" : null;
-
-				return typeToReturn;
+					// The "contentDisposition" will be definitely "null", since "mimeType != null" and so, the "contentDisposition" will not have been retrieved by the caller method.
+					if ( (contentDisposition != null) ) {
+						contentDisposition = contentDisposition.toLowerCase();
+						if ( !contentDisposition.equals("attachment") )
+							typeToReturn = contentDisposition.contains("pdf") ? "document" : null;    // TODO - add more types as needed. Check: "http://www.esocialsciences.org/Download/repecDownload.aspx?qs=Uqn/rN48N8UOPcbSXUd2VFI+dpOD3MDPRfIL8B3DH+6L18eo/yEvpYEkgi9upp2t8kGzrjsWQHUl44vSn/l7Uc1SILR5pVtxv8VYECXSc8pKLF6QJn6MioA5dafPj/8GshHBvLyCex2df4aviMvImCZpwMHvKoPiO+4B7yHRb97u1IHg45E+Z6ai0Z/0vacWHoCsNT9O4FNZKMsSzen2Cw=="
+					}
+					else
+						typeToReturn = urlStr.toLowerCase().contains("pdf") ? "document" : null;
+				}
+				return typeToReturn;	// It may be null.
 			}
 
 			String plainMimeType = mimeType;	// Make sure we don't cause any NPE later on..
@@ -189,34 +191,46 @@ public class ConnSupportUtils
 			else if ( POSSIBLE_DOC_OR_DATASET_MIME_TYPE.matcher(plainMimeType).matches() )
 			{
 				contentDisposition = conn.getHeaderField("Content-Disposition");
-				if ( (contentDisposition != null) && !contentDisposition.equals("attachment") )	// It may be "attachment" but also be a pdf.. but we have to check if the "pdf" exists inside the url-string.
-				{
-					String lowerCaseContentDisposition = contentDisposition.toLowerCase();
-					if ( lowerCaseContentDisposition.contains("pdf") )
-						typeToReturn = "document";
-					else {
-						String clearContentDisposition = StringUtils.replace(lowerCaseContentDisposition, "\"", "", -1);
-						if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
-							typeToReturn = "dataset";
+				if ( (contentDisposition != null) ) {
+					contentDisposition = contentDisposition.toLowerCase();
+					if ( !contentDisposition.equals("attachment") )    // It may be "attachment" but also be a pdf.. but we have to check if the "pdf" exists inside the url-string.
+					{
+						if ( contentDisposition.contains("pdf") )
+							typeToReturn = "document";
+						else {
+							String clearContentDisposition = StringUtils.replace(contentDisposition, "\"", "", -1);
+							clearContentDisposition = StringUtils.replace(clearContentDisposition, "'", "", -1);
+							if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
+								typeToReturn = "dataset";
+						}
+						return typeToReturn;
 					}
 				}
-				else {
-					lowerCaseUrl = urlStr.toLowerCase();
-					if ( lowerCaseUrl.contains("pdf") )
-						typeToReturn = "document";
-					else if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(lowerCaseUrl).matches() )
-						typeToReturn = "dataset";
-				}
+				// In case the content-disposition is null or "attachement", check the url.
+				lowerCaseUrl = urlStr.toLowerCase();
+				if ( lowerCaseUrl.contains("pdf") )
+					typeToReturn = "document";
+				else if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(lowerCaseUrl).matches() )
+					typeToReturn = "dataset";
 			}	// TODO - When we will accept more docTypes, match it also against other docTypes, not just "pdf".
+			else {	// This url is going to be classified as a "page", so do one last check, if the content-disposition refers to a doc-file.
+				// The domain "bib.irb.hr" and possibly others as well, classify their full-texts as "html-pages" in the "content-type", but their "Content-Disposition" says there's a "filename.pdf", which is true.
+				if ( conn != null ) {    // Just to be sure we avoid an NPE.
+					contentDisposition = conn.getHeaderField("Content-Disposition");    // The "contentDisposition" will be definitely "null", since "mimeType != null" and so, the "contentDisposition" will not have been retrieved by the caller method.
+					if ( (contentDisposition != null) && contentDisposition.toLowerCase().contains("pdf") )
+						typeToReturn = "document";
+				}
+			}
+
 			return typeToReturn;	// Default is "null".
 		}
-		else if ( (contentDisposition != null) && !contentDisposition.equals("attachment") ) {	// If the mimeType was not retrieved, then try the "Content Disposition".
+		else if ( (contentDisposition != null) && !contentDisposition.equals("attachment") ) {	// If the mimeType was not retrieved, then try the "Content Disposition", which is already in "lowerCase".
 			// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
-			String lowerCaseContentDisposition = contentDisposition.toLowerCase();
-			if ( lowerCaseContentDisposition.contains("pdf") )
+			if ( contentDisposition.contains("pdf") )
 				typeToReturn = "document";
 			else {
-				String clearContentDisposition = StringUtils.replace(lowerCaseContentDisposition, "\"", "", -1);
+				String clearContentDisposition = StringUtils.replace(contentDisposition, "\"", "", -1);
+				clearContentDisposition = StringUtils.replace(clearContentDisposition, "'", "", -1);
 				if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
 					typeToReturn = "dataset";
 			}
