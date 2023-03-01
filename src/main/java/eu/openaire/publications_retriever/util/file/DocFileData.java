@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.nio.file.Paths;
 
 public class DocFileData {
@@ -17,12 +18,28 @@ public class DocFileData {
     private Long size;
     private String location;
 
+    private FileOutputStream fileOutputStream;
+
+
+    public DocFileData(File docFile, String hash, Long size, String location, FileOutputStream fileOutputStream) {
+        this.docFile = docFile;
+        this.hash = hash;
+        this.size = size;
+        this.location = location;
+        this.fileOutputStream = fileOutputStream;
+    }
+
 
     public DocFileData(File docFile, String hash, Long size, String location) {
         this.docFile = docFile;
         this.hash = hash;
         this.size = size;
         this.location = location;
+    }
+
+    public DocFileData(File docFile, FileOutputStream fileOutputStream) {
+        this.docFile = docFile;
+        this.fileOutputStream = fileOutputStream;
     }
 
     public File getDocFile() {
@@ -77,6 +94,14 @@ public class DocFileData {
         this.location = location;
     }
 
+    public FileOutputStream getFileOutputStream() {
+        return fileOutputStream;
+    }
+
+    public void setFileOutputStream(FileOutputStream fileOutputStream) {
+        this.fileOutputStream = fileOutputStream;
+    }
+
     @Override
     public String toString() {
         return "DocFileData{" +
@@ -84,6 +109,7 @@ public class DocFileData {
                 ", hash='" + hash + '\'' +
                 ", size=" + size +
                 ", location='" + location + '\'' +
+                ", fileOutputStream=" + fileOutputStream +
                 '}';
     }
 }

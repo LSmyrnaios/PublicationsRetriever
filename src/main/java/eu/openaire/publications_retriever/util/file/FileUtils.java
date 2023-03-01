@@ -22,6 +22,8 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -53,9 +55,9 @@ public class FileUtils
 
 	public static final List<DataToBeLogged> dataToBeLoggedList = Collections.synchronizedList(new ArrayList<>(jsonBatchSize));
 	
-	public static final Hashtable<String, Integer> numbersOfDuplicateDocFileNames = new Hashtable<>();	// Holds docFileNa,es with their duplicatesNum.
+	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<>();	// Holds docFileNames with their duplicatesNum.
 	// If we use the above without external synchronization, then the "ConcurrentHashMap" should be used instead.
-	
+
 	public static boolean shouldDownloadDocFiles = false;	// It will be set to "true" if the related command-line-argument is given.
 	public static boolean shouldUploadFilesToS3 = false;	// Should we upload the files to S3 ObjectStore? Otherwise, they will be stored locally.
 	public static boolean shouldDeleteOlderDocFiles = false;	// Should we delete any older stored docFiles? This is useful for testing.
@@ -332,21 +334,23 @@ public class FileUtils
 
 	public static final AtomicInteger numOfDocFiles = new AtomicInteger(0);
 
-
 	public static DocFileData storeDocFileWithIdOrOriginalFileName(HttpURLConnection conn, String docUrl, String id, int contentSize) throws DocFileNotRetrievedException
 	{
-		File docFile;
+		DocFileData docFileData;
 		if ( docFileNameType.equals(DocFileNameType.idName) )
-			docFile = getDocFileNameAndHandleExisting(id, ".pdf", false);    // TODO - Later, on different fileTypes, take care of the extension properly.
+			docFileData = getDocFileAndHandleExisting(id, ".pdf", false);    // TODO - Later, on different fileTypes, take care of the extension properly.
 		else if ( docFileNameType.equals(DocFileNameType.originalName) )
-			docFile = getDocFileWithOriginalFileName(docUrl, conn.getHeaderField("Content-Disposition"));
+			docFileData = getDocFileWithOriginalFileName(docUrl, conn.getHeaderField("Content-Disposition"));
 		else
 			throw new DocFileNotRetrievedException("The 'docFileNameType' was invalid: " + docFileNameType);
 
 		numOfDocFiles.incrementAndGet();
 
+		File docFile = docFileData.getDocFile();
+		FileOutputStream fileOutputStream = docFileData.getFileOutputStream();
+
 		try ( BufferedInputStream inStream = new BufferedInputStream(conn.getInputStream(), fiveMb);
-			  BufferedOutputStream outStream = new BufferedOutputStream(new FileOutputStream(docFile), fiveMb) )
+			  BufferedOutputStream outStream = new BufferedOutputStream(((fileOutputStream != null) ? fileOutputStream : new FileOutputStream(docFile)), fiveMb) )
 		{
 			int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);
 			int readByte = -1;
@@ -369,7 +373,6 @@ public class FileUtils
 			}
 			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
 
-			DocFileData docFileData;
 			if ( shouldUploadFilesToS3 ) {
 				docFileData = S3ObjectStore.uploadToS3(docFile.getName(), docFile.getAbsolutePath());
 				if ( docFileData != null ) {    // Otherwise, the returned object will be null.
@@ -381,6 +384,12 @@ public class FileUtils
 					numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 			} else
 				docFileData = new DocFileData(docFile, null, null, ((FileUtils.shouldLogFullPathName) ? docFile.getAbsolutePath() : docFile.getName()));
+
+
+			// TODO - CHECK IF NOW WE CAN ADD THE HASH AND SIZE CALCULATION HERE, SINCE IT IS NOT SYNCHRONIZED ANYMORE..  and so we will not lose time..
+			// TODO - ALSO HERE WE HAVE THE STREAMS OPEN ALREADY, WOULD THIS SPEED THINGS UP??
+			// TODO -  WOULD WE NEED TO RESET THE STREAMS, BUT AT LEAST WE WOULD NOT HAVE TO RE-OPEN THEM??
+
 
 			// TODO - HOW TO SPOT DUPLICATE-NAMES IN THE S3 MODE?
 			// The local files are deleted after uploaded.. (as they should be)
@@ -511,7 +520,7 @@ public class FileUtils
 	 * @return
 	 * @throws DocFileNotRetrievedException
 	 */
-	public static File getDocFileWithOriginalFileName(String docUrl, String contentDisposition) throws  DocFileNotRetrievedException
+	public static DocFileData getDocFileWithOriginalFileName(String docUrl, String contentDisposition) throws  DocFileNotRetrievedException
 	{
 		String docFileName = null;
 		boolean hasUnretrievableDocName = false;
@@ -572,58 +581,77 @@ public class FileUtils
 		
 		//logger.debug("docFileName: " + docFileName);
 
-		return getDocFileNameAndHandleExisting(docFileName, dotFileExtension, hasUnretrievableDocName);
+		return getDocFileAndHandleExisting(docFileName, dotFileExtension, hasUnretrievableDocName);
 	}
 
 
-	public static File getDocFileNameAndHandleExisting(String docFileName, String dotFileExtension, boolean hasUnretrievableDocName) throws  DocFileNotRetrievedException
+	private static final Lock fileNameLock = new ReentrantLock(true);
+
+	public static DocFileData getDocFileAndHandleExisting(String docFileName, String dotFileExtension, boolean hasUnretrievableDocName) throws  DocFileNotRetrievedException
 	{
+		String saveDocFileFullPath = storeDocFilesDir + docFileName;
+		if ( ! docFileName.endsWith(dotFileExtension) )
+			saveDocFileFullPath += dotFileExtension;
+
+		File docFile = new File(saveDocFileFullPath);
+		FileOutputStream fileOutputStream = null;
+		Integer curDuplicateNum = 0;
+
+		// Synchronize to avoid file-overriding and corruption when multiple thread try to store a file with the same name (like when there are multiple files related with the same ID), which results also in loosing docFiles.
+		// The file is created inside the synchronized block, by initializing the "fileOutputStream", so the next thread to check if it is going to download a duplicate-named file is guaranteed to find the previous file in the file-system
+		// (without putting the file-creation inside the locks, the previous thread might have not created the file in time and the next thread will just override it, instead of creating a new file)
+		fileNameLock.lock();
 		try {
-			String saveDocFileFullPath = storeDocFilesDir + docFileName;
-			if ( ! docFileName.endsWith(dotFileExtension) )
-				saveDocFileFullPath += dotFileExtension;
-
-			File docFile = new File(saveDocFileFullPath);
-
 			if ( !hasUnretrievableDocName )	// If we retrieved the fileName, go check if it's a duplicate.
 			{
-				boolean isDuplicate = false;
-				Integer curDuplicateNum;
-
-				if ( (curDuplicateNum = numbersOfDuplicateDocFileNames.get(docFileName)) != null ) {
+				if ( (curDuplicateNum = numbersOfDuplicateDocFileNames.get(docFileName)) != null )	// TODO - Since this datastructure is accessed inside the SYNCHRONIZED BLOCK, it can simpy be a HashMap without any internal synch, in order to speed it up.
 					curDuplicateNum += 1;
-					isDuplicate = true;
-				} else if ( docFile.exists() ) {	// If it's not an already-known duplicate (this is the first duplicate-case for this file), go check if it exists in the fileSystem.
-					curDuplicateNum = 1;	// It was "null", after the "Hashtable.get()" check.
-					isDuplicate = true;
-				}
+				else if ( docFile.exists() )	// If it's not an already-known duplicate (this is the first duplicate-case for this file), go check if it exists in the fileSystem.
+					curDuplicateNum = 1;	// It was "null", after the "ConcurrentHashMap.get()" check.
+				else
+					curDuplicateNum = 0;
 
-				if ( isDuplicate ) {	// Construct final-DocFileName by renaming.
+				if ( curDuplicateNum > 0 ) {	// Construct final-DocFileName for this docFile.
 					String preExtensionFileName = docFileName;
 					int lastIndexOfDot = docFileName.lastIndexOf(".");
 					if ( lastIndexOfDot != -1 )
 						preExtensionFileName = docFileName.substring(0, lastIndexOfDot);
-					String newDocFileName = preExtensionFileName + "(" + curDuplicateNum + ")" + dotFileExtension;
-					saveDocFileFullPath = storeDocFilesDir + File.separator + newDocFileName;
+					docFileName = preExtensionFileName + "(" + curDuplicateNum + ")" + dotFileExtension;
+					saveDocFileFullPath = storeDocFilesDir + File.separator + docFileName;
 					docFile = new File(saveDocFileFullPath);
-					if ( docFile.createNewFile() )
-						numbersOfDuplicateDocFileNames.put(docFileName, curDuplicateNum);	// We should add the new "curDuplicateNum" for the original fileName, only if the new file can be created.
-					else {
-						String errMsg = "Error when creating the new file '" + newDocFileName + "'!";
-						logger.error(errMsg);	// Here we include the case that this file already exists from another run of this program.
-						throw new DocFileNotRetrievedException(errMsg);
-					}
 				}
 			}
-			return docFile;
 
-		} catch (DocFileNotRetrievedException dfnre) {
-			throw dfnre;
+			fileOutputStream = new FileOutputStream(docFile);
+			if ( curDuplicateNum > 0 )	// After the file is created successfully, from the above outputStream-initialization, add the new duplicate-num in our HashMap.
+				numbersOfDuplicateDocFileNames.put(docFileName, curDuplicateNum);    // We should add the new "curDuplicateNum" for the original fileName, only if the new file can be created.
+
+		} catch (FileNotFoundException fnfe) {	// This may be thrown in case the file cannot be created.
+			logger.error("", fnfe);
+			// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
+			// So the empty file may exist, but we will also get the "FileNotFoundException".
+			try {
+				if ( docFile.exists() )
+					FileDeleteStrategy.FORCE.delete(docFile);
+			} catch (Exception e) {
+				logger.error("Error when deleting the half-created file: " + docFileName);
+			}
+			// The "fileOutputStream" was not created in this case, so no closing is needed.
+			throw new DocFileNotRetrievedException(fnfe.getMessage());
 		} catch (Exception e) {	// Mostly I/O and Security Exceptions.
+			if ( fileOutputStream != null ) {
+				try {
+					fileOutputStream.close();
+				} catch (Exception ignored) {}
+			}
 			String errMsg = "Error when handling the fileName = \"" + docFileName + "\" and dotFileExtension = \"" + dotFileExtension + "\"!";
 			logger.error(errMsg, e);
 			throw new DocFileNotRetrievedException(errMsg);
+		} finally {
+			fileNameLock.unlock();
 		}
+
+		return new DocFileData(docFile, fileOutputStream);
 	}
 
 
