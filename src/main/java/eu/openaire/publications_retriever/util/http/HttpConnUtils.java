@@ -19,7 +19,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
@@ -42,8 +45,8 @@ public class HttpConnUtils
 
 	public static final Set<String> blacklistedDomains = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());	// Domains with which we don't want to connect again.
 
-	public static final Hashtable<String, Integer> timesDomainsHadInputNotBeingDocNorPage = new Hashtable<String, Integer>();
-	public static final Hashtable<String, Integer> timesDomainsReturnedNoType = new Hashtable<String, Integer>();	// Domain which returned no content-type not content disposition in their response and amount of times they did.
+	public static final ConcurrentHashMap<String, Integer> timesDomainsHadInputNotBeingDocNorPage = new ConcurrentHashMap<String, Integer>();
+	public static final ConcurrentHashMap<String, Integer> timesDomainsReturnedNoType = new ConcurrentHashMap<String, Integer>();	// Domain which returned no content-type not content disposition in their response and amount of times they did.
 
 	public static AtomicInteger numOfDomainsBlockedDueToSSLException = new AtomicInteger(0);
 

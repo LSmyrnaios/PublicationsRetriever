@@ -54,7 +54,7 @@ public class MachineLearning
 	 */
 	public static final SetMultimap<String, String> successPathsHashMultiMap = Multimaps.synchronizedSetMultimap(HashMultimap.create());	// Holds multiple values for any key, if a docPagePath(key) has many different docUrlPaths(values) for doc links.
 
-	public static final Hashtable<String, String> successDocPathsExtensionHashMap = new Hashtable<String, String>();
+	public static final ConcurrentHashMap<String, String> successDocPathsExtensionHashMap = new ConcurrentHashMap<String, String>();
 
 	public static AtomicInteger docUrlsFoundByMLA = new AtomicInteger(0);
 	// If we later want to show statistics, we should take into account only the number of the urls to which the MLA was tested against, not all the urls in the inputFile.
@@ -64,7 +64,7 @@ public class MachineLearning
 		domainsBlockedFromMLA.add("sciencedirect.com");
 	}
 
-	private static final Hashtable<String, Integer> timesDomainsFailedInMLA = new Hashtable<String, Integer>();
+	private static final ConcurrentHashMap<String, Integer> timesDomainsFailedInMLA = new ConcurrentHashMap<String, Integer>();
 	private static final int timesToFailBeforeBlockedFromMLA = 10;
 
 	private static final List<Double> successRateList = Collections.synchronizedList(new ArrayList<>());

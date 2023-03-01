@@ -21,8 +21,8 @@ import java.io.BufferedReader;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,8 +41,8 @@ public class PageCrawler
 
 	public static final Pattern JAVASCRIPT_CODE_PDF_LINK = Pattern.compile(".*\"pdfUrl\":\"([^\"]+)\".*");	// TODO - Check if this case is common, in order to handle it.
 
-	public static final Hashtable<String, Integer> timesDomainNotGivingInternalLinks = new Hashtable<String, Integer>();
-	public static final Hashtable<String, Integer> timesDomainNotGivingDocUrls = new Hashtable<String, Integer>();
+	public static final ConcurrentHashMap<String, Integer> timesDomainNotGivingInternalLinks = new ConcurrentHashMap<String, Integer>();
+	public static final ConcurrentHashMap<String, Integer> timesDomainNotGivingDocUrls = new ConcurrentHashMap<String, Integer>();
 
 	public static final int timesToGiveNoInternalLinksBeforeBlocked = 200;
 	public static final int timesToGiveNoDocUrlsBeforeBlocked = 100;

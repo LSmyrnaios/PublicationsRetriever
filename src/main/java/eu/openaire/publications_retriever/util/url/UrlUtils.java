@@ -38,10 +38,10 @@ public class UrlUtils
 
 	public static final Set<String> duplicateUrls = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
-	public static final Hashtable<String, IdUrlTuple> docOrDatasetUrlsWithIDs = new Hashtable<String, IdUrlTuple>();	// Null keys are allowed (in case they are not available in the input).
+	public static final ConcurrentHashMap<String, IdUrlTuple> docOrDatasetUrlsWithIDs = new ConcurrentHashMap<String, IdUrlTuple>();	// Null keys are allowed (in case they are not available in the input).
 
-	public static final Hashtable<String, Integer> domainsAndHits = new Hashtable<>();
-	// The data inside HashTable "domainsAndHits" is used to evaluate how good the domain is doing while is having some problems.
+	public static final ConcurrentHashMap<String, Integer> domainsAndHits = new ConcurrentHashMap<>();
+	// The data inside ConcurrentHashMap "domainsAndHits" is used to evaluate how good the domain is doing while is having some problems.
 
 	public static final String duplicateUrlIndicator = "duplicate";
 	public static final String unreachableDocOrDatasetUrlIndicator = "unreachable";
@@ -94,7 +94,7 @@ public class UrlUtils
 						MachineLearning.gatherMLData(pageUrl, finalDocUrl, pageDomain);
 
 					// Add the domains of the pageUrl and the finalDocUrl to the successful domains as both lead in some way to a docUrl.
-					// The data inside HashTable "domainsAndHits" is used to evaluate how good the domain is doing while is having some problems.
+					// The data inside ConcurrentHashMap "domainsAndHits" is used to evaluate how good the domain is doing while is having some problems.
 					// If the "goods" surpass the "bads", then that domain will not get blocked, even if the "minimum-accepted-bad-cases" was exceeded.
 					ConnSupportUtils.countInsertAndGetTimes(domainsAndHits, pageDomain);
 

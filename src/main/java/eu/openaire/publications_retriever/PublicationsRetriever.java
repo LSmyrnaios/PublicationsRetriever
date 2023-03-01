@@ -23,6 +23,7 @@ import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -441,7 +442,7 @@ public class PublicationsRetriever
 				logger.debug(domainWithLock.getKey() + " : " + domainWithLock.getValue().getTimesConnected());
 			}
 
-			//sortHashTableByValueAndPrint(UrlUtils.domainsAndHits, true);
+			//sortConcurrentHashMapByValueAndPrint(UrlUtils.domainsAndHits, true);
 
 			// DEBUG! comment-out the following in production (even in debug-mode).
 			/*if ( MachineLearning.useMLA )
@@ -510,7 +511,7 @@ public class PublicationsRetriever
 	}
 
 
-	public static void sortHashTableByValueAndPrint(Hashtable<String, Integer> table, boolean descendingOrder)
+	public static void sortConcurrentHashMapByValueAndPrint(ConcurrentHashMap<String, Integer> table, boolean descendingOrder)
 	{
 		List<Map.Entry<String, Integer>> list = new LinkedList<>(table.entrySet());
 		list.sort((o1, o2) -> {

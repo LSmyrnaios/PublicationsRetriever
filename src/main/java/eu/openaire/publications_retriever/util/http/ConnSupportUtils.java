@@ -58,9 +58,9 @@ public class ConnSupportUtils
 	public static final int minPolitenessDelay = 3000;	// 3 sec
 	public static final int maxPolitenessDelay = 7000;	// 7 sec
 
-	public static final Hashtable<String, Integer> timesDomainsReturned5XX = new Hashtable<String, Integer>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
-	public static final Hashtable<String, Integer> timesDomainsHadTimeoutEx = new Hashtable<String, Integer>();
-	public static final Hashtable<String, Integer> timesPathsReturned403 = new Hashtable<String, Integer>();
+	public static final ConcurrentHashMap<String, Integer> timesDomainsReturned5XX = new ConcurrentHashMap<String, Integer>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
+	public static final ConcurrentHashMap<String, Integer> timesDomainsHadTimeoutEx = new ConcurrentHashMap<String, Integer>();
+	public static final ConcurrentHashMap<String, Integer> timesPathsReturned403 = new ConcurrentHashMap<String, Integer>();
 	
 	public static final SetMultimap<String, String> domainsMultimapWithPaths403BlackListed = Multimaps.synchronizedSetMultimap(HashMultimap.create());	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
 	
@@ -81,7 +81,7 @@ public class ConnSupportUtils
 	public static final Set<String> knownDocMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 	public static final Set<String> knownDatasetMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
-	public static final Hashtable<String, DomainConnectionData> domainsWithConnectionData = new Hashtable<>();
+	public static final ConcurrentHashMap<String, DomainConnectionData> domainsWithConnectionData = new ConcurrentHashMap<>();
 
 
 	public static void setKnownMimeTypes()
@@ -350,7 +350,7 @@ public class ConnSupportUtils
 	/**
 	 * This method receives the domain and manages the sleep-time, if needed.
 	 * It first extracts the last 3 parts of the domain. Then it checks if the domain is faced for the first time.
-	 * If it is the first time, then the domain is added in the Hashtable along with a new DomainConnectionData.
+	 * If it is the first time, then the domain is added in the ConcurrentHashMap along with a new DomainConnectionData.
 	 * Else the thread will lock that domain and check if it was connected before at most "minPolitenessDelay" secs, if so, then the thread will sleep for a random number of milliseconds.
 	 * Different threads lock on different domains, so each thread is not dependent on another thread which works on a different domain.
 	 * @param domainStr
@@ -524,7 +524,7 @@ public class ConnSupportUtils
 	}
 	
 	
-	public static boolean countAndBlockPathAfterTimes(SetMultimap<String, String> domainsWithPaths, Hashtable<String, Integer> pathsWithTimes, String pathStr, String domainStr, int timesBeforeBlocked, boolean calledForPageUrl)
+	public static boolean countAndBlockPathAfterTimes(SetMultimap<String, String> domainsWithPaths, ConcurrentHashMap<String, Integer> pathsWithTimes, String pathStr, String domainStr, int timesBeforeBlocked, boolean calledForPageUrl)
 	{
 		if ( countInsertAndGetTimes(pathsWithTimes, pathStr) > timesBeforeBlocked )
 		{
@@ -606,7 +606,7 @@ public class ConnSupportUtils
 	 * @param checkAgainstDocUrlsHits
 	 * @return boolean
 	 */
-	public static boolean countAndBlockDomainAfterTimes(Set<String> blackList, Hashtable<String, Integer> domainsWithTimes, String domainStr, int timesBeforeBlock, boolean checkAgainstDocUrlsHits)
+	public static boolean countAndBlockDomainAfterTimes(Set<String> blackList, ConcurrentHashMap<String, Integer> domainsWithTimes, String domainStr, int timesBeforeBlock, boolean checkAgainstDocUrlsHits)
 	{
 		int badTimes = countInsertAndGetTimes(domainsWithTimes, domainStr);
 
@@ -627,7 +627,7 @@ public class ConnSupportUtils
 	}
 	
 	
-	public static int countInsertAndGetTimes(Hashtable<String, Integer> itemsWithTimes, String itemToCount)
+	public static int countInsertAndGetTimes(ConcurrentHashMap<String, Integer> itemsWithTimes, String itemToCount)
 	{
 		int curTimes = 1;
 		Integer prevTimes = itemsWithTimes.get(itemToCount);
