@@ -833,7 +833,7 @@ public class UrlChecker {
 		logger.debug("Connection-problematic-urls: " + LoaderAndChecker.connProblematicUrls);
 		logger.debug("Content-problematic-urls: " + PageCrawler.contentProblematicUrls);
 
-		PublicationsRetriever.calculateAndPrintElapsedTime(start, Instant.now());
+		PublicationsRetriever.calculateAndPrintElapsedTime(start, Instant.now(), null);
 	}
 
 

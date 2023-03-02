@@ -428,7 +428,7 @@ public class PublicationsRetriever
 		logger.debug("The number of domains blocked in total, was: " + HttpConnUtils.blacklistedDomains.size());
 		logger.debug("The number of paths blocked -due to HTTP 403- in total, was: " + ConnSupportUtils.domainsMultimapWithPaths403BlackListed.values().size());
 
-		calculateAndPrintElapsedTime(startTime, Instant.now());
+		calculateAndPrintElapsedTime(startTime, Instant.now(), null);
 		logger.debug("Used " + workerThreadsCount + " worker threads.");
 
 		if ( logger.isDebugEnabled() )
@@ -451,7 +451,7 @@ public class PublicationsRetriever
 	}
 
 
-	public static void calculateAndPrintElapsedTime(Instant startTime, Instant finishTime)
+	public static void calculateAndPrintElapsedTime(Instant startTime, Instant finishTime, String customMessage)
 	{
 		/*
 		Calculating time using the following method-example.
@@ -507,7 +507,7 @@ public class PublicationsRetriever
 		if ( days > 0 )
 			daysMessage = days + " days, ";
 		
-		logger.info("The program finished after: " + daysMessage + hoursMessage + minutesMessage + secondsMessage + millisMessage);
+		logger.info(((customMessage != null) ? customMessage : "The program finished after: ") + daysMessage + hoursMessage + minutesMessage + secondsMessage + millisMessage);
 	}
 
 
