@@ -606,7 +606,15 @@ public class ConnSupportUtils
 			throw new DomainBlockedException(domainStr);
 		}
 	}
-	
+
+
+	public static final Set<String> domainsNotBlockableAfterTimes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+	// These domains have some non-giving pageUrls, some dataset-giving pages and some document-giving ones. So we avoid blocking them, in case 500 consecutive pages do not give full--texts.
+	static {
+		// All of these domains are manually checked for their quality and consistency.
+		domainsNotBlockableAfterTimes.add("zenodo.org");
+	}
+
 	
 	/**
 	 * This method handles domains which are reaching cases were they can be blocked.
@@ -622,8 +630,10 @@ public class ConnSupportUtils
 	 */
 	public static boolean countAndBlockDomainAfterTimes(Set<String> blackList, ConcurrentHashMap<String, Integer> domainsWithTimes, String domainStr, int timesBeforeBlock, boolean checkAgainstDocUrlsHits)
 	{
-		int badTimes = countInsertAndGetTimes(domainsWithTimes, domainStr);
+		if ( domainsNotBlockableAfterTimes.contains(domainStr) )
+			return false;
 
+		int badTimes = countInsertAndGetTimes(domainsWithTimes, domainStr);
 		if ( badTimes > timesBeforeBlock )
 		{
 			if ( checkAgainstDocUrlsHits ) {	// This will not be the case for MLA-blocked-domains. We cannot take into account ALL retrieved docUrls when only a part was retrieved by the MLA.
