@@ -1,6 +1,7 @@
 package eu.openaire.publications_retriever.crawler;
 
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
+import eu.openaire.publications_retriever.exceptions.DomainBlockedException;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
@@ -62,7 +63,7 @@ public class MetaDocUrlsHandler {
     {
         // Check if the docLink is provided in a metaTag and connect to it directly.
         String metaDocUrl = null;
-        if ( (metaDocUrl = getMetaDocUrlFromHTML(pageHtml)) == null ) { // This is mostly the case when the page does not have a docUrl.
+        if ( (metaDocUrl = getMetaDocUrlFromHTML(pageHtml)) == null ) { // This is mostly the case when the page does not have a docUrl, although not always, so we continue crawling it.
             if ( logger.isTraceEnabled() )
                 logger.trace("Could not retrieve the metaDocUrl, continue by crawling the page..");
             return false;   // We don't log the sourceUrl, since it will be handled later.
@@ -126,6 +127,11 @@ public class MetaDocUrlsHandler {
             logger.warn("The retrieved metaDocUrl was NOT a docUrl (unexpected): " + metaDocUrl + " , continue by crawling the page..");
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return false;   // Continue crawling the page..
+        } catch (DomainBlockedException dbe) {
+            String metaDocUrlDomain = UrlUtils.getDomainStr(metaDocUrl, null);
+            return ((metaDocUrlDomain != null) && metaDocUrlDomain.equals(pageDomain));
+            // The metaDocUrlDomain may be inside a subdomain which has the problems. The page being in the main domain should not be excluded from crawling if the subdomain gets blocked.
+            // If the domain is the same, and it's blocked, then stop crawling it. It's very rare that a page will get its domain blocked but will provide docUrl in another domain.
         } catch (Exception e) {
             logger.warn("The MetaDocUrl < " + metaDocUrl + " > had connectivity or redirection problems! Continue by crawling the page..");
             return false;   // Continue crawling the page..
