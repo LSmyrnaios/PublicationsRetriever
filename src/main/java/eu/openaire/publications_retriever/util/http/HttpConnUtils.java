@@ -441,7 +441,7 @@ public class HttpConnUtils
 			if ( conn != null )
 				conn.disconnect();
 			if ( e instanceof UnknownHostException ) {
-				logger.debug("A new \"Unknown Network\" Host was found and blacklisted: \"" + domainStr + "\"");
+				logger.warn("A new \"Unknown Network\" Host was found and blacklisted: \"" + domainStr + "\"");
 				blacklistedDomains.add(domainStr);	//Log it to never try connecting with it again.
 				throw new DomainBlockedException(domainStr);
 			}

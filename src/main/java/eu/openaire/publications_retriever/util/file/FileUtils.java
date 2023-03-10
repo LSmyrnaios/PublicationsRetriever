@@ -139,7 +139,7 @@ public class FileUtils
 
 		// If the directory doesn't exist, try to (re)create it.
 		try {
-			if ( !dir.exists() && !dir.mkdirs() ) {	// Try to create the directory(-ies) if they don't exist.
+			if ( !dir.mkdirs() ) {	// Try to create the directory(-ies) if they don't exist.
 				String errorMessage;
 				if ( PublicationsRetriever.docFilesStorageGivenByUser )
 					errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
@@ -657,7 +657,7 @@ public class FileUtils
 
 	static final int mb = 1_048_576;
 
-	public static final int fiveMb = 5 * mb;
+	public static final int fiveMb = (5 * mb);
 
 	static final int fiftyMBInBytes = (50 * mb);
 	static final int oneHundredMBInBytes = (100 * mb);
