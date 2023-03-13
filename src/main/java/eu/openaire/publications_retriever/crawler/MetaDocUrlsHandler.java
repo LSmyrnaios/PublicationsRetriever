@@ -42,7 +42,7 @@ public class MetaDocUrlsHandler {
     }
 
 
-    public static Pattern DOMAIN_REPLACEMENT_PATTERN = Pattern.compile("://(?:localhost|127.0.0.1)(?:\\:[\\d]+)?");
+    public static Pattern LOCALHOST_DOMAIN_REPLACEMENT_PATTERN = Pattern.compile("://(?:localhost|127.0.0.1)(?:\\:[\\d]+)?");
 
     public static AtomicInteger numOfMetaDocUrlsFound = new AtomicInteger(0);
 
@@ -88,19 +88,27 @@ public class MetaDocUrlsHandler {
         }
 
         String lowerCaseMetaDocUrl = metaDocUrl.toLowerCase();
-        boolean hasUnsupportedDocExtension = UrlTypeChecker.CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseMetaDocUrl).matches();
 
-        if ( hasUnsupportedDocExtension
+        if ( UrlTypeChecker.CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseMetaDocUrl).matches()
             || UrlTypeChecker.PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseMetaDocUrl).matches()
             || UrlTypeChecker.URL_DIRECTORY_FILTER.matcher(lowerCaseMetaDocUrl).matches()
-            || COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS.matcher(lowerCaseMetaDocUrl).matches()
-            || PageCrawler.NON_VALID_DOCUMENT.matcher(lowerCaseMetaDocUrl).matches() )
+            || COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS.matcher(lowerCaseMetaDocUrl).matches() )   // These do not lead us to avoid crawling the page, since the metaDocUrl may be an image, but the page may also include a full-text inside.
         {
             logger.warn("The retrieved metaDocUrl ( " + metaDocUrl + " ) is pointing to an unsupported file, continue by crawling the page..");
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return false;   // Continue crawling the page.. The page may give the correct file inside, like this one: https://scholarlypublications.universiteitleiden.nl/handle/1887/66271
         }
 
+        // In case we are certain we do not have an "unsupported-file" as a metaDocUrl (which would lead us to crawl the page)..
+        // Check if we have a false-positive full-text file. In this case we can avoid crawling the page.
+        // Since, it is almost certain that whatever full-text we retrieve from crawling, will be a false-positive as well.
+        if ( PageCrawler.NON_VALID_DOCUMENT.matcher(lowerCaseMetaDocUrl).matches() ) {
+            logger.warn("The retrieved metaDocUrl ( " + metaDocUrl + " ) is pointing to a false-positive full-text file, avoid crawling the page..!");
+            //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
+            return true;    // This pageUrl was handled. Nothing more can be done.
+        }
+
+        // Canonnicalize the metaDocUrl before connecting with it, to avoid encoding problems. We assume the metaDocUrl to be a full-url (including the protocol, domain etc.)
         String tempMetaDocUrl = metaDocUrl;
         if ( (metaDocUrl = URLCanonicalizer.getCanonicalURL(metaDocUrl, null, StandardCharsets.UTF_8)) == null ) {
             logger.warn("Could not canonicalize metaDocUrl: " + tempMetaDocUrl + " , continue by crawling the page..");
@@ -110,7 +118,7 @@ public class MetaDocUrlsHandler {
 
         // Sometimes, the metaDocUrl contains the "localhost" instead of the page' domain. So we have to search and replace.
         // For example: http://localhost:4000/bitstreams/98e649e7-a656-4a90-ad69-534178e63fbb/download
-        metaDocUrl = DOMAIN_REPLACEMENT_PATTERN.matcher(metaDocUrl).replaceFirst("://" +  pageDomain);
+        metaDocUrl = LOCALHOST_DOMAIN_REPLACEMENT_PATTERN.matcher(metaDocUrl).replaceFirst("://" +  pageDomain);
 
         if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(metaDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
             ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, metaDocUrl, false);
@@ -158,5 +166,6 @@ public class MetaDocUrlsHandler {
         }
         //logger.debug("MetaDocUrl: " + metaDocUrl);	// DEBUG!
         return metaDocUrl;	// IT MAY BE NULL.. Handling happens in the caller method.
+        // It does not need "trimming".
     }
 }
