@@ -57,7 +57,7 @@ public class PageCrawler
 
 	private static final String spaceOrDashes = "(?:\\s|%20|-|_)*";	// This includes the encoded space inside the url-string.
 
-	public static final Pattern DOCUMENT_TEXT = Pattern.compile("pdf|download|t[ée]l[ée]charger|descargar|texte" + spaceOrDashes + "intégral");
+	public static final Pattern DOCUMENT_TEXT = Pattern.compile("pdf|full" + spaceOrDashes + "text|download|t[ée]l[ée]charger|descargar|texte" + spaceOrDashes + "intégral");
 
 	// The following regex is used both in the text around the links and in the links themselves. Everything should be LOWERCASE, from the regex-rules to the link to be matched against them.
 	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:[^e]manu[ae]l|(?:\\|\\|" + spaceOrDashes + ")?gu[ií](?:de|a)|directive[s]?|preview|leaflet|agreement(?!.*thesis" + spaceOrDashes + "(?:19|20)[\\d]{2}.*)|accessibility|journal" + spaceOrDashes + "catalog|disclose" + spaceOrDashes + "file|poli(?:c(?:y|ies)|tika(?:si)?)"	// "policy" can be a lone word or a word after: repository|embargo|privacy|data protection|take down|supplement|access
@@ -69,7 +69,7 @@ public class PageCrawler
 																		+ "|(?:peer|mini)" + spaceOrDashes + "review|(?:case|annual)" + spaceOrDashes + "report|review" + spaceOrDashes + "article|short" + spaceOrDashes + "communication|letter" + spaceOrDashes + "to" + spaceOrDashes + "editor|how" + spaceOrDashes + "to" + spaceOrDashes + "(?:create|submit|contact)|tutori[ae]l|survey-results"
 																		+ "|data-sharing-guidance|rate(?:" + spaceOrDashes + ")?cards|press" + spaceOrDashes + "release|liability" + spaceOrDashes + "disclaimer|(?:avec|dans)" + spaceOrDashes + "(?:ocd|x2)?hal|online" + spaceOrDashes + "flyer|publishing" + spaceOrDashes + "process|book" + spaceOrDashes + "of" + spaceOrDashes + "abstracts|academic" + spaceOrDashes + "social" + spaceOrDashes + "networks|ijcseugcjournalno|manuscript(?:" + spaceOrDashes + "preparation)?" + spaceOrDashes + "checklist"
 																		+ "|^(?:licen[cs]e|help|reprints|pol[ií]ti[kc][sa](?:" + spaceOrDashes + "de" + spaceOrDashes + "informação)?|for" + spaceOrDashes + "recruiters|charte" + spaceOrDashes + "de" + spaceOrDashes + "signature|weekly" + spaceOrDashes + "visitors|publication" + spaceOrDashes + "(?:ethics" + spaceOrDashes + "and" + spaceOrDashes + "malpractice|fees)|redaktion|sample" + spaceOrDashes + "manuscript)$"	// Single words/phrases inside the html-text.
-																		+ "|/(?:entry|information|opinion|(?:rapportannuel|publerkl|utt_so_|atsc_|tjg_|ictrp_|oproep_voor_artikels_|[^/]*call_for_contributions_)[\\w-_()]*|accesorestringido|library_recommendation_form|research-article|loi_republique_numerique_publis|nutzungsbedingungen|autorenhinweise|mediadaten|canceledpresentations|sscc-facme_cirugia|bir_journals_reprint_form|transparencia|wfme|evolution_de_l_ergonomie|que_pouvez_vous_deposer|ethic-comittee-approval|restri(?:ngido|cted)).pdf$"	// The plain "research-article.pdf" is the template provided by journals.
+																		+ "|/(?:entry|information|opinion|(?:rapportannuel|publerkl|utt_so_|atsc_|tjg_|ictrp_|oproep_voor_artikels_|[^/]*call_for_contributions_)[\\w-_()]*|accesorestringido|library_recommendation_form|research-article|loi_republique_numerique_publis|nutzungsbedingungen|autorenhinweise|mediadaten|canceledpresentations|sscc-facme_cirugia|bir_journals_reprint_form|transparencia|wfme|evolution_de_l_ergonomie|que_pouvez_vous_deposer|ethic-comittee-approval|restri(?:ngido|cted)|asn" + spaceOrDashes + "tips).pdf(?:\\?.*)?$"	// The plain "research-article.pdf" is the template provided by journals.
 																		+ "|kilavuzu"	// "guide" in Turkish
 																		+ "|(?:公表|登録)届出書|取扱要領|リポジトリ(?:要項|運用指針)|検索のポイント|について|閲覧方法|ープンアクセスポリシー|されたみなさまへ|論文の許諾書).*");	// registration/notification form/statement, instructions, repository requirements/operation guidelines, search point, how to browse (all in japanese), open access guide, to all of you, dissertation consent form
 
@@ -479,7 +479,8 @@ public class PageCrawler
 			String parentClassName = parentElement.className().trim();
 			if ( parentElement.tagName().trim().equals("footer")
 				|| parentClassName.equals("tab") || parentClassName.equals("product-head-bnrs")	// Exclude links which are "tabs". For example those hidden in submenus, of the main-menu (not submenus of fulltext-choices).
-				|| parentClassName.contains("reference") || parentElement.id().contains("reference"))	// The class-name may include other class-types as well.
+				|| parentClassName.contains("reference") || parentClassName.contains("kapak") // "kapak" = "cover" in Turkish
+				|| parentElement.id().contains("reference"))	// The class-name may include other class-types as well.
 				return true;
 
 			parentElement = parentElement.parent();	// Climb up to the ancestor.
