@@ -67,6 +67,7 @@ public class UrlTypeChecker
 			// The "manuscript.elsevier.com" gives pdfs right away, so it should be allowed.
 			// The "(www|journals).elsevier.com", come mostly from "doi.org"-urls.
 			+ "|(?<!manuscript.)elsevier.com|sciencedirect.com"
+			+ "|(?:static|multimedia|tienda).elsevier."	// Holds generic pdfs with various info about journals etc. or images or unrelated info.
 
 			+ "|arvojournals.org"	// Avoid this problematic domain, which redirects to another domain, but also adds a special token, which cannot be replicated. Also, it has cookies issues.
 			+ "|books.openedition.org"	// Avoid this closed-access sub-domain. (other subdomains, like "journals.openedition.org" are fine).
