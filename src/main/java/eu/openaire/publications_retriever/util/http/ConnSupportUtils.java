@@ -379,38 +379,38 @@ public class ConnSupportUtils
 			return;
 		}
 
-		long elapsedTimeMillis;
+		long elapsedTimeSinceLastConnection;
 		domainConnectionData.lock.lock();// Threads trying to connect with the same domain, should sleep one AFTER the other, to avoid coming back after sleep at the same time, in the end..
 		Instant currentTime = Instant.now();
 		try {
-			elapsedTimeMillis = Duration.between(domainConnectionData.lastTimeConnected, currentTime).toMillis();
+			elapsedTimeSinceLastConnection = Duration.between(domainConnectionData.lastTimeConnected, currentTime).toMillis();
 		} catch (Exception e) {
 			logger.warn("An exception was thrown when tried to obtain the time elapsed from the last time the domain connected: " + e.getMessage());
 			domainConnectionData.updateAndUnlock(currentTime);
 			return;
 		}
 
-		if ( elapsedTimeMillis < minPolitenessDelay ) {
-			long finalPolitenessDelay = getRandomNumber(minPolitenessDelay, maxPolitenessDelay) - elapsedTimeMillis;
+		if ( elapsedTimeSinceLastConnection < minPolitenessDelay ) {
+			long finalPolitenessDelay = getRandomNumber(minPolitenessDelay, maxPolitenessDelay) - elapsedTimeSinceLastConnection;
 
 			// Apply the following for testing. Otherwise, it's more efficient to use the above method.
 			//long randomPolitenessDelay = getRandomNumber(minPolitenessDelay, maxPolitenessDelay);
-			//long finalPolitenessDelay = randomPolitenessDelay - elapsedTimeMillis;	// This way we avoid reaching the upper limit while preventing underflow (in case we applied the difference in the parameters of "getRandomNumber()").
-			//logger.debug("WILL SLEEP for " + finalPolitenessDelay + " | randomNumber was " + randomPolitenessDelay + ", elapsedTime was: " + elapsedTimeMillis + " | domain: " + domainStr);	// DEBUG!
+			//long finalPolitenessDelay = randomPolitenessDelay - elapsedTimeSinceLastConnection;	// This way we avoid reaching the upper limit while preventing underflow (in case we applied the difference in the parameters of "getRandomNumber()").
+			//logger.debug("WILL SLEEP for " + finalPolitenessDelay + " | randomNumber was " + randomPolitenessDelay + ", elapsedTime was: " + elapsedTimeSinceLastConnection + " | domain: " + domainStr);	// DEBUG!
 
 			try {
 				Thread.sleep(finalPolitenessDelay);    // Avoid server-overloading for the same domain.
 			} catch (InterruptedException ie) {
 				Instant newCurrentTime = Instant.now();
 				try {
-					elapsedTimeMillis = Duration.between(currentTime, newCurrentTime).toMillis();
+					elapsedTimeSinceLastConnection = Duration.between(currentTime, newCurrentTime).toMillis();
 				} catch (Exception e) {
 					logger.warn("An exception was thrown when tried to obtain the time elapsed from the last time the \"currentTime\" was updated: " + e.getMessage());
 					domainConnectionData.updateAndUnlock(newCurrentTime);	// Update the time and connect.
 					return;
 				}
-				if ( elapsedTimeMillis < minPolitenessDelay ) {
-					finalPolitenessDelay -= elapsedTimeMillis;
+				if ( elapsedTimeSinceLastConnection < minPolitenessDelay ) {
+					finalPolitenessDelay -= elapsedTimeSinceLastConnection;
 					try {
 						Thread.sleep(finalPolitenessDelay);
 					} catch (InterruptedException ignored) {}
@@ -418,7 +418,7 @@ public class ConnSupportUtils
 			}	// At this point, if both sleeps were interrupted, some time has already passed, so it's ok to connect to the same domain.
 			currentTime = Instant.now();	// Update, after the sleep.
 		} //else
-			//logger.debug("NO SLEEP NEEDED, elapsedTime: " + elapsedTimeMillis + " > " + minPolitenessDelay + " | domain: " + domainStr);	// DEBUG!
+			//logger.debug("NO SLEEP NEEDED, elapsedTime: " + elapsedTimeSinceLastConnection + " > " + minPolitenessDelay + " | domain: " + domainStr);	// DEBUG!
 
 		domainConnectionData.updateAndUnlock(currentTime);
 	}

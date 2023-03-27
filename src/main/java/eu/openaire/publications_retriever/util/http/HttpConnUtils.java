@@ -53,8 +53,8 @@ public class HttpConnUtils
 	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0";	// This should not be "final", another program should be able to set its own "UserAgent".
 	public static String acceptLanguage = "en-US,en;q=0.5";
 
-	public static final int maxConnGETWaitingTime = 15000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
-	public static final int maxConnHEADWaitingTime = 10000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
+	public static final int maxConnGETWaitingTime = 15_000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
+	public static final int maxConnHEADWaitingTime = 10_000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
 
 	private static final int maxRedirectsForPageUrls = 7;// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
 	private static final int maxRedirectsForInternalLinks = 2;	// Internal-DOC-Links shouldn't take more than 2 redirects.

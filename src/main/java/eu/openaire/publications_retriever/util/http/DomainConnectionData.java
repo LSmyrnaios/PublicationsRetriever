@@ -13,8 +13,8 @@ public class DomainConnectionData {
     final Lock lock = new ReentrantLock(true);  // This lock is locking the threads on each domain.
 
     public DomainConnectionData() {
-        this.lastTimeConnected = Instant.now();
         this.timesConnected = 1;
+        this.lastTimeConnected = Instant.now();
     }
 
 

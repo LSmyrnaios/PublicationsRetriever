@@ -66,12 +66,12 @@ public class PageCrawler
 																		+ "|table" + spaceOrDashes + "of" + spaceOrDashes + "contents|(?:front|back|end)" + spaceOrDashes + "matter|information" + spaceOrDashes + "for" + spaceOrDashes + "authors|pdf(?:/a)?" + spaceOrDashes + "conversion|catalogue|factsheet|classifieds"	// classifieds = job-ads
 																		+ "|pdf-viewer|certificate" + spaceOrDashes + "of|conflict[s]?" + spaceOrDashes + "of" + spaceOrDashes + "interest|(?:recommendation|order)" + spaceOrDashes + "form|adverti[sz]e|mandatory" + spaceOrDashes + "open" + spaceOrDashes + "access|recommandations" + spaceOrDashes + "pour" + spaceOrDashes + "s'affilier|hal.*collections|terms|conditions|hakuohjeet|logigramme|export_liste_publi|yearbook|pubs_(?:brochure|overview)|thermal-letter"
 																		+ "|procedure|規程|運営規程"	// 規程 == procedure, 運営規程 = Operating regulations  (in japanese)
-																		+ "|(?:peer|mini)" + spaceOrDashes + "review|(?:case|annual)" + spaceOrDashes + "report|review" + spaceOrDashes + "article|short" + spaceOrDashes + "communication|letter" + spaceOrDashes + "to" + spaceOrDashes + "editor|how" + spaceOrDashes + "to" + spaceOrDashes + "(?:create|submit|contact)|tutori[ae]l|survey-results"
-																		+ "|data-sharing-guidance|rate(?:" + spaceOrDashes + ")?cards|press" + spaceOrDashes + "release|liability" + spaceOrDashes + "disclaimer|(?:avec|dans)" + spaceOrDashes + "(?:ocd|x2)?hal|online" + spaceOrDashes + "flyer|publishing" + spaceOrDashes + "process|book" + spaceOrDashes + "of" + spaceOrDashes + "abstracts|academic" + spaceOrDashes + "social" + spaceOrDashes + "networks|ijcseugcjournalno|manuscript(?:" + spaceOrDashes + "preparation)?" + spaceOrDashes + "checklist"
+																		+ "|(?:peer|mini)" + spaceOrDashes + "review|(?:case|annual)" + spaceOrDashes + "report|review" + spaceOrDashes + "article|short" + spaceOrDashes + "communication|letter" + spaceOrDashes + "to" + spaceOrDashes + "editor|how" + spaceOrDashes + "to" + spaceOrDashes + "(?:create|submit|contact)|tutori[ae]l|survey-results|calendar" + spaceOrDashes + "of" + spaceOrDashes + "events"
+																		+ "|data-sharing-guidance|rate(?:" + spaceOrDashes + ")?cards|press" + spaceOrDashes + "release|liability" + spaceOrDashes + "disclaimer|(?:avec|dans)" + spaceOrDashes + "(?:ocd|x2)?hal|online" + spaceOrDashes + "flyer|publishing" + spaceOrDashes + "process|book" + spaceOrDashes + "of" + spaceOrDashes + "abstracts|academic" + spaceOrDashes + "social" + spaceOrDashes + "networks|ijcseugcjournalno|manuscript(?:" + spaceOrDashes + "preparation)?" + spaceOrDashes + "checklist|by" + spaceOrDashes + "laws"
 																		+ "|^(?:licen[cs]e|help|reprints|pol[ií]ti[kc][sa](?:" + spaceOrDashes + "de" + spaceOrDashes + "informação)?|for" + spaceOrDashes + "recruiters|charte" + spaceOrDashes + "de" + spaceOrDashes + "signature|weekly" + spaceOrDashes + "visitors|publication" + spaceOrDashes + "(?:ethics" + spaceOrDashes + "and" + spaceOrDashes + "malpractice|fees)|redaktion|sample" + spaceOrDashes + "manuscript|open" + spaceOrDashes + "access)$"	// Single words/phrases inside the html-text.
 																		+ "|/(?:entry|information|opinion|(?:rapportannuel|publerkl|utt_so_|atsc_|tjg_|ictrp_|oproep_voor_artikels_|[^/]*call_for_contributions_)[\\w-_()]*|accesorestringido|library_recommendation_form|research-article|loi_republique_numerique_publis|nutzungsbedingungen|autorenhinweise|mediadaten|canceledpresentations|sscc-facme_cirugia|bir_journals_reprint_form|transparencia|wfme|evolution_de_l_ergonomie|que_pouvez_vous_deposer|ethic-comittee-approval|restri(?:ngido|cted)|asn" + spaceOrDashes + "tips|aidehelp).pdf(?:\\?.*)?$"	// The plain "research-article.pdf" is the template provided by journals.
 																		+ "|kilavuzu"	// "guide" in Turkish
-																		+ "|(?:公表|登録)届出書|取扱要領|リポジトリ(?:要項|運用指針)|検索のポイント|について|閲覧方法|ープンアクセスポリシー|されたみなさまへ|論文の許諾書).*");	// registration/notification form/statement, instructions, repository requirements/operation guidelines, search point, how to browse (all in japanese), open access guide, to all of you, dissertation consent form
+																		+ "|(?:公表|登録)届出書|取扱要領|リポジトリ(?:要項|運用指針)|検索のポイント|について|閲覧方法|ープンアクセスポリシー|されたみなさまへ|(?:論文の|登録)許諾書|著作権利用許諾要件|削除依頼書).*");	// registration/notification form/statement, instructions, repository requirements/operation guidelines, search point, how to browse (all in japanese), open access guide, to all of you, dissertation consent form / Registration License / Copyright license requirements / deletion request form
 
 	// Example of docUrl having the "editorial" keyword: https://publikationen.ub.uni-frankfurt.de/opus4/frontdoor/deliver/index/docId/45461/file/daek_et_al_2017_editorial.pdf
 
@@ -483,14 +483,25 @@ public class PageCrawler
 
 		// Avoid collecting internal-links which are inside the "footer" or the "article-references" section (we make it more general with the ending-s).
 		Element parentElement = element.parent();
-		while ( parentElement != null ) {
+		if ( parentElement == null )
+			return false;
+
+		// Check for text inside the immediate parent only.
+		String parentLowerText = parentElement.text().trim().toLowerCase();
+		if ( !parentLowerText.isEmpty() && NON_VALID_DOCUMENT.matcher(parentLowerText).matches() ) {
+			//logger.debug("Text of false-positive elements: " + parentLowerText);
+			return true;
+		}
+
+		// Check all the ancestors.
+		do {
 			if ( parentElement.tagName().trim().equals("footer")
 					|| PARENT_CLASS_NAME_FILTER_PATTERN.matcher(parentElement.className().trim().toLowerCase()).matches()
 					|| PARENT_ID_FILTER_PATTERN.matcher(parentElement.id().toLowerCase()).matches() )
 				return true;
 
 			parentElement = parentElement.parent();	// Climb up to the ancestor.
-		}
+		} while ( parentElement != null );
 
 		return false;
 	}
