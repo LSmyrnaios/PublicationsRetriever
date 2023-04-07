@@ -82,7 +82,7 @@ public class MetaDocUrlsHandler {
             // Block the domain and return "true" to indicate handled-state.
             HttpConnUtils.blacklistedDomains.add(pageDomain);
             logger.warn("Domain: \"" + pageDomain + "\" was blocked, after giving a dynamic metaDocUrl: " + metaDocUrl);
-            UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as its metaDocUrl was a dynamic-link.", null, true, "true", "true", "false", "false", "false", null, "null");  // We log the source-url, and that was discarded in "PageCrawler.visit()".
+            UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl was a dynamic-link.", null, true, "true", "true", "false", "false", "false", null, "null");  // We log the source-url, and that was discarded in "PageCrawler.visit()".
             PageCrawler.contentProblematicUrls.incrementAndGet();
             return true;    // Since the domain is blocked, there is no point in continuing to crawl.
         }
@@ -105,6 +105,7 @@ public class MetaDocUrlsHandler {
         if ( PageCrawler.NON_VALID_DOCUMENT.matcher(lowerCaseMetaDocUrl).matches() ) {
             logger.warn("The retrieved metaDocUrl ( " + metaDocUrl + " ) is pointing to a false-positive full-text file, avoid crawling the page..!");
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
+            UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl is pointing to a false-positive full-text file.", null, true, "true", "true", "false", "false", "false", null, "null");
             return true;    // This pageUrl was handled. Nothing more can be done.
         }
 
@@ -137,7 +138,11 @@ public class MetaDocUrlsHandler {
             return false;   // Continue crawling the page..
         } catch (DomainBlockedException dbe) {
             String metaDocUrlDomain = UrlUtils.getDomainStr(metaDocUrl, null);
-            return ((metaDocUrlDomain != null) && metaDocUrlDomain.equals(pageDomain));
+            if ( (metaDocUrlDomain != null) && metaDocUrlDomain.equals(pageDomain) ) {
+                UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its domain was blocked.", null, true, "true", "true", "false", "false", "false", null, "null");
+                return true;    // Stop crawling the page.
+            }
+            return false;   // Continue crawling the page.
             // The metaDocUrlDomain may be inside a subdomain which has the problems. The page being in the main domain should not be excluded from crawling if the subdomain gets blocked.
             // If the domain is the same, and it's blocked, then stop crawling it. It's very rare that a page will get its domain blocked but will provide docUrl in another domain.
         } catch (Exception e) {
