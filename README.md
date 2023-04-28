@@ -1,9 +1,9 @@
 # PublicationsRetriever    ![Build Status](https://github.com/LSmyrnaios/PublicationsRetriever/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
 
 A Java-program which retrieves the Document and Dataset Urls from the given Publication-Web-Pages and if wanted, it can also download the full-texts and/or upload them to an **S3 Object Store**.<br>
-Afterwards, these full-text documents are mined, in order to enrich a much more complete set of OpenAIRE publications with inference links, in the [**OpenAIRE Research Graph**](https://graph.openaire.eu/).<br>
+Afterwards, these full-text documents are mined (by other pieces of software), in order to enrich a much more complete set of OpenAIRE publications with inference links, in the [**OpenAIRE Graph**](https://graph.openaire.eu/).<br>
 
-This program is used either as a stand-alone download-tool for full-texts and datasets, or as a library for the [UrlsWorker](https://code-repo.d4science.org/lsmyrnaios/UrlsWorker) code, of OpenAIRE's "**PDF Aggregation Service**". <br>
+This program is used either as a stand-alone download-tool for full-texts and datasets, or as a library for the [UrlsWorker](https://code-repo.d4science.org/lsmyrnaios/UrlsWorker)'s code, of OpenAIRE's "**PDF Aggregation Service**". <br>
 
 The **PublicationsRetriever** takes as input the PubPages with their IDs -in JSON format- and gives an output -also in JSON format,
 which contains the IDs, the PubPages, the Document or Dataset Urls, a series of informative booleans, the *MD5* "fileHash", the "fileSize" and a "comment".<br>
@@ -13,6 +13,9 @@ The "booleans" are:
 - "wasDocumentOrDatasetAccessible": it signals whether the url gave a document or dataset url
 - "wasDirectLink": it signals whether the url was a document or dataset link itself
 - "couldRetry": it signals whether it could be worth to check the url in the future (in case the sourceUrl gave the docOrDatasetUrl or it resulted in an error which might be eliminated in the future, like a "ConnectionTimeout")
+<br>
+
+Note: the values to the above "booleans" are Strings: "true", "false" or "N/A". 
 <br>
 
 The "comment" can have the following values:
@@ -124,5 +127,5 @@ The above script will run the following commands:
 <br>
 
 ## Customizations
-- You can set **File-related** customizations in ***util.file.FileUtils.java***.
-- You can set **Connection-related** customizations in ***util.url.HttpConnUtils.java*** and ***util.url.ConnSupportUtils.java***.
+- You can set **File-related** customizations in ***[util.file.FileUtils.java](https://github.com/LSmyrnaios/PublicationsRetriever/blob/7a74ffb7bdade36d6ba94032e730c2bbcb5f7731/src/main/java/eu/openaire/publications_retriever/util/file/FileUtils.java)***.
+- You can set **Connection-related** customizations in ***[util.url.HttpConnUtils.java](https://github.com/LSmyrnaios/PublicationsRetriever/blob/7a74ffb7bdade36d6ba94032e730c2bbcb5f7731/src/main/java/eu/openaire/publications_retriever/util/http/HttpConnUtils.java)*** and ***[util.url.ConnSupportUtils.java](https://github.com/LSmyrnaios/PublicationsRetriever/blob/7a74ffb7bdade36d6ba94032e730c2bbcb5f7731/src/main/java/eu/openaire/publications_retriever/util/http/ConnSupportUtils.java)***.
