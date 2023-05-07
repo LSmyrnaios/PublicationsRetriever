@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -82,7 +83,7 @@ public class FileUtils
 
 	public static int duplicateIdUrlEntries = 0;
 
-	private static final String utf8Charset = "UTF-8";
+	private static final String utf8Charset = StandardCharsets.UTF_8.toString();
 
 	public static final Pattern EXTENSION_PATTERN = Pattern.compile("(\\.[^.-_]+)$");
 
@@ -193,7 +194,6 @@ public class FileUtils
 				lineCount ++;
 			}
 			
-			printStream.flush();
 			printStream.close();
 			inputScanner.close();
 			
@@ -604,7 +604,7 @@ public class FileUtils
 		try {
 			if ( !hasUnretrievableDocName )	// If we retrieved the fileName, go check if it's a duplicate.
 			{
-				if ( (curDuplicateNum = numbersOfDuplicateDocFileNames.get(docFileName)) != null )	// TODO - Since this datastructure is accessed inside the SYNCHRONIZED BLOCK, it can simpy be a HashMap without any internal synch, in order to speed it up.
+				if ( (curDuplicateNum = numbersOfDuplicateDocFileNames.get(docFileName)) != null )	// Since this datastructure is accessed inside the SYNCHRONIZED BLOCK, it can simpy be a HashMap without any internal synch, in order to speed it up.
 					curDuplicateNum += 1;
 				else if ( docFile.exists() )	// If it's not an already-known duplicate (this is the first duplicate-case for this file), go check if it exists in the fileSystem.
 					curDuplicateNum = 1;	// It was "null", after the "ConcurrentHashMap.get()" check.
@@ -692,10 +692,8 @@ public class FileUtils
 		if ( inputScanner != null )
         	inputScanner.close();
 		
-		if ( printStream != null ) {
-			printStream.flush();
+		if ( printStream != null )
 			printStream.close();
-		}
 
 		// If the MLA was enabled then an extra file was used to store the streamed content and count the number of urls, in order to optimize the M.L.A.'s execution.
 		if ( fullInputFilePath != null ) {
