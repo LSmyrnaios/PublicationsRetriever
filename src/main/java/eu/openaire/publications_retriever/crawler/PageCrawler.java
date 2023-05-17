@@ -481,7 +481,7 @@ public class PageCrawler
 			}
 		}
 
-		// Avoid collecting internal-links which are inside the "footer" or the "article-references" section (we make it more general with the ending-s).
+		// Avoid collecting internal-links which are inside the "footer", "header", "article-references" or other sections (we make it more general with the ending-s).
 		Element parentElement = element.parent();
 		if ( parentElement == null )
 			return false;
@@ -495,7 +495,8 @@ public class PageCrawler
 
 		// Check all the ancestors.
 		do {
-			if ( parentElement.tagName().trim().equals("footer")
+			String parentTag = parentElement.tagName().trim();
+			if ( parentTag.equals("footer") || parentTag.equals("header")
 					|| PARENT_CLASS_NAME_FILTER_PATTERN.matcher(parentElement.className().trim().toLowerCase()).matches()
 					|| PARENT_ID_FILTER_PATTERN.matcher(parentElement.id().toLowerCase()).matches() )
 				return true;

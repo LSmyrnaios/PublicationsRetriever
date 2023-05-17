@@ -48,7 +48,7 @@ public class UrlTypeChecker
 	// The diff with the "login" being here, in compare with being in "URL_DIRECTORY_FILTER"-regex, is that it can be found in a random place inside a url.. not just as a directory..
 
 	// So, we make a new REGEX for these extensions, this time, without a potential argument in the end (e.g. ?id=XXX..), except for the potential "lang".
-	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+(?<!" + docOrDatasetKeywords + ")\\.(?:" + htOrPhpExtensionsPattern+ "|[aj]sp[x]?|jsf|do|asc|cgi)(?:\\?(?!.*" + docOrDatasetKeywords + ").*)?$");	// We may have this page, which runs a script to return the pdf: "https://www.ijcseonline.org/pdf_paper_view.php?paper_id=4547&48-IJCSE-07375.pdf" or this pdf-internal-link: "https://meetingorganizer.copernicus.org/EGU2020/EGU2020-6296.html?pdf"
+	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+(?<!" + docOrDatasetKeywords + ")\\.(?:" + htOrPhpExtensionsPattern+ "|[aj]sp[x]?|jsf|do|asc|cgi|cfm)(?:\\?(?!.*" + docOrDatasetKeywords + ").*)?$");	// We may have this page, which runs a script to return the pdf: "https://www.ijcseonline.org/pdf_paper_view.php?paper_id=4547&48-IJCSE-07375.pdf" or this pdf-internal-link: "https://meetingorganizer.copernicus.org/EGU2020/EGU2020-6296.html?pdf"
 	
 	public static final Pattern INTERNAL_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+format=(?:xml|" + htOrPhpExtensionsPattern + "|rss|ris|bib).*");	// This exists as a url-parameter.
 
@@ -108,7 +108,7 @@ public class UrlTypeChecker
 		// Avoid JavaScript-powered domains, other than the "sciencedirect.com", which is handled separately.
 		// We could "guess" the pdf-link for some of them, but for "persee.fr" for ex. there's also a captcha requirement for the connection.
 		// The "tandfonline.com" gives an "HTTP 503 Server Error", even for the urls containing "/pdf/" which appear to work when opened in a Browser.
-		if ( /*(*/lowerCaseUrl.contains("tandfonline.com") /*&& !lowerCaseUrl.contains("/pdf/"))*/ || lowerCaseUrl.contains("persee.fr")
+		if ( /*(*/lowerCaseUrl.contains("tandfonline.com") /*&& !lowerCaseUrl.contains("/pdf/"))*/ || lowerCaseUrl.contains("persee.fr") || lowerCaseUrl.contains("papers.ssrn.com")
 			|| lowerCaseUrl.contains("documentation.ird.fr") )	// The "documentation.ird.fr" works in "UrlCheck-test" but not when running multiple urls from the inputFile.
 		{
 			loggingMessage = "Discarded after matching to a JavaScript-using domain, other than the 'sciencedirect.com'.";

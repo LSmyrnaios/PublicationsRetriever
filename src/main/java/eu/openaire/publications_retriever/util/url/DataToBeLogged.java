@@ -82,7 +82,7 @@ public class DataToBeLogged
 			changeMap.setAccessible(true);
 			changeMap.set(jsonObject, new LinkedHashMap<>());
 			changeMap.setAccessible(false);
-		} catch (IllegalAccessException | NoSuchFieldException e) {
+		} catch (Exception e) {
 			logger.warn("Could not create an ordered JSONObject, so continuing with an unordered one. Exception msg: " + e.getMessage());
 			jsonObject = new JSONObject();	// In this case, just create a new "normal" JSONObject.
 		}
@@ -104,7 +104,7 @@ public class DataToBeLogged
 		} catch (JSONException je) {
 			// Keep the jsonObject with what it has till now.. plus a "special" comment.
 			jsonObject.put("comment", "There was a problem creating this JSON with the right values.");
-			logger.warn("Invalid JsonOutput will be written as: " + jsonObject);	// Depending on which json-key is the pre-last one, we will know what caused the error.
+			logger.warn("Invalid JsonOutput will be written as: " + jsonObject);	// Depending on which json-key is the pre-error one, we will know what caused the error (the one right after).
 		}
 
         return jsonObject.toString();
