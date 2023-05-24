@@ -109,7 +109,7 @@ public class UrlTypeChecker
 		// We could "guess" the pdf-link for some of them, but for "persee.fr" for ex. there's also a captcha requirement for the connection.
 		// The "tandfonline.com" gives an "HTTP 503 Server Error", even for the urls containing "/pdf/" which appear to work when opened in a Browser.
 		if ( /*(*/lowerCaseUrl.contains("tandfonline.com") /*&& !lowerCaseUrl.contains("/pdf/"))*/ || lowerCaseUrl.contains("persee.fr") || lowerCaseUrl.contains("papers.ssrn.com")
-			|| lowerCaseUrl.contains("documentation.ird.fr") )	// The "documentation.ird.fr" works in "UrlCheck-test" but not when running multiple urls from the inputFile.
+			|| lowerCaseUrl.contains("documentation.ird.fr") || lowerCaseUrl.contains("library.unisa.edu.au") )	// The "documentation.ird.fr" works in "UrlCheck-test" but not when running multiple urls from the inputFile.
 		{
 			loggingMessage = "Discarded after matching to a JavaScript-using domain, other than the 'sciencedirect.com'.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);

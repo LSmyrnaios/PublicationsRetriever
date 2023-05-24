@@ -146,6 +146,14 @@ public class MetaDocUrlsHandler {
             // The metaDocUrlDomain may be inside a subdomain which has the problems. The page being in the main domain should not be excluded from crawling if the subdomain gets blocked.
             // If the domain is the same, and it's blocked, then stop crawling it. It's very rare that a page will get its domain blocked but will provide docUrl in another domain.
         } catch (Exception e) {
+            if ( e instanceof RuntimeException ) {
+                String exceptionMessage = e.getMessage();
+                if ( (exceptionMessage != null) && (exceptionMessage.contains("HTTP 401") || exceptionMessage.contains("HTTP 403")) ) {
+                    logger.warn("The MetaDocUrl < " + metaDocUrl + " > had authorization issues, so further crawling of this page is aborted.");
+                    UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl had authorization issues.", null, true, "true", "true", "false", "false", "false", null, "null");
+                    return true;    // It was handled, avoid crawling the page.
+                }
+            }
             logger.warn("The MetaDocUrl < " + metaDocUrl + " > had connectivity or redirection problems! Continue by crawling the page..");
             return false;   // Continue crawling the page..
         }
