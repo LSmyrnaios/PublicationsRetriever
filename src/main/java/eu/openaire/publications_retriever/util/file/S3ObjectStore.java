@@ -155,6 +155,7 @@ public class S3ObjectStore {
 
             // TODO - What if the fileObjKeyName already exists?
             // Right now it gets overwritten (unless we add versioning, which is irrelevant for different objects..)
+            // Luckily, we use unique file-names.
 
         } catch (Exception e) {
             logger.error("Could not upload the file \"" + fileObjKeyName + "\" to the S3 ObjectStore, exception: " + e.getMessage(), e);
