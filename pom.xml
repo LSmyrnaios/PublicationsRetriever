@@ -4,7 +4,7 @@
 
   <groupId>com.openaire.publications_retriever</groupId>
   <artifactId>publications_retriever</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0</version>
   <packaging>jar</packaging>
 
   <name>publications_retriever</name>

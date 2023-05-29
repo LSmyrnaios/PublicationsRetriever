@@ -68,7 +68,7 @@ To run the application you should navigate to the ***target*** directory, which 
 while choosing the appropriate run-command.<br> 
 
 **Run with standard input/output:**<br>
-**``java -jar publications_retriever-1.0-SNAPSHOT.jar arg1:'-inputFileFullPath' arg2:<inputFile> arg3:'-retrieveDataType' arg4:'<dataType: document | dataset | all>' arg5:'-downloadDocFiles' arg6:'-docFileNameType' arg7:'idName' arg8:'-firstDocFileNum' arg9:'NUM' arg10:'-docFilesStorage'
+**``java -jar publications_retriever-1.0.jar arg1:'-inputFileFullPath' arg2:<inputFile> arg3:'-retrieveDataType' arg4:'<dataType: document | dataset | all>' arg5:'-downloadDocFiles' arg6:'-docFileNameType' arg7:'idName' arg8:'-firstDocFileNum' arg9:'NUM' arg10:'-docFilesStorage'
 arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
 
 **Run tests with custom input/output:**
@@ -80,7 +80,7 @@ arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
     and change the ***appender-ref***, from ***File*** to ***Console***.<br>
 - Run ``mvn install`` to create the new ***JAR*** file.<br>
 - Execute the program with the following command:<br>
-**``java -jar publications_retriever-1.0-SNAPSHOT.jar arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-docFileNameType' arg5:'numberName' arg6:'-firstDocFileNum' arg7:'NUM' arg8:'-docFilesStorage' arg9:'storageDir' arg10:'-inputDataUrl' arg11: 'inputUrl' arg12: '-numOfThreads' arg13: <NUM>``**
+**``java -jar publications_retriever-1.0.jar arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-docFileNameType' arg5:'numberName' arg6:'-firstDocFileNum' arg7:'NUM' arg8:'-docFilesStorage' arg9:'storageDir' arg10:'-inputDataUrl' arg11: 'inputUrl' arg12: '-numOfThreads' arg13: <NUM>``**
 <br><br>
 *You can use the argument '-inputFileFullPath' to define the inputFile, instead of the stdin-redirection. That way, the progress percentage will appear in the logging file.*
 <br><br>
@@ -114,7 +114,7 @@ The above script will run the following commands:
 - **`mvn clean install`**: Does a *clean install*.
 - **`rm -rf example/sample_output/*`**: Removes any previous example-results.
 - **``cd target &&
-    java -jar publications_retriever-1.0-SNAPSHOT.jar -retrieveDataType document -downloadDocFiles -docFileNameType numberName -firstDocFileNum 1 -docFilesStorage ../example/sample_output/DocFiles
+    java -jar publications_retriever-1.0.jar -retrieveDataType document -downloadDocFiles -docFileNameType numberName -firstDocFileNum 1 -docFilesStorage ../example/sample_output/DocFiles
     < ../example/sample_input/sample_input.json > ../example/sample_output/sample_output.json``**<br>
     This command will run the program with "**../example/sample_input/sample_input.json**" as input
     and "**../example/sample_output/sample_output.json**" as the output.<br>
