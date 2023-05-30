@@ -115,7 +115,7 @@ public class LoaderAndChecker
 						return false;
 
 					String urlToCheck = retrievedUrlToCheck;
-					if ( !urlToCheck.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrlToCheck, null, StandardCharsets.UTF_8)) == null ) {
+					if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(urlToCheck).matches() && ((urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrlToCheck, null, StandardCharsets.UTF_8)) == null) ) {
 						logger.warn("Could not canonicalize url: " + retrievedUrlToCheck);
 						UrlUtils.logOutputData("null", retrievedUrlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
 						LoaderAndChecker.connProblematicUrls.incrementAndGet();
@@ -270,7 +270,7 @@ public class LoaderAndChecker
 					}
 
 					String sourceUrl = urlToCheck;	// Hold it here for the logging-messages.
-					if ( !sourceUrl.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
+					if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(sourceUrl).matches() && ((urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null) ) {
 						logger.warn("Could not canonicalize url: " + sourceUrl);
 						UrlUtils.logOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
 						LoaderAndChecker.connProblematicUrls.incrementAndGet();
@@ -367,7 +367,7 @@ public class LoaderAndChecker
 
 					String urlToCheck = retrievedUrl;
 					String sourceUrl = urlToCheck;    // Hold it here for the logging-messages.
-					if ( !sourceUrl.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
+					if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(sourceUrl).matches() && ((urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null) ) {
 						logger.warn("Could not canonicalize url: " + sourceUrl);
 						UrlUtils.logOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
 						LoaderAndChecker.connProblematicUrls.incrementAndGet();
@@ -459,7 +459,7 @@ public class LoaderAndChecker
 
 						String urlToCheck = retrievedUrl;
 						String sourceUrl = urlToCheck;    // Hold it here for the logging-messages.
-						if ( !sourceUrl.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null ) {
+						if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(sourceUrl).matches() && ((urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null) ) {
 							logger.warn("Could not canonicalize url: " + sourceUrl);
 							UrlUtils.logOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
 							LoaderAndChecker.connProblematicUrls.incrementAndGet();
@@ -557,7 +557,7 @@ public class LoaderAndChecker
 		for ( String urlToCheck : retrievedUrlsOfThisId )
 		{
 			if ( loggedUrlsOfThisId.contains(urlToCheck)
-				|| ( ((urlToCheck = URLCanonicalizer.getCanonicalURL(urlToCheck, null, StandardCharsets.UTF_8)) == null)
+				|| ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(urlToCheck).matches() && ((urlToCheck = URLCanonicalizer.getCanonicalURL(urlToCheck, null, StandardCharsets.UTF_8)) == null)
 					|| loggedUrlsOfThisId.contains(urlToCheck) ))
 					continue;
 
@@ -687,8 +687,7 @@ public class LoaderAndChecker
 			// Some "retrieved-urls" maybe were excluded before the canonicalization point (e.g. because their domains were blocked or were duplicates).
 			// We have to make sure the "equal()" and the "contains()" succeed on the same-started-urls.
 			String tempUrl = retrievedUrl;
-			if ( !retrievedUrl.contains("#/") )
-				if ( (retrievedUrl = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null )
+			if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(retrievedUrl).matches() && ((retrievedUrl = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null) )
 					retrievedUrl = tempUrl;	// Make sure we keep it on canonicalization-failure.
 
 			if ( !loggedUrlsOfThisId.contains(retrievedUrl) )

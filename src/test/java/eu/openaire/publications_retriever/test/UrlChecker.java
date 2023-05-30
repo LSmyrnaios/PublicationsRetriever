@@ -803,7 +803,7 @@ public class UrlChecker {
 		for ( String url : urlList )
 		{
 			String urlToCheck = url;	// Use an extra String or it cannot be printed in the error-logging-message as it will be null.
-			if ( !urlToCheck.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(url, null, StandardCharsets.UTF_8)) == null ) {
+			if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(urlToCheck).matches() && ((urlToCheck = URLCanonicalizer.getCanonicalURL(url, null, StandardCharsets.UTF_8)) == null) ) {
 				logger.warn("Could not canonicalize url: " + url);
 				continue;
 			}

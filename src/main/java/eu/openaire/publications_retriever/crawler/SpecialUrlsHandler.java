@@ -194,7 +194,7 @@ public class SpecialUrlsHandler
 		}
 
 		String urlToCheck = pdfUrl;
-		if ( !urlToCheck.contains("#/") && (urlToCheck = URLCanonicalizer.getCanonicalURL(pdfUrl, pageUrl, StandardCharsets.UTF_8)) == null ) {
+		if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(urlToCheck).matches() && ((urlToCheck = URLCanonicalizer.getCanonicalURL(pdfUrl, pageUrl, StandardCharsets.UTF_8)) == null) ) {
 			logger.warn("Could not canonicalize url: " + pdfUrl);
 			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as the retrievied \"turkjgastroenterol\"-pdf-url had canonicalization's problems.", pageDomain, true, "true", "true", "false", "false", "false", null, "null");
 			LoaderAndChecker.connProblematicUrls.incrementAndGet();

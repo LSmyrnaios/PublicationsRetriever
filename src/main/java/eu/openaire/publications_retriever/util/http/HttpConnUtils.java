@@ -558,7 +558,7 @@ public class HttpConnUtils
 				}
 
 				String tempTargetUrl = targetUrl;
-				if ( !targetUrl.contains("#/") && (targetUrl = URLCanonicalizer.getCanonicalURL(targetUrl, null, StandardCharsets.UTF_8)) == null )
+				if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(targetUrl).matches() && ((targetUrl = URLCanonicalizer.getCanonicalURL(targetUrl, null, StandardCharsets.UTF_8)) == null) )
 					throw new RuntimeException("Could not canonicalize target url: " + tempTargetUrl);	// Don't let it continue.
 
 				//ConnSupportUtils.printRedirectDebugInfo(currentUrl, location, targetUrl, responseCode, curRedirectsNum);

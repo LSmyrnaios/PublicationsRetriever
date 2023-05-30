@@ -111,7 +111,7 @@ public class MetaDocUrlsHandler {
 
         // Canonnicalize the metaDocUrl before connecting with it, to avoid encoding problems. We assume the metaDocUrl to be a full-url (including the protocol, domain etc.)
         String tempMetaDocUrl = metaDocUrl;
-        if ( (metaDocUrl = URLCanonicalizer.getCanonicalURL(metaDocUrl, null, StandardCharsets.UTF_8)) == null ) {
+        if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(metaDocUrl).matches() && ((metaDocUrl = URLCanonicalizer.getCanonicalURL(metaDocUrl, null, StandardCharsets.UTF_8)) == null) ) {
             logger.warn("Could not canonicalize metaDocUrl: " + tempMetaDocUrl + " , continue by crawling the page..");
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return false;   // Continue crawling the page..

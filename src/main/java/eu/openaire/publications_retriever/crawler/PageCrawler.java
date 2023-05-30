@@ -126,7 +126,7 @@ public class PageCrawler
 				for ( String currentLink : currentPageLinks )
 				{
 					// Produce fully functional internal links, NOT internal paths or non-canonicalized (if possible). The M.L.A. will evaluate whether the predictedDocUrls exist in the Set of internal-links.
-					if ( currentLink.contains("[") ) { // This link cannot be canonicalized, go and make it a full-link, at least.
+					if ( UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(currentLink).matches() ) {	// This link cannot be canonicalized, go and make it a full-link, at least.
 						if ( (urlToCheck = ConnSupportUtils.getFullyFormedUrl(pageUrl, currentLink, null)) == null )
 							continue;
 					} else if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl, StandardCharsets.UTF_8)) == null ) {
@@ -152,7 +152,7 @@ public class PageCrawler
 		{
 			if ( !shouldRunPrediction) {	// If we used the MLA for this pageUrl, then this process is already handled for all urls. Otherwise, here we canonicalize only few links at best.
 				// Produce fully functional internal links, NOT internal paths or non-canonicalized (if possible).
-				if ( currentLink.contains("[") ) { // This link cannot be canonicalized, go and make it a full-link, at least.
+				if ( UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(currentLink).matches() ) { // This link cannot be canonicalized, go and make it a full-link, at least.
 					if ( (urlToCheck = ConnSupportUtils.getFullyFormedUrl(pageUrl, currentLink, null)) == null )
 						continue;
 				}
@@ -568,7 +568,7 @@ public class PageCrawler
 
 		// Produce fully functional internal links, NOT internal paths or non-canonicalized.
 		String tempLink = docLink;
-		if ( (docLink = URLCanonicalizer.getCanonicalURL(docLink, pageUrl, StandardCharsets.UTF_8)) == null ) {
+		if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(docLink).matches() && ((docLink = URLCanonicalizer.getCanonicalURL(docLink, pageUrl, StandardCharsets.UTF_8)) == null) ) {
 			logger.warn("Could not canonicalize internal url: " + tempLink);
 			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there were canonicalization problems with the 'possibleDocUrl' found inside: " + tempLink, null, true, "true", "false", "false", "false", "false", null, "null");
 			return false;
