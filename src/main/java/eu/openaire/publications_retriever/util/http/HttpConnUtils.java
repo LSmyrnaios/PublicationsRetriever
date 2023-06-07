@@ -1,6 +1,5 @@
 package eu.openaire.publications_retriever.util.http;
 
-import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.crawler.SpecialUrlsHandler;
@@ -18,7 +17,6 @@ import javax.net.ssl.SSLException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -558,8 +556,8 @@ public class HttpConnUtils
 				}
 
 				String tempTargetUrl = targetUrl;
-				if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(targetUrl).matches() && ((targetUrl = URLCanonicalizer.getCanonicalURL(targetUrl, null, StandardCharsets.UTF_8)) == null) )
-					throw new RuntimeException("Could not canonicalize target url: " + tempTargetUrl);	// Don't let it continue.
+				if ( (targetUrl = LoaderAndChecker.basicURLNormalizer.filter(targetUrl)) == null )
+					throw new RuntimeException("Could not normalize target url: " + tempTargetUrl);	// Don't let it continue.
 
 				//ConnSupportUtils.printRedirectDebugInfo(currentUrl, location, targetUrl, responseCode, curRedirectsNum);
 

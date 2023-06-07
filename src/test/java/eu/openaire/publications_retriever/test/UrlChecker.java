@@ -1,7 +1,7 @@
 package eu.openaire.publications_retriever.test;
 
 import com.google.common.collect.HashMultimap;
-import edu.uci.ics.crawler4j.url.URLCanonicalizer;
+import crawlercommons.filters.basic.BasicURLNormalizer;
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.util.file.FileUtils;
@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.HttpURLConnection;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Set;
@@ -802,9 +801,12 @@ public class UrlChecker {
 
 		for ( String url : urlList )
 		{
-			String urlToCheck = url;	// Use an extra String or it cannot be printed in the error-logging-message as it will be null.
-			if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(urlToCheck).matches() && ((urlToCheck = URLCanonicalizer.getCanonicalURL(url, null, StandardCharsets.UTF_8)) == null) ) {
-				logger.warn("Could not canonicalize url: " + url);
+			//String url = entry.getKey();	// TODO - future-code.
+			//Boolean givesDocOrDatasetUrl = entry.getValue();	// TODO - future-code.
+
+			String urlToCheck;
+			if ( (urlToCheck = LoaderAndChecker.basicURLNormalizer.filter(url)) == null ) {
+				logger.warn("Could not normalize url: " + url);
 				continue;
 			}
 

@@ -1,7 +1,7 @@
 package eu.openaire.publications_retriever.util.url;
 
 import com.google.common.collect.HashMultimap;
-import edu.uci.ics.crawler4j.url.URLCanonicalizer;
+import crawlercommons.filters.basic.BasicURLNormalizer;
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.CookieStore;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -41,7 +40,9 @@ public class LoaderAndChecker
 			+ "|svg|sas7bdat|spss|sas|stata|(?:my|postgre)?sql(?:ite)?|bigquery|sh[px]|sb[xn]|prj|dbf|(?:m|acc)db|mif|mat|pcd|bt|n[sc]?[\\d]*|h[\\d]+|hdf[\\d]*|trs|opj|jcamp|fcs|fas(?:ta)?|keys|values";
 	public static final Pattern DATASET_URL_FILTER = Pattern.compile(".+(?:dataset[s]?/.*|(?:\\.|format=)" + dataset_formats + "(?:\\?.+)?$)");
 
-	
+
+	public static final BasicURLNormalizer basicURLNormalizer = BasicURLNormalizer.newBuilder().build();
+
 	public static int numOfIDs = 0;	// The number of IDs existing in the input.
 	public static AtomicInteger connProblematicUrls = new AtomicInteger(0);	// Urls known to have connectivity problems, such as long conn-times etc.
 	public static AtomicInteger inputDuplicatesNum = new AtomicInteger(0);
@@ -115,9 +116,9 @@ public class LoaderAndChecker
 						return false;
 
 					String urlToCheck = retrievedUrlToCheck;
-					if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(urlToCheck).matches() && ((urlToCheck = URLCanonicalizer.getCanonicalURL(retrievedUrlToCheck, null, StandardCharsets.UTF_8)) == null) ) {
-						logger.warn("Could not canonicalize url: " + retrievedUrlToCheck);
-						UrlUtils.logOutputData("null", retrievedUrlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
+					if ( (urlToCheck = basicURLNormalizer.filter(retrievedUrlToCheck)) == null ) {
+						logger.warn("Could not normalize url: " + retrievedUrlToCheck);
+						UrlUtils.logOutputData("null", retrievedUrlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to normalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
 						LoaderAndChecker.connProblematicUrls.incrementAndGet();
 						return false;
 					}
@@ -228,7 +229,7 @@ public class LoaderAndChecker
 						}
 
 						String lowerCaseRetrievedUrl = retrievedUrl.toLowerCase();
-						// Check if it's a possible-DocUrl, if so, this is the only url which will be checked from this id-group, unless there's a canonicalization problem.
+						// Check if it's a possible-DocUrl, if so, this is the only url which will be checked from this id-group, unless there's a normalization problem.
 						if ( (retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
 							|| (retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) ) {
 							//logger.debug("Possible docUrl or datasetUrl: " + retrievedUrl);
@@ -270,15 +271,15 @@ public class LoaderAndChecker
 					}
 
 					String sourceUrl = urlToCheck;	// Hold it here for the logging-messages.
-					if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(sourceUrl).matches() && ((urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null) ) {
-						logger.warn("Could not canonicalize url: " + sourceUrl);
-						UrlUtils.logOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
+					if ( (urlToCheck = basicURLNormalizer.filter(sourceUrl)) == null ) {
+						logger.warn("Could not normalize url: " + sourceUrl);
+						UrlUtils.logOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to normalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
 						LoaderAndChecker.connProblematicUrls.incrementAndGet();
 
 						// If other urls exits, then go and check those.
 						if ( !isSingleIdUrlPair ) {    // Don't forget to write the valid but not-to-be-connected urls to the outputFile.
 							loggedUrlsOfCurrentId.add(sourceUrl);
-							checkRemainingUrls(retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId, isSingleIdUrlPair);	// Go check the other urls because they might not have a canonicalization problem.
+							checkRemainingUrls(retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId, isSingleIdUrlPair);	// Go check the other urls because they might not have a normalization problem.
 							handleLogOfRemainingUrls(retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId);
 						}
 						return false;	// Exit this runnable to go to the next ID.
@@ -296,7 +297,7 @@ public class LoaderAndChecker
 						// This url had connectivity problems.. but the rest might not, go check them out.
 						if ( !isSingleIdUrlPair ) {
 							loggedUrlsOfCurrentId.add(urlToCheck);
-							checkRemainingUrls(retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId, isSingleIdUrlPair);	// Go check the other urls because they might not have a canonicalization problem.
+							checkRemainingUrls(retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId, isSingleIdUrlPair);	// Go check the other urls because they might not have a normalization problem.
 						}
 					}
 
@@ -367,9 +368,9 @@ public class LoaderAndChecker
 
 					String urlToCheck = retrievedUrl;
 					String sourceUrl = urlToCheck;    // Hold it here for the logging-messages.
-					if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(sourceUrl).matches() && ((urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null) ) {
-						logger.warn("Could not canonicalize url: " + sourceUrl);
-						UrlUtils.logOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
+					if ( (urlToCheck = basicURLNormalizer.filter(sourceUrl)) == null ) {
+						logger.warn("Could not normalize url: " + sourceUrl);
+						UrlUtils.logOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to normalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
 						LoaderAndChecker.connProblematicUrls.incrementAndGet();
 						return false;
 					}
@@ -459,9 +460,9 @@ public class LoaderAndChecker
 
 						String urlToCheck = retrievedUrl;
 						String sourceUrl = urlToCheck;    // Hold it here for the logging-messages.
-						if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(sourceUrl).matches() && ((urlToCheck = URLCanonicalizer.getCanonicalURL(sourceUrl, null, StandardCharsets.UTF_8)) == null) ) {
-							logger.warn("Could not canonicalize url: " + sourceUrl);
-							UrlUtils.logOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to canonicalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
+						if ( (urlToCheck = basicURLNormalizer.filter(sourceUrl)) == null ) {
+							logger.warn("Could not normalize url: " + sourceUrl);
+							UrlUtils.logOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to normalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
 							LoaderAndChecker.connProblematicUrls.incrementAndGet();
 							continue;
 						}
@@ -545,7 +546,7 @@ public class LoaderAndChecker
 
 
 	/**
-	 * This method is called after a "best-case" url was detected but either had canonicalization problems or the connection failed.
+	 * This method is called after a "best-case" url was detected but either had normalization problems or the connection failed.
 	 * @param retrievedId
 	 * @param retrievedUrlsOfThisId
 	 * @param loggedUrlsOfThisId
@@ -556,9 +557,9 @@ public class LoaderAndChecker
 	{
 		for ( String urlToCheck : retrievedUrlsOfThisId )
 		{
+			// Check this url -before and after normalization- against the logged urls of this ID.
 			if ( loggedUrlsOfThisId.contains(urlToCheck)
-				|| ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(urlToCheck).matches() && ((urlToCheck = URLCanonicalizer.getCanonicalURL(urlToCheck, null, StandardCharsets.UTF_8)) == null)
-					|| loggedUrlsOfThisId.contains(urlToCheck) ))
+				|| ( ((urlToCheck = basicURLNormalizer.filter(urlToCheck)) != null) && loggedUrlsOfThisId.contains(urlToCheck) ) )
 					continue;
 
 			loadingRetries.incrementAndGet();
@@ -684,11 +685,11 @@ public class LoaderAndChecker
 	{
 		for ( String retrievedUrl : retrievedUrlsOfThisId )
 		{
-			// Some "retrieved-urls" maybe were excluded before the canonicalization point (e.g. because their domains were blocked or were duplicates).
-			// We have to make sure the "equal()" and the "contains()" succeed on the same-started-urls.
+			// Some "retrieved-urls" maybe were excluded before the normalization point (e.g. because their domains were blocked or were duplicates).
+			// We have to make sure the "contains()" succeed on the same-started-urls.
 			String tempUrl = retrievedUrl;
-			if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(retrievedUrl).matches() && ((retrievedUrl = URLCanonicalizer.getCanonicalURL(retrievedUrl, null, StandardCharsets.UTF_8)) == null) )
-					retrievedUrl = tempUrl;	// Make sure we keep it on canonicalization-failure.
+			if ( (retrievedUrl = basicURLNormalizer.filter(retrievedUrl)) == null )
+					retrievedUrl = tempUrl;	// Make sure we check the non-normalized version.
 
 			if ( !loggedUrlsOfThisId.contains(retrievedUrl) )
 				UrlUtils.logOutputData(retrievedId, retrievedUrl, null, "unreachable",

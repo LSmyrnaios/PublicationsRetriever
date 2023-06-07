@@ -1,7 +1,6 @@
 package eu.openaire.publications_retriever.crawler;
 
 
-import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
@@ -13,7 +12,6 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -194,9 +192,10 @@ public class SpecialUrlsHandler
 		}
 
 		String urlToCheck = pdfUrl;
-		if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(urlToCheck).matches() && ((urlToCheck = URLCanonicalizer.getCanonicalURL(pdfUrl, pageUrl, StandardCharsets.UTF_8)) == null) ) {
-			logger.warn("Could not canonicalize url: " + pdfUrl);
-			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as the retrievied \"turkjgastroenterol\"-pdf-url had canonicalization's problems.", pageDomain, true, "true", "true", "false", "false", "false", null, "null");
+		if ( ((urlToCheck = ConnSupportUtils.getFullyFormedUrl(pageUrl, pdfUrl, null)) == null)	// Make it a full-URL.
+				|| ((urlToCheck = LoaderAndChecker.basicURLNormalizer.filter(urlToCheck)) == null) ) {	// Normalize it.
+			logger.warn("Could not normalize url: " + pdfUrl);
+			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as the retrievied \"turkjgastroenterol\"-pdf-url had normalization's problems.", pageDomain, true, "true", "true", "false", "false", "false", null, "null");
 			LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			return false;
 		}

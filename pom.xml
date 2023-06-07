@@ -150,52 +150,26 @@
       </exclusions>
     </dependency>
 
-
-<!--
-// This is the updated fork of Crawler4j, by "rzo1". Check if we can use this for a more modern "UrlCanonicalization".
-  // GitHub-link: https://github.com/rzo1/crawler4j
-    &lt;!&ndash; https://mvnrepository.com/artifact/de.hs-heilbronn.mi/crawler4j-commons &ndash;&gt;
     <dependency>
-      <groupId>de.hs-heilbronn.mi</groupId>
-      <artifactId>crawler4j-commons</artifactId>
-      <version>5.0.1</version>
-    </dependency>
--->
-
-
-    <!-- https://mvnrepository.com/artifact/edu.uci.ics/crawler4j -->
-    <dependency>
-      <groupId>edu.uci.ics</groupId>
-      <artifactId>crawler4j</artifactId>
-      <version>4.4.0</version>
+      <groupId>com.github.crawler-commons</groupId>
+      <artifactId>crawler-commons</artifactId>
+      <version>1.3</version>
       <exclusions>
         <exclusion>
-          <groupId>com.sleepycat</groupId>
-          <artifactId>je</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.tika</groupId>
-          <artifactId>*</artifactId>
+          <groupId>commons-io</groupId>
+          <artifactId>commons-io</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>ch.qos.logback</groupId>
-          <artifactId>logback-classic</artifactId>
+          <groupId>org.junit.jupiter</groupId>
+          <artifactId>junit-jupiter-engine</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-codec</groupId>
-          <artifactId>commons-codec</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient</artifactId>
+          <groupId>org.junit.jupiter</groupId>
+          <artifactId>junit-jupiter-params</artifactId>
         </exclusion>
       </exclusions>
     </dependency>

@@ -27,6 +27,8 @@
         </encoder>
     </appender>
 
+    <logger name="crawlercommons" level="warn"/>
+
     <root level="debug">
         <appender-ref ref="RollingFile" />
     </root>

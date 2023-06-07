@@ -1,6 +1,5 @@
 package eu.openaire.publications_retriever.crawler;
 
-import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.exceptions.*;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
@@ -19,7 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.net.HttpURLConnection;
-import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -125,12 +123,10 @@ public class PageCrawler
 				HashSet<String> newPageLinks = new HashSet<>(currentPageLinks.size());	// We use "HashSet" to avoid duplicates.
 				for ( String currentLink : currentPageLinks )
 				{
-					// Produce fully functional internal links, NOT internal paths or non-canonicalized (if possible). The M.L.A. will evaluate whether the predictedDocUrls exist in the Set of internal-links.
-					if ( UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(currentLink).matches() ) {	// This link cannot be canonicalized, go and make it a full-link, at least.
-						if ( (urlToCheck = ConnSupportUtils.getFullyFormedUrl(pageUrl, currentLink, null)) == null )
-							continue;
-					} else if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl, StandardCharsets.UTF_8)) == null ) {
-						logger.warn("Could not canonicalize internal url: " + currentLink);
+					// Produce fully functional internal links, NOT internal paths or non-normalized (if possible). The M.L.A. will evaluate whether the predictedDocUrls exist in the Set of internal-links.
+					if ( ((urlToCheck = ConnSupportUtils.getFullyFormedUrl(pageUrl, currentLink, null)) == null)	// Make it a full-URL.
+						|| ((urlToCheck = LoaderAndChecker.basicURLNormalizer.filter(urlToCheck)) == null) ) {    // Normalize it.
+						logger.warn("Could not normalize internal url: " + currentLink);
 						continue;
 					}
 					newPageLinks.add(urlToCheck);
@@ -150,14 +146,11 @@ public class PageCrawler
 		// Check if urls inside this page, match to a docUrl or to a datasetUrl regex, if they do, try connecting with them and see if they truly are docUrls. If they are, return.
 		for ( String currentLink : currentPageLinks )
 		{
-			if ( !shouldRunPrediction) {	// If we used the MLA for this pageUrl, then this process is already handled for all urls. Otherwise, here we canonicalize only few links at best.
-				// Produce fully functional internal links, NOT internal paths or non-canonicalized (if possible).
-				if ( UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(currentLink).matches() ) { // This link cannot be canonicalized, go and make it a full-link, at least.
-					if ( (urlToCheck = ConnSupportUtils.getFullyFormedUrl(pageUrl, currentLink, null)) == null )
-						continue;
-				}
-				else if ( (urlToCheck = URLCanonicalizer.getCanonicalURL(currentLink, pageUrl, StandardCharsets.UTF_8)) == null ) {
-					logger.warn("Could not canonicalize internal url: " + currentLink);
+			if ( !shouldRunPrediction) {	// If we used the MLA for this pageUrl, then this process is already handled for all urls. Otherwise, here we normalize only few links at best.
+				// Produce fully functional internal links, NOT internal paths or non-normalized (if possible). The M.L.A. will evaluate whether the predictedDocUrls exist in the Set of internal-links.
+				if ( ((urlToCheck = ConnSupportUtils.getFullyFormedUrl(pageUrl, currentLink, null)) == null)	// Make it a full-URL.
+						|| ((urlToCheck = LoaderAndChecker.basicURLNormalizer.filter(urlToCheck)) == null) ) {    // Normalize it.
+					logger.warn("Could not normalize internal url: " + currentLink);
 					continue;
 				}
 			} else
@@ -342,7 +335,7 @@ public class PageCrawler
 		int curNumOfInternalLinks = 0;
 
 		// Iterate through the elements and extract the internal link.
-		// The internal link might be half-link, or it may have canonicalization issues. That's ok, it is made whole and cannonicalized later, if needed.
+		// The internal link might be half-link, or it may have normalization issues. That's ok, it is made whole and normalized later, if needed.
 
 		if ( pageUrl.contains("aup-online.com") ) {
 			SpecialUrlsHandler.handleAupOnlinePage(pageUrl, elementLinksOnPage);
@@ -535,7 +528,7 @@ public class PageCrawler
 			else if ( !lowerCaseInternalLink.contains("/#/") )
 				return null;	// Else if it has not a hashtag-directory we reject it (don't add it in the hashSet)..
 		}
-		else if ( lowerCaseInternalLink.contains("\"") || lowerCaseInternalLink.contains("[error") )	// They cannot be canonicalized and especially the second one is not wanted.
+		else if ( lowerCaseInternalLink.contains("\"") || lowerCaseInternalLink.contains("[error") )	// They cannot be normalized and especially the second one is not wanted.
 			return null;
 
 		//logger.debug("Filtered InternalLink: " + internalLink);	// DEBUG!
@@ -566,11 +559,12 @@ public class PageCrawler
 			return false;
 		}
 
-		// Produce fully functional internal links, NOT internal paths or non-canonicalized.
+		// Produce fully functional internal links, NOT internal paths or non-normalized.
 		String tempLink = docLink;
-		if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(docLink).matches() && ((docLink = URLCanonicalizer.getCanonicalURL(docLink, pageUrl, StandardCharsets.UTF_8)) == null) ) {
-			logger.warn("Could not canonicalize internal url: " + tempLink);
-			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there were canonicalization problems with the 'possibleDocUrl' found inside: " + tempLink, null, true, "true", "false", "false", "false", "false", null, "null");
+		if ( ((docLink = ConnSupportUtils.getFullyFormedUrl(pageUrl, docLink, null)) == null)	// Make it a full-URL.
+				|| ((docLink = LoaderAndChecker.basicURLNormalizer.filter(docLink)) == null) ) {	// Normalize it.
+			logger.warn("Could not normalize internal url: " + tempLink);
+			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there were normalization problems with the 'possibleDocUrl' found inside: " + tempLink, null, true, "true", "false", "false", "false", "false", null, "null");
 			return false;
 		}
 
@@ -618,7 +612,7 @@ public class PageCrawler
 
 		int remainingUrlsCounter = 0;
 
-		for ( String currentLink : remainingLinks )    // Here we don't re-check already-checked links, as this is a new list. All the links here are full-canonicalized-urls.
+		for ( String currentLink : remainingLinks )    // Here we don't re-check already-checked links, as this is a new list. All the links here are full-normalized-urls.
 		{
 			// Make sure we avoid connecting to different domains to save time. We allow to check different domains only after matching to possible-urls in the previous fast-loop.
 			if ( !currentLink.contains(pageDomain)

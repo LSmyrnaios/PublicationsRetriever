@@ -1,6 +1,5 @@
 package eu.openaire.publications_retriever.crawler;
 
-import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import eu.openaire.publications_retriever.exceptions.DomainBlockedException;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
@@ -10,7 +9,6 @@ import eu.openaire.publications_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -111,8 +109,8 @@ public class MetaDocUrlsHandler {
 
         // Canonnicalize the metaDocUrl before connecting with it, to avoid encoding problems. We assume the metaDocUrl to be a full-url (including the protocol, domain etc.)
         String tempMetaDocUrl = metaDocUrl;
-        if ( !UrlUtils.URL_ACCEPTED_CHARS_TO_AVOID_CANONICALIZATION.matcher(metaDocUrl).matches() && ((metaDocUrl = URLCanonicalizer.getCanonicalURL(metaDocUrl, null, StandardCharsets.UTF_8)) == null) ) {
-            logger.warn("Could not canonicalize metaDocUrl: " + tempMetaDocUrl + " , continue by crawling the page..");
+        if ( (metaDocUrl = LoaderAndChecker.basicURLNormalizer.filter(metaDocUrl)) == null ) {
+            logger.warn("Could not normalize metaDocUrl: " + tempMetaDocUrl + " , continue by crawling the page..");
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return false;   // Continue crawling the page..
         }
