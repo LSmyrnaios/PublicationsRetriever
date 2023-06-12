@@ -835,7 +835,7 @@ public class UrlChecker {
 		logger.debug("Connection-problematic-urls: " + LoaderAndChecker.connProblematicUrls);
 		logger.debug("Content-problematic-urls: " + PageCrawler.contentProblematicUrls);
 
-		PublicationsRetriever.calculateAndPrintElapsedTime(start, Instant.now(), "The testing of " + numOfUrlsToCheck + " urls finished after: ");
+		PublicationsRetriever.calculateAndPrintElapsedTime(start, Instant.now(), "The testing of " + urlList.size() + " urls finished after: ");
 	}
 
 
