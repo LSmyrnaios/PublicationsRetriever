@@ -24,7 +24,7 @@ public class UrlUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(UrlUtils.class);
 
-	public static final Pattern URL_TRIPLE = Pattern.compile("([^/]+://(?:ww(?:w|\\d)(?:(?:\\w+)?\\.)?)?([\\w.\\-]+)(?:[:\\d]+)?(?:.*/)?)(?:([^/^;?]*)(?:[;?][^/^=]+(?:=.*)?)?)?");
+	public static final Pattern URL_TRIPLE = Pattern.compile("([^/]+://(?:ww(?:w|\\d)(?:(?:\\w+)?\\.)?)?([\\w.-]+)(?:[:\\d]+)?(?:.*/)?)(?:([^/^;?]*)(?:[;?][^/^=]+(?:=.*)?)?)?");
 	// URL_TRIPLE regex to group domain, path and ID --> group <1> is the regular PATH, group<2> is the DOMAIN and group <3> is the regular "ID".
 	// TODO - Add explanation also for the non-captured groups for better maintenance. For example the "ww(?:w|\\d)" can capture "www", "ww2", "ww3" ect.
 

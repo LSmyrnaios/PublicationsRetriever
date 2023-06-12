@@ -85,7 +85,7 @@ public class FileUtils
 
 	private static final String utf8Charset = StandardCharsets.UTF_8.toString();
 
-	public static final Pattern EXTENSION_PATTERN = Pattern.compile("(\\.[^.-_]+)$");
+	public static final Pattern EXTENSION_PATTERN = Pattern.compile("(\\.[^._-]+)$");
 
 
 	public FileUtils(InputStream input, OutputStream output)

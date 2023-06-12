@@ -39,7 +39,7 @@ public class ConnSupportUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(ConnSupportUtils.class);
 
-	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("(?:\\([']?)?([\\w]+/[\\w+\\-.]+).*");
+	public static final Pattern MIME_TYPE_FILTER = Pattern.compile("(?:\\([']?)?([\\w]+/[\\w+.-]+).*");
 
 	public static final Pattern POSSIBLE_DOC_OR_DATASET_MIME_TYPE = Pattern.compile("(?:(?:application|binary)/(?:(?:x-)?octet(?:-stream)?|save|force-download))|unknown");	// We don't take it for granted.. if a match is found, then we check for the "pdf" keyword in the "contentDisposition" (if it exists) or in the url.
 	// There are special cases. (see: "https://kb.iu.edu/d/agtj" for "octet" info.
