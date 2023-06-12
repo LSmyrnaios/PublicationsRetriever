@@ -62,12 +62,12 @@ public class PageCrawler
 																		// We may have the "Emanuel" writer's name in the url-string. Also, we may have the "agreement"-keyword in a valid pub-url like: https://irep.ntu.ac.uk/id/eprint/40188/1/__Opel.ads.ntu.ac.uk_IRep-PGR%24_2020%20Theses%20and%20deposit%20agreement%20forms_BLSS_NBS_FARRIER-WILLIAMS%2C%20Elizabeth_EFW%20Thesis%202020.pdf
 																		+ "|licen(?:se|cia)" + spaceOrDashes + "(?:of|de)" + spaceOrDashes + "us[eo]|(?:governance|safety)" + spaceOrDashes + "statement|normativa|(?:consumer|hazard|copyright)" + spaceOrDashes + "(?:information|(?:release" + spaceOrDashes + ")?form)|copyright|permission|(?:editorial|review)" + spaceOrDashes + "board|d[ée](?:p(?:ôt[s]?|oser|osit)|butez)|cr[ée]er" + spaceOrDashes + "(?:votre|son)|orcid|subscription|instruction|code" + spaceOrDashes + "of" + spaceOrDashes + "conduct|request|join|compte|[^_]account"
 																		+ "|table" + spaceOrDashes + "of" + spaceOrDashes + "contents|(?:front|back|end)" + spaceOrDashes + "matter|information" + spaceOrDashes + "for" + spaceOrDashes + "authors|pdf(?:/a)?" + spaceOrDashes + "conversion|catalogue|factsheet|classifieds"	// classifieds = job-ads
-																		+ "|pdf-viewer|certificate" + spaceOrDashes + "of|conflict[s]?" + spaceOrDashes + "of" + spaceOrDashes + "interest|(?:recommendation|order)" + spaceOrDashes + "form|adverti[sz]e|mandatory" + spaceOrDashes + "open" + spaceOrDashes + "access|recommandations" + spaceOrDashes + "pour" + spaceOrDashes + "s'affilier|hal.*collections|terms|conditions|hakuohjeet|logigramme|export_liste_publi|yearbook|pubs_(?:brochure|overview)|thermal-letter"
+																		+ "|pdf-viewer|certificate" + spaceOrDashes + "of|conflict[s]?" + spaceOrDashes + "of" + spaceOrDashes + "interest|(?:recommendation|order)" + spaceOrDashes + "form|adverti[sz]e|mandatory" + spaceOrDashes + "open" + spaceOrDashes + "access|recommandations" + spaceOrDashes + "pour" + spaceOrDashes + "s'affilier|hal.*collections|terms|conditions|hakuohjeet|logigramme|export_liste_publi|yearbook|pubs_(?:brochure|overview)|thermal-letter|réutiliser" + spaceOrDashes + "des" + spaceOrDashes + "images" + spaceOrDashes + "dans" + spaceOrDashes + "des" + spaceOrDashes + "publications"
 																		+ "|procedure|規程|運営規程"	// 規程 == procedure, 運営規程 = Operating regulations  (in japanese)
 																		+ "|(?:peer|mini)" + spaceOrDashes + "review|(?:case|annual)" + spaceOrDashes + "report|review" + spaceOrDashes + "article|short" + spaceOrDashes + "communication|letter" + spaceOrDashes + "to" + spaceOrDashes + "editor|how" + spaceOrDashes + "to" + spaceOrDashes + "(?:create|submit|contact)|tutori[ae]l|survey-results|calendar" + spaceOrDashes + "of" + spaceOrDashes + "events|know" + spaceOrDashes + "your" + spaceOrDashes + "rights|your(?:" + spaceOrDashes + "id|cv)" + spaceOrDashes + "hal|présentation" + spaceOrDashes + "portail" + spaceOrDashes + "hal"
 																		+ "|data-sharing-guidance|rate(?:" + spaceOrDashes + ")?cards|press" + spaceOrDashes + "release|liability" + spaceOrDashes + "disclaimer|(?:avec|dans)" + spaceOrDashes + "(?:ocd|x2)?hal|online" + spaceOrDashes + "flyer|publishing" + spaceOrDashes + "process|book" + spaceOrDashes + "of" + spaceOrDashes + "abstracts|academic" + spaceOrDashes + "social" + spaceOrDashes + "networks|ijcseugcjournalno|manuscript(?:" + spaceOrDashes + "preparation)?" + spaceOrDashes + "checklist|by" + spaceOrDashes + "laws"
 																		+ "|^(?:licen[cs]e|help|reprints|pol[ií]ti[kc][sa](?:" + spaceOrDashes + "de" + spaceOrDashes + "informação)?|for" + spaceOrDashes + "recruiters|charte" + spaceOrDashes + "de" + spaceOrDashes + "signature|weekly" + spaceOrDashes + "visitors|publication" + spaceOrDashes + "(?:ethics" + spaceOrDashes + "and" + spaceOrDashes + "malpractice|fees)|redaktion|sample" + spaceOrDashes + "manuscript|open" + spaceOrDashes + "access)$"	// Single words/phrases inside the html-text.
-																		+ "|/(?:entry|information|opinion|(?:rapportannuel|publerkl|utt_so_|atsc_|tjg_|ictrp_|oproep_voor_artikels_|[^/]*call_for_contributions_)[\\w-_()]*|accesorestringido|library_recommendation_form|research-article|loi_republique_numerique_publis|nutzungsbedingungen|autorenhinweise|mediadaten|canceledpresentations|sscc-facme_cirugia|bir_journals_reprint_form|transparencia|wfme|evolution_de_l_ergonomie|que_pouvez_vous_deposer|ethic-comittee-approval|restri(?:ngido|cted)|asn" + spaceOrDashes + "tips|aidehelp).pdf(?:\\?.*)?$"	// The plain "research-article.pdf" is the template provided by journals.
+																		+ "|/(?:entry|information|opinion|(?:rapportannuel|publerkl|utt_so_|atsc_|tjg_|ictrp_|oproep_voor_artikels_|[^/]*call_for_contributions_)[\\w-_()]*|accesorestringido|library_recommendation_form|research-article|loi_republique_numerique_publis|nutzungsbedingungen|autorenhinweise|mediadaten|canceledpresentations|sscc-facme_cirugia|bir_journals_reprint_form|transparencia|wfme|evolution_de_l_ergonomie|que_pouvez_vous_deposer|ethic-comittee-approval|restri(?:ngido|cted)|ofi[c]+ial|asn" + spaceOrDashes + "tips|aidehelp|.*_doi|(?:b-ent|aces)_.*).pdf(?:\\?.*)?$"	// The plain "research-article.pdf" is the template provided by journals.
 																		+ "|kilavuzu"	// "guide" in Turkish
 																		+ "|(?:公表|登録)届出書|取扱要領|リポジトリ(?:要項|運用指針)|検索のポイント|について|閲覧方法|ープンアクセスポリシー|されたみなさまへ|(?:論文の|登録)許諾書|著作権利用許諾要件|削除依頼書).*");	// registration/notification form/statement, instructions, repository requirements/operation guidelines, search point, how to browse (all in japanese), open access guide, to all of you, dissertation consent form / Registration License / Copyright license requirements / deletion request form
 
@@ -454,13 +454,13 @@ public class PageCrawler
 	}
 
 
-	private static final String commonPattern = "reference|su[m]{1,2}ar(?:io|y)|author";
+	private static final String commonPattern = "website-navigation|reference|su[m]{1,2}ar(?:io|y)|author|logo";
 
 	private static final Pattern PARENT_CLASS_NAME_FILTER_PATTERN = Pattern.compile("(?:^(?:tab|product-head-bnrs)$|.*(?:" + commonPattern + "|breadcrumb|su[b]?scri(?:p[tc]i[oó]n|b(?:a|ir)se)|reco[m]{1,2}enda(?:tion|do)|metric|stats|cookie|kapak|accesos-usuario).*)");
 	// Exclude links which are "tabs". For example those hidden in submenus, of the main-menu (not submenus of fulltext-choices).
 	// "kapak" = "cover" in Turkish
 
-	private static final Pattern PARENT_ID_FILTER_PATTERN = Pattern.compile(".*(?:" + commonPattern + ").*");
+	private static final Pattern PARENT_ID_FILTER_PATTERN = Pattern.compile(".*(?:" + commonPattern + "|other).*");
 	
 	private static boolean hasUnacceptableStructure(Element element, String pageUrl)
 	{
@@ -491,7 +491,7 @@ public class PageCrawler
 			String parentTag = parentElement.tagName().trim();
 			if ( parentTag.equals("footer") || parentTag.equals("header")
 					|| PARENT_CLASS_NAME_FILTER_PATTERN.matcher(parentElement.className().trim().toLowerCase()).matches()
-					|| PARENT_ID_FILTER_PATTERN.matcher(parentElement.id().toLowerCase()).matches() )
+					|| PARENT_ID_FILTER_PATTERN.matcher(parentElement.id().toLowerCase()).matches() )	// No "trimming" is necessary.
 				return true;
 
 			parentElement = parentElement.parent();	// Climb up to the ancestor.
