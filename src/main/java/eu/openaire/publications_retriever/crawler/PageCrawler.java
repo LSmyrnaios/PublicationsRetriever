@@ -65,11 +65,12 @@ public class PageCrawler
 																		+ "|pdf-viewer|certificate" + spaceOrDashes + "of|conflict[s]?" + spaceOrDashes + "of" + spaceOrDashes + "interest|(?:recommendation|order)" + spaceOrDashes + "form|adverti[sz]e|mandatory" + spaceOrDashes + "open" + spaceOrDashes + "access|recommandations" + spaceOrDashes + "pour" + spaceOrDashes + "s'affilier|hal.*collections|terms|conditions|hakuohjeet|logigramme|export_liste_publi|yearbook|pubs_(?:brochure|overview)|thermal-letter|réutiliser" + spaceOrDashes + "des" + spaceOrDashes + "images" + spaceOrDashes + "dans" + spaceOrDashes + "des" + spaceOrDashes + "publications"
 																		+ "|procedure|規程|運営規程"	// 規程 == procedure, 運営規程 = Operating regulations  (in japanese)
 																		+ "|(?:peer|mini)" + spaceOrDashes + "review|(?:case|annual)" + spaceOrDashes + "report|review" + spaceOrDashes + "article|short" + spaceOrDashes + "communication|letter" + spaceOrDashes + "to" + spaceOrDashes + "editor|how" + spaceOrDashes + "to" + spaceOrDashes + "(?:create|submit|contact)|tutori[ae]l|survey-results|calendar" + spaceOrDashes + "of" + spaceOrDashes + "events|know" + spaceOrDashes + "your" + spaceOrDashes + "rights|your(?:" + spaceOrDashes + "id|cv)" + spaceOrDashes + "hal|présentation" + spaceOrDashes + "portail" + spaceOrDashes + "hal"
-																		+ "|data-sharing-guidance|rate(?:" + spaceOrDashes + ")?cards|press" + spaceOrDashes + "release|liability" + spaceOrDashes + "disclaimer|(?:avec|dans)" + spaceOrDashes + "(?:ocd|x2)?hal|online" + spaceOrDashes + "flyer|publishing" + spaceOrDashes + "process|book" + spaceOrDashes + "of" + spaceOrDashes + "abstracts|academic" + spaceOrDashes + "social" + spaceOrDashes + "networks|ijcseugcjournalno|manuscript(?:" + spaceOrDashes + "preparation)?" + spaceOrDashes + "checklist|by" + spaceOrDashes + "laws"
-																		+ "|^(?:licen[cs]e|help|reprints|pol[ií]ti[kc][sa](?:" + spaceOrDashes + "de" + spaceOrDashes + "informação)?|for" + spaceOrDashes + "recruiters|charte" + spaceOrDashes + "de" + spaceOrDashes + "signature|weekly" + spaceOrDashes + "visitors|publication" + spaceOrDashes + "(?:ethics" + spaceOrDashes + "and" + spaceOrDashes + "malpractice|fees)|redaktion|sample" + spaceOrDashes + "manuscript|open" + spaceOrDashes + "access)$"	// Single words/phrases inside the html-text.
+																		+ "|data-sharing-guidance|rate(?:" + spaceOrDashes + ")?cards|press" + spaceOrDashes + "release|liability" + spaceOrDashes + "disclaimer|(?:avec|dans)" + spaceOrDashes + "(?:ocd|x2)?hal|online" + spaceOrDashes + "flyer|publishing" + spaceOrDashes + "process|book" + spaceOrDashes + "of" + spaceOrDashes + "abstracts|academic" + spaceOrDashes + "social" + spaceOrDashes + "networks|ijcseugcjournalno|manuscript(?:" + spaceOrDashes + "preparation)?" + spaceOrDashes + "checklist|by" + spaceOrDashes + "laws|reglamento" + spaceOrDashes + "de" + spaceOrDashes + "ciencia" + spaceOrDashes + "abierta"
+																		+ "|^(?:licen[cs]e|help|reprints|pol[ií]ti[kc][sa](?:" + spaceOrDashes + "de" + spaceOrDashes + "informação)?|for" + spaceOrDashes + "recruiters|charte" + spaceOrDashes + "de" + spaceOrDashes + "signature|weekly" + spaceOrDashes + "visitors|publication" + spaceOrDashes + "(?:ethics" + spaceOrDashes + "and" + spaceOrDashes + "malpractice|fees)|redaktion|sample" + spaceOrDashes + "manuscript|open" + spaceOrDashes + "access(?:" + spaceOrDashes + "policy)?)$"	// Single words/phrases inside the html-text.
 																		+ "|/(?:entry|information|opinion|(?:rapportannuel|publerkl|utt_so_|atsc_|tjg_|ictrp_|oproep_voor_artikels_|[^/]*call_for_contributions_)[\\w_()-]*|accesorestringido|library_recommendation_form|research-article|loi_republique_numerique_publis|nutzungsbedingungen|autorenhinweise|mediadaten|canceledpresentations|sscc-facme_cirugia|bir_journals_reprint_form|transparencia|wfme|evolution_de_l_ergonomie|que_pouvez_vous_deposer|ethic-comittee-approval|restri(?:ngido|cted)|ofi[c]+ial|asn" + spaceOrDashes + "tips|aidehelp|.*_doi|(?:b-ent|aces)_.*).pdf(?:\\?.*)?$"	// The plain "research-article.pdf" is the template provided by journals.
 																		+ "|kilavuzu"	// "guide" in Turkish
-																		+ "|(?:公表|登録)届出書|取扱要領|リポジトリ(?:要項|運用指針)|検索のポイント|について|閲覧方法|ープンアクセスポリシー|されたみなさまへ|(?:論文の|登録)許諾書|著作権利用許諾要件|削除依頼書).*");	// registration/notification form/statement, instructions, repository requirements/operation guidelines, search point, how to browse (all in japanese), open access guide, to all of you, dissertation consent form / Registration License / Copyright license requirements / deletion request form
+																		+ "|(?:公表|登録)届出書|取扱要領|リポジトリ(?:要項|運用指針)|検索のポイント|について|閲覧方法|ープンアクセスポリシー|されたみなさまへ|(?:論文の|登録)許諾書|著作権利用許諾要件|削除依頼書"	// registration/notification form/statement, instructions, repository requirements/operation guidelines, search point, how to browse (all in japanese), open access guide, to all of you, dissertation consent form / Registration License / Copyright license requirements / deletion request form
+																		+ "|ープンアクセス方針).*");	// "Open access policy" in Japanese.
 
 	// Example of docUrl having the "editorial" keyword: https://publikationen.ub.uni-frankfurt.de/opus4/frontdoor/deliver/index/docId/45461/file/daek_et_al_2017_editorial.pdf
 
@@ -352,7 +353,7 @@ public class PageCrawler
 				// TODO - Somehow I need to detect if a link has the parameter "?isAllowd=n" or "&isAllowd=n".
 				// In that case the whole page should be discarded as not having any docUrls!
 
-				// TODO - ALso, each individual link coming in the program, containing the above, should be discarded, so such rules should be added in some regex.
+				// TODO - ALso, each individual link coming in the program, containing the above, should be discarded. Such rules should be added in some regex.
 
 				// Check the text appearing next-to or as the link, inside the html.
 				linkAttr = el.text().trim();
@@ -454,14 +455,15 @@ public class PageCrawler
 	}
 
 
-	private static final String commonPattern = "website-navigation|reference|su[m]{1,2}ar(?:io|y)|author|logo";
+	private static final String commonPattern = "website-navigation|reference|su[m]{1,2}ar(?:io|y)(?!.*metadata.*)|author|logo|related" + spaceOrDashes + "product";
 
 	private static final Pattern PARENT_CLASS_NAME_FILTER_PATTERN = Pattern.compile("(?:^(?:tab|product-head-bnrs)$|.*(?:" + commonPattern + "|breadcrumb|su[b]?scri(?:p[tc]i[oó]n|b(?:a|ir)se)|reco[m]{1,2}enda(?:tion|do)|metric|stats|cookie|kapak|accesos-usuario).*)");
 	// Exclude links which are "tabs". For example those hidden in submenus, of the main-menu (not submenus of fulltext-choices).
 	// "kapak" = "cover" in Turkish
 
 	private static final Pattern PARENT_ID_FILTER_PATTERN = Pattern.compile(".*(?:" + commonPattern + "|other).*");
-	
+
+
 	private static boolean hasUnacceptableStructure(Element element, String pageUrl)
 	{
 		// Exclude links which have the class "state-published" and have a different domain, than the pageUrl.
@@ -480,7 +482,7 @@ public class PageCrawler
 			return false;
 
 		// Check for text inside the immediate parent only.
-		String parentLowerText = parentElement.text().trim().toLowerCase();
+		String parentLowerText = parentElement.ownText().trim().toLowerCase();	// We check the text of the parent only, not the child (again) and further descends.
 		if ( !parentLowerText.isEmpty() && NON_VALID_DOCUMENT.matcher(parentLowerText).matches() ) {
 			//logger.debug("Text of false-positive elements: " + parentLowerText);
 			return true;
