@@ -70,7 +70,7 @@ public class PageCrawler
 																		+ "|/(?:entry|information|opinion|(?:rapportannuel|publerkl|utt_so_|atsc_|tjg_|ictrp_|oproep_voor_artikels_|[^/]*call_for_contributions_)[\\w_()-]*|accesorestringido|library_recommendation_form|research-article|loi_republique_numerique_publis|nutzungsbedingungen|autorenhinweise|mediadaten|canceledpresentations|sscc-facme_cirugia|bir_journals_reprint_form|transparencia|wfme|evolution_de_l_ergonomie|que_pouvez_vous_deposer|ethic-comittee-approval|restri(?:ngido|cted)|ofi[c]+ial|asn" + spaceOrDashes + "tips|aidehelp|.*_doi|(?:b-ent|aces)_.*).pdf(?:\\?.*)?$"	// The plain "research-article.pdf" is the template provided by journals.
 																		+ "|kilavuzu"	// "guide" in Turkish
 																		+ "|(?:公表|登録)届出書|取扱要領|リポジトリ(?:要項|運用指針)|検索のポイント|について|閲覧方法|ープンアクセスポリシー|されたみなさまへ|(?:論文の|登録)許諾書|著作権利用許諾要件|削除依頼書"	// registration/notification form/statement, instructions, repository requirements/operation guidelines, search point, how to browse (all in japanese), open access guide, to all of you, dissertation consent form / Registration License / Copyright license requirements / deletion request form
-																		+ "|ープンアクセス方針).*");	// "Open access policy" in Japanese.
+																		+ "|ープンアクセス方針|(?:刊行物|個人)単位登録).*");	// "Open access policy" in Japanese, "Publication unit registration"
 
 	// Example of docUrl having the "editorial" keyword: https://publikationen.ub.uni-frankfurt.de/opus4/frontdoor/deliver/index/docId/45461/file/daek_et_al_2017_editorial.pdf
 

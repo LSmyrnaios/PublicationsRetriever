@@ -209,7 +209,7 @@ public class UrlUtils
 	}
 
 
-	public static final Pattern TOP_THREE_LEVEL_DOMAIN_FILTER = Pattern.compile("[\\w-.]*?((?:[\\w-]+.)?[\\w-]+.[\\w-]+)$");
+	public static final Pattern TOP_THREE_LEVEL_DOMAIN_FILTER = Pattern.compile("[\\w.-]*?((?:[\\w-]+.)?[\\w-]+.[\\w-]+)$");
 
 	/**
 	 * This method received the domain as a parameter and tries to return only the top-three-level domain part.

@@ -255,15 +255,10 @@ public class UrlTypeChecker
 			lowerCaseLink = linkStr.toLowerCase();
 		// If it's not "null", it means we have already done the transformation in the calling method.
 		
-		return	URL_DIRECTORY_FILTER.matcher(lowerCaseLink).matches()
+		return	shouldNotAcceptPageUrl(linkStr, lowerCaseLink)
 				|| INTERNAL_LINKS_KEYWORDS_FILTER.matcher(lowerCaseLink).matches()
-				|| SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
-				|| PLAIN_DOMAIN_FILTER.matcher(lowerCaseLink).matches()
-				|| URL_FILE_EXTENSION_FILTER.matcher(lowerCaseLink).matches()
 				|| INTERNAL_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseLink).matches()
-				|| PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseLink).matches()
-				|| PageCrawler.NON_VALID_DOCUMENT.matcher(lowerCaseLink).matches()
-				|| CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseLink).matches();	// TODO - To be removed when these docExtensions get supported.
+				|| PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseLink).matches();
 	}
 	
 }
