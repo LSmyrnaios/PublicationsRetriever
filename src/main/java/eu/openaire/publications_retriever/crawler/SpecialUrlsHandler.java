@@ -28,6 +28,7 @@ public class SpecialUrlsHandler
 
 	private static final String nasaBaseDomainPath = "https://ntrs.nasa.gov/";
 
+	private static final String ieeexploreBasePath = "https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=";
 
 
 	public static String checkAndHandleSpecialUrls(String resourceUrl) throws RuntimeException
@@ -51,6 +52,9 @@ public class SpecialUrlsHandler
 			resourceUrl = updatedUrl;
 		} else if ( (updatedUrl = checkAndHandleIjcseonlinePage(resourceUrl)) != null ) {
 			//logger.debug("Ijcseonline-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+			resourceUrl = updatedUrl;
+		} else if ( (updatedUrl = checkAndHandleIeeeExplorer(resourceUrl)) != null ) {
+			//logger.debug("IeeeExplorer-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		} else
 			resourceUrl = checkAndHandleDergipark(resourceUrl);	// It returns the same url if nothing was handled.
@@ -259,7 +263,7 @@ public class SpecialUrlsHandler
 	public static String checkAndHandleIjcseonlinePage(String pageUrl)
 	{
 		if ( ! pageUrl.contains("www.ijcseonline.org") )
-			return null;
+			return null;    // It's from another domain, keep looking..
 
 		if ( ! pageUrl.contains("pdf_paper_view.php") )
 			return pageUrl;
@@ -281,6 +285,23 @@ public class SpecialUrlsHandler
 		}
 
 		return ijcseonlineBaseUrl + pdfFileName;
+	}
+
+
+	//////////  ieeexplore.ieee.org   /////////////////
+	// https://ieeexplore.ieee.org/document/8924293 --> https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=8924293
+	public static String checkAndHandleIeeeExplorer(String pageUrl) {
+		if ( pageUrl.contains("ieeexplore.ieee.org") ) {
+			if ( pageUrl.contains("/stampPDF/") ) {	// It's probably already a docUrl
+				return pageUrl;
+			}
+			String idStr = UrlUtils.getDocIdStr(pageUrl, null);
+			if ( idStr == null )
+				return pageUrl;
+
+			return (ieeexploreBasePath + idStr);
+		}
+		return null;    // It's from another domain, keep looking..
 	}
 
 }
