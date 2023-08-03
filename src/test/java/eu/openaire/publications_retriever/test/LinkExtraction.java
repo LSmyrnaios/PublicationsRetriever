@@ -239,7 +239,7 @@ public class LinkExtraction {
 			if ( e instanceof DocLinkFoundException ) {
 				// A true-pdf link was found. The only problem is that the list of the links is missing now, since the method exited early.
 				// Using step-by-step debugging can reveal all the available HTML-elements captured (which include the pre-extracted links).
-				PageCrawler.verifyDocLink("urlId", url, url, null, null, (DocLinkFoundException) e);
+				PageCrawler.verifyDocLink("urlId", url, url, null, (DocLinkFoundException) e);
 			} else if ( e instanceof DocLinkInvalidException ) {
 				logger.warn("A invalid docLink was found: " + link);
 			}
