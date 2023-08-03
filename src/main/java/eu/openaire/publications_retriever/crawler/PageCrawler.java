@@ -222,7 +222,7 @@ public class PageCrawler
 
 		// If we reached here, it means that we couldn't find a docUrl the quick way.. so we have to check some (we exclude lots of them) of the internal links one by one.
 
-		if ( should_check_remaining_links && (remainingLinks.size() > 0) )
+		if ( should_check_remaining_links && !remainingLinks.isEmpty() )
 			checkRemainingInternalLinks(urlId, sourceUrl, pageUrl, pageDomain, remainingLinks);
 		else
 			handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false, false);
@@ -272,7 +272,7 @@ public class PageCrawler
 			PageCrawler.contentProblematicUrls.incrementAndGet();
 			return null;
 		} catch ( DocLinkFoundException dlfe) {
-			if ( !verifyDocLink(urlId, sourceUrl, pageUrl, pageDomain, pageContentType, dlfe) )	// url-logging is handled inside.
+			if ( !verifyDocLink(urlId, sourceUrl, pageUrl, pageContentType, dlfe) )	// url-logging is handled inside.
 				handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false, true);
 			return null;	// This DocLink is the only docLink we will ever go to get from this page. The sourceUrl is logged inside the called method.
 			// If this "DocLink" is a DocUrl, then returning "null" here, will trigger the 'PageCrawler.retrieveInternalLinks()' method to exit immediately (and normally).
@@ -292,7 +292,7 @@ public class PageCrawler
 		boolean isEmpty = false;
 
 		if ( !isNull )
-			isEmpty = (currentPageLinks.size() == 0);
+			isEmpty = currentPageLinks.isEmpty();
 
 		if ( isNull || isEmpty ) {	// If no links were retrieved (e.g. the pageUrl was some kind of non-page binary content)
 			logger.warn("No " + (isEmpty ? "valid" : "available") + " links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
@@ -325,7 +325,8 @@ public class PageCrawler
 	public static HashSet<String> extractInternalLinksFromHtml(String pageHtml, String pageUrl) throws DocLinkFoundException, DynamicInternalLinksFoundException, DocLinkInvalidException, RuntimeException
 	{
 		Document document = Jsoup.parse(pageHtml);
-		Elements elementLinksOnPage = document.select("a, link[href][type*=pdf], form[action]");
+		Elements elementLinksOnPage = document.select("a, link[href][type*=pdf], form[action]");	// TODO - Add more "types" once other docTypes are accepted.
+		// A docUrl may be inside an <a> tag, without the "href" attribute. It may be inside a "data" attribute.
 		if ( elementLinksOnPage.isEmpty() ) {	// It will surely NOT be null, by Jsoup-documentation.
 			//logger.warn("Jsoup did not extract any links from pageUrl: \"" + pageUrl + "\"");	// DEBUG!
 			return null;
@@ -445,7 +446,7 @@ public class PageCrawler
 		List<Attribute> attributes = element.attributes().asList();
 		for ( Attribute attribute : attributes ) {
 			String name = attribute.getKey();
-			if ( name.contains("data") ) {	// For example: "data", "data-popup", "data-article-url". Example-url: https://www.ingentaconnect.com/content/cscript/cvia/2017/00000002/00000003/art00008
+			if ( name.contains("data") && !name.contains("data-follow-set") ) {	// For example: "data", "data-popup", "data-article-url". Example-url: https://www.ingentaconnect.com/content/cscript/cvia/2017/00000002/00000003/art00008
 				internalLink = attribute.getValue().trim();
 				if ( !internalLink.isEmpty() && !internalLink.equals("#") )
 					break;	// Upon finding the first real link, the method returns it.
@@ -491,9 +492,15 @@ public class PageCrawler
 		// Check all the ancestors.
 		do {
 			String parentTag = parentElement.tagName().trim();
-			if ( parentTag.equals("footer") || parentTag.equals("header")
-					|| PARENT_CLASS_NAME_FILTER_PATTERN.matcher(parentElement.className().trim().toLowerCase()).matches()
-					|| PARENT_ID_FILTER_PATTERN.matcher(parentElement.id().toLowerCase()).matches() )	// No "trimming" is necessary.
+			if ( !parentTag.isEmpty() && (parentTag.equals("footer") || parentTag.equals("header")) )
+				return true;
+
+			String parentClass = parentElement.className().trim();
+			if ( !parentClass.isEmpty() && PARENT_CLASS_NAME_FILTER_PATTERN.matcher(parentClass.toLowerCase()).matches() )
+				return true;
+
+			String parentId = parentElement.id();	// No "trimming" is necessary for the id.
+			if ( !parentId.isEmpty() && PARENT_ID_FILTER_PATTERN.matcher(parentId.toLowerCase()).matches() )
 				return true;
 
 			parentElement = parentElement.parent();	// Climb up to the ancestor.
@@ -552,7 +559,7 @@ public class PageCrawler
 	}
 
 
-	public static boolean verifyDocLink(String urlId, String sourceUrl, String pageUrl, String pageDomain, String pageContentType, DocLinkFoundException dlfe)
+	public static boolean verifyDocLink(String urlId, String sourceUrl, String pageUrl, String pageContentType, DocLinkFoundException dlfe)
 	{
 		String docLink = dlfe.getMessage();
 		if ( (docLink == null) || docLink.isEmpty() ) {
@@ -577,7 +584,7 @@ public class PageCrawler
 
 		//logger.debug("Going to check DocLink: " + docLink);	// DEBUG!
 		try {
-			if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, docLink, pageDomain, false, true) ) {    // We log the docUrl inside this method.
+			if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, docLink, null, false, true) ) {    // We log the docUrl inside this method.
 				logger.warn("The DocLink < " + docLink + " > was not a docUrl (unexpected)!");
 				UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as the retrieved DocLink: < " + docLink + " > was not a docUrl.", null, true, "true", "true", "false", "false", "false", null, "null");
 				return false;
