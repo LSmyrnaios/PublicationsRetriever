@@ -669,7 +669,7 @@ public class FileUtils
 	{
 		if ( contentSize != -2 ) {
 			if ( contentSize <= fiftyMBInBytes )
-				return 30_000;	// 30 seconds
+				return 45_000;	// 45 seconds
 			else if ( contentSize <= oneHundredMBInBytes )
 				return 60_000;	// 1 min.
 			else if ( contentSize <= twoHundredMBInBytes )
