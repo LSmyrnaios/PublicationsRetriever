@@ -212,7 +212,7 @@ public class PageCrawler
 					}
 					continue;
 				} catch (Exception e) {	// The exception: "DomainWithUnsupportedHEADmethodException" should never be caught here, as we use "GET" for possibleDocOrDatasetUrls.
-					logger.error("" + e);
+					logger.error("Error when processing the url: " + urlToCheck, e);
 					continue;
 				}
             }

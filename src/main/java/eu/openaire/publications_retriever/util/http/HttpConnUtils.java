@@ -444,7 +444,7 @@ public class HttpConnUtils
 				throw new DomainBlockedException(domainStr);
 			}
 			else if ( e instanceof SocketTimeoutException ) {
-				logger.debug("Url: \"" + resourceURL + "\" failed to respond on time!");
+				logger.warn("Url: \"" + resourceURL + "\" failed to respond on time!");
 				ConnSupportUtils.onTimeoutException(domainStr);	// May throw a "DomainBlockedException", which will be thrown before the "ConnTimeoutException".
 				throw new ConnTimeoutException();
 			}
