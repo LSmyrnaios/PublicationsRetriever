@@ -612,6 +612,8 @@ public class ConnSupportUtils
 	static {
 		// All of these domains are manually checked for their quality and consistency.
 		domainsNotBlockableAfterTimes.add("zenodo.org");
+		domainsNotBlockableAfterTimes.add("doi.org");	// This domain is the starting point for many publications. It redirects to other domains.
+		domainsNotBlockableAfterTimes.add("dx.doi.org");	// Same as above. We have to add full-domains in this set.
 	}
 
 	
