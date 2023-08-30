@@ -708,8 +708,8 @@ public class ConnSupportUtils
 
 		StringBuilder htmlStrB = htmlStrBuilder.get();
 		if ( htmlStrB == null ) {
-			htmlStrBuilder.set(new StringBuilder(300000));	// Initialize and pre-allocate the StringBuilder for the current Thread.
-			htmlStrB = htmlStrBuilder.get();
+			htmlStrB = new StringBuilder(100000);	// Initialize and pre-allocate the StringBuilder.
+			htmlStrBuilder.set(htmlStrB);	// Save it for future use by this thread.
 		}
 
 		try (BufferedReader br = (bufferedReader != null ? bufferedReader : new BufferedReader(new InputStreamReader(conn.getInputStream()), FileUtils.fiveMb)) )	// Try-with-resources
