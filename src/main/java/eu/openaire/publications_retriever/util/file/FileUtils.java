@@ -300,7 +300,7 @@ public class FileUtils
 
 		if ( urlStr.isEmpty() ) {
 			if ( !idStr.isEmpty() )	// If we only have the id, then go and log it.
-				UrlUtils.logOutputData(idStr, urlStr, null, "unreachable", "Discarded in FileUtils.jsonDecoder(), as the url was not found.", null, false, "true", "false", "false", "false", "false", null, "null");
+				UrlUtils.logOutputData(idStr, urlStr, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in FileUtils.jsonDecoder(), as the url was not found.", null, false, "true", "false", "false", "false", "false", null, "null");
 			return null;
 		}
 

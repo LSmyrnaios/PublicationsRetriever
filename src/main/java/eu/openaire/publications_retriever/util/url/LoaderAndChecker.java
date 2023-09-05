@@ -600,9 +600,9 @@ public class LoaderAndChecker
 			return null;
 		}
 		
-		if ( HttpConnUtils.blacklistedDomains.contains(urlDomain) ) {	// Check if it has been blackListed after running internal links' checks.
-			logger.debug("Avoid connecting to blackListed domain: \"" + urlDomain + "\" with url: " + retrievedUrl);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", "Discarded in 'LoaderAndChecker.handleUrlChecks()' method, as its domain was found blackListed.", null, true, "true", "true", "false", "false", "false", null, "null");
+		if ( HttpConnUtils.blacklistedDomains.contains(urlDomain) ) {	// Check if it has been blacklisted after running internal links' checks.
+			logger.debug("Avoid connecting to blacklisted domain: \"" + urlDomain + "\" with url: " + retrievedUrl);
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'LoaderAndChecker.handleUrlChecks()' method, as its domain was found blacklisted.", null, true, "true", "true", "false", "false", "false", null, "null");
 			if ( !useIdUrlPairs )
 				connProblematicUrls.incrementAndGet();
 			return null;
@@ -610,7 +610,7 @@ public class LoaderAndChecker
 		
 		if ( ConnSupportUtils.checkIfPathIs403BlackListed(retrievedUrl, urlDomain) ) {	// The path-extraction is independent of the jsessionid-removal, so this gets executed before.
 			logger.debug("Preventing reaching 403ErrorCode with url: \"" + retrievedUrl + "\"!");
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, "unreachable", "Discarded in 'LoaderAndChecker.handleUrlChecks()' as it had a blackListed urlPath.", null, true, "true", "true", "false", "false", "false", null, "null");
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'LoaderAndChecker.handleUrlChecks()' as it had a blacklisted urlPath.", null, true, "true", "true", "false", "false", "false", null, "null");
 			if ( !useIdUrlPairs )
 				connProblematicUrls.incrementAndGet();
 			return null;
@@ -692,7 +692,7 @@ public class LoaderAndChecker
 					retrievedUrl = tempUrl;	// Make sure we check the non-normalized version.
 
 			if ( !loggedUrlsOfThisId.contains(retrievedUrl) )
-				UrlUtils.logOutputData(retrievedId, retrievedUrl, null, "unreachable",
+				UrlUtils.logOutputData(retrievedId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator,
 					"Skipped in LoaderAndChecker, as a better url was selected for id: " + retrievedId, null, true, "false", "N/A", "N/A", "N/A", "true", null, "null");
 		}
 	}

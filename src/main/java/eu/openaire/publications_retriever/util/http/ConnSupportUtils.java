@@ -526,12 +526,13 @@ public class ConnSupportUtils
 			// Block the whole domain if it has more than a certain number of blocked paths.
 			if ( domainsMultimapWithPaths403BlackListed.get(domainStr).size() > numberOf403BlockedPathsBeforeDomainBlocked )	// It will not throw an NPE, as the domain is inserted by the previous method.
 			{
-				// Note that the result of "domainsMultimapWithPaths403BlackListed.get(domainStr)" cannot be null! It may only be empty,
-
-				HttpConnUtils.blacklistedDomains.add(domainStr);	// Block the whole domain itself.
-				logger.warn("Domain: \"" + domainStr + "\" was blocked, after having more than " + numberOf403BlockedPathsBeforeDomainBlocked + " of its paths 403blackListed.");
-				domainsMultimapWithPaths403BlackListed.removeAll(domainStr);	// No need to keep this anymore.
-				throw new DomainBlockedException(domainStr);
+				// Note that the result of "domainsMultimapWithPaths403BlackListed.get(domainStr)" cannot be null! It may only be empty.
+				if ( ! ConnSupportUtils.domainsNotBlockableAfterTimes.contains(domainStr) ) {
+					HttpConnUtils.blacklistedDomains.add(domainStr);	// Block the whole domain itself.
+					logger.warn("Domain: \"" + domainStr + "\" was blocked, after having more than " + numberOf403BlockedPathsBeforeDomainBlocked + " of its paths 403blackListed.");
+					domainsMultimapWithPaths403BlackListed.removeAll(domainStr);	// No need to keep this anymore.
+					throw new DomainBlockedException(domainStr);
+				}
 			}
 		}
 	}
@@ -674,7 +675,7 @@ public class ConnSupportUtils
 	 */
 	public static List<String> blockSharedSiteSessionDomains(String targetUrl, String previousFromTargetUrl)
 	{
-		List<String> blockedDomainsToReturn = new ArrayList<>(2);
+		final List<String> blockedDomainsToReturn = new ArrayList<>(2);
 		String targetUrlDomain, beforeTargetUrlDomain;
 
 		if ( (targetUrlDomain = UrlUtils.getDomainStr(targetUrl, null)) == null )
@@ -887,8 +888,8 @@ public class ConnSupportUtils
 			//logger.debug("Content-length of \"" + conn.getURL().toString() + "\" is: " + contentSize);	// DEBUG!
 			return contentSize;
 		} catch (NumberFormatException nfe) {	// This is also thrown if the "contentLength"-field does not exist inside the headers-list.
-			if ( calledForFullTextDownload )	// It's not useful to show a logging-message otherwise.
-				logger.warn("No \"Content-Length\" was retrieved from docUrl: \"" + conn.getURL().toString() + "\"! We will store the docFile anyway..");	// No action is needed.
+			if ( calledForFullTextDownload && logger.isTraceEnabled() )	// It's not useful to show a logging-message otherwise.
+				logger.trace("No \"Content-Length\" was retrieved from docUrl: \"" + conn.getURL().toString() + "\"! We will store the docFile anyway..");	// No action is needed.
 			return -2;	// The content size could not be retrieved.
 		} catch ( Exception e ) {
 			logger.error("", e);
@@ -1038,7 +1039,7 @@ public class ConnSupportUtils
 	private static final ThreadLocalRandom threadLocalRandom = ThreadLocalRandom.current();
 
 	public static long getRandomNumber(int min, int max) {
-		return threadLocalRandom.nextLong(min, max+1);	// It's (max+1) because the max upper bound is exclusive.
+		return threadLocalRandom.nextLong(min, max+1);	// Since the max upper bound is exclusive, we have to set (max+1) in order to take the max.
 	}
 
 
