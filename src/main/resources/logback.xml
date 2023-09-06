@@ -8,11 +8,11 @@
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
             <fileNamePattern>logs/PublicationsRetriever.%i.log.zip</fileNamePattern>
             <minIndex>1</minIndex>
-            <maxIndex>20</maxIndex>
+            <maxIndex>10</maxIndex>
         </rollingPolicy>
 
         <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-            <maxFileSize>50MB</maxFileSize>  <!-- Lower the size to check the "RollingFileAppender" during tests. -->
+            <maxFileSize>100MB</maxFileSize>  <!-- Lower the size to check the "RollingFileAppender" during tests. -->
         </triggeringPolicy>
         <encoder>
             <charset>UTF-8</charset>

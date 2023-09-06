@@ -519,6 +519,7 @@ public class HttpConnUtils
 		}
 		URL currentUrlObject;
 		String currentUrl;
+		String targetDomainStr;
 
 		try {
 			do {	// We assume we already have an HTTP-3XX response code.
@@ -566,25 +567,26 @@ public class HttpConnUtils
 					throw new AlreadyFoundDocUrlException();
 				}
 
-				if ( !targetUrl.contains(domainStr) ) {    // If the next page is not in the same domain as the current one, we have to find the domain again.
+				// Get the domain of the target url. It may be a subdomain or a completely different one.
+				if ( (targetDomainStr = UrlUtils.getDomainStr(targetUrl, null)) == null )
+					throw new RuntimeException("Unable to obtain the domain!");	// The cause it's already logged inside "getDomainStr()".
+
+				if ( ! targetDomainStr.contains(domainStr) )	// If the next page is not in the same domain as the current one, we have to find the domain again.
 					conn.disconnect();	// Close the socket with that server.
-					if ( (domainStr = UrlUtils.getDomainStr(targetUrl, null)) == null )
-						throw new RuntimeException("Unable to obtain the domain!");	// The cause it's already logged inside "getDomainStr()".
-				}
 
 				// Check if this redirection is just http-to-https and store the domain to do offline-redirection in the future.
 				// If the domain supports it, do an offline-redirect to "HTTPS", thus avoiding the expensive real-redirect.
 				if ( ConnSupportUtils.isJustAnHTTPSredirect(currentUrl, targetUrl) ) {
-					domainsSupportingHTTPS.add(domainStr);    // It does not store duplicates.
+					domainsSupportingHTTPS.add(targetDomainStr);    // It does not store duplicates.
 					//logger.debug("Found an HTTP-TO-HTTPS redirect: " + currentUrl + " --> " + targetUrl);	// DEBUG!
 				}
 
 				if ( ConnSupportUtils.isJustASlashRedirect(currentUrl, targetUrl) ) {	// If the "targetUrl" is the "currentUrl" but with just an added "/".
-					domainsWithSlashRedirect.add(domainStr);
+					domainsWithSlashRedirect.add(targetDomainStr);
 					//logger.debug("Found a non-slash-ended to slash-ended url redirection: " + currentUrl + " --> " + targetUrl);	// DEBUG!s
 				}
 
-				conn = HttpConnUtils.openHttpConnection(targetUrl, domainStr, calledForPageUrl, calledForPossibleDocUrl);
+				conn = HttpConnUtils.openHttpConnection(targetUrl, targetDomainStr, calledForPageUrl, calledForPossibleDocUrl);
 
 				responseCode = conn.getResponseCode();	// It's already checked for -1 case (Invalid HTTP), inside openHttpConnection().
 
@@ -595,7 +597,7 @@ public class HttpConnUtils
 			} while ( (responseCode >= 300) && (responseCode <= 399) );
 			
 			// It should have returned if there was an HTTP 2XX code. Now we have to handle the error-code.
-			String errorMessage = ConnSupportUtils.onErrorStatusCode(currentUrl, domainStr, responseCode, calledForPageUrl);
+			String errorMessage = ConnSupportUtils.onErrorStatusCode(currentUrl, targetDomainStr, responseCode, calledForPageUrl);
 			throw new RuntimeException(errorMessage);	// This is not thrown if a "DomainBlockedException" was thrown first.
 			
 		} catch (AlreadyFoundDocUrlException | RuntimeException | ConnTimeoutException | DomainBlockedException | DomainWithUnsupportedHEADmethodException e) {	// We already logged the right messages.
