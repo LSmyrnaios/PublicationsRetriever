@@ -56,6 +56,9 @@ public class SpecialUrlsHandler
 		} else if ( (updatedUrl = checkAndHandleIeeeExplorer(resourceUrl)) != null ) {
 			//logger.debug("IeeeExplorer-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
+		} else if ( (updatedUrl = checkAndHandleOSFurls(resourceUrl)) != null ) {
+			//logger.debug("OSF-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+			resourceUrl = updatedUrl;
 		} else
 			resourceUrl = checkAndHandleDergipark(resourceUrl);	// It returns the same url if nothing was handled.
 
@@ -302,6 +305,22 @@ public class SpecialUrlsHandler
 			return (ieeexploreBasePath + idStr);
 		}
 		return null;    // It's from another domain, keep looking..
+	}
+
+
+	//////////  osf.io   /////////////////
+	// https://osf.io/2xpq7 --> https://osf.io/2xpq7/download
+	public static String checkAndHandleOSFurls(String pageUrl)
+	{
+		if ( !pageUrl.contains("://osf.io") )	// We want to transform only urls belonging to the top-level-domain.
+			return null;    // It's from another domain, keep looking..
+
+		if ( pageUrl.contains("/download") )	// It's probably already a docUrl
+			return pageUrl;
+		else if ( !pageUrl.endsWith("/") )
+			pageUrl += "/";
+
+		return (pageUrl + "download");
 	}
 
 }
