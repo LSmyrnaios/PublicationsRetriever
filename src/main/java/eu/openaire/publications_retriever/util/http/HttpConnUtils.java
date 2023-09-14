@@ -48,7 +48,7 @@ public class HttpConnUtils
 
 	public static AtomicInteger numOfDomainsBlockedDueToSSLException = new AtomicInteger(0);
 
-	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0";	// This should not be "final", another program, using this software as a library, should be able to set its own "UserAgent".
+	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/117.0";	// This should not be "final", another program, using this software as a library, should be able to set its own "UserAgent".
 	public static String acceptLanguage = "en-US,en;q=0.5";
 
 	public static final int maxConnGETWaitingTime = 15_000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
@@ -59,7 +59,7 @@ public class HttpConnUtils
 
 	private static final int timesToHaveNoDocNorPageInputBeforeBlocked = 10;
 
-	public static final int maxAllowedContentSize = 1073741824;	// 1Gb ; yes some publications can be huge..
+	public static int maxAllowedContentSize = 536_870_912;	// 512 Mb | More than that can indicate a big pdf with no text, but full of images. This should be configurable (so not final).
 	private static final boolean shouldNOTacceptGETmethodForUncategorizedInternalLinks = true;
 
 	public static final Set<String> domainsSupportingHTTPS = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
