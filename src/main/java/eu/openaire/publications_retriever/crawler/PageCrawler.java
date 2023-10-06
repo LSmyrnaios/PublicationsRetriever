@@ -60,7 +60,7 @@ public class PageCrawler
 	// The following regex is used both in the text around the links and in the links themselves. Everything should be LOWERCASE, from the regex-rules to the link to be matched against them.
 	public static final Pattern NON_VALID_DOCUMENT = Pattern.compile(".*(?:[^e]manu[ae]l|(?:\\|\\|" + spaceOrDashes + ")?gu[ií](?:de|a)|directive[s]?|preview|leaflet|agreement(?!.*thesis" + spaceOrDashes + "(?:19|20)[\\d]{2}.*)|accessibility|journal" + spaceOrDashes + "catalog|disclose" + spaceOrDashes + "file|poli(?:c(?:y|ies)|tika(?:si)?)"	// "policy" can be a lone word or a word after: repository|embargo|privacy|data protection|take down|supplement|access
 																		// We may have the "Emanuel" writer's name in the url-string. Also, we may have the "agreement"-keyword in a valid pub-url like: https://irep.ntu.ac.uk/id/eprint/40188/1/__Opel.ads.ntu.ac.uk_IRep-PGR%24_2020%20Theses%20and%20deposit%20agreement%20forms_BLSS_NBS_FARRIER-WILLIAMS%2C%20Elizabeth_EFW%20Thesis%202020.pdf
-																		+ "|licen(?:se|cia)" + spaceOrDashes + "(?:of|de)" + spaceOrDashes + "us[eo]|(?:governance|safety)" + spaceOrDashes + "statement|normativa|(?:consumer|hazard|copyright)" + spaceOrDashes + "(?:information|(?:release" + spaceOrDashes + ")?form)|copyright|permission|(?:editorial|review)" + spaceOrDashes + "board|d[ée](?:p(?:ôt[s]?|oser|osit)|butez)|cr[ée]er" + spaceOrDashes + "(?:votre|son)|orcid|subscription|instruction|code" + spaceOrDashes + "of" + spaceOrDashes + "conduct|request|join|compte|[^_]account"
+																		+ "|licen(?:se|cia)" + spaceOrDashes + "(?:of|de)" + spaceOrDashes + "us[eo]|(?:governance|safety)" + spaceOrDashes + "statement|normativa|(?:consumer|hazard|copyright)" + spaceOrDashes + "(?:information|(?:release" + spaceOrDashes + ")?form)|copyright|permission|(?:editorial|review)" + spaceOrDashes + "board|d[ée](?:p(?:ôt[s]?|oser|osit(?!ed))|butez)|cr[ée]er" + spaceOrDashes + "(?:votre|son)|orcid|subscription|instruction|code" + spaceOrDashes + "of" + spaceOrDashes + "conduct|request|join|compte|[^_]account"
 																		+ "|table" + spaceOrDashes + "of" + spaceOrDashes + "contents|(?:front|back|end)" + spaceOrDashes + "matter|information" + spaceOrDashes + "for" + spaceOrDashes + "authors|pdf(?:/a)?" + spaceOrDashes + "conversion|catalogue|factsheet|classifieds"	// classifieds = job-ads
 																		+ "|pdf-viewer|certificate" + spaceOrDashes + "of|conflict[s]?" + spaceOrDashes + "of" + spaceOrDashes + "interest|(?:recommendation|order)" + spaceOrDashes + "form|adverti[sz]e|mandatory" + spaceOrDashes + "open" + spaceOrDashes + "access|recommandations" + spaceOrDashes + "pour" + spaceOrDashes + "s'affilier|hal.*collections|terms|conditions|hakuohjeet|logigramme|export_liste_publi|yearbook|pubs_(?:brochure|overview)|thermal-letter|réutiliser" + spaceOrDashes + "des" + spaceOrDashes + "images" + spaceOrDashes + "dans" + spaceOrDashes + "des" + spaceOrDashes + "publications"
 																		+ "|procedure|規程|運営規程"	// 規程 == procedure, 運営規程 = Operating regulations  (in japanese)
@@ -428,6 +428,10 @@ public class PageCrawler
 				if ( (internalLink = getInternalDataLink(el)) == null )
 					return true;	// This means that no attributes containing the word "data" was found in this element.
 
+			// It may be the case that the top url for a "Download" element, is a javascript method which just opens a box with other elements, including the DocUrl.
+			if ( internalLink.startsWith("javascript:") )
+				return true;	// Go to the next url.
+
 			if ( !UrlTypeChecker.shouldNotAcceptInternalLink(internalLink, null) ) {
 				//logger.debug("Found the docLink < " + internalLink + " > from link-text: \"" + linkAttr + "\"");	// DEBUG
 				internalLink = StringUtils.replace(internalLink, "/view/", "/download/", 1);	// It may be the case, where the provided PDF-link is the view and not the download-url.
@@ -436,7 +440,7 @@ public class PageCrawler
 			throw new DocLinkInvalidException(internalLink);
 		}
 		else
-			return false;
+			return false;	// Check the current element further.
 	}
 
 

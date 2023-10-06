@@ -56,7 +56,7 @@ public class UrlTypeChecker
 			+ "|www.ccdc.cam.ac.uk|figshare.com/collections/|datadryad.org/stash/dataset/"
 			+ "|evernote|skype|microsoft|adobe|buffer|digg|stumbleupon|addthis|delicious|dailymotion|gostats|blog(?:ger)?|copyright|friendfeed|newsvine|telegram|getpocket"
 			+ "|flipboard|line.me|vk|ok.rudouban|baidu|qzone|xing|renren|weibo|doubleclick|bit.ly|github|reviewofbooks|plu.mx"
-			+ "|(?<!files.)wordpress"
+			+ "|(?<!files.)wordpress|orcid.org"
 
 			// Block nearly all the "elsevier.com" urls, as well as the "sciencedirect.com" urls.
 			// The "(linkinghub|api).elsevier.com" urls redirect -automatically or can be redirected manually- to the "sciencedirect.com", where the pdf is provided, BUT they cannot be retrieved.
@@ -109,7 +109,7 @@ public class UrlTypeChecker
 		// We could "guess" the pdf-link for some of them, but for "persee.fr" for ex. there's also a captcha requirement for the connection.
 		// The "tandfonline.com" gives an "HTTP 503 Server Error", even for the urls containing "/pdf/" which appear to work when opened in a Browser.
 		if ( /*(*/lowerCaseUrl.contains("tandfonline.com") /*&& !lowerCaseUrl.contains("/pdf/"))*/ || lowerCaseUrl.contains("persee.fr") || lowerCaseUrl.contains("papers.ssrn.com")
-			|| lowerCaseUrl.contains("documentation.ird.fr") || lowerCaseUrl.contains("library.unisa.edu.au") )	// The "documentation.ird.fr" works in "UrlCheck-test" but not when running multiple urls from the inputFile.
+			|| lowerCaseUrl.contains("documentation.ird.fr") || lowerCaseUrl.contains("library.unisa.edu.au") || lowerCaseUrl.contains("publications.cnr.it") )	// The "documentation.ird.fr" works in "UrlCheck-test" but not when running multiple urls from the inputFile.
 		{
 			loggingMessage = "Discarded after matching to a JavaScript-using domain, other than the 'sciencedirect.com'.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
