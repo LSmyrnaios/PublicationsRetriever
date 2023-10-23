@@ -259,7 +259,7 @@ public class HttpConnUtils
 			conn = handleRedirects(urlId, sourceUrl, pageUrl, resourceURL, conn, responseCode, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // Take care of redirects.
 		}
 		else if ( (responseCode < 200) || (responseCode >= 400) ) {	// If we have error codes.
-			String errorMessage = ConnSupportUtils.onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode, calledForPageUrl);
+			String errorMessage = ConnSupportUtils.onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode, calledForPageUrl, conn);
 			throw new RuntimeException(errorMessage);	// This is not thrown, if a "DomainBlockedException" is thrown from the previous method-call.
 		}
 		// Else it's an HTTP 2XX SUCCESS CODE or an HTTP 304 NOT MODIFIED
@@ -317,7 +317,7 @@ public class HttpConnUtils
 				weirdMetaDocUrlWhichNeedsGET = true;
 			}
 
-			isSpecialUrl.set(false);	// It will be false until proven to not pass through the "SpecialUrls"
+			isSpecialUrl.set(false);	// It will be false until proven to get transformed inside "SpecialUrls".
 			if ( calledForPageUrl || calledForPossibleDocUrl ) {
 				String tempURL = SpecialUrlsHandler.checkAndHandleSpecialUrls(resourceURL);	// May throw a "RuntimeException".
 				isSpecialUrl.set( !tempURL.equals(resourceURL) );
@@ -597,7 +597,7 @@ public class HttpConnUtils
 			} while ( (responseCode >= 300) && (responseCode <= 399) );
 			
 			// It should have returned if there was an HTTP 2XX code. Now we have to handle the error-code.
-			String errorMessage = ConnSupportUtils.onErrorStatusCode(currentUrl, targetDomainStr, responseCode, calledForPageUrl);
+			String errorMessage = ConnSupportUtils.onErrorStatusCode(currentUrl, targetDomainStr, responseCode, calledForPageUrl, conn);
 			throw new RuntimeException(errorMessage);	// This is not thrown if a "DomainBlockedException" was thrown first.
 			
 		} catch (AlreadyFoundDocUrlException | RuntimeException | ConnTimeoutException | DomainBlockedException | DomainWithUnsupportedHEADmethodException e) {	// We already logged the right messages.

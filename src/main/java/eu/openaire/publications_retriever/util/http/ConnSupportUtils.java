@@ -15,6 +15,7 @@ import eu.openaire.publications_retriever.util.file.IdUrlTuple;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
 import org.apache.commons.io.FileDeleteStrategy;
+import org.jsoup.Jsoup;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -311,7 +312,7 @@ public class ConnSupportUtils
 				int responseCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP response), inside openHttpConnection().
 				// Only a final-url will reach here, so no redirect should occur (thus, we don't check for it).
 				if ( (responseCode < 200) || (responseCode >= 400) ) {    // If we have unwanted/error codes.
-					String errorMessage = onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode, calledForPageUrl);
+					String errorMessage = onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode, calledForPageUrl, conn);
 					throw new DocFileNotRetrievedException(errorMessage);
 				}	// No redirection should exist in this re-connection with another HTTP-Method.
 			}
@@ -458,10 +459,11 @@ public class ConnSupportUtils
 	 * @param domainStr
 	 * @param errorStatusCode
 	 * @param calledForPageUrl
-	 * @throws DomainBlockedException
+	 * @param conn
 	 * @return
+	 * @throws DomainBlockedException
 	 */
-	public static String onErrorStatusCode(String urlStr, String domainStr, int errorStatusCode, boolean calledForPageUrl) throws DomainBlockedException
+	public static String onErrorStatusCode(String urlStr, String domainStr, int errorStatusCode, boolean calledForPageUrl, HttpURLConnection conn) throws DomainBlockedException
 	{
 		if ( (errorStatusCode == 500) && domainStr.contains("handle.net") ) {    // Don't take the 500 of "handle.net", into consideration, it returns many times 500, where it should return 404.. so treat it like a 404.
 			//logger.warn("\"handle.com\" returned 500 where it should return 404.. so we will treat it like a 404.");    // See an example: "https://hdl.handle.net/10655/10123".
@@ -473,6 +475,18 @@ public class ConnSupportUtils
 		if ( (errorStatusCode >= 400) && (errorStatusCode <= 499) )	// Client Error.
 		{
 			errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received: HTTP " + errorStatusCode + " Client Error.";
+			// Get the error-response-body:
+			if ( calledForPageUrl && (errorStatusCode != 404) && (errorStatusCode != 410) ) {
+				String errorText = getErrorMessageFromResponseBody(conn);
+				if ( errorText != null ) {
+					errorLogMessage += " Error-text: " + errorText;
+					/*if ( errorStatusCode == 403 && errorText.toLowerCase().contains("javascript") ) {
+						// Use selenium to execute the JS.
+						driver.get(urlStr);
+						driver.findElement(By.id("download")).click();
+					}*/
+				}
+			}
 			if ( errorStatusCode == 403 )
 				on403ErrorCode(urlStr, domainStr, calledForPageUrl);	// The "DomainBlockedException" will go up-method by its own, if thrown inside this one.
 		}
@@ -484,19 +498,57 @@ public class ConnSupportUtils
 				errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received: HTTP " + errorStatusCode + " Server Error.";
 				on5XXerrorCode(errorStatusCode, domainStr);
 			} else {	// Unknown Error (including non-handled: 1XX and the weird one: 999 (used for example on Twitter), responseCodes).
-				logger.warn("Url: \"" + urlStr + "\" seems to be unreachable. Received unexpected responseCode: " + errorStatusCode);
+				errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received unexpected responseCode: " + errorStatusCode;
+				if ( calledForPageUrl ) {
+					String errorText = getErrorMessageFromResponseBody(conn);
+					if ( errorText != null )
+						errorLogMessage += " Error-text: " + errorText;
+				}
+				logger.warn(errorLogMessage);
 				if ( domainStr != null ) {
 					HttpConnUtils.blacklistedDomains.add(domainStr);
 					logger.warn("Domain: \"" + domainStr + "\" was blocked, after giving a " + errorStatusCode + " HTTP-status-code.");
+					throw new DomainBlockedException(domainStr);	// Throw this even if there was an error preventing the domain from getting blocked.
 				}
-				
-				throw new DomainBlockedException(domainStr);	// Throw this even if there was an error preventing the domain from getting blocked.
 			}
 		}
 		return errorLogMessage;
 	}
 	
-	
+
+	public static String getErrorMessageFromResponseBody(HttpURLConnection conn)
+	{
+		final StringBuilder msgStrB = new StringBuilder(500);
+		try ( InputStream inputStream = conn.getErrorStream() ) {
+			if ( inputStream == null )	// No error-data is provided.
+				return null;
+
+			try ( BufferedReader br = new BufferedReader(new InputStreamReader(inputStream)) ) {
+				String inputLine;
+				while ( (inputLine = br.readLine()) != null ) {	// Returns the line, without the ending-line characters.
+					if ( !inputLine.isEmpty() )
+						msgStrB.append(inputLine).append(" ");	// We want a single finale line, not a multi-line text.
+				}
+
+				if ( msgStrB.length() == 0 )
+					return null;	// Make sure we return a "null" on empty string, to better handle the case in the caller-function.
+
+				String errorText = Jsoup.parse(msgStrB.toString()).text();	// It's already "trimmed".
+				if ( errorText.length() == 0 )
+					return null;
+
+				return errorText;
+			} catch (IOException ioe) {
+				logger.error("IOException when retrieving the response-body: " + ioe.getMessage());
+				return null;
+			}
+		} catch (Exception e) {
+			logger.error("Could not extract the response-body!", e);
+			return null;
+		}
+	}
+
+
 	/**
 	 * This method handles the HTTP 403 Error Code.
 	 * When a connection returns 403, we take the path of the url, and we block it, as the directory which we are trying to connect to, is forbidden to be accessed.
