@@ -48,7 +48,7 @@ public class HttpConnUtils
 
 	public static AtomicInteger numOfDomainsBlockedDueToSSLException = new AtomicInteger(0);
 
-	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/117.0";	// This should not be "final", another program, using this software as a library, should be able to set its own "UserAgent".
+	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/118.0";	// This should not be "final", another program, using this software as a library, should be able to set its own "UserAgent".
 	public static String acceptLanguage = "en-US,en;q=0.5";
 
 	public static final int maxConnGETWaitingTime = 15_000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
@@ -327,6 +327,18 @@ public class HttpConnUtils
 			URL url = new URL(resourceURL);
 			conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestProperty("User-Agent", userAgent);
+			conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
+			conn.setRequestProperty("Accept-Encoding", "gzip, deflate, br");
+			conn.setRequestProperty("DNT", "1");
+			conn.setRequestProperty("Connection", "keep-alive");
+			conn.setRequestProperty("Sec-Fetch-Dest", "document");
+			conn.setRequestProperty("Sec-Fetch-Mode", "navigate");
+			conn.setRequestProperty("Sec-Fetch-Site", "cross-site");
+			conn.setRequestProperty("Upgrade-Insecure-Requests", "1");
+			conn.setRequestProperty("Pragma", "no-cache");
+			conn.setRequestProperty("Cache-Control", "no-cache");
+			conn.setRequestProperty("Host", domainStr);
+
 			if ( !domainsWithUnsupportedAcceptLanguageParameter.contains(domainStr) )
 				conn.setRequestProperty("Accept-Language", acceptLanguage);
 			conn.setInstanceFollowRedirects(false);	// We manage redirects on our own, in order to control redirectsNum, avoid redirecting to unwantedUrls and handling errors.
