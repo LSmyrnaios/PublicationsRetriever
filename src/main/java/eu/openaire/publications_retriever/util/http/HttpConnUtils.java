@@ -328,7 +328,7 @@ public class HttpConnUtils
 			conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestProperty("User-Agent", userAgent);
 			conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
-			conn.setRequestProperty("Accept-Encoding", "gzip, deflate, br");
+			//conn.setRequestProperty("Accept-Encoding", "gzip, deflate, br");
 			conn.setRequestProperty("DNT", "1");
 			conn.setRequestProperty("Connection", "keep-alive");
 			conn.setRequestProperty("Sec-Fetch-Dest", "document");
