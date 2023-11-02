@@ -80,7 +80,7 @@ public class MetaDocUrlsHandler {
             // Block the domain and return "true" to indicate handled-state.
             HttpConnUtils.blacklistedDomains.add(pageDomain);
             logger.warn("Domain: \"" + pageDomain + "\" was blocked, after giving a dynamic metaDocUrl: " + metaDocUrl);
-            UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl was a dynamic-link.", null, true, "true", "true", "false", "false", "false", null, "null");  // We log the source-url, and that was discarded in "PageCrawler.visit()".
+            UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl was a dynamic-link.", null, true, "true", "true", "false", "false", "false", null, "null");
             PageCrawler.contentProblematicUrls.incrementAndGet();
             return true;    // Since the domain is blocked, there is no point in continuing to crawl.
         }
@@ -165,7 +165,6 @@ public class MetaDocUrlsHandler {
             return null;    // It was not found and so it was not handled. We don't log the sourceUrl, since it will be handled later.
 
         //logger.debug("Matched meta-doc-url-line: " + metaDocUrlMatcher.group(0));	// DEBUG!!
-
         String metaDocUrl = null;
         try {
             metaDocUrl = metaDocUrlMatcher.group(1);

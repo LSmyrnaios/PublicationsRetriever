@@ -770,8 +770,8 @@ public class ConnSupportUtils
 			String inputLine;
 			while ( (inputLine = br.readLine()) != null )
 			{
-				if ( !inputLine.isEmpty() && (inputLine.length() != 1) && !SPACE_ONLY_LINE.matcher(inputLine).matches() ) {	// We check for (inputLine.length() != 1), as some lines contain an unrecognized byte.
-					htmlStrB.append(inputLine);
+				if ( !inputLine.isEmpty() && (inputLine.length() != 1) && !SPACE_ONLY_LINE.matcher(inputLine).matches() ) {	// We check for (inputLine.length() != 1), as some lines contain just an unrecognized byte.
+					htmlStrB.append(inputLine).append(" ");	// Add a space where the line-break was, in order to not join words in text, which are separated by a new line in the html-code.
 					//logger.debug(inputLine);	// DEBUG!
 				}
 			}
@@ -828,10 +828,13 @@ public class ConnSupportUtils
 					mimeType = "application/pdf";
 					calledForPossibleDocUrl = true;	// Important for the re-connection.
 					foundDetectedContentType = true;
+					// The "bufferedReader" has already been closed.
 				} else if ( detectedContentType.detectedContentType.equals("undefined") )
 					logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have UNDEFINED contentType.");
+					// The "bufferedReader" has already been closed.
 				else
 					warnMsg += "\nUnspecified \"detectedContentType\": " + detectedContentType.detectedContentType;
+					// Normally, we should never reach here. The BufferedReader should be null.
 			}
 			else	//  ( detectedContentType == null )
 				warnMsg += "\nCould not retrieve the response-body for url: " + finalUrlStr;
@@ -840,6 +843,7 @@ public class ConnSupportUtils
 			warnMsg += "\nThe initial connection was made with the \"HTTP-HEAD\" method, so there is no response-body to use to detect the content-type.";
 
 		if ( !foundDetectedContentType && wasConnectedWithHTTPGET ) {	// If it could be detected (by using the "GET"  method to take the response-body), but it was not, only then go and check if it should be blocked.
+			// The BufferedReader should be null here.
 			if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, HttpConnUtils.timesDomainsReturnedNoType, domainStr, timesToReturnNoTypeBeforeDomainBlocked, true) ) {
 				logger.warn(warnMsg);
 				logger.warn("Domain: \"" + domainStr + "\" was blocked after returning no Type-info more than " + timesToReturnNoTypeBeforeDomainBlocked + " times.");
@@ -888,9 +892,11 @@ public class ConnSupportUtils
 				logger.debug(Arrays.toString(inputLine.chars().toArray()));
 			}*/
 
-			//logger.debug("First line of RequestBody: " + inputLine);	// DEBUG!
+			// Check if the stream ended before we could find an "accepted" line.
 			if ( inputLine == null )
 				return null;
+
+			//logger.debug("First actual line of RequestBody: " + inputLine);	// DEBUG!
 
 			String lowerCaseInputLine = inputLine.toLowerCase();
 			//logger.debug(lowerCaseInputLine + "\nLength of line: "  + lowerCaseInputLine.length());	// DEBUG!
@@ -989,12 +995,8 @@ public class ConnSupportUtils
 
 	public static boolean isJustAnHTTPSredirect(String currentUrl, String targetUrl)
 	{
-		// First check if we go from an http to an https in general.
-		if ( !currentUrl.startsWith("http://", 0) && !targetUrl.startsWith("https://", 0) )
-			return false;
-
-		// Take the url after the protocol and check if it's the same, if it is then we have our HTTPS redirect, if not then it's another type of redirect.
-		return haveOnlyProtocolDifference(currentUrl, targetUrl);
+		return ( currentUrl.startsWith("http://", 0) && targetUrl.startsWith("https://", 0)
+				&& haveOnlyProtocolDifference(currentUrl, targetUrl) );
 	}
 
 
