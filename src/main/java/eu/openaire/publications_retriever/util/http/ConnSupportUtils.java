@@ -15,8 +15,9 @@ import eu.openaire.publications_retriever.util.file.IdUrlTuple;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
 import org.apache.commons.io.FileDeleteStrategy;
-import org.jsoup.Jsoup;
 import org.apache.commons.lang3.StringUtils;
+
+import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -89,6 +89,22 @@ public class TestNonStandardInputOutput  {
 
 	@Disabled
 	@Test
+	public void testCustomInputOutputWithIdDocFileNames()
+	{
+		String[] args = new String[7];
+		args[0] = "-retrieveDataType";
+		args[1] = "document";	// "document" OR "dataset" OR "all"
+		args[2] = "-downloadDocFiles";
+		args[3] = "-docFileNameType";
+		args[4] = "idName";
+		args[5] = "-docFilesStorage";
+		args[6] = "docFiles";
+		main(args);
+	}
+
+
+	@Disabled
+	@Test
 	public void testCustomInputOutputWithIdDocFileNamesToS3()
 	{
 		String[] args = new String[7];

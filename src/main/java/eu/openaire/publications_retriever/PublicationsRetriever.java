@@ -53,7 +53,7 @@ public class PublicationsRetriever
 	public static Instant startTime = null;
 	public static String targetUrlType = "docOrDatasetUrl";	// docUrl, documentUrl, docOrDatasetUrl ; this is set by the args-parser, and it's used when outputting data.
 
-	public static DecimalFormat df = new DecimalFormat("0.00");
+	public static final DecimalFormat df = new DecimalFormat("0.00");
 
 	public static ExecutorService executor;
 	public static int workerThreadsCount = 0;
