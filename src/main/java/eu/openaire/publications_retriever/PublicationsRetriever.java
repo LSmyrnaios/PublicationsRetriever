@@ -387,6 +387,7 @@ public class PublicationsRetriever
 			logger.debug("The M.L.A. was not enabled.");
 
 		logger.debug("About " + df.format(LoaderAndChecker.connProblematicUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + LoaderAndChecker.connProblematicUrls.get() + " urls) were pages which had connectivity problems.");
+		logger.debug("About " + df.format(MetaDocUrlsHandler.numOfProhibitedAccessPagesFound.get() * 100.0 / inputCheckedUrlNum) + "% (" + MetaDocUrlsHandler.numOfProhibitedAccessPagesFound.get() + " urls) were pages with prohibited access.");
 		logger.debug("About " + df.format(UrlTypeChecker.pagesNotProvidingDocUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.pagesNotProvidingDocUrls.get() + " urls) were pages which did not provide docUrls.");
 		logger.debug("About " + df.format(UrlTypeChecker.longToRespondUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.longToRespondUrls.get() + " urls) were urls which belong to domains which take too long to respond.");
 		logger.debug("About " + df.format(PageCrawler.contentProblematicUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + PageCrawler.contentProblematicUrls.get() + " urls) were urls which had problematic content.");
@@ -416,9 +417,9 @@ public class PublicationsRetriever
 			int failedTasks = LoaderAndChecker.totalNumFailedTasks.get();
 			if ( failedTasks > 0 ) {
 				remainingNonProblematicUrls -= failedTasks;
-				logger.info("The rest " + remainingNonProblematicUrls + " urls either did not provide a fulltext or their status is unknown since " + failedTasks + " of them failed.");
+				logger.info("The remaining " + remainingNonProblematicUrls + " urls either did not provide a fulltext or their status is unknown since " + failedTasks + " of them failed.");
 			} else
-				logger.info("The rest " + remainingNonProblematicUrls + " urls did not provide a fulltext.");
+				logger.info("The remaining " + remainingNonProblematicUrls + " urls did not provide a fulltext.");
 		}
 
 		logger.debug("The number of offline-redirects to HTTPS (reducing the online-redirection-overhead), was: " + HttpConnUtils.timesDidOfflineHTTPSredirect.get());
