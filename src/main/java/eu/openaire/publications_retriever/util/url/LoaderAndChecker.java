@@ -141,6 +141,7 @@ public class LoaderAndChecker
 						String wasUrlValid = list.get(0);
 						String couldRetry = list.get(1);
 						UrlUtils.logOutputData("null", retrievedUrlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
+						return false;
 					}
 					return true;
 				});
@@ -285,10 +286,12 @@ public class LoaderAndChecker
 						return false;	// Exit this runnable to go to the next ID.
 					}
 
+					boolean wasSuccessful = true;
 					try {	// Check if it's a docUrl, if not, it gets crawled.
 						HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
 						if ( !isSingleIdUrlPair )	// Otherwise it's already logged.
 							loggedUrlsOfCurrentId.add(urlToCheck);
+						// Here the runnable was successful in any case.
 					} catch (Exception e) {
 						List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
 						String wasUrlValid = list.get(0);
@@ -297,14 +300,15 @@ public class LoaderAndChecker
 						// This url had connectivity problems.. but the rest might not, go check them out.
 						if ( !isSingleIdUrlPair ) {
 							loggedUrlsOfCurrentId.add(urlToCheck);
-							checkRemainingUrls(retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId, isSingleIdUrlPair);	// Go check the other urls because they might not have a normalization problem.
-						}
+							wasSuccessful = checkRemainingUrls(retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId, isSingleIdUrlPair);	// Go check the other urls because they might not have a connection problem.
+						} else
+							wasSuccessful = false;
 					}
 
 					if ( !isSingleIdUrlPair )	// Don't forget to write the valid but not-to-be-connected urls to the outputFile.
 						handleLogOfRemainingUrls(retrievedId, retrievedUrlsOfCurrentId, loggedUrlsOfCurrentId);
 
-					return true;
+					return wasSuccessful;
 				});
 			}// end id-for-loop
 			int numFailedTasks = invokeAllTasksAndWait(callableTasks);
@@ -396,6 +400,7 @@ public class LoaderAndChecker
 						String wasUrlValid = list.get(0);
 						String couldRetry = list.get(1);
 						UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
+						return false;
 					}
 					return true;
 				});
@@ -488,6 +493,7 @@ public class LoaderAndChecker
 							String wasUrlValid = list.get(0);
 							String couldRetry = list.get(1);
 							UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
+							return false;
 						}
 					}
 					return true;
@@ -576,6 +582,7 @@ public class LoaderAndChecker
 				UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, in checkRemainingUrls(), due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
 				if ( !isSingleIdUrlPair )
 					loggedUrlsOfThisId.add(urlToCheck);
+				// Try the next url..
 			}
 		}
 		return false;

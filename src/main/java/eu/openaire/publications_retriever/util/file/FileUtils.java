@@ -142,7 +142,7 @@ public class FileUtils
 		// If the directory doesn't exist, try to (re)create it.
 		try {
 			if ( !dir.exists() ) {
-				if ( !dir.mkdirs() ) {	// Try to create the directory(-ies) if they don't exist. If they exist OR if sth went wrong, the result os the same: "false".
+				if ( !dir.mkdirs() ) {	// Try to create the directory(-ies) if they don't exist. If they exist OR if sth went wrong, the result is the same: "false".
 					String errorMessage;
 					if ( PublicationsRetriever.docFilesStorageGivenByUser )
 						errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
@@ -274,7 +274,7 @@ public class FileUtils
 
 			if ( !idAndUrlMappedInput.put(inputIdUrlTuple.id, inputIdUrlTuple.url) ) {    // We have a duplicate id-url pair in the input, log it here as we cannot pass it through the HashMultimap. We will handle the first found pair only.
 				duplicateIdUrlEntries ++;
-				UrlUtils.logOutputData(inputIdUrlTuple.id, inputIdUrlTuple.url, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextIdUrlPairBatchFromJson(), as it is a duplicate.", null, false, "true", "N/A", "N/A", "N/A", "true", null, "null");
+				UrlUtils.logOutputData(inputIdUrlTuple.id, inputIdUrlTuple.url, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextIdUrlPairBatchFromJson(), as it is a duplicate.", null, false, "false", "N/A", "N/A", "N/A", "true", null, "null");
 			}
 		}
 
@@ -303,7 +303,7 @@ public class FileUtils
 
 		if ( urlStr.isEmpty() ) {
 			if ( !idStr.isEmpty() )	// If we only have the id, then go and log it.
-				UrlUtils.logOutputData(idStr, urlStr, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in FileUtils.jsonDecoder(), as the url was not found.", null, false, "true", "false", "false", "false", "false", null, "null");
+				UrlUtils.logOutputData(idStr, urlStr, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in FileUtils.jsonDecoder(), as the url was not found.", null, true, "true", "false", "false", "false", "false", null, "null");
 			return null;
 		}
 
@@ -764,7 +764,7 @@ public class FileUtils
 			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
 
 			if ( !urlGroup.add(retrievedLineStr) )    // We have a duplicate in the input.. log it here as we cannot pass it through the HashSet. It's possible that this as well as the original might be/give a docUrl.
-				UrlUtils.logOutputData(null, retrievedLineStr, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null, false, "true", "N/A", "N/A", "N/A", "true", null, "null");
+				UrlUtils.logOutputData(null, retrievedLineStr, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null, false, "false", "N/A", "N/A", "N/A", "true", null, "null");
 		}
 
 		return urlGroup;

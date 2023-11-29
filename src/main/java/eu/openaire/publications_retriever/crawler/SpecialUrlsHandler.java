@@ -225,6 +225,7 @@ public class SpecialUrlsHandler
 			String wasValid = list.get(0);
 			String couldRetry = list.get(1);
 			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem in checking the retrieved \"turkjgastroenterol\"-pdf-url.", pageDomain, true, "true", wasValid, "false", "false", couldRetry, null, "null");
+			return false;
 		}
 
 		return true;
