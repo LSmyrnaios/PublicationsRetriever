@@ -19,9 +19,9 @@ public class MetaDocUrlsHandler {
 
     // Order-independent META_DOC_URL-regex.
     // <meta(?:[^<]*name=\"(?:[^<]*(?:citation|wkhealth)_pdf|eprints.document)_url\"[^<]*content=\"(http[^\"]+)\"|[^<]*content=\"(http[^\"]+)\"[^<]*name=\"(?:[^<]*(?:citation|wkhealth)_pdf|eprints.document)_url\")[^>]*[/]?>
-    private static final String metaName = "name=\"(?:[^<]*(?:citation|wkhealth)_pdf|eprints.document)_url\"";
+    private static final String metaName = "name=\"(?:[^<]*(?:(?:citation|wkhealth)(?:_fulltext)?_)?pdf|eprints.document)_url\"";
     private static final String metaContent = "content=\"(http[^\"]+)\"";
-    public static final Pattern META_DOC_URL = Pattern.compile("<meta(?:[^<]*" + metaName + "[^<]*" + metaContent + "|[^<]*" + metaContent + "[^<]*" + metaName + ")[^>]*[/]?>");
+    public static final Pattern META_DOC_URL = Pattern.compile("<meta(?:[^<]*" + metaName + "[^<]*" + metaContent + "|[^<]*" + metaContent + "[^<]*" + metaName + ")[^>]*[/]?>", Pattern.CASE_INSENSITIVE);
 
     public static Pattern COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS;    // Its pattern gets compiled at runtime, only one time, depending on the Datatype.
     static {
