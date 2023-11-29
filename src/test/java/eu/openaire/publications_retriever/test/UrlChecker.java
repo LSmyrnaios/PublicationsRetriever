@@ -1,7 +1,6 @@
 package eu.openaire.publications_retriever.test;
 
 import com.google.common.collect.HashMultimap;
-import crawlercommons.filters.basic.BasicURLNormalizer;
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.util.file.FileUtils;

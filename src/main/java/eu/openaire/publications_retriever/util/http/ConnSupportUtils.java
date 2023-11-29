@@ -14,6 +14,9 @@ import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.file.IdUrlTuple;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
+import org.apache.commons.compress.compressors.brotli.BrotliCompressorInputStream;
+import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.FileDeleteStrategy;
 import org.apache.commons.lang3.StringUtils;
 
@@ -24,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -435,7 +439,7 @@ public class ConnSupportUtils
 	{
 		try {
 			String html = null;
-			if ( (html = ConnSupportUtils.getHtmlString(conn, null)) == null ) {
+			if ( (html = ConnSupportUtils.getHtmlString(conn, null, false)) == null ) {
 				logger.warn("Could not retrieve the HTML-code for HTTP300PageUrl: " + conn.getURL().toString());
 				return null;
 			}
@@ -517,36 +521,76 @@ public class ConnSupportUtils
 	}
 	
 
-	public static String getErrorMessageFromResponseBody(HttpURLConnection conn)
+	public static InputStream checkEncodingAndGetInputStream(HttpURLConnection conn, boolean isForError)
 	{
-		final StringBuilder msgStrB = new StringBuilder(500);
-		try ( InputStream inputStream = conn.getErrorStream() ) {
-			if ( inputStream == null )	// No error-data is provided.
+		InputStream inputStream = null;
+		try {
+			inputStream = (isForError ? conn.getErrorStream() : conn.getInputStream());
+			if ( isForError && (inputStream == null) )	// Only the "getErrorStream" may return null.
 				return null;
-
-			try ( BufferedReader br = new BufferedReader(new InputStreamReader(inputStream)) ) {
-				String inputLine;
-				while ( (inputLine = br.readLine()) != null ) {	// Returns the line, without the ending-line characters.
-					if ( !inputLine.isEmpty() )
-						msgStrB.append(inputLine).append(" ");	// We want a single finale line, not a multi-line text.
-				}
-
-				if ( msgStrB.length() == 0 )
-					return null;	// Make sure we return a "null" on empty string, to better handle the case in the caller-function.
-
-				String errorText = Jsoup.parse(msgStrB.toString()).text();	// It's already "trimmed".
-				if ( errorText.length() == 0 )
-					return null;
-
-				return errorText;
-			} catch (IOException ioe) {
-				logger.error("IOException when retrieving the response-body: " + ioe.getMessage());
-				return null;
-			}
 		} catch (Exception e) {
-			logger.error("Could not extract the response-body!", e);
+			logger.error("", e);
 			return null;
 		}
+		// Determine the potential encoding
+		String encoding = conn.getHeaderField("content-encoding");
+		if ( encoding != null ) {
+			String url = conn.getURL().toString();
+			if ( logger.isTraceEnabled() )
+				logger.trace("Url \"" + url + "\" has content-encoding: " + encoding);
+			InputStream compressedInputStream = getCompressedInputStream(inputStream, encoding, url, isForError);
+			if ( compressedInputStream == null ) {
+				try {
+					inputStream.close();
+				} catch (IOException ioe) {}
+				return null;    // The error is logged inside the called method.
+			}
+			inputStream = compressedInputStream;
+		}
+
+		return inputStream;
+	}
+
+
+	public static InputStream getCompressedInputStream(InputStream inputStream, String encoding, String url, boolean isForError)
+	{
+		InputStream compressedInputStream;
+		try {
+			if ( encoding.equals("gzip") )
+				compressedInputStream = new GzipCompressorInputStream(inputStream);
+			else if ( encoding.equals("deflate") )
+				compressedInputStream = new DeflateCompressorInputStream(inputStream);
+			else if ( encoding.equals("br") )
+				compressedInputStream = new BrotliCompressorInputStream(inputStream);
+			else {
+				logger.warn("An unsupported \"content-encoding\" (" + encoding + ") was received from url: " + url);
+				return null;
+			}
+		} catch (IOException ioe) {
+			String exMsg = ioe.getMessage();
+			if ( exMsg.startsWith("Input is not in the") )
+				logger.warn(exMsg + " | http-published-encoding: " + encoding + " | url: " + url);
+				// Some urls do not return valid html-either way.
+			else
+				logger.error("Could not acquire the compressorInputStream for encoding: " + encoding + " | url: " + url, ioe);
+			return null;
+		}
+		return compressedInputStream;
+	}
+
+
+	public static String getErrorMessageFromResponseBody(HttpURLConnection conn)
+	{
+		String html = getHtmlString(conn, null, true);
+		if ( html == null )
+			return null;
+
+		int htmlLength = html.length();
+		if ( (htmlLength == 0) || (htmlLength > 10000) )
+			return null;
+
+		String errorText = Jsoup.parse(html).text();	// The result is already "trimmed".
+		return ((errorText.length() > 0) ? errorText : null);
 	}
 
 
@@ -752,7 +796,7 @@ public class ConnSupportUtils
 
 	public static ThreadLocal<StringBuilder> htmlStrBuilder = new ThreadLocal<StringBuilder>();	// Every Thread has its own variable.
 
-	public static String getHtmlString(HttpURLConnection conn, BufferedReader bufferedReader)
+	public static String getHtmlString(HttpURLConnection conn, BufferedReader bufferedReader, boolean isForError)
 	{
 		if ( getContentSize(conn, false) == -1 ) {	// "Unacceptable size"-code..
 			logger.warn("Aborting HTML-extraction for pageUrl: " + conn.getURL().toString());
@@ -766,7 +810,14 @@ public class ConnSupportUtils
 			htmlStrBuilder.set(htmlStrB);	// Save it for future use by this thread.
 		}
 
-		try (BufferedReader br = (bufferedReader != null ? bufferedReader : new BufferedReader(new InputStreamReader(conn.getInputStream()), FileUtils.fiveMb)) )	// Try-with-resources
+		InputStream inputStream = null;
+		if ( bufferedReader == null ) {
+			inputStream = checkEncodingAndGetInputStream(conn, isForError);
+			if ( inputStream == null )	// The error is already logged inside.
+				return null;
+		}
+
+		try (BufferedReader br = ((bufferedReader != null) ? bufferedReader : new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8), FileUtils.fiveMb)) )	// Try-with-resources
 		{
 			String inputLine;
 			while ( (inputLine = br.readLine()) != null )
@@ -788,6 +839,12 @@ public class ConnSupportUtils
 			return null;
 		} finally {
 			htmlStrB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating.
+			try {
+				if ( inputStream != null )
+					inputStream.close();
+			} catch (IOException ioe) {
+				// Ignore.
+			}
 		}
 	}
 
@@ -878,9 +935,13 @@ public class ConnSupportUtils
 			return null;
 		}
 
+		InputStream inputStream = checkEncodingAndGetInputStream(conn, false);
+		if ( inputStream == null )
+			return null;
+
 		BufferedReader br = null;
 		try {
-			br = new BufferedReader(new InputStreamReader(conn.getInputStream()), FileUtils.fiveMb);
+			br = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8), FileUtils.fiveMb);
 			String inputLine;
 
 			// Skip empty lines in the beginning of the HTML-code
@@ -1052,7 +1113,6 @@ public class ConnSupportUtils
 
 	public static InputStream getInputStreamFromInputDataUrl()
 	{
-		InputStream inputStream = null;
 		if ( (PublicationsRetriever.inputDataUrl == null) || PublicationsRetriever.inputDataUrl.isEmpty() ) {
 			String errorMessage = "The \"inputDataUrl\" was not given, even though";
 			logger.error(errorMessage);
@@ -1061,6 +1121,7 @@ public class ConnSupportUtils
 			System.exit(55);
 		}
 
+		InputStream inputStream = null;
 		try {
 			HttpURLConnection conn = HttpConnUtils.handleConnection(null, PublicationsRetriever.inputDataUrl, PublicationsRetriever.inputDataUrl, PublicationsRetriever.inputDataUrl, null, true, true);
 			String mimeType = conn.getHeaderField("Content-Type");
@@ -1072,7 +1133,12 @@ public class ConnSupportUtils
 				System.exit(56);
 			}
 
-			inputStream = new BufferedInputStream(conn.getInputStream(), FileUtils.fiveMb);
+			inputStream = ConnSupportUtils.checkEncodingAndGetInputStream(conn, false);
+			if ( inputStream == null )
+				throw new RuntimeException("Could not acquire the InputStream!");
+
+			// Wrap it with a buffer, for increased efficiency.
+			inputStream = new BufferedInputStream(inputStream, FileUtils.fiveMb);
 
 		} catch (Exception e) {
 			String errorMessage = "Unexpected error when retrieving the input-stream from the inputDataUrl:\n" + e.getMessage();

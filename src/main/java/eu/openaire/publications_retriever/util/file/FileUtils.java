@@ -5,6 +5,7 @@ import com.google.common.collect.HashMultimap;
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.crawler.MachineLearning;
 import eu.openaire.publications_retriever.exceptions.DocFileNotRetrievedException;
+import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.url.DataToBeLogged;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
@@ -349,9 +350,14 @@ public class FileUtils
 		numOfDocFiles.incrementAndGet();
 
 		File docFile = docFileData.getDocFile();
+
+		InputStream inputStream = ConnSupportUtils.checkEncodingAndGetInputStream(conn, false);
+		if ( inputStream == null )
+			throw new DocFileNotRetrievedException("Could not acquire the inputStream!");
+
 		FileOutputStream fileOutputStream = docFileData.getFileOutputStream();
 
-		try ( BufferedInputStream inStream = new BufferedInputStream(conn.getInputStream(), fiveMb);
+		try ( BufferedInputStream inStream = new BufferedInputStream(inputStream, fiveMb);
 			  BufferedOutputStream outStream = new BufferedOutputStream(((fileOutputStream != null) ? fileOutputStream : new FileOutputStream(docFile)), fiveMb) )
 		{
 			int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);
@@ -442,7 +448,11 @@ public class FileUtils
 		File docFile = new File(storeDocFilesDir + (numOfDocFile++) + ".pdf");	// First use the "numOfDocFile" and then increment it.
 		// TODO - Later, on different fileTypes, take care of the extension properly.
 
-		try ( BufferedInputStream inStream = new BufferedInputStream(conn.getInputStream(), fiveMb);
+		InputStream inputStream = ConnSupportUtils.checkEncodingAndGetInputStream(conn, false);
+		if ( inputStream == null )
+			throw new DocFileNotRetrievedException("Could not acquire the inputStream!");
+
+		try ( BufferedInputStream inStream = new BufferedInputStream(inputStream, fiveMb);
 			BufferedOutputStream outStream = new BufferedOutputStream(new FileOutputStream(docFile), fiveMb))
 		{
 			int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);

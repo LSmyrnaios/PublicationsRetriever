@@ -88,7 +88,7 @@ public class PageCrawler
 		}
 
 		String pageHtml = null;	// Get the pageHtml to parse the page.
-		if ( (pageHtml = ConnSupportUtils.getHtmlString(conn, bufferedReader)) == null ) {
+		if ( (pageHtml = ConnSupportUtils.getHtmlString(conn, bufferedReader, false)) == null ) {
 			logger.warn("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
 			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", null, true, "true", "true", "false", "false", "true", null, "null");
 			LoaderAndChecker.connProblematicUrls.incrementAndGet();

@@ -328,7 +328,13 @@ public class HttpConnUtils
 			conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestProperty("User-Agent", userAgent);
 			conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
-			//conn.setRequestProperty("Accept-Encoding", "gzip, deflate, br");
+
+			conn.setRequestProperty("Accept-Encoding", "gzip, deflate, br");
+			//conn.setRequestProperty("TE", "trailers");	// TODO - Investigate the "transfer-encoding" header.
+
+			if ( !domainsWithUnsupportedAcceptLanguageParameter.contains(domainStr) )
+				conn.setRequestProperty("Accept-Language", acceptLanguage);
+
 			conn.setRequestProperty("DNT", "1");
 			conn.setRequestProperty("Connection", "keep-alive");
 			conn.setRequestProperty("Sec-Fetch-Dest", "document");
@@ -339,8 +345,6 @@ public class HttpConnUtils
 			conn.setRequestProperty("Cache-Control", "no-cache");
 			conn.setRequestProperty("Host", domainStr);
 
-			if ( !domainsWithUnsupportedAcceptLanguageParameter.contains(domainStr) )
-				conn.setRequestProperty("Accept-Language", acceptLanguage);
 			conn.setInstanceFollowRedirects(false);	// We manage redirects on our own, in order to control redirectsNum, avoid redirecting to unwantedUrls and handling errors.
 
 			boolean useHttpGetMethod = false;
