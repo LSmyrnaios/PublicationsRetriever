@@ -17,6 +17,20 @@ public class MetaDocUrlsHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(MetaDocUrlsHandler.class);
 
+
+    // Order-independent META_RESTRICTED_ACCESS_RIGHTS-regex.
+    // <meta(?:[^<]*name=\"DC.AccessRights\"[^<]*content=\"restricted\"|[^<]*content=\"restricted\"[^<]*name=\"DC.AccessRights\")[^>]*[/]?>
+    private static final String metaAccessName = "name=\"DC.(?:Access)?Rights\"";
+    private static final String metaAccessContent = "content=\"([^\"]+)\"";
+    // It may be "restricted", "info:eu-repo/semantics/(openAccess|closedAccess|embargoedAccess|restrictedAccess)", "Open Access", etc..
+    public static final Pattern META_RESTRICTED_ACCESS_RIGHTS = Pattern.compile("<(?:(?i)meta)(?:[^<]*" + metaAccessName + "[^<]*" + metaAccessContent + "|[^<]*" + metaAccessContent + "[^<]*" + metaAccessName + ")[^>]*[/]?>", Pattern.CASE_INSENSITIVE);
+
+    public static final Pattern NO_ACCESS_RIGHTS = Pattern.compile(".*(?:(close[d]?|embargo(?:ed)?|restrict(?:ed)?|metadata" + PageCrawler.spaceOrDashes + "only|paid)(?:" + PageCrawler.spaceOrDashes + "access)?|(?:no[t]?|není)" + PageCrawler.spaceOrDashes + "(?:accessible|přístupná)"
+            + "|inaccessible|(?:acceso" + PageCrawler.spaceOrDashes + ")?cerrado).*");
+    // We want the "capturing-group" to know which is the case for each url and write it in the logs. The text given to this regex is made lowercase.
+    // "není přístupná" = "not accessible" in Czech
+
+
     // Order-independent META_DOC_URL-regex.
     // <meta(?:[^<]*name=\"(?:[^<]*(?:citation|wkhealth)_pdf|eprints.document)_url\"[^<]*content=\"(http[^\"]+)\"|[^<]*content=\"(http[^\"]+)\"[^<]*name=\"(?:[^<]*(?:citation|wkhealth)_pdf|eprints.document)_url\")[^>]*[/]?>
     private static final String metaName = "name=\"(?:[^<]*(?:(?:citation|wkhealth)(?:_fulltext)?_)?pdf|eprints.document)_url\"";
@@ -42,6 +56,7 @@ public class MetaDocUrlsHandler {
 
     public static Pattern LOCALHOST_DOMAIN_REPLACEMENT_PATTERN = Pattern.compile("://(?:localhost|127.0.0.1)(?:\\:[\\d]+)?");
 
+    public static AtomicInteger numOfProhibitedAccessPagesFound = new AtomicInteger(0);
     public static AtomicInteger numOfMetaDocUrlsFound = new AtomicInteger(0);
 
 
@@ -59,6 +74,34 @@ public class MetaDocUrlsHandler {
      */
     public static boolean checkIfAndHandleMetaDocUrl(String urlId, String sourceUrl, String pageUrl, String pageDomain, String pageHtml)
     {
+        // Before checking for the MetaDocUrl, check whether this publication is restricted or not. It may have a metaDocUrl, but it will redirect to the landing page.
+        // e.g.: https://le.uwpress.org/content/78/2/260
+
+        // Some websites use upper of mixed-case meta tags, names or contents or even the values.
+        // We cannot make the HTML lower-case or we will make the metaDocUrls invalid.
+        // So the REGEXes have to be case-insensitive..!
+
+        String metaAccessRights = null;
+        if ( (metaAccessRights = getMetaAccessRightsFromHTML(pageHtml)) == null ) { // This is mostly the case when the page does not include any info about "access rights". It may or may not provide access to the docUrl.
+            if ( logger.isTraceEnabled() )
+                logger.trace("Could not retrieve the metaAccessRights for url \"" + pageUrl + "\", continue by checking the metaDocUrl..");
+        } else if ( logger.isTraceEnabled() )
+            logger.trace("metaAccessRights: " + metaAccessRights);  // DEBUG!
+
+        if ( metaAccessRights != null ) {
+            String lowercaseMetaAccessRights = metaAccessRights.toLowerCase();
+            Matcher noAccessRightsMatcher = NO_ACCESS_RIGHTS.matcher(lowercaseMetaAccessRights);
+            if ( noAccessRightsMatcher.matches() ) {
+                String noAccessCase = noAccessRightsMatcher.group(1);
+                if ( (noAccessCase == null) || noAccessCase.isEmpty() )
+                    noAccessCase = "prohibited";    // This is not an "official" status, but a good description of the situation and makes it clear that there was a minor problem when determining the exact reason.
+                logger.debug("The metaAccessRights were found to be \"" + noAccessCase + "\"! Do not check the metaDocUrl, nor crawl the page!");
+                UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its accessRight were '" + noAccessCase + "'.", null, true, "true", "true", "false", "false", "true", null, "null");
+                numOfProhibitedAccessPagesFound.incrementAndGet();
+                return true;   // This publication has "restricted" metaAccessRights, so it will not be handled in another way. Although, it may be rechecked in the future.
+            }
+        }
+
         // Check if the docLink is provided in a metaTag and connect to it directly.
         String metaDocUrl = null;
         if ( (metaDocUrl = getMetaDocUrlFromHTML(pageHtml)) == null ) { // This is mostly the case when the page does not have a docUrl, although not always, so we continue crawling it.
@@ -158,6 +201,48 @@ public class MetaDocUrlsHandler {
     }
 
 
+    /**
+     * Scan the HTML-code for the metaDocUrl.
+     * It may be located either in the start or at the end of the HTML.
+     * An HTML-Code may be only a few VERY-LONG lines of code, instead of hundreds of "normal-sized" lines.
+     * */
+    public static String getMetaAccessRightsFromHTML(String pageHtml)
+    {
+        Matcher metaAccessRightsMatcher = META_RESTRICTED_ACCESS_RIGHTS.matcher(pageHtml);
+
+        // There may be multiple meta-tags about "access rights". Find them all and concatenate them to check them later.
+
+        final StringBuilder stringBuilder = new StringBuilder(500);
+
+        while ( metaAccessRightsMatcher.find() )
+        {
+            String currentMetaAccessRights = null;
+            //logger.debug("Matched metaAccessRights-line: " + metaAccessRightsMatcher.group(0));	// DEBUG!!
+            try {
+                currentMetaAccessRights = metaAccessRightsMatcher.group(1);
+            } catch ( Exception e ) { logger.error("", e); }
+            if ( currentMetaAccessRights == null ) {
+                try {
+                    currentMetaAccessRights = metaAccessRightsMatcher.group(2);    // Try the other group.
+                } catch ( Exception e ) { logger.error("", e); }
+            }
+            if ( (currentMetaAccessRights != null)
+                    && !currentMetaAccessRights.startsWith("http") && (currentMetaAccessRights.length() <= 200) )
+                stringBuilder.append(currentMetaAccessRights).append(" -- ");
+        }
+
+        if ( stringBuilder.length() == 0 )
+            return null;    // It was not found and so it was not handled. We don't log the sourceUrl, since it will be handled later.
+        else
+            return stringBuilder.toString();
+    }
+
+
+    /**
+     * Scan the HTML-code for the metaDocUrl.
+     * It may be located either in the start or at the end of the HTML.
+     * An HTML-Code may be only a few VERY-LONG lines of code, instead of hundreds of "normal-sized" lines.
+     * */
     public static String getMetaDocUrlFromHTML(String pageHtml)
     {
         Matcher metaDocUrlMatcher = META_DOC_URL.matcher(pageHtml);

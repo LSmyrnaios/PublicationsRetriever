@@ -53,7 +53,7 @@ public class PageCrawler
 	public static boolean should_check_remaining_links = true;	// The remaining links very rarely give docUrls.. so, for time-performance, we can disable them.
 	private static final int MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT = 10;	// The < 10 > is the optimal value, figured out after experimentation.
 
-	private static final String spaceOrDashes = "(?:\\s|%20|-|_)*";	// This includes the encoded space inside the url-string.
+	public static final String spaceOrDashes = "(?:\\s|%20|-|_)*";	// This includes the encoded space inside the url-string.
 
 	public static final Pattern DOCUMENT_TEXT = Pattern.compile("pdf|full" + spaceOrDashes + "text|download|t[ée]l[ée]charger|descargar|texte" + spaceOrDashes + "intégral");
 
