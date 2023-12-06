@@ -3,6 +3,8 @@ package eu.openaire.publications_retriever.util.url;
 import com.google.common.collect.HashMultimap;
 import crawlercommons.filters.basic.BasicURLNormalizer;
 import eu.openaire.publications_retriever.PublicationsRetriever;
+import eu.openaire.publications_retriever.exceptions.ConnTimeoutException;
+import eu.openaire.publications_retriever.exceptions.DomainWithUnsupportedHEADmethodException;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
@@ -731,8 +733,6 @@ public class LoaderAndChecker
 	public static List<String> getWasValidAndCouldRetry(Exception e, String pageUrl)
 	{
 		List<String> list = new ArrayList<>(2);
-
-		// Set default values.
 		String wasUrlValid = "true";
 		String couldRetry = "false";
 
@@ -744,12 +744,12 @@ public class LoaderAndChecker
 				else if ( COULD_RETRY_HTTP_STATUS.matcher(message).matches() )
 					couldRetry = "true";	// 	We could retry at a later time, since some errors might be temporal.
 			}
-		}
+		} else if ( e instanceof ConnTimeoutException
+			|| e instanceof DomainWithUnsupportedHEADmethodException )	// This should never get caught here normally.
+			couldRetry = "true";
+		// else if it's a "DomainBlockedException", the default values apply
 
-		// Ultimately, if this url is not valid, there is no point in retrying in the future, no matter if it belongs to a future-handled domain.
-		if ( wasUrlValid.equals("false") )
-			couldRetry = "false";
-		else if ( (pageUrl != null) && COULD_RETRY_URLS.matcher(pageUrl).matches() )
+		if ( (pageUrl != null) && COULD_RETRY_URLS.matcher(pageUrl).matches() )
 			couldRetry = "true";
 
 		list.add(0, wasUrlValid);
