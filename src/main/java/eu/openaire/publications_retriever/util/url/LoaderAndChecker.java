@@ -4,6 +4,7 @@ import com.google.common.collect.HashMultimap;
 import crawlercommons.filters.basic.BasicURLNormalizer;
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.exceptions.ConnTimeoutException;
+import eu.openaire.publications_retriever.exceptions.DomainBlockedException;
 import eu.openaire.publications_retriever.exceptions.DomainWithUnsupportedHEADmethodException;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
@@ -142,27 +143,14 @@ public class LoaderAndChecker
 						List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
 						String wasUrlValid = list.get(0);
 						String couldRetry = list.get(1);
-						UrlUtils.logOutputData("null", retrievedUrlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
+						String errorMsg = "Discarded at loading time, as " + list.get(2);
+						UrlUtils.logOutputData("null", retrievedUrlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
 						return false;
 					}
 					return true;
 				});
 			}// end for-loop
-			int numFailedTasks = invokeAllTasksAndWait(callableTasks);
-			if ( numFailedTasks == -1 ) {
-				FileUtils.writeResultsToFile();	// Writes to the output file
-				System.err.println("Invoking and/or executing the callableTasks failed with the exception written in the log files!");
-				System.exit(99);
-			} else if ( numFailedTasks > 0 ) {
-				logger.warn(numFailedTasks + " tasks failed in batch_" + batchCount);
-				totalNumFailedTasks.incrementAndGet();
-			}
-
-			callableTasks.clear();
-			logger.debug("The number of cookies is: " + cookieStore.getCookies().size());
-			boolean cookiesDeleted = cookieStore.removeAll();
-			logger.debug(cookiesDeleted ? "The cookies where removed!" : "No cookies where removed!");
-			FileUtils.writeResultsToFile();	// Writes to the output file
+			executeTasksAndHandleResults(callableTasks, batchCount, cookieStore);
 		}// end while-loop
 	}
 
@@ -298,7 +286,8 @@ public class LoaderAndChecker
 						List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
 						String wasUrlValid = list.get(0);
 						String couldRetry = list.get(1);
-						UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
+						String errorMsg = "Discarded at loading time, as " + list.get(2);
+						UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
 						// This url had connectivity problems.. but the rest might not, go check them out.
 						if ( !isSingleIdUrlPair ) {
 							loggedUrlsOfCurrentId.add(urlToCheck);
@@ -313,21 +302,7 @@ public class LoaderAndChecker
 					return wasSuccessful;
 				});
 			}// end id-for-loop
-			int numFailedTasks = invokeAllTasksAndWait(callableTasks);
-			if ( numFailedTasks == -1 ) {
-				FileUtils.writeResultsToFile();	// Writes to the output file
-				System.err.println("Invoking and/or executing the callableTasks failed with the exception written in the log files!");
-				System.exit(99);
-			} else if ( numFailedTasks > 0 ) {
-				logger.warn(numFailedTasks + " tasks failed in batch_" + batchCount);
-				totalNumFailedTasks.incrementAndGet();
-			}
-
-			callableTasks.clear();
-			logger.debug("The number of cookies is: " + cookieStore.getCookies().size());
-			boolean cookiesDeleted = cookieStore.removeAll();
-			logger.debug(cookiesDeleted ? "The cookies where removed!" : "No cookies where removed!");
-			FileUtils.writeResultsToFile();	// Writes to the output file
+			executeTasksAndHandleResults(callableTasks, batchCount, cookieStore);
 		}// end loading-while-loop
 	}
 
@@ -401,27 +376,14 @@ public class LoaderAndChecker
 						List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
 						String wasUrlValid = list.get(0);
 						String couldRetry = list.get(1);
-						UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
+						String errorMsg = "Discarded at loading time, as " + list.get(2);
+						UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
 						return false;
 					}
 					return true;
 				});
 			}// end pairs-for-loop
-			int numFailedTasks = invokeAllTasksAndWait(callableTasks);
-			if ( numFailedTasks == -1 ) {
-				FileUtils.writeResultsToFile();	// Writes to the output file
-				System.err.println("Invoking and/or executing the callableTasks failed with the exception written in the log files!");
-				System.exit(99);
-			} else if ( numFailedTasks > 0 ) {
-				logger.warn(numFailedTasks + " tasks failed in batch_" + batchCount);
-				totalNumFailedTasks.incrementAndGet();
-			}
-
-			callableTasks.clear();
-			logger.debug("The number of cookies is: " + cookieStore.getCookies().size());
-			boolean cookiesDeleted = cookieStore.removeAll();
-			logger.debug(cookiesDeleted ? "The cookies where removed!" : "No cookies where removed!");
-			FileUtils.writeResultsToFile();	// Writes to the output file
+			executeTasksAndHandleResults(callableTasks, batchCount, cookieStore);
 		}// end loading-while-loop
 	}
 
@@ -494,29 +456,36 @@ public class LoaderAndChecker
 							List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
 							String wasUrlValid = list.get(0);
 							String couldRetry = list.get(1);
-							UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
+							String errorMsg = "Discarded at loading time, as " + list.get(2);
+							UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
 							return false;
 						}
 					}
 					return true;
 				});
 			}// end for-id-loop
-			int numFailedTasks = invokeAllTasksAndWait(callableTasks);
-			if ( numFailedTasks == -1 ) {
-				FileUtils.writeResultsToFile();	// Writes to the output file
-				System.err.println("Invoking and/or executing the callableTasks failed with the exception written in the log files!");
-				System.exit(99);
-			} else if ( numFailedTasks > 0 ) {
-				logger.warn(numFailedTasks + " tasks failed in batch_" + batchCount);
-				totalNumFailedTasks.incrementAndGet();
-			}
-
-			callableTasks.clear();
-			logger.debug("The number of cookies is: " + cookieStore.getCookies().size());
-			boolean cookiesDeleted = cookieStore.removeAll();
-			logger.debug(cookiesDeleted ? "The cookies where removed!" : "No cookies where removed!");
-			FileUtils.writeResultsToFile();	// Writes to the output file
+			executeTasksAndHandleResults(callableTasks, batchCount, cookieStore);
 		}// end loading-while-loop
+	}
+
+
+	public static void executeTasksAndHandleResults(List<Callable<Boolean>> callableTasks, int batchCount, CookieStore cookieStore)
+	{
+		int numFailedTasks = invokeAllTasksAndWait(callableTasks);
+		if ( numFailedTasks == -1 ) {
+			FileUtils.writeResultsToFile();	// Writes to the output file
+			System.err.println("Invoking and/or executing the callableTasks failed with the exception written in the log files!");
+			System.exit(99);
+		} else if ( numFailedTasks > 0 ) {
+			logger.warn(numFailedTasks + " tasks failed in batch_" + batchCount);
+			totalNumFailedTasks.incrementAndGet();
+		}
+
+		callableTasks.clear();
+		logger.debug("The number of cookies is: " + cookieStore.getCookies().size());
+		boolean cookiesDeleted = cookieStore.removeAll();
+		logger.debug(cookiesDeleted ? "The cookies where removed!" : "No cookies where removed!");
+		FileUtils.writeResultsToFile();	// Writes to the output file
 	}
 
 
@@ -581,7 +550,8 @@ public class LoaderAndChecker
 				List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
 				String wasUrlValid = list.get(0);
 				String couldRetry = list.get(1);
-				UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, in checkRemainingUrls(), due to connectivity problems.", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
+				String errorMsg = "Discarded at loading time, in checkRemainingUrls(), as " + list.get(2);
+				UrlUtils.logOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
 				if ( !isSingleIdUrlPair )
 					loggedUrlsOfThisId.add(urlToCheck);
 				// Try the next url..
@@ -730,30 +700,43 @@ public class LoaderAndChecker
 	public static Pattern COULD_RETRY_URLS = Pattern.compile("[^/]+://[^/]*(?:sciencedirect|elsevier).com[^/]*/.*");
 	// The urls having the aforementioned domains are likely to be specially-handled in future updates, so we want to keep their urls available for retrying.
 
-	public static List<String> getWasValidAndCouldRetry(Exception e, String pageUrl)
+	public static List<String> getWasValidAndCouldRetry(Exception e, String url)
 	{
-		List<String> list = new ArrayList<>(2);
+		List<String> list = new ArrayList<>(3);
 		String wasUrlValid = "true";
 		String couldRetry = "false";
+		String errorMsg = null;
 
 		if ( e instanceof RuntimeException ) {	// This check also covers the: (e != null) check.
 			String message = e.getMessage();
 			if ( message != null) {
-				if ( INVALID_URL_HTTP_STATUS.matcher(message).matches() )
+				if ( INVALID_URL_HTTP_STATUS.matcher(message).matches() ) {
 					wasUrlValid = "false";
-				else if ( COULD_RETRY_HTTP_STATUS.matcher(message).matches() )
-					couldRetry = "true";	// 	We could retry at a later time, since some errors might be temporal.
-			}
-		} else if ( e instanceof ConnTimeoutException
-			|| e instanceof DomainWithUnsupportedHEADmethodException )	// This should never get caught here normally.
+					errorMsg = "the url is invalid and lead to http-client-error";
+				} else if ( COULD_RETRY_HTTP_STATUS.matcher(message).matches() ) {
+					couldRetry = "true";    // 	We could retry at a later time, since some errors might be temporal.
+					errorMsg = "the url had a non-fatal http-error";
+				}
+			} else
+				errorMsg = "there is an unspecified runtime error";
+		} else if ( e instanceof ConnTimeoutException ) {
 			couldRetry = "true";
-		// else if it's a "DomainBlockedException", the default values apply
+			errorMsg = "the url had a connection-timeout";
+		} else if ( e instanceof DomainWithUnsupportedHEADmethodException ) {	// This should never get caught here normally.
+			couldRetry = "true";
+			errorMsg = "the url does not support HEAD method for checking most of the internal links";
+		} else if ( e instanceof DomainBlockedException ) {
+			// the default values apply
+			errorMsg = "the url had its initial or redirected domain blocked";
+		} else
+			errorMsg = "there is a serious unspecified error";
 
-		if ( (pageUrl != null) && COULD_RETRY_URLS.matcher(pageUrl).matches() )
+		if ( (url != null) && COULD_RETRY_URLS.matcher(url).matches() )
 			couldRetry = "true";
 
 		list.add(0, wasUrlValid);
 		list.add(1, couldRetry);
+		list.add(2, errorMsg);
 		return list;
 	}
 	

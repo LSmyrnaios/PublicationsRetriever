@@ -224,7 +224,8 @@ public class SpecialUrlsHandler
 			// The pageUrl is a VALID-URL, but whether we couldRetry or not, it depends on the error of the docUrl.. So if it is a 404, then we can never get the fulltext. On the contrary, if it is a 503, then in the future wy might get it.
 			String wasValid = list.get(0);
 			String couldRetry = list.get(1);
-			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem in checking the retrieved \"turkjgastroenterol\"-pdf-url.", pageDomain, true, "true", wasValid, "false", "false", couldRetry, null, "null");
+			String errorMsg = "Discarded in 'PageCrawler.visit()' method, as there was a problem in checking the retrieved 'turkjgastroenterol'-pdf-url: " + list.get(2);
+			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, pageDomain, true, "true", wasValid, "false", "false", couldRetry, null, "null");
 			return false;
 		}
 
