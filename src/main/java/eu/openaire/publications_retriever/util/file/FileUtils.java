@@ -629,7 +629,7 @@ public class FileUtils
 					if ( lastIndexOfDot != -1 )
 						preExtensionFileName = docFileName.substring(0, lastIndexOfDot);
 					docFileName = preExtensionFileName + "(" + curDuplicateNum + ")" + dotFileExtension;
-					saveDocFileFullPath = storeDocFilesDir + File.separator + docFileName;
+					saveDocFileFullPath = storeDocFilesDir + docFileName;
 					docFile = new File(saveDocFileFullPath);
 				}
 			}
