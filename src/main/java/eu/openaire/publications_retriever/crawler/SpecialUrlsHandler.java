@@ -59,6 +59,12 @@ public class SpecialUrlsHandler
 		} else if ( (updatedUrl = checkAndHandleOSFurls(resourceUrl)) != null ) {
 			//logger.debug("OSF-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
+		/*} else if ( (updatedUrl = checkAndHandleWileyUrls(resourceUrl)) != null ) {
+			//logger.debug("Wiley-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+			resourceUrl = updatedUrl;*/
+		} else if ( (updatedUrl = checkAndHandleScieloUrls(resourceUrl)) != null ) {
+			//logger.debug("Scielo-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+			resourceUrl = updatedUrl;
 		} else
 			resourceUrl = checkAndHandleDergipark(resourceUrl);	// It returns the same url if nothing was handled.
 
@@ -323,6 +329,38 @@ public class SpecialUrlsHandler
 			pageUrl += "/";
 
 		return (pageUrl + "download");
+	}
+
+
+	//////////  onlinelibrary.wiley.com   /////////////////
+	// https://onlinelibrary.wiley.com/doi/10.1111/polp.12377 --> https://onlinelibrary.wiley.com/doi/pdfdirect/10.1111/polp.12377
+	// The https://onlinelibrary.wiley.com/doi/pdf/10.1111/polp.12377 opens a page with JS and auto-redirects (using JS, NOT http-3XX) to the "/pdfdirect/" version.
+	// Also:
+	// https://onlinelibrary.wiley.com/doi/10.1111/polp.12377 --> https://onlinelibrary.wiley.com/doi/epdf/10.1111/polp.12377 (page with the pdf in view and a download button)
+	// -->
+	// TODO - CHECK IT AGAIN
+	/*public static String checkAndHandleWileyUrls(String pageUrl)
+	{
+		if ( !pageUrl.contains("onlinelibrary.wiley.com/doi/") )	// We want to transform only urls belonging to this subdomain and has this structure.
+			return null;    // It's from another domain, keep looking..
+
+		if ( pageUrl.contains("epdf/") )	// It's a script-depending pdf-url which needs transformation.
+			return StringUtils.replace(pageUrl, "epdf/", "pdfdirect/", 1);
+		else
+			return StringUtils.replace(pageUrl, "/doi/", "/doi/pdfdirect/", 1);
+	}*/
+
+
+	////////////////////////  www.scielo.br  ///////////////////////
+	// https://www.scielo.br/j/bjb/a/64jBbrbZ8hG3fvhy6d6nczj/?amp;format=pdf&lang=en   --> REPLACE THE PROBLEMATIC "amp;" with "&".
+	// https://www.scielo.br/j/bjb/a/64jBbrbZ8hG3fvhy6d6nczj/?&format=pdf&lang=en
+	// We can remove it, instead of replacing it, as the result is a bit odd, yet valid. BUT, better replace it for consistency.
+	public static String checkAndHandleScieloUrls(String pageUrl)
+	{
+		if ( !pageUrl.contains("scielo.br") )	// We want to transform only urls belonging to this subdomain and has this structure.
+			return null;    // It's from another domain, keep looking..
+
+		return StringUtils.replace(pageUrl, "amp;", "&");
 	}
 
 }
