@@ -616,7 +616,7 @@ public class FileUtils
 		try {
 			if ( !hasUnretrievableDocName )	// If we retrieved the fileName, go check if it's a duplicate.
 			{
-				if ( (curDuplicateNum = numbersOfDuplicateDocFileNames.get(docFileName)) != null )	// Since this datastructure is accessed inside the SYNCHRONIZED BLOCK, it can simpy be a HashMap without any internal synch, in order to speed it up.
+				if ( (curDuplicateNum = numbersOfDuplicateDocFileNames.get(docFileName)) != null )	// Since this data-structure is accessed inside the SYNCHRONIZED BLOCK, it can simpy be a HashMap without any internal sync, in order to speed it up.
 					curDuplicateNum += 1;
 				else if ( docFile.exists() )	// If it's not an already-known duplicate (this is the first duplicate-case for this file), go check if it exists in the fileSystem.
 					curDuplicateNum = 1;	// It was "null", after the "ConcurrentHashMap.get()" check.

@@ -494,6 +494,18 @@ public class ConnSupportUtils
 			}
 			if ( errorStatusCode == 403 )
 				on403ErrorCode(urlStr, domainStr, calledForPageUrl);	// The "DomainBlockedException" will go up-method by its own, if thrown inside this one.
+			else if ( errorStatusCode == 429 ) {
+				String retryAfterTime = conn.getHeaderField("Retry-After");	// Get the "Retry-After" header, if it exists.
+				if ( retryAfterTime != null ) {
+					errorLogMessage += " | Retry-After:" + retryAfterTime;
+					// TODO - Add this domain in a special hashMap, having the retry-after time as a value.
+					// TODO - Upon deciding the delay between requests of the same domain, lookup each domain and take into account this "retry-after" time.
+					// TODO - One possible problem with this: we may get our threads starved, waiting even a day, for a couple of domains.
+					//  Ideally, we should put those urls aside somehow and retry them in the end, if the waiting time is above some threshold.
+					//  (Just put them in a list and go to the next url. In the end, take care all the urls in that list. If the retry-time is huge (e.g. > 1 day, set a could-retry status, with a nice error-msg, and finish the current-batch.))
+					// TODO - Check the syntax of this header here: https://www.geeksforgeeks.org/http-headers-retry-after/
+				}
+			}
 		}
 		else {	// Other errorCodes. Retrieve the domain and make the required actions.
 			if ( (domainStr == null) || !urlStr.contains(domainStr) )	// The domain might have changed after redirections.
