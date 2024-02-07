@@ -45,6 +45,8 @@ DocFileFullPath: *the full-storage-path of the fulltext-document-file.*<br>
 ErrorCause: *the cause of the failure of retrieving the docUrl or the docFile.*<br>
 <br>
 
+The program's execution process can be found [here](documentation/program-execution-process.md).
+<br>
 This program utilizes multiple threads to speed up the process, while using politeness-delays between same-domain connections, in order to avoid overloading the data-providers.
 <br>
 In case no IDs are available to be used in the input, the user should provide a file containing just urls (one url per line)

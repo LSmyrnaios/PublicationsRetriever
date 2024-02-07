@@ -32,8 +32,11 @@ public class TestNonStandardInputOutput  {
 	private static final Logger logger = LoggerFactory.getLogger(TestNonStandardInputOutput.class);
 
 	private static final String testingSubDir = "idUrlPairs";	// "idUrlPairs" or "justUrls".
-	private static final String testingDirectory = System.getProperty("user.dir") + File.separator + "testData" + File.separator + testingSubDir + File.separator;
-	private static final String testInputFile = "orderedList1000.json";	//"test_only_ids.json";	//"id_to_url_rand10000_20201015.json";	//"test_non_utf_output.json"; //"around_200k_IDs.json";	// "sampleCleanUrls3000.json", "orderedList1000.json", "orderedList5000.json", "testRandomNewList100.csv", "test.json", "id_to_url_rand10000_20201015.json"
+	private static final String testingDirectory = FileUtils.workingDir + "testData" + File.separator + testingSubDir + File.separator;
+	private static final String testInputFile = "orderedList500.json";	//"test_only_ids.json";	//"id_to_url_rand10000_20201015.json";	//"test_non_utf_output.json"; //"around_200k_IDs.json";	// "sampleCleanUrls3000.json", "orderedList1000.json", "orderedList5000.json", "testRandomNewList100.csv", "test.json", "id_to_url_rand10000_20201015.json"
+
+	// TODO - Add an extra cmd-argument to define the "upper-limit" of the number of records to process from a file.
+	// Thus, we will have a single 5000 or 10000 records file and process only the first N records, instead of having multiple files of smaller length.
 
 	private static final File inputFile = new File(testingDirectory + testInputFile);
 	private static File outputFile = new File(testingDirectory + "results_" + testInputFile);	// This can change if the user gives the inputFile as a cmd-arg.
