@@ -501,12 +501,18 @@ public class LoaderAndChecker
 					Boolean value = futures.get(i).get();	// Get and see if an exception is thrown..
 					// Add check for the value, if wanted.. (we don't care at the moment)
 				} catch (ExecutionException ee) {
-					String stackTraceMessage = GenericUtils.getSelectiveStackTrace(ee, null, 15);	// These can be serious errors like an "out of memory exception" (Java HEAP).
-					logger.error("Task_" + (i+1) + " failed with: " + ee.getMessage() + "\n" + stackTraceMessage);
+					// The stacktrace of the "ExecutionException" is the one of the current code and not the code which ran inside the background-task. Try to get the cause.
+					Throwable throwable = ee.getCause();
+					if ( throwable == null ) {
+						logger.warn("No cause was retrieved for the \"ExecutionException\"!");
+						throwable = ee;
+					}
+					String stackTraceMessage = GenericUtils.getSelectiveStackTrace(throwable, null, 15);	// These can be serious errors like an "out of memory exception" (Java HEAP).
+					logger.error("Task_" + i + " failed with: " + throwable.getMessage() + "\n" + stackTraceMessage);
 					System.err.println(stackTraceMessage);
 					numFailedTasks ++;
 				} catch (CancellationException ce) {
-					logger.error("Task_" + (i+1) + " was cancelled: " + ce.getMessage());
+					logger.error("Task_" + i + " was cancelled: " + ce.getMessage());
 					numFailedTasks ++;
 				} catch (IndexOutOfBoundsException ioobe) {
 					logger.error("IOOBE for task_" + i + " in the futures-list! " + ioobe.getMessage());
