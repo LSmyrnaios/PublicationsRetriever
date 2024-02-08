@@ -48,9 +48,6 @@ public class HttpConnUtils
 
 	public static AtomicInteger numOfDomainsBlockedDueToSSLException = new AtomicInteger(0);
 
-	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/118.0";	// This should not be "final", another program, using this software as a library, should be able to set its own "UserAgent".
-	public static String acceptLanguage = "en-US,en;q=0.5";
-
 	public static final int maxConnGETWaitingTime = 15_000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
 	public static final int maxConnHEADWaitingTime = 10_000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
 
@@ -75,7 +72,7 @@ public class HttpConnUtils
 
 	public static AtomicInteger timesDidOfflineSlashRedirect = new AtomicInteger(0);
 
-	public static ThreadLocal<Boolean> isSpecialUrl = new ThreadLocal<Boolean>();	// Every Thread has its own variable.
+	public static ThreadLocal<Boolean> isSpecialUrl = new ThreadLocal<Boolean>();	// Every Thread has its own variable. This variable is used only in non-failure cases.
 
 	public static final String docFileNotRetrievedMessage = DocFileNotRetrievedException.class.getSimpleName() + " was thrown before the docFile could be stored. ";  // Get the class-name programmatically, in order to easily spot the error if the exception-name changes.
 
@@ -113,12 +110,7 @@ public class HttpConnUtils
 
 			conn = handleConnection(urlId, sourceUrl, pageUrl, resourceURL, domainStr, calledForPageUrl, calledForPossibleDocOrDatasetUrl);
 
-			// Check if we are able to find the mime type, if not then try "Content-Disposition".
-			String mimeType = conn.getContentType();
-			String contentDisposition = null;
-
 			String finalUrlStr = conn.getURL().toString();
-
 			if ( !finalUrlStr.contains(domainStr) )	// Get the new domain after possible change from redirects.
 				if ( (domainStr = UrlUtils.getDomainStr(finalUrlStr, null)) == null )
 					throw new RuntimeException("Unable to obtain the domain!");	// The cause it's already logged inside "getDomainStr()".
@@ -127,10 +119,10 @@ public class HttpConnUtils
 			String firstHtmlLine = null;
 			BufferedReader bufferedReader = null;
 
-			///////////////////////////
-			//mimeType = null;	// DEBUG!
-			///////////////////////////
+			// Check if we are able to find the mime type, if not then try "Content-Disposition".
+			String contentDisposition = null;
 
+			String mimeType = conn.getContentType();
 			if ( mimeType == null ) {
 				contentDisposition = conn.getHeaderField("Content-Disposition");
 				if ( contentDisposition == null ) {
@@ -326,25 +318,7 @@ public class HttpConnUtils
 
 			URL url = new URL(resourceURL);
 			conn = (HttpURLConnection) url.openConnection();
-			conn.setRequestProperty("User-Agent", userAgent);
-			conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
-
-			conn.setRequestProperty("Accept-Encoding", "gzip, deflate, br");
-			//conn.setRequestProperty("TE", "trailers");	// TODO - Investigate the "transfer-encoding" header.
-
-			if ( !domainsWithUnsupportedAcceptLanguageParameter.contains(domainStr) )
-				conn.setRequestProperty("Accept-Language", acceptLanguage);
-
-			conn.setRequestProperty("DNT", "1");
-			conn.setRequestProperty("Connection", "keep-alive");
-			conn.setRequestProperty("Sec-Fetch-Dest", "document");
-			conn.setRequestProperty("Sec-Fetch-Mode", "navigate");
-			conn.setRequestProperty("Sec-Fetch-Site", "cross-site");
-			conn.setRequestProperty("Upgrade-Insecure-Requests", "1");
-			conn.setRequestProperty("Pragma", "no-cache");
-			conn.setRequestProperty("Cache-Control", "no-cache");
-			conn.setRequestProperty("Host", domainStr);
-
+			ConnSupportUtils.setHttpHeaders(conn, domainStr);
 			conn.setInstanceFollowRedirects(false);	// We manage redirects on our own, in order to control redirectsNum, avoid redirecting to unwantedUrls and handling errors.
 
 			boolean useHttpGetMethod = false;
@@ -378,7 +352,7 @@ public class HttpConnUtils
 				domainsWithUnsupportedAcceptLanguageParameter.add(domainStr);	// Take note that this domain does not support it..
 
 				conn = (HttpURLConnection) url.openConnection();
-				conn.setRequestProperty("User-Agent", userAgent);
+				ConnSupportUtils.setHttpHeaders(conn, domainStr);
 				conn.setInstanceFollowRedirects(false);
 
 				if ( useHttpGetMethod ) {
@@ -409,10 +383,8 @@ public class HttpConnUtils
 				// If we accept connection's retrying, using "GET", move on reconnecting.
 				// No call of "conn.disconnect()" here, as we will connect to the same server.
 				conn = (HttpURLConnection) url.openConnection();
+				ConnSupportUtils.setHttpHeaders(conn, domainStr);
 				conn.setRequestMethod("GET");	// To reach here, it means that the HEAD method is unsupported.
-				conn.setRequestProperty("User-Agent", userAgent);
-				if ( !domainsWithUnsupportedAcceptLanguageParameter.contains(domainStr) )
-					conn.setRequestProperty("Accept-Language", acceptLanguage);
 				conn.setConnectTimeout(maxConnGETWaitingTime);
 				conn.setReadTimeout(maxConnGETWaitingTime);
 				conn.setInstanceFollowRedirects(false);
@@ -433,8 +405,8 @@ public class HttpConnUtils
 					domainsWithUnsupportedAcceptLanguageParameter.add(domainStr);	// Take note that this domain does not support it..
 
 					conn = (HttpURLConnection) url.openConnection();
+					ConnSupportUtils.setHttpHeaders(conn, domainStr);
 					conn.setRequestMethod("GET");	// To reach here, it means that the HEAD method is unsupported.
-					conn.setRequestProperty("User-Agent", userAgent);
 					conn.setConnectTimeout(maxConnGETWaitingTime);
 					conn.setReadTimeout(maxConnGETWaitingTime);
 					conn.setInstanceFollowRedirects(false);

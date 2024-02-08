@@ -19,7 +19,6 @@ import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStr
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.FileDeleteStrategy;
 import org.apache.commons.lang3.StringUtils;
-
 import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,6 +87,31 @@ public class ConnSupportUtils
 	public static final Set<String> knownDatasetMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
 	public static final ConcurrentHashMap<String, DomainConnectionData> domainsWithConnectionData = new ConcurrentHashMap<>();
+
+	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/118.0";	// This should not be "final", another program, using this software as a library, should be able to set its own "UserAgent".
+	public static String acceptLanguage = "en-US,en;q=0.5";
+
+
+	public static void setHttpHeaders(HttpURLConnection conn, String domainStr)
+	{
+		conn.setRequestProperty("User-Agent", userAgent);
+		conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
+		conn.setRequestProperty("Accept-Encoding", "gzip, deflate, br");
+		//conn.setRequestProperty("TE", "trailers");	// TODO - Investigate the "transfer-encoding" header.
+
+		if ( !HttpConnUtils.domainsWithUnsupportedAcceptLanguageParameter.contains(domainStr) )
+			conn.setRequestProperty("Accept-Language", acceptLanguage);
+
+		conn.setRequestProperty("DNT", "1");
+		conn.setRequestProperty("Connection", "keep-alive");
+		conn.setRequestProperty("Sec-Fetch-Dest", "document");
+		conn.setRequestProperty("Sec-Fetch-Mode", "navigate");
+		conn.setRequestProperty("Sec-Fetch-Site", "cross-site");
+		conn.setRequestProperty("Upgrade-Insecure-Requests", "1");
+		conn.setRequestProperty("Pragma", "no-cache");
+		conn.setRequestProperty("Cache-Control", "no-cache");
+		conn.setRequestProperty("Host", domainStr);
+	}
 
 
 	public static void setKnownMimeTypes()

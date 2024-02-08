@@ -354,6 +354,9 @@ public class PageCrawler
 				// TODO - Somehow I need to detect if a link has the parameter "?isAllowd=n" or "&isAllowd=n".
 				// In that case the whole page should be discarded as not having any docUrls!
 
+				// Even though this seems to be the case, I am not entirely sure that this param is not used in any other type of url inside the page, apart from docUrl.
+				// TODO - It would be best for this check to happen upon trying to connect with a url and throw a special exception which will indicate restricted use for the whole page.
+
 				// TODO - ALso, each individual link coming in the program, containing the above, should be discarded. Such rules should be added in some regex.
 
 				// Check the text appearing next-to or as the link, inside the html.
