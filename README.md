@@ -1,4 +1,11 @@
-# PublicationsRetriever    ![Build Status](https://github.com/LSmyrnaios/PublicationsRetriever/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
+# PublicationsRetriever
+
+### Build status
+Github Action: ![Build Status](https://github.com/LSmyrnaios/PublicationsRetriever/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
+<br>
+Jenkins: [![Build Status](https://jenkins-dnet.d4science.org/buildStatus/icon?job=PublicationsRetriever)](https://jenkins-dnet.d4science.org/job/PublicationsRetriever/)
+<br>
+<br>
 
 A Java-program which retrieves the Document and Dataset Urls from the given Publication-Web-Pages and if wanted, it can also download the full-texts and/or upload them to an **S3 Object Store**.<br>
 Afterwards, these full-text documents are mined (by other pieces of software), in order to enrich a much more complete set of OpenAIRE publications with inference links, in the [**OpenAIRE Graph**](https://graph.openaire.eu/).<br>
