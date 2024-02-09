@@ -309,11 +309,13 @@ public class HttpConnUtils
 				weirdMetaDocUrlWhichNeedsGET = true;
 			}
 
-			isSpecialUrl.set(false);	// It will be false until proven to get transformed inside "SpecialUrls".
+			isSpecialUrl.set(false);	// Reset its value (from the previous record).
 			if ( calledForPageUrl || calledForPossibleDocUrl ) {
-				String tempURL = SpecialUrlsHandler.checkAndHandleSpecialUrls(resourceURL);	// May throw a "RuntimeException".
-				isSpecialUrl.set( !tempURL.equals(resourceURL) );
-				resourceURL = tempURL;
+				String changedUrl = SpecialUrlsHandler.checkAndHandleSpecialUrls(resourceURL);	// May throw a "RuntimeException".
+				if ( !changedUrl.equals(resourceURL) ) {
+					isSpecialUrl.set(true);
+					resourceURL = changedUrl;
+				}
 			}
 
 			URL url = new URL(resourceURL);

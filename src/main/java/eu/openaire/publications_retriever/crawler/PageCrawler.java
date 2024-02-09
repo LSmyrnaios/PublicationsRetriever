@@ -281,6 +281,11 @@ public class PageCrawler
 			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.retrieveInternalLinks()' method, as there was an invalid docLink. Its contentType is: '" + pageContentType + "'", null, true, "true", "true", "false", "false", "false", null, "null");
 			handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false, true);
 			return null;
+		} catch (DocLinkUnavailableException dlue) {
+			logger.warn("The docLink was not available inside pageUrl: " + pageUrl);
+			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.retrieveInternalLinks()' method, as the doc-link was not available. Its contentType is: '" + pageContentType + "'", null, true, "true", "true", "false", "false", "false", null, "null");
+			PageCrawler.contentProblematicUrls.incrementAndGet();
+			return null;
 		} catch (Exception e) {
 			logger.warn("Could not retrieve the internalLinks for pageUrl: " + pageUrl);
 			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.retrieveInternalLinks()' method, as there was a problem retrieving its internalLinks. Its contentType is: '" + pageContentType + "'", null, true, "true", "true", "false", "false", "false", null, "null");
@@ -322,7 +327,7 @@ public class PageCrawler
 	 * @throws DocLinkInvalidException
 	 * @throws RuntimeException
 	 */
-	public static HashSet<String> extractInternalLinksFromHtml(String pageHtml, String pageUrl) throws DocLinkFoundException, DynamicInternalLinksFoundException, DocLinkInvalidException, RuntimeException
+	public static HashSet<String> extractInternalLinksFromHtml(String pageHtml, String pageUrl) throws DocLinkFoundException, DynamicInternalLinksFoundException, DocLinkInvalidException, DocLinkUnavailableException, RuntimeException
 	{
 		Document document = Jsoup.parse(pageHtml);
 		Elements elementLinksOnPage = document.select("a, link[href][type*=pdf], form[action]");	// TODO - Add more "types" once other docTypes are accepted.
@@ -341,7 +346,7 @@ public class PageCrawler
 
 		if ( pageUrl.contains("aup-online.com") ) {
 			SpecialUrlsHandler.handleAupOnlinePage(pageUrl, elementLinksOnPage);
-			// The above method will always throw an exception, either a "DocLinkFoundException" or a "RuntimeException".
+			// The above method will always throw an exception, either a "DocLinkFoundException" or a "DocLinkUnavailableException".
 		}
 
 		for ( Element el : elementLinksOnPage )

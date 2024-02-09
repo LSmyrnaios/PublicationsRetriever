@@ -71,7 +71,7 @@ If you want to run it with distributed execution on multiple VMs, you may give a
 ## Install & Run (using MAVEN)
 To install the application, navigate to the directory of the project, where the ***pom.xml*** is located.<br>
 Then enter this command in the terminal:<br>
-**``mvn install``**<br>
+**``mvn clean install``**<br>
 
 To run the application you should navigate to the ***target*** directory, which will be created by *MAVEN* and run the executable ***JAR*** file,
 while choosing the appropriate run-command.<br> 
@@ -87,7 +87,7 @@ arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
     you can specify it in the **util.file.FileUtils.skipFirstRow**-variable, in order for the first-row (headers) to be ignored.
 - If you want to see the logging-messages in the *Console*, open the ***resources/logback.xml***
     and change the ***appender-ref***, from ***File*** to ***Console***.<br>
-- Run ``mvn install`` to create the new ***JAR*** file.<br>
+- Run ``mvn clean install`` to create the new ***JAR*** file.<br>
 - Execute the program with the following command:<br>
 **``java -jar publications_retriever-1.1-SNAPSHOT.jar arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-docFileNameType' arg5:'numberName' arg6:'-firstDocFileNum' arg7:'NUM' arg8:'-docFilesStorage' arg9:'storageDir' arg10:'-inputDataUrl' arg11: 'inputUrl' arg12: '-numOfThreads' arg13: <NUM>``**
 <br><br>

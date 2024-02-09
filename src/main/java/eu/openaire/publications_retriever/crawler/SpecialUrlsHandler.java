@@ -2,6 +2,7 @@ package eu.openaire.publications_retriever.crawler;
 
 
 import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
+import eu.openaire.publications_retriever.exceptions.DocLinkUnavailableException;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
@@ -240,7 +241,7 @@ public class SpecialUrlsHandler
 
 
 	/////////// aup-online.com ////////////////////
-	public static void handleAupOnlinePage(String pageUrl, Elements elementLinksOnPage) throws DocLinkFoundException, RuntimeException
+	public static void handleAupOnlinePage(String pageUrl, Elements elementLinksOnPage) throws DocLinkFoundException, DocLinkUnavailableException
 	{
 		// This domain gives the fulltext-urls inside the "action" attribute of a "form"-element.
 		// We handle these elements for every domain, but, this one gives a false-positive ".../download" url, which causes this method to exit early and not reach the desired form-element.
@@ -254,7 +255,7 @@ public class SpecialUrlsHandler
 			}
 		}
 		// If we reach here, then no docUrl can be retrieved for this page. We should return immediately.
-		throw new RuntimeException("No docUrl was found inside a form-element, for \"aup-online.com\" pageUrl: " + pageUrl);
+		throw new DocLinkUnavailableException("No docUrl was found inside a form-element, for \"aup-online.com\" pageUrl: " + pageUrl);
 	}
 
 
