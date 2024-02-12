@@ -28,13 +28,14 @@ public class UrlTypeChecker
 
 	public static final Pattern URL_DIRECTORY_FILTER =
 			Pattern.compile("[^/]+://.*/(?:(discover|profile|user|survey|index|media|theme|product|deposit|default|shop|view)/" + docOrDatasetNegativeLookAroundPattern	// Avoid blocking these if the url is likely to give a file.
-					+ "|(?:(?:ldap|password)-)?login|auth(?:entication)?\\.|ac[c]?ess(?![./]+)|sign[-]?(?:in|out|up)|session|(?:how-to-)?(:?join[^t]|subscr)|regist(?:er|ration)|submi(?:t|ssion)|(?:post|send|export|(?:wp-)?admin|home|form|career[s]?|company)/|watch|browse|import|bookmark|announcement|feedback|share[^d]|about|(?:[^/]+-)?faq|wiki|news|events|cart|support|(?:site|html)map|documentation|help|license|disclaimer|copyright|(?:site-)?polic(?:y|ies)|privacy|terms|law|principles"
-					+ "|(?:my|your|create)?[-]?account|my(?:dspace|selection|cart)|(?:service|help)[-]?desk|settings|fund|aut[h]?or|journal/key|(?:journal-)?editor|author:|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic(s)?/.*/view/|conta[c]?t|wallet|contribute|donate|our[_-][\\w]+|template|logo|image|photo/|video|advertiser|most-popular|people|(?:the)?press|for-authors|customer-service[s]?|captcha|clipboard|dropdown|widget"
+					+ "|(?:(?:ldap|password)-)?login|ac[c]?ess(?![./]+)|sign[-]?(?:in|out|up)|session|(?:how-to-)?(:?join[^t]|subscr)|regist(?:er|ration)|submi(?:t|ssion)|(?:post|send|export|(?:wp-)?admin|home|form|career[s]?|company)/|watch|browse|import|bookmark|announcement|feedback|share[^d]|about|(?:[^/]+-)?faq|wiki|news|events|cart|support|(?:site|html)map|documentation|help|license|disclaimer|copyright|(?:site-)?polic(?:y|ies)|privacy|terms|law|principles"
+					+ "|(?:my|your|create)?[-]?account|my(?:dspace|selection|cart)|(?:service|help)[-]?desk|settings|fund|aut[h]?or" + docOrDatasetNegativeLookAroundPattern + "|journal/key|(?:journal-)?editor|author:|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic(s)?/.*/view/|conta[c]?t|wallet|contribute|donate|our[_-][\\w]+|template|logo|image|photo/|video|advertiser|most-popular|people|(?:the)?press|for-authors|customer-service[s]?|captcha|clipboard|dropdown|widget"
 					+ "|(?:forum|blog|column|row|js|css|rss|legal)/"	// These are absolute directory names.	TODO - Should I add the "|citation[s]?" rule ? The nasa-docUrls include it..
 					+ "|(?:(?:advanced[-]?)?search|search/advanced|search-results|(?:[e]?books|journals)(?:-catalog)?|issue|docs|oai|(?:abstracting-)?indexing|online[-]?early|honors|awards|meetings|calendar|diversity|scholarships|invo(?:ice|lved)|errata|classroom|publish(?:-with-us)?|upload|products|forgot|home|ethics|comics|podcast|trends|bestof|booksellers|recommendations|bibliographic|volume[s]?)[/]?$"	// Url ends with these. Note that some of them are likely to be part of a docUrl, for ex. the "/trends/"-dir.
 					// TODO - In case we have just DocUrls (not datasetUrls), exclude the following as well: "/(?:bibtext|dc(?:terms)?|tei|endnote)$", it could be added in another regex.. or do an initialization check and construct this regex based on the url-option provided.
 					+ "|rights[-]?permissions|publication[-]?ethics|advertising|reset[-]?password|\\*/|communit(?:y|ies)"
-					+ "|restricted|noaccess|crawlprevention|error|(?:mis|ab)use|\\?denied|gateway|defaultwebpage|sorryserver|cookie|(?:page-)?not[-]?found|(?:404(?:_response)|accessibility|invalid|catalog(?:ue|ar|o)?)\\." + htOrPhpExtensionsPattern + ").*");
+					+ "|restricted|noaccess|crawlprevention|error|(?:mis|ab)use|\\?denied|gateway|defaultwebpage|sorryserver|(?<!response_type=)cookie|(?:page-)?not[-]?found"
+					+ "|(?:404(?:_response)?|accessibility|invalid|catalog(?:ue|ar|o)?)\\." + htOrPhpExtensionsPattern + ").*");
 
 	// We check them as a directory to avoid discarding publications' urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
 
@@ -57,6 +58,7 @@ public class UrlTypeChecker
 			+ "|evernote|skype|microsoft|adobe|buffer|digg|stumbleupon|addthis|delicious|dailymotion|gostats|blog(?:ger)?|copyright|friendfeed|newsvine|telegram|getpocket"
 			+ "|flipboard|line.me|vk|ok.rudouban|baidu|qzone|xing|renren|weibo|doubleclick|bit.ly|github|reviewofbooks|plu.mx"
 			+ "|(?<!files.)wordpress|orcid.org"
+			+ "|auth(?:orize|entication)?\\."
 
 			// Block nearly all the "elsevier.com" urls, as well as the "sciencedirect.com" urls.
 			// The "(linkinghub|api).elsevier.com" urls redirect -automatically or can be redirected manually- to the "sciencedirect.com", where the pdf is provided, BUT they cannot be retrieved.
@@ -192,14 +194,13 @@ public class UrlTypeChecker
 				LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			return true;
 		}
-		/*
-		// Avoid slow urls (taking more than 3secs to connect). This is currently disabled since it was decided to let more pageUrl unblocked.
+		/*// Avoid slow urls (taking more than 3secs to connect). This is currently disabled since it was decided to let more pageUrl unblocked.
 		else if ( lowerCaseUrl.contains("handle.net") || lowerCaseUrl.contains("doors.doshisha.ac.jp") || lowerCaseUrl.contains("opac-ir.lib.osaka-kyoiku.ac.jp") ) {
 			loggingMessage = "Discarded after matching to domain, known to take long to respond.";
 			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
 			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, null);
 			if ( !LoaderAndChecker.useIdUrlPairs )
-				longToRespondUrls ++;
+				longToRespondUrls.incrementAndGet();
 			return true;
 		}*/
 		// Avoid urls which contain either "getSharedSiteSession" or "consumeSharedSiteSession" as these cause an infinite loop.
