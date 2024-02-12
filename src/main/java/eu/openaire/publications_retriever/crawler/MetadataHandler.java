@@ -13,9 +13,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class MetaDocUrlsHandler {
+public class MetadataHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(MetaDocUrlsHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(MetadataHandler.class);
 
 
     // Order-independent META_RESTRICTED_ACCESS_RIGHTS-regex.
@@ -72,7 +72,7 @@ public class MetaDocUrlsHandler {
      * @param pageHtml
      * @return
      */
-    public static boolean checkIfAndHandleMetaDocUrl(String urlId, String sourceUrl, String pageUrl, String pageDomain, String pageHtml)
+    public static boolean checkAndHandleMetadata(String urlId, String sourceUrl, String pageUrl, String pageDomain, String pageHtml)
     {
         // Before checking for the MetaDocUrl, check whether this publication is restricted or not. It may have a metaDocUrl, but it will redirect to the landing page.
         // e.g.: https://le.uwpress.org/content/78/2/260

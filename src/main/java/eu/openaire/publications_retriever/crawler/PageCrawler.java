@@ -107,8 +107,8 @@ public class PageCrawler
 			return;
 		}
 
-		// Check if the docLink is provided in a metaTag and connect to it directly.
-		if ( MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl(urlId, sourceUrl, pageUrl, pageDomain, pageHtml) )
+		// Check if this publication is (likely) open-access and then check the docLink is provided in a metaTag and connect to it directly.
+		if ( MetadataHandler.checkAndHandleMetadata(urlId, sourceUrl, pageUrl, pageDomain, pageHtml) )
 			return;	// The sourceUrl is already logged inside the called method.
 
 		HashSet<String> currentPageLinks = null;	// We use "HashSet" to avoid duplicates.

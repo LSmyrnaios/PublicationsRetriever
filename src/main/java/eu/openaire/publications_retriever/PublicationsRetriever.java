@@ -1,7 +1,7 @@
 package eu.openaire.publications_retriever;
 
 import eu.openaire.publications_retriever.crawler.MachineLearning;
-import eu.openaire.publications_retriever.crawler.MetaDocUrlsHandler;
+import eu.openaire.publications_retriever.crawler.MetadataHandler;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
@@ -379,7 +379,7 @@ public class PublicationsRetriever
 			logger.info("From which docUrls, we were able to retrieve: " + numOfStoredDocFiles + " distinct docFiles. That's about: " + df.format(numOfStoredDocFiles * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "%."
 					+ " The un-retrieved docFiles were either belonging to already-found docUrls or they had connection-issues.");
 		}
-		logger.debug("The metaDocUrl-handler is responsible for the discovery of " + MetaDocUrlsHandler.numOfMetaDocUrlsFound + " docUrls (" + df.format(MetaDocUrlsHandler.numOfMetaDocUrlsFound.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "% of the found docUrls).");
+		logger.debug("The metaDocUrl-handler is responsible for the discovery of " + MetadataHandler.numOfMetaDocUrlsFound + " docUrls (" + df.format(MetadataHandler.numOfMetaDocUrlsFound.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "% of the found docUrls).");
 		logger.debug("The re-crossed docUrls (from all handlers) were " + ConnSupportUtils.reCrossedDocUrls.get() + ". That's about " + df.format(ConnSupportUtils.reCrossedDocUrls.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "% of the found docUrls.");
 		if ( MachineLearning.useMLA )
 			logger.debug("The M.L.A. is responsible for the discovery of " + MachineLearning.docUrlsFoundByMLA.get() + " of the docUrls (" + df.format(MachineLearning.docUrlsFoundByMLA.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "%). The M.L.A.'s average success-rate was: " + df.format(MachineLearning.getAverageSuccessRate()) + "%. Gathered data for " + MachineLearning.timesGatheredData.get() + " valid pageUrl-docUrl pairs.");
@@ -387,7 +387,7 @@ public class PublicationsRetriever
 			logger.debug("The M.L.A. was not enabled.");
 
 		logger.debug("About " + df.format(LoaderAndChecker.connProblematicUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + LoaderAndChecker.connProblematicUrls.get() + " urls) were pages which had connectivity problems.");
-		logger.debug("About " + df.format(MetaDocUrlsHandler.numOfProhibitedAccessPagesFound.get() * 100.0 / inputCheckedUrlNum) + "% (" + MetaDocUrlsHandler.numOfProhibitedAccessPagesFound.get() + " urls) were pages with prohibited access.");
+		logger.debug("About " + df.format(MetadataHandler.numOfProhibitedAccessPagesFound.get() * 100.0 / inputCheckedUrlNum) + "% (" + MetadataHandler.numOfProhibitedAccessPagesFound.get() + " urls) were pages with prohibited access.");
 		logger.debug("About " + df.format(UrlTypeChecker.pagesNotProvidingDocUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.pagesNotProvidingDocUrls.get() + " urls) were pages which did not provide docUrls.");
 		logger.debug("About " + df.format(UrlTypeChecker.longToRespondUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.longToRespondUrls.get() + " urls) were urls which belong to domains which take too long to respond.");
 		logger.debug("About " + df.format(PageCrawler.contentProblematicUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + PageCrawler.contentProblematicUrls.get() + " urls) were urls which had problematic content.");
