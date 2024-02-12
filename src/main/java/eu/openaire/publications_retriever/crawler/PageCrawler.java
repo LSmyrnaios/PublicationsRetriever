@@ -73,6 +73,8 @@ public class PageCrawler
 																		+ "|ープンアクセス方針|(?:刊行物|個人)単位登録).*");	// "Open access policy" in Japanese, "Publication unit registration"
 
 	// Example of docUrl having the "editorial" keyword: https://publikationen.ub.uni-frankfurt.de/opus4/frontdoor/deliver/index/docId/45461/file/daek_et_al_2017_editorial.pdf
+	// Example of docUrl having the "review" keyword: https://jag.journalagent.com/tkd/pdfs/TKDA-33903-INVITED_REVIEW-ASLAN.pdf
+
 
 	public static void visit(String urlId, String sourceUrl, String pageUrl, String pageContentType, HttpURLConnection conn, String firstHTMLlineFromDetectedContentType, BufferedReader bufferedReader)
 	{
@@ -602,10 +604,8 @@ public class PageCrawler
 				return false;
 			}
 			return true;
-		} catch (Exception e) {	// After connecting to the metaDocUrl.
-			logger.warn("The DocLink < " + docLink + " > was not reached!");
-			if (e instanceof RuntimeException)
-				ConnSupportUtils.printEmbeddedExceptionMessage(e, docLink);
+		} catch (Exception e) {	// After connecting to the possibleDocLink.
+			logger.warn("The DocLink < " + docLink + " > was not reached!");	// The specific error has already been written inside the called method.
 			UrlUtils.logOutputData(urlId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as the retrieved DocLink: < " + docLink + " > had connectivity problems.", null, true, "true", "true", "false", "false", "false", null, "null");
 			return false;
 		}

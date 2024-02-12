@@ -186,8 +186,7 @@ public class ConnSupportUtils
 						contentDisposition = contentDisposition.toLowerCase();
 						if ( !contentDisposition.equals("attachment") )
 							typeToReturn = contentDisposition.contains(".pdf") ? "document" : null;    // TODO - add more types as needed. Check: "http://www.esocialsciences.org/Download/repecDownload.aspx?qs=Uqn/rN48N8UOPcbSXUd2VFI+dpOD3MDPRfIL8B3DH+6L18eo/yEvpYEkgi9upp2t8kGzrjsWQHUl44vSn/l7Uc1SILR5pVtxv8VYECXSc8pKLF6QJn6MioA5dafPj/8GshHBvLyCex2df4aviMvImCZpwMHvKoPiO+4B7yHRb97u1IHg45E+Z6ai0Z/0vacWHoCsNT9O4FNZKMsSzen2Cw=="
-					}
-					else
+					} else
 						typeToReturn = urlStr.toLowerCase().contains("pdf") ? "document" : null;
 				}
 				return typeToReturn;	// It may be null.
@@ -1204,7 +1203,7 @@ public class ConnSupportUtils
 	public static String getWasDirectLink(String sourceUrl, String pageUrl, boolean calledForPageUrl, String finalUrlStr) {
 		String wasDirectLink;
 		if ( calledForPageUrl ) {
-			boolean isSpecialUrl = HttpConnUtils.isSpecialUrl.get();	// It's more efficient to save it once in a temp-variable.
+			boolean isSpecialUrl = HttpConnUtils.isSpecialUrl.get();
 			if ( (!isSpecialUrl && ( pageUrl.equals(finalUrlStr) || ConnSupportUtils.haveOnlyProtocolDifference(pageUrl, finalUrlStr) ))
 					|| sourceUrl.equals(finalUrlStr) || ConnSupportUtils.haveOnlyProtocolDifference(sourceUrl, finalUrlStr))	// Or if it was not a "specialUrl" and the pageUrl is the same as the docUrl.
 				wasDirectLink = "true";

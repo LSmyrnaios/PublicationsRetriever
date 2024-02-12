@@ -242,7 +242,7 @@ public class MachineLearning
 	/**
 	 * This method tries to predict the docUrl of a page, if this page gives us the ID of the document, based on previous success cases.
 	 * The idea is that we might get a url which shows info about the publication and has the same ID with the wanted docUrl, but it just happens to be in a different directory (path).
-	 * So, before going and checking each and every one of the internal links, we should check if by using known docUrl-paths that gave docUrls before (for the current pageUrl-path), we are able to retrieve the docUrl immediately.
+	 * So, before going and checking each one of the internal links, we should check if by using known docUrl-paths that gave docUrls before (for the current pageUrl-path), we are able to retrieve the docUrl immediately.
 	 * @param urlId
 	 * @param sourceUrl
 	 * @param pageUrl
