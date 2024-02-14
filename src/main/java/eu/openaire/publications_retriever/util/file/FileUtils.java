@@ -65,9 +65,7 @@ public class FileUtils
 	public static boolean shouldDeleteOlderDocFiles = false;	// Should we delete any older stored docFiles? This is useful for testing.
 
 	public enum DocFileNameType {
-		originalName,
-		idName,
-		numberName
+		originalName, idName, numberName
 	}
 	public static DocFileNameType docFileNameType = null;
 

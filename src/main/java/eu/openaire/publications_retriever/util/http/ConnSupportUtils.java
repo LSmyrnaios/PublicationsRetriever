@@ -347,7 +347,7 @@ public class ConnSupportUtils
 
 			// Check if we should abort the download based on its content-size.
 			int contentSize = 0;
-			if ( (contentSize = getContentSize(conn, true)) == -1 )	// "Unacceptable size"-code..
+			if ( (contentSize = getContentSize(conn, true, false)) == -1 )	// "Unacceptable size"-code..
 				throw new DocFileNotRetrievedException("The HTTP-reported size of this file was unacceptable!");
 
 			// Write the downloaded bytes to the docFile and return the docFileName.
@@ -571,8 +571,8 @@ public class ConnSupportUtils
 		String encoding = conn.getHeaderField("content-encoding");
 		if ( encoding != null ) {
 			String url = conn.getURL().toString();
-			if ( logger.isTraceEnabled() )
-				logger.trace("Url \"" + url + "\" has content-encoding: " + encoding);
+			/*if ( logger.isTraceEnabled() )
+				logger.trace("Url \"" + url + "\" has content-encoding: " + encoding);*/
 			InputStream compressedInputStream = getCompressedInputStream(inputStream, encoding, url, isForError);
 			if ( compressedInputStream == null ) {
 				try {
@@ -833,8 +833,9 @@ public class ConnSupportUtils
 
 	public static String getHtmlString(HttpURLConnection conn, BufferedReader bufferedReader, boolean isForError)
 	{
-		if ( getContentSize(conn, false) == -1 ) {	// "Unacceptable size"-code..
-			logger.warn("Aborting HTML-extraction for pageUrl: " + conn.getURL().toString());
+		if ( getContentSize(conn, false, isForError) == -1 ) {	// "Unacceptable size"-code..
+			if ( !isForError )	// It's expected to have ZERO-length most times, and thus the extraction cannot continue. Do not show a message. It's rare that we get an error-message anyway.
+				logger.warn("Aborting HTML-extraction for pageUrl: " + conn.getURL().toString());
 			ConnSupportUtils.closeBufferedReader(bufferedReader);	// This page's content-type was auto-detected, and the process fails before re-requesting the conn-inputStream, then make sure we close the last one.
 			return null;
 		}
@@ -965,7 +966,7 @@ public class ConnSupportUtils
 	 */
 	public static DetectedContentType extractContentTypeFromResponseBody(HttpURLConnection conn)
 	{
-		if ( getContentSize(conn, false) == -1 ) {	// "Unacceptable size"-code..
+		if ( getContentSize(conn, false, false) == -1 ) {	// "Unacceptable size"-code..
 			logger.warn("Aborting HTML-extraction for pageUrl: " + conn.getURL().toString());
 			return null;
 		}
@@ -1028,16 +1029,18 @@ public class ConnSupportUtils
 	 * This method returns the ContentSize of the content of an HttpURLConnection.
 	 * @param conn
 	 * @param calledForFullTextDownload
+	 * @param isForError
 	 * @return contentSize
 	 * @throws NumberFormatException
 	 */
-	public static int getContentSize(HttpURLConnection conn, boolean calledForFullTextDownload)
+	public static int getContentSize(HttpURLConnection conn, boolean calledForFullTextDownload, boolean isForError)
 	{
 		int contentSize = 0;
 		try {
 			contentSize = Integer.parseInt(conn.getHeaderField("Content-Length"));
 			if ( (contentSize <= 0) || (contentSize > HttpConnUtils.maxAllowedContentSize) ) {
-				logger.warn((calledForFullTextDownload ? "DocUrl: \"" : "Url: \"") + conn.getURL().toString() + "\" had a non-acceptable contentSize: " + contentSize + ". The maxAllowed one is: " + HttpConnUtils.maxAllowedContentSize + " bytes.");
+				if ( !isForError )	// In case of an error, we expect it to be < 0 > most of the time. Do not show a message, but return that it's not acceptable to continue acquiring the content.
+					logger.warn((calledForFullTextDownload ? "DocUrl: \"" : "Url: \"") + conn.getURL().toString() + "\" had a non-acceptable contentSize: " + contentSize + ". The maxAllowed one is: " + HttpConnUtils.maxAllowedContentSize + " bytes.");
 				return -1;
 			}
 			//logger.debug("Content-length of \"" + conn.getURL().toString() + "\" is: " + contentSize);	// DEBUG!

@@ -9,6 +9,8 @@
 ### [Nexus Maven Repository](https://maven.d4science.org/nexus/content/repositories/dnet45-snapshots/eu/openaire/publications_retriever/)
 <br>
 
+## Description & basic information
+
 A Java-program which retrieves the Document and Dataset Urls from the given Publication-Web-Pages and if wanted, it can also download the full-texts and/or upload them to an **S3 Object Store**.<br>
 Afterwards, these full-text documents are mined (by other pieces of software), in order to enrich a much more complete set of OpenAIRE publications with inference links, in the [**OpenAIRE Graph**](https://graph.openaire.eu/).<br>
 
