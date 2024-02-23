@@ -363,9 +363,6 @@ public class ConnSupportUtils
 				throw new DocFileNotRetrievedException(errMsg);
 			}
 
-			// Calculate the hash and the size here (AFTER the FileUtils.storeDocFile() call), in order to avoid long threads-blocking, as the "storeDocFile" is synchronized.
-			docFileData.calculateAndSetHashAndSize();
-
 			if ( FileUtils.shouldUploadFilesToS3 ) {
 				File docFile = docFileData.getDocFile();
 				try {	// In the "S3"-mode, we don't keep the files locally.

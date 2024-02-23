@@ -16,11 +16,13 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -353,6 +355,14 @@ public class FileUtils
 		if ( inputStream == null )
 			throw new DocFileNotRetrievedException("Could not acquire the inputStream!");
 
+		MessageDigest md;
+		try {
+			md = MessageDigest.getInstance("MD5");
+		} catch (Exception e) {
+			logger.error("Failed to get instance for MD5 hash-algorithm!", e);
+			throw new RuntimeException("MD5 HASH ALGO MISSING");
+		}
+		long bytesCount = 0;
 		FileOutputStream fileOutputStream = docFileData.getFileOutputStream();
 
 		try ( BufferedInputStream inStream = new BufferedInputStream(inputStream, fiveMb);
@@ -374,28 +384,29 @@ public class FileUtils
 					}
 					numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved.
 					throw new DocFileNotRetrievedException(errMsg);
-				} else
+				} else {
 					outStream.write(readByte);
+					md.update((byte) readByte);
+					bytesCount++;
+				}
 			}
 			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
+
+			String md5Hash = DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
 
 			if ( shouldUploadFilesToS3 ) {
 				docFileData = S3ObjectStore.uploadToS3(docFile.getName(), docFile.getAbsolutePath());
 				if ( docFileData != null ) {    // Otherwise, the returned object will be null.
 					docFileData.setDocFile(docFile);
+					docFileData.setHash(md5Hash);
+					docFileData.setSize(bytesCount);
 					// In the S3 case, we use IDs or increment-numbers as the names, so no duplicate-overwrite should be a problem here.
 					// as we delete the local files and the online tool just overwrites the file, without responding if it was overwritten.
 					// So if the other naming methods were used with S3, we would have to check if the file existed online and then rename of needed and upload back.
 				} else
 					numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 			} else
-				docFileData = new DocFileData(docFile, null, null, ((FileUtils.shouldLogFullPathName) ? docFile.getAbsolutePath() : docFile.getName()));
-
-
-			// TODO - CHECK IF NOW WE CAN ADD THE HASH AND SIZE CALCULATION HERE, SINCE IT IS NOT SYNCHRONIZED ANYMORE..  and so we will not lose time..
-			// TODO - ALSO HERE WE HAVE THE STREAMS OPEN ALREADY, WOULD THIS SPEED THINGS UP??
-			// TODO -  WOULD WE NEED TO RESET THE STREAMS, BUT AT LEAST WE WOULD NOT HAVE TO RE-OPEN THEM??
-
+				docFileData = new DocFileData(docFile, md5Hash, bytesCount, ((FileUtils.shouldLogFullPathName) ? docFile.getAbsolutePath() : docFile.getName()));
 
 			// TODO - HOW TO SPOT DUPLICATE-NAMES IN THE S3 MODE?
 			// The local files are deleted after uploaded.. (as they should be)
@@ -450,6 +461,15 @@ public class FileUtils
 		if ( inputStream == null )
 			throw new DocFileNotRetrievedException("Could not acquire the inputStream!");
 
+		MessageDigest md;
+		try {
+			md = MessageDigest.getInstance("MD5");
+		} catch (Exception e) {
+			logger.error("Failed to get instance for MD5 hash-algorithm!", e);
+			throw new RuntimeException("MD5 HASH ALGO MISSING");
+		}
+		long bytesCount = 0;
+
 		try ( BufferedInputStream inStream = new BufferedInputStream(inputStream, fiveMb);
 			BufferedOutputStream outStream = new BufferedOutputStream(new FileOutputStream(docFile), fiveMb))
 		{
@@ -469,23 +489,30 @@ public class FileUtils
 					}
 					numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 					throw new DocFileNotRetrievedException(errMsg);
-				} else
+				} else {
 					outStream.write(readByte);
+					md.update((byte) readByte);
+					bytesCount++;
+				}
 			}
 			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
+
+			String md5Hash = DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
 
 			DocFileData docFileData;
 			if ( shouldUploadFilesToS3 ) {
 				docFileData = S3ObjectStore.uploadToS3(docFile.getName(), docFile.getAbsolutePath());
 				if ( docFileData != null ) {    // Otherwise, the returned object will be null.
 					docFileData.setDocFile(docFile);
+					docFileData.setHash(md5Hash);
+					docFileData.setSize(bytesCount);
 					// In the S3 case, we use IDs or increment-numbers as the names, so no duplicate-overwrite should be a problem here.
 					// as we delete the local files and the online tool just overwrites the file, without responding if it was overwritten.
 					// So if the other naming methods were used with S3, we would have to check if the file existed online and then rename of needed and upload back.
 				} else
 					numOfDocFile --;
 			} else
-				docFileData = new DocFileData(docFile, null, null, ((FileUtils.shouldLogFullPathName) ? docFile.getAbsolutePath() : docFile.getName()));
+				docFileData = new DocFileData(docFile, md5Hash, bytesCount, ((FileUtils.shouldLogFullPathName) ? docFile.getAbsolutePath() : docFile.getName()));
 
 			// TODO - HOW TO SPOT DUPLICATE-NAMES IN THE S3 MODE?
 			// The local files are deleted after uploaded.. (as they should be)
