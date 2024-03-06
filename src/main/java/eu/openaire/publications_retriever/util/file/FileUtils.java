@@ -364,11 +364,12 @@ public class FileUtils
 		}
 		long bytesCount = 0;
 		FileOutputStream fileOutputStream = docFileData.getFileOutputStream();
+		int bufferSize = (((contentSize != -2) && contentSize < fiveMb) ? contentSize : fiveMb);
 
-		try ( BufferedInputStream inStream = new BufferedInputStream(inputStream, fiveMb);
-			  BufferedOutputStream outStream = new BufferedOutputStream(((fileOutputStream != null) ? fileOutputStream : new FileOutputStream(docFile)), fiveMb) )
+		try ( BufferedInputStream inStream = new BufferedInputStream(inputStream, bufferSize);
+			  BufferedOutputStream outStream = new BufferedOutputStream(((fileOutputStream != null) ? fileOutputStream : new FileOutputStream(docFile)), bufferSize) )
 		{
-			int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);
+			int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);	// It handles the "-2" case.
 			int readByte = -1;
 			long startTime = System.nanoTime();
 			while ( (readByte = inStream.read()) != -1 )
@@ -469,11 +470,12 @@ public class FileUtils
 			throw new RuntimeException("MD5 HASH ALGO MISSING");
 		}
 		long bytesCount = 0;
+		int bufferSize = (((contentSize != -2) && contentSize < fiveMb) ? contentSize : fiveMb);
 
-		try ( BufferedInputStream inStream = new BufferedInputStream(inputStream, fiveMb);
-			BufferedOutputStream outStream = new BufferedOutputStream(new FileOutputStream(docFile), fiveMb))
+		try ( BufferedInputStream inStream = new BufferedInputStream(inputStream, bufferSize);
+			BufferedOutputStream outStream = new BufferedOutputStream(new FileOutputStream(docFile), bufferSize))
 		{
-			int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);
+			int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);	// It handles the "-2" case.
 			int readByte = -1;
 			long startTime = System.nanoTime();
 			while ( (readByte = inStream.read()) != -1 )

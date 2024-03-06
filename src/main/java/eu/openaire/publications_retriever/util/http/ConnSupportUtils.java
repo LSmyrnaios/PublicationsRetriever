@@ -349,6 +349,7 @@ public class ConnSupportUtils
 			int contentSize = 0;
 			if ( (contentSize = getContentSize(conn, true, false)) == -1 )	// "Unacceptable size"-code..
 				throw new DocFileNotRetrievedException("The HTTP-reported size of this file was unacceptable!");
+			// It may be "-2", in case it was not retrieved..
 
 			// Write the downloaded bytes to the docFile and return the docFileName.
 			DocFileData docFileData =  null;
@@ -830,12 +831,14 @@ public class ConnSupportUtils
 
 	public static String getHtmlString(HttpURLConnection conn, BufferedReader bufferedReader, boolean isForError)
 	{
-		if ( getContentSize(conn, false, isForError) == -1 ) {	// "Unacceptable size"-code..
+		int contentSize = 0;
+		if ( (contentSize = getContentSize(conn, false, isForError)) == -1 ) {	// "Unacceptable size"-code..
 			if ( !isForError )	// It's expected to have ZERO-length most times, and thus the extraction cannot continue. Do not show a message. It's rare that we get an error-message anyway.
 				logger.warn("Aborting HTML-extraction for pageUrl: " + conn.getURL().toString());
 			ConnSupportUtils.closeBufferedReader(bufferedReader);	// This page's content-type was auto-detected, and the process fails before re-requesting the conn-inputStream, then make sure we close the last one.
 			return null;
 		}
+		// It may be "-2" in case the "contentSize" was not available.
 
 		StringBuilder htmlStrB = htmlStrBuilder.get();
 		if ( htmlStrB == null ) {
@@ -843,14 +846,16 @@ public class ConnSupportUtils
 			htmlStrBuilder.set(htmlStrB);	// Save it for future use by this thread.
 		}
 
+		int bufferSize = 0;
 		InputStream inputStream = null;
 		if ( bufferedReader == null ) {
 			inputStream = checkEncodingAndGetInputStream(conn, isForError);
 			if ( inputStream == null )	// The error is already logged inside.
 				return null;
+			bufferSize = (((contentSize != -2) && contentSize < FileUtils.fiveMb) ? contentSize : FileUtils.fiveMb);
 		}
 
-		try (BufferedReader br = ((bufferedReader != null) ? bufferedReader : new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8), FileUtils.fiveMb)) )	// Try-with-resources
+		try (BufferedReader br = ((bufferedReader != null) ? bufferedReader : new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8), bufferSize)) )	// Try-with-resources
 		{
 			String inputLine;
 			while ( (inputLine = br.readLine()) != null )
@@ -963,18 +968,22 @@ public class ConnSupportUtils
 	 */
 	public static DetectedContentType extractContentTypeFromResponseBody(HttpURLConnection conn)
 	{
-		if ( getContentSize(conn, false, false) == -1 ) {	// "Unacceptable size"-code..
-			logger.warn("Aborting HTML-extraction for pageUrl: " + conn.getURL().toString());
+		int contentSize = 0;
+		if ( (contentSize = getContentSize(conn, false, false)) == -1) {	// "Unacceptable size"-code..
+			logger.warn("Aborting content-extraction for pageUrl: " + conn.getURL().toString());
 			return null;
 		}
+		// It may be "-2" in case the "contentSize" was not available.
 
 		InputStream inputStream = checkEncodingAndGetInputStream(conn, false);
 		if ( inputStream == null )
 			return null;
 
+		int bufferSize = (((contentSize != -2) && contentSize < FileUtils.fiveMb) ? contentSize : FileUtils.fiveMb);
+
 		BufferedReader br = null;
 		try {
-			br = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8), FileUtils.fiveMb);
+			br = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8), bufferSize);
 			String inputLine;
 
 			// Skip empty lines in the beginning of the HTML-code
@@ -1172,8 +1181,15 @@ public class ConnSupportUtils
 			if ( inputStream == null )
 				throw new RuntimeException("Could not acquire the InputStream!");
 
+			// Check if we should abort the download based on its content-size.
+			int contentSize = 0;
+			if ( (contentSize = getContentSize(conn, true, false)) == -1 )	// "Unacceptable size"-code..
+				throw new DocFileNotRetrievedException("The HTTP-reported size of this file was unacceptable!");
+			// It may be "-2", in case it was not retrieved..
+			int bufferSize = (((contentSize != -2) && contentSize < FileUtils.fiveMb) ? contentSize : FileUtils.fiveMb);
+
 			// Wrap it with a buffer, for increased efficiency.
-			inputStream = new BufferedInputStream(inputStream, FileUtils.fiveMb);
+			inputStream = new BufferedInputStream(inputStream, bufferSize);
 
 		} catch (Exception e) {
 			String errorMessage = "Unexpected error when retrieving the input-stream from the inputDataUrl:\n" + e.getMessage();

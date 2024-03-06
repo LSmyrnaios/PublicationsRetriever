@@ -85,7 +85,7 @@ public class TestNonStandardInputOutput  {
 		args[3] = "-docFileNameType";
 		args[4] = "originalName";
 		args[5] = "-docFilesStorage";
-		args[6] = "/storage/runs/run1/docFiles";
+		args[6] = "docFiles";
 		main(args);
 	}
 
