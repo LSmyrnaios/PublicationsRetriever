@@ -170,7 +170,7 @@ public class S3ObjectStore {
 
     public static boolean emptyBucket(String bucketName, boolean shouldDeleteBucket)
     {
-        logger.warn("Going to " + (shouldDeleteBucket ? "delete" : "empty") + " bucket \"" + bucketName + "\"");
+        logger.warn("Going to " + (shouldDeleteBucket ? "delete" : "empty") + " bucket \"" + bucketName + "\"!");
 
         // First list the objects of the bucket.
         Iterable<Result<Item>> results;
@@ -181,30 +181,47 @@ public class S3ObjectStore {
             return false;
         }
 
+        int countDeletedFiles = 0;
+        int countFilesNotDeleted = 0;
+        long totalSize = 0;
+        Item item;
+
         // Then, delete the objects.
         for ( Result<Item> resultItem : results ) {
             try {
-                if ( !deleteFile(resultItem.get().objectName(), bucketName) ) {
-                    logger.error("Cannot proceed with bucket deletion, since only an empty bucket can be removed!");
-                    return false;
-                }
+                item = resultItem.get();
             } catch (Exception e) {
-                logger.error("Error getting the object from resultItem: " + resultItem.toString() + "\nThe bucket \"" + bucketName + "\" will not be able  to be deleted! Exception message: " + e.getMessage());
-                return false;
+                logger.error("Could not get the item-object of one of the S3-Objects returned from the bucket!", e);
+                countFilesNotDeleted ++;
+                continue;
             }
+            totalSize += item.size();
+
+            if ( !deleteFile(item.objectName(), bucketName) ) { // The reason and for what object, is already logged.
+                logger.error("Cannot proceed with bucket deletion, since only an empty bucket can be removed!");
+                countFilesNotDeleted ++;
+            } else
+                countDeletedFiles ++;
         }
 
         if ( shouldDeleteBucket ) {
-            // Lastly, delete the empty bucket.
-            try {
-                minioClient.removeBucket(RemoveBucketArgs.builder().bucket(bucketName).build());
-            } catch (Exception e) {
-                logger.error("Could not delete the bucket \"" + bucketName + "\" from the S3 ObjectStore, exception: " + e.getMessage(), e);
+            if ( countFilesNotDeleted == 0 ) {
+                // Lastly, delete the empty bucket. We need to do this last, as in case it's not empty, we get an error!
+                try {
+                    minioClient.removeBucket(RemoveBucketArgs.builder().bucket(bucketName).build());
+                    logger.info("Bucket \"" + bucketName + "\" was deleted!");
+                } catch (Exception e) {
+                    logger.error("Bucket \"" + bucketName + "\" could not be deleted!", e);
+                    return false;
+                }
+            } else {
+                logger.error("Cannot execute the \"removeBucket\" command for bucket \"" + bucketName + "\", as " + countFilesNotDeleted + " files failed to be deleted!");
                 return false;
             }
-        }
+        } else
+            logger.info("Bucket \"" + bucketName + "\" was emptied!");
 
-        logger.info("Bucket " + bucketName + " was " + (shouldDeleteBucket ? "deleted!" : "emptied!"));
+        logger.info(countDeletedFiles + " files were deleted, amounting to " + ((totalSize/1024)/1024) + " MB.");
         return true;
     }
 
