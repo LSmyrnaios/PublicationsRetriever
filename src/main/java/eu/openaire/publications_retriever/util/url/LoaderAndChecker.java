@@ -35,7 +35,7 @@ public class LoaderAndChecker
 	
 	public static boolean useIdUrlPairs = true;
 	
-	public static final Pattern DOC_URL_FILTER = Pattern.compile(".+(pdf|download|/doc|document|(?:/|[?]|&)file|/fulltext|attachment|/paper|viewfile|viewdoc|/get|cgi/viewcontent.cgi\\?|t[ée]l[ée]charger|descargar).*");
+	public static final Pattern DOC_URL_FILTER = Pattern.compile(".+(pdf|download|/doc|document|(?:/|[?]|&)file|/fulltext|attachment|/paper|view(?:file|doc)|/get|cgi/viewcontent.cgi\\?|t[ée]l[ée]charger|descargar).*");
 	// "DOC_URL_FILTER" works for lowerCase Strings (we make sure they are in lowerCase before we check).
 	// Note that we still need to check if it's an alive link and if it's actually a docUrl (though it's mimeType).
 
