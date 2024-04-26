@@ -60,8 +60,12 @@ public class SpecialUrlsHandler
 		} else if ( (updatedUrl = checkAndHandleOSFurls(resourceUrl)) != null ) {
 			//logger.debug("OSF-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
-		/*} else if ( (updatedUrl = checkAndHandleWileyUrls(resourceUrl)) != null ) {
+		} else if ( (updatedUrl = checkAndHandleWileyUrls(resourceUrl)) != null ) {
 			//logger.debug("Wiley-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+			resourceUrl = updatedUrl;
+			// The following in nte ready yet..
+		/*} else if ( (updatedUrl = checkAndHandleEmbopressUrls(resourceUrl)) != null ) {
+			//logger.debug("Embopress-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;*/
 		} else if ( (updatedUrl = checkAndHandleScieloUrls(resourceUrl)) != null ) {
 			//logger.debug("Scielo-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
@@ -333,24 +337,71 @@ public class SpecialUrlsHandler
 	}
 
 
+
+	private static final Pattern ONLINELIBRARY_WILEY = Pattern.compile("(?:http[s]?)://[^/]*onlinelibrary.wiley.com/([^/]+/)?doi/.*");
+
 	//////////  onlinelibrary.wiley.com   /////////////////
 	// https://onlinelibrary.wiley.com/doi/10.1111/polp.12377 --> https://onlinelibrary.wiley.com/doi/pdfdirect/10.1111/polp.12377
 	// The https://onlinelibrary.wiley.com/doi/pdf/10.1111/polp.12377 opens a page with JS and auto-redirects (using JS, NOT http-3XX) to the "/pdfdirect/" version.
 	// Also:
 	// https://onlinelibrary.wiley.com/doi/10.1111/polp.12377 --> https://onlinelibrary.wiley.com/doi/epdf/10.1111/polp.12377 (page with the pdf in view and a download button)
 	// -->
-	// TODO - CHECK IT AGAIN
-	/*public static String checkAndHandleWileyUrls(String pageUrl)
+	public static String checkAndHandleWileyUrls(String pageUrl)
 	{
-		if ( !pageUrl.contains("onlinelibrary.wiley.com/doi/") )	// We want to transform only urls belonging to this subdomain and has this structure.
-			return null;    // It's from another domain, keep looking..
+		Matcher matcher = ONLINELIBRARY_WILEY.matcher(pageUrl);
+		if ( !matcher.matches() ) {
+			if ( pageUrl.contains("api.wiley.com/onlinelibrary") ) {
+				String docIdStr = UrlUtils.getDocIdStr(pageUrl, null);
+				return ((docIdStr != null) ? ("https://onlinelibrary.wiley.com/doi/pdfdirect/" + docIdStr + "?download=true") : null);
+			} else
+				return null;    // It's from another domain, keep looking..
+		}
+
+		// Check and remove any subJournal.
+		String subJournal = matcher.group(1);
+		if ( (subJournal != null) && !subJournal.isEmpty() )
+			pageUrl = StringUtils.replace(pageUrl, subJournal, "");
+
+		if ( pageUrl.contains("/pdfdirect/") )	// It's already a final-pdf url.
+			return ((pageUrl.contains("download=true")) ? pageUrl : (pageUrl + (pageUrl.contains("?") ? "&" : "?") + "download=true"));
+
+		if ( pageUrl.endsWith("/abstract") )
+			pageUrl = StringUtils.replace(pageUrl, "/abstract", "");
+		else if ( pageUrl.endsWith("/fullpdf") )
+			pageUrl = StringUtils.replace(pageUrl, "/fullpdf", "");
 
 		if ( pageUrl.contains("epdf/") )	// It's a script-depending pdf-url which needs transformation.
-			return StringUtils.replace(pageUrl, "epdf/", "pdfdirect/", 1);
+			pageUrl = StringUtils.replace(pageUrl, "epdf/", "pdfdirect/", 1);
+		else if ( pageUrl.contains("pdf/") )	// It's a script-depending pdf-url which needs transformation.
+			pageUrl = StringUtils.replace(pageUrl, "pdf/", "pdfdirect/", 1);
+		else if ( pageUrl.contains("full/") )
+			pageUrl = StringUtils.replace(pageUrl, "full/", "pdfdirect/", 1);
+		else if ( pageUrl.contains("abs/") )
+			pageUrl = StringUtils.replace(pageUrl, "/doi/abs/", "/doi/pdfdirect/", 1);
+		else if ( pageUrl.contains("full-xml/") )	// Replace these to their "normal" html pages, from where we can get the PDFs.
+			pageUrl = StringUtils.replace(pageUrl, "/full-xml/", "/full/", 1);
 		else
-			return StringUtils.replace(pageUrl, "/doi/", "/doi/pdfdirect/", 1);
-	}*/
+			pageUrl = StringUtils.replace(pageUrl, "/doi/", "/doi/pdfdirect/", 1);
 
+		return ((pageUrl.contains("download=true")) ? pageUrl : (pageUrl + (pageUrl.contains("?") ? "&" : "?") + "download=true"));
+	}
+
+
+	//////////  www.embopress.org   /////////////////
+	// https://www.embopress.org/doi/pdfdirect/10.1038/msb.2012.46?download=true --> https://www.embopress.org/doi/pdf/10.1038/msb.2012.46?download=true
+	// DocUrls of Wiley, sometimes redirect to "www.embopress.org", while maintaining similar structure (instead of "/pdfdirect/", they use "/pdf/").
+	public static String checkAndHandleEmbopressUrls(String pageUrl)
+	{
+		if ( !pageUrl.contains("://www.embopress.org") )	// We want to transform only urls belonging to the top-level-domain.
+			return null;    // It's from another domain, keep looking..
+
+		if ( pageUrl.contains("/pdf/") )	// It's probably already a docUrl
+			return pageUrl;
+		else if ( pageUrl.contains("/pdfdirect/") )
+			return StringUtils.replace(pageUrl, "/pdfdirect/", "/pdf/", 1);
+		else
+			return pageUrl;
+	}
 
 	////////////////////////  www.scielo.br  ///////////////////////
 	// https://www.scielo.br/j/bjb/a/64jBbrbZ8hG3fvhy6d6nczj/?amp;format=pdf&lang=en   --> REPLACE THE PROBLEMATIC "amp;" with "&".
