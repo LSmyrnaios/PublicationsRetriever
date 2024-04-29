@@ -501,14 +501,8 @@ public class LoaderAndChecker
 					Boolean value = futures.get(i).get();	// Get and see if an exception is thrown..
 					// Add check for the value, if wanted.. (we don't care at the moment)
 				} catch (ExecutionException ee) {
-					// The stacktrace of the "ExecutionException" is the one of the current code and not the code which ran inside the background-task. Try to get the cause.
-					Throwable throwable = ee.getCause();
-					if ( throwable == null ) {
-						logger.warn("No cause was retrieved for the \"ExecutionException\"!");
-						throwable = ee;
-					}
-					String stackTraceMessage = GenericUtils.getSelectiveStackTrace(throwable, null, 15);	// These can be serious errors like an "out of memory exception" (Java HEAP).
-					logger.error("Task_" + i + " failed with: " + throwable.getMessage() + "\n" + stackTraceMessage);
+					String stackTraceMessage = GenericUtils.getSelectedStackTraceForCausedException(ee, "Task_" + i + " failed with: ", null, 15);	// These can be serious errors like an "out of memory exception" (Java HEAP).
+					logger.error(stackTraceMessage);
 					System.err.println(stackTraceMessage);
 					numFailedTasks ++;
 				} catch (CancellationException ce) {

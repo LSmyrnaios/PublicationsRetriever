@@ -79,12 +79,26 @@ public class GenericUtils {
     }
 
 
+    public static String getSelectedStackTraceForCausedException(Throwable thr, String firstMessage, String additionalMessage, int numOfLines)
+    {
+        // The stacktrace of the "ExecutionException" is the one of the current code and not the code which ran inside the background-task. Try to get the cause.
+        Throwable causedThrowable = thr.getCause();
+        if ( causedThrowable == null ) {
+            logger.warn("No cause was retrieved for the \"ExecutionException\"!");
+            causedThrowable = thr;
+        }
+        String initialMessage = firstMessage + causedThrowable.getMessage() + ((additionalMessage != null) ? additionalMessage : "");
+        return getSelectiveStackTrace(causedThrowable, initialMessage, numOfLines);
+    }
+
+
     public static String getSelectiveStackTrace(Throwable thr, String initialMessage, int numOfLines)
     {
         StackTraceElement[] stels = thr.getStackTrace();
-        StringBuilder sb = new StringBuilder(numOfLines *100);
+        StringBuilder sb = new StringBuilder(numOfLines *100);  // This StringBuilder is thread-safe as a local-variable.
         if ( initialMessage != null )
-            sb.append(initialMessage).append(" Stacktrace:").append(FileUtils.endOfLine);	// This StringBuilder is thread-safe as a local-variable.
+            sb.append(initialMessage).append(FileUtils.endOfLine);
+        sb.append("Stacktrace:").append(FileUtils.endOfLine);
         for ( int i = 0; (i < stels.length) && (i <= numOfLines); ++i ) {
             sb.append(stels[i]);
             if (i < numOfLines) sb.append(FileUtils.endOfLine);

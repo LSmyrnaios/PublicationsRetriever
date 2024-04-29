@@ -163,6 +163,13 @@
       </exclusions>
     </dependency>
 
+    <!-- Use this dependency in case we move to Java 11 in the future (or at least use JDK-11 in a VM).. -->
+    <dependency>
+      <groupId>jakarta.xml.bind</groupId>
+      <artifactId>jakarta.xml.bind-api</artifactId>
+      <version>2.3.3</version>
+    </dependency>
+
     <!-- There is a newer version, but from v.1.4 onwards it requires Java-11. -->
     <dependency>
       <groupId>com.github.crawler-commons</groupId>
