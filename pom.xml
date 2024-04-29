@@ -14,6 +14,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.12.1</version>
+        <!-- DO NOT UPDATE, until the Jenkins-instance has its "maven" package updated. Otherwise, the release will not be able to be deployed on Nexus repository. -->
         <configuration>
           <source>1.8</source>
           <target>1.8</target>
@@ -24,7 +25,8 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>3.5.3</version>
+        <version>3.5.2</version>
+        <!-- DO NOT UPDATE until the Jenkins-instance has its "maven" package updated. Otherwise, the release will not be able to be deployed on Nexus repository. -->
         <executions>
           <execution>
             <phase>package</phase>
