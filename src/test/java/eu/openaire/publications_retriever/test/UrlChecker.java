@@ -888,6 +888,7 @@ public class UrlChecker {
 		urlList.add("http://www.ampere.cnrs.fr/correspondance/rdf/ampcorr-<? print $val['bookId'] ?>-RDF.xml");
 		urlList.add("https:/articles/matecconf/abs/2018/32/matecconf_smima2018_03065/matecconf_smima2018_03065.html");
 		urlList.add("http://okeanos-www.hbz-nrw.de/ce-rewrite.no-url");
+		urlList.add("https://hal.science/hal-03190416/file/d0ma00875c.pdf;");
 
 		// The following are "made-up"..
 		urlList.add("https://upcommons.upc.edu/bitstream/handle/2117/115::00/docID:Check?sequence=1&isAllowed=y");
@@ -896,8 +897,11 @@ public class UrlChecker {
 
 		urlList.add("https://www1.domain1.com/oauth2server/oauth/authorize?client_id=Lfvdfdfgdfg&redirect_uri=https://apps.domain2.com/eAccess/domain1/login.xhtml&response_type=code&scope=read");
 		urlList.add("https://www1.domain1.com?redirect_uri=https://apps.domain2.com/eAccess/domain1/login.xhtml&response_type=code&scope=read");
-		// TODO - Consider: Before connecting with a url like the above, we could extract the inner-url as well and check it also against the filter-regexes. The parent url may be ok, but the child url may not.
+		// TODO - Consider: Before connecting with a url like the above, we could extract the inner-url as well and check it also against the filter-regexes. The parent url may be ok, but the child url may not and we can't check its domain unless it's extracted..
 		// It will increase complexity, but it will help avoid one more connection in case of a problematic child-url.
+
+		urlList.add("https://nottingham-repository.worktribe.com/6611020/1/Do Relatively More Efficient Firms Demand Additional Audit Effort (Hours)?");
+		urlList.add("https://nottingham-repository.worktribe.com/6611020/1/Do Relatively More Efficient Firms Demand Additional Audit Effort (Hours)??=123");
 
 		int regex_problematic_urls = 0;
 
