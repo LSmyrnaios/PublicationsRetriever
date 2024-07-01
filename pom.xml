@@ -114,14 +114,14 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>33.2.0-jre</version>
+      <version>33.2.1-jre</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-compress -->
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>
-      <version>1.26.1</version>
+      <version>1.26.2</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.brotli/dec -->
@@ -156,7 +156,7 @@
     <dependency>
       <groupId>io.minio</groupId>
       <artifactId>minio</artifactId>
-      <version>8.5.10</version>
+      <version>8.5.11</version>
       <exclusions>
       <exclusion>
         <groupId>com.google.guava</groupId>

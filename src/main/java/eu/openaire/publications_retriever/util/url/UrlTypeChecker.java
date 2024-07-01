@@ -53,10 +53,10 @@ public class UrlTypeChecker
 	
 	public static final Pattern INTERNAL_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+format=(?:xml|" + htOrPhpExtensionsPattern + "|rss|ris|bib).*");	// This exists as a url-parameter.
 
-	public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile("[^/]+://[^/]*(?:(?<!drive.)google\\.|goo.gl|gstatic|facebook|fb.me|meta|twitter|x|insta(?:gram|paper)|tiktok|youtube|vimeo|linkedin|ebay|bing|(?:amazon|[./]analytics)\\.|s.w.org|wikipedia|myspace|yahoo|mail|pinterest|reddit|tumblr"
+	public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile("[^/]+://[^/]*(?<=[/.])(?:(?<!drive.)google\\.|goo.gl|gstatic|facebook|fb.me|twitter|(?:meta|xing|baidu|t|x|vk).co|insta(?:gram|paper)|tiktok|youtube|vimeo|linkedin|ebay|bing|(?:amazon|[./]analytics)\\.|s.w.org|wikipedia|myspace|yahoo|mail|pinterest|reddit|tumblr"
 			+ "|www.ccdc.cam.ac.uk|figshare.com/collections/|datadryad.org/stash/dataset/"
 			+ "|evernote|skype|microsoft|adobe|buffer|digg|stumbleupon|addthis|delicious|dailymotion|gostats|blog(?:ger)?|copyright|friendfeed|newsvine|telegram|getpocket"
-			+ "|flipboard|line.me|vk|ok.rudouban|baidu|qzone|xing|renren|weibo|doubleclick|bit.ly|github|reviewofbooks|plu.mx"
+			+ "|flipboard|line.me|ok.rudouban|qzone|renren|weibo|doubleclick|bit.ly|github|reviewofbooks|plu.mx"
 			+ "|(?<!files.)wordpress|orcid.org"
 			+ "|auth(?:orize|entication)?\\."
 

@@ -191,7 +191,7 @@ public class HttpConnUtils
 					return false;
 				}
 				else if ( (lowerCaseMimeType != null) && ((lowerCaseMimeType.contains("htm") || (lowerCaseMimeType.contains("text") && !lowerCaseMimeType.contains("xml") && !lowerCaseMimeType.contains("csv") && !lowerCaseMimeType.contains("tsv")))) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
-					// TODO - Better make a regex for the above checks..
+					// TODO - Better make a regex for the above checks.. (be careful to respect the "||" and "&&" operators)
 					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn, firstHtmlLine, bufferedReader);
 				else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" with mimeType: \"" + mimeType + "\" will not be visited!");

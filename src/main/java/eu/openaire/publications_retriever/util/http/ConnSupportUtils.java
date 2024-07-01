@@ -88,7 +88,7 @@ public class ConnSupportUtils
 
 	public static final ConcurrentHashMap<String, DomainConnectionData> domainsWithConnectionData = new ConcurrentHashMap<>();
 
-	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0";	// This should not be "final", another program, using this software as a library, should be able to set its own "UserAgent".
+	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0";	// This should not be "final", another program, using this software as a library, should be able to set its own "UserAgent".
 	public static String acceptLanguage = "en-US,en;q=0.5";
 
 
