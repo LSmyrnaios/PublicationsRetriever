@@ -705,31 +705,32 @@ public class LoaderAndChecker
 		List<String> list = new ArrayList<>(3);
 		String wasUrlValid = "true";
 		String couldRetry = "false";
-		String errorMsg = null;
+		String errorMsg;
 
 		if ( e instanceof RuntimeException ) {	// This check also covers the: (e != null) check.
 			String message = e.getMessage();
 			if ( message != null) {
 				if ( INVALID_URL_HTTP_STATUS.matcher(message).matches() ) {
 					wasUrlValid = "false";
-					errorMsg = "the url is invalid and lead to http-client-error";
+					errorMsg = "the url is invalid and lead to http-client-error.";
 				} else if ( COULD_RETRY_HTTP_STATUS.matcher(message).matches() ) {
 					couldRetry = "true";    // 	We could retry at a later time, since some errors might be temporal.
-					errorMsg = "the url had a non-fatal http-error";
-				}
+					errorMsg = "the url had a non-fatal http-error.";
+				} else
+					errorMsg = "there is a serious unspecified error.";
 			} else
-				errorMsg = "there is an unspecified runtime error";
+				errorMsg = "there is an unspecified runtime error.";
 		} else if ( e instanceof ConnTimeoutException ) {
 			couldRetry = "true";
-			errorMsg = "the url had a connection-timeout";
+			errorMsg = "the url had a connection-timeout.";
 		} else if ( e instanceof DomainWithUnsupportedHEADmethodException ) {	// This should never get caught here normally.
 			couldRetry = "true";
-			errorMsg = "the url does not support HEAD method for checking most of the internal links";
+			errorMsg = "the url does not support HEAD method for checking most of the internal links.";
 		} else if ( e instanceof DomainBlockedException ) {
 			// the default values apply
-			errorMsg = "the url had its initial or redirected domain blocked";
+			errorMsg = "the url had its initial or redirected domain blocked.";
 		} else
-			errorMsg = "there is a serious unspecified error";
+			errorMsg = "there is a serious unspecified error.";
 
 		if ( (url != null) && COULD_RETRY_URLS.matcher(url).matches() )
 			couldRetry = "true";

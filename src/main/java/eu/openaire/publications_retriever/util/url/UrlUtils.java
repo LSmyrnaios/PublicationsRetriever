@@ -300,8 +300,7 @@ public class UrlUtils
 		if ( (noAnchorUrl == null) || noAnchorUrl.isEmpty() ) {
 			logger.warn("Unexpected null or empty value returned by \"anchorMatcher.group(1)\" for url: \"" + urlStr + "\"");
 			return urlStr;
-		}
-		else
+		} else
 			return noAnchorUrl;
 	}
 
