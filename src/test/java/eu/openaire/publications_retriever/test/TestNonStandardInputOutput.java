@@ -7,6 +7,7 @@ import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.signal.SignalUtils;
 import eu.openaire.publications_retriever.util.url.GenericUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
+import eu.openaire.publications_retriever.util.url.UrlTypeChecker;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
