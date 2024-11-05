@@ -537,7 +537,7 @@ public class HttpConnUtils
 					throw new RuntimeException("Could not create target url for resourceUrl: " + currentUrl + " having location: " + location);
 
 				String lowerCaseTargetUrl = targetUrl.toLowerCase();
-				if ( (calledForPageUrl && UrlTypeChecker.shouldNotAcceptPageUrl(targetUrl, lowerCaseTargetUrl))	// Redirecting a pageUrl.
+				if ( (calledForPageUrl && UrlTypeChecker.shouldNotAcceptPageUrl(urlId, sourceUrl, targetUrl, lowerCaseTargetUrl, calledForPageUrl))	// Redirecting a pageUrl.
 						|| (!calledForPageUrl && UrlTypeChecker.shouldNotAcceptInternalLink(targetUrl, lowerCaseTargetUrl)) )	// Redirecting an internalPageLink.
 					throw new RuntimeException("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + targetUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code, in redirection-number: " + curRedirectsNum);
 				else if ( lowerCaseTargetUrl.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".

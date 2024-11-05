@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
@@ -26,18 +27,7 @@ public class UrlTypeChecker
 	private static final String docOrDatasetNegativeLookAroundPattern = "(?<!" + wordsPattern + docOrDatasetKeywords + wordsPattern + ")(?!.*" + docOrDatasetKeywords + ".*)";
 	// Note: Up to Java 8, we cannot use the "*" or "+" inside the lookbehind, so we use character-class with limits.
 
-	public static final Pattern URL_DIRECTORY_FILTER =
-			Pattern.compile("[^/]+://.*/(?:(discover|profile|user|survey|index|media|theme|product|deposit|default|shop|view)/" + docOrDatasetNegativeLookAroundPattern	// Avoid blocking these if the url is likely to give a file.
-					+ "|(?:(?:ldap|password)-)?login|ac[c]?ess(?![./]+)|sign[-]?(?:in|out|up)|session|(?:how-to-)?(:?join[^t]|subscr)|regist(?:er|ration)|submi(?:t|ssion)|(?:post|send|export|(?:wp-)?admin|home|form|career[s]?|company)/|watch|browse|import|bookmark|announcement|feedback|share[^d]|about|(?:[^/]+-)?faq|wiki|news|events|cart|support|(?:site|html)map|documentation|help|license|disclaimer|copyright|(?:site-)?polic(?:y|ies)(?!.*paper)|privacy|terms|law|principles"
-					+ "|(?:my|your|create)?[-]?account|my(?:dspace|selection|cart)|(?:service|help)[-]?desk|settings|fund|aut[h]?or" + docOrDatasetNegativeLookAroundPattern + "|journal/key|(?:journal-)?editor|author:|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic(s)?/.*/view/|conta[c]?t|wallet|contribute|donate|our[_-][\\w]+|template|logo|image|photo/|video|advertiser|most-popular|people|(?:the)?press|for-authors|customer-service[s]?|captcha|clipboard|dropdown|widget"
-					+ "|(?:forum|blog|column|row|js|css|rss|legal)/"	// These are absolute directory names.	TODO - Should I add the "|citation[s]?" rule ? The nasa-docUrls include it..
-					+ "|(?:(?:advanced[-]?)?search|search/advanced|search-results|(?:[e]?books|journals)(?:-catalog)?|issue|docs|oai|(?:abstracting-)?indexing|online[-]?early|honors|awards|meetings|calendar|diversity|scholarships|invo(?:ice|lved)|errata|classroom|publish(?:-with-us)?|upload|products|forgot|home|ethics|comics|podcast|trends|bestof|booksellers|recommendations|bibliographic|volume[s]?)[/]?$"	// Url ends with these. Note that some of them are likely to be part of a docUrl, for ex. the "/trends/"-dir.
-					// TODO - In case we have just DocUrls (not datasetUrls), exclude the following as well: "/(?:bibtext|dc(?:terms)?|tei|endnote)$", it could be added in another regex.. or do an initialization check and construct this regex based on the url-option provided.
-					+ "|rights[-]?permissions|publication[-]?ethics|advertising|reset[-]?password|\\*/|communit(?:y|ies)"
-					+ "|restricted|noaccess|crawlprevention|error|(?:mis|ab)use|\\?denied|gateway|defaultwebpage|sorryserver|(?<!response_type=)cookie|(?:page-)?not[-]?found"
-					+ "|(?:404(?:_response)?|accessibility|invalid|catalog(?:ue|ar|o)?)\\." + htOrPhpExtensionsPattern + ").*");
-
-	// We check them as a directory to avoid discarding publications' urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
+	public static Pattern URL_DIRECTORY_FILTER;	// Set this regex during runtime to account for the user's preference in selecting to retrieve documents only (not datasets).
 
 	public static final Pattern CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER = Pattern.compile(".+\\.(?:(?:doc|ppt)[x]?|ps|epub|od[tp]|djvu|rtf)(?:\\?.+)?$");	// Doc-extensions which are currently unsupported. Some pageUrls give also .zip files, but that's another story.
 
@@ -77,6 +67,30 @@ public class UrlTypeChecker
 			+ "|services.bepress.com"	// Avoid potential malicious domain (Avast had some urls of this domain in the Blacklist).
 			+ "|(?:careers|shop).|myworkdayjobs.com"
 			+ "|editorialmanager.com"
+
+			// Add domains with a specific blocking-reason, in "capturing-groups", in order to be able to get the matched-group-number and know the exact reason the block occurred.
+
+			+ "|(tandfonline.com|persee.fr|papers.ssrn.com|documentation.ird.fr|library.unisa.edu.au|publications.cnr.it)"	// 1. JavaScript-powered domains.
+			// We could "guess" the pdf-link for some of them, but for "persee.fr" for example, there's also a captcha requirement.
+			// The "tandfonline.com" cannot give even direct "/pdf/" urls, as it gives "HTTP 503 Server Error" or "HTTP 403 Forbidden", which urls appear to work when opened in a Browser.
+
+			+ "|(doaj.org/toc/)"	// 2. Avoid resultPages (containing multiple publication-results).
+			+ "|(dlib.org|saberes.fcecon.unr.edu.ar|eumed.net)"	// 3. Avoid HTML docUrls. These are shown simply inside the html-text of the page. No binary to download.
+			+ "|(rivisteweb.it|wur.nl|remeri.org.mx|cam.ac.uk|scindeks.ceon.rs|egms.de)"	// 4. Avoid pages known to not provide docUrls (just metadata).
+			+ "|(bibliotecadigital.uel.br|cepr.org)"	// 5. Avoid domains requiring login to access docUrls.
+			+ "|(scielosp.org" + docOrDatasetNegativeLookAroundPattern + "|cepr.org|dk.um.si|apospublications.com|jorr.org|rwth-aachen.de|pubmed.ncbi.nlm.nih.gov)"	// 6. Avoid domains which have their DocUrls in larger depth (internalPagesToDocUrls or PreviousOfDocUrls).
+			+ "|(200.17.137.108)"	// 7. Avoid known domains with connectivity problems.
+
+			// Avoid slow urls (taking more than 3secs to connect). This is currently disabled since it was decided to let more pageUrl unblocked.
+			//"handle.net", "doors.doshisha.ac.jp", "opac-ir.lib.osaka-kyoiku.ac.jp"
+			/*
+			// In case these "slow" domain are blocked later, use something like the following when handling them..
+			loggingMessage = "Discarded after matching to domain, known to take long to respond.";
+			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
+			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, null);
+			longToRespondUrls.incrementAndGet();
+			*/
+
 			+ ")[^/]*/.*");
 
 	public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile("[^/]+://[\\w.:-]+(?:/[\\w]{2})?(?:/index." + htOrPhpExtensionsPattern + ")?[/]?(?:\\?(?:locale(?:-attribute)?|ln)=[\\w_-]+)?$");	// Exclude plain domains' urls. Use "ISO 639-1" for language-codes (2 letters directory).
@@ -92,161 +106,168 @@ public class UrlTypeChecker
 	public static AtomicInteger urlsWithUnwantedForm = new AtomicInteger(0);	// (plain domains, unwanted page-extensions ect.)
 	public static AtomicInteger pangaeaUrls = new AtomicInteger(0);	// These urls are in false form by default, but even if they weren't, or we transform them, PANGAEA. only gives datasets, not fulltext.
 	public static AtomicInteger pagesNotProvidingDocUrls = new AtomicInteger(0);
-	
-	
+
+
+
 	/**
-	 * This method takes the "retrievedUrl" from the inputFile and the "lowerCaseUrl" that comes out the retrieved one.
-	 * It then checks if the "lowerCaseUrl" matched certain criteria representing the unwanted urls' types. It uses the "retrievedUrl" for proper logging.
-	 * If these criteria match, then it logs the url and returns "true", otherwise, it returns "false".
-	 * @param urlId
-	 * @param lowerCaseUrl
-	 * @return true/false
-	 */
-	public static boolean matchesUnwantedUrlType(String urlId, String retrievedUrl, String lowerCaseUrl)
-	{
-		String loggingMessage = null;
-		String wasUrlValid = "N/A";	// Default value to be used, in case the given url matches an unwanted type. We do not know if the url is valid (i.e. if it can be connected and give a non 4XX response) at this point.
-		
-		// Avoid JavaScript-powered domains, other than the "sciencedirect.com", which is handled separately.
-		// We could "guess" the pdf-link for some of them, but for "persee.fr" for ex. there's also a captcha requirement for the connection.
-		// The "tandfonline.com" gives an "HTTP 503 Server Error", even for the urls containing "/pdf/" which appear to work when opened in a Browser.
-		if ( /*(*/lowerCaseUrl.contains("tandfonline.com") /*&& !lowerCaseUrl.contains("/pdf/"))*/ || lowerCaseUrl.contains("persee.fr") || lowerCaseUrl.contains("papers.ssrn.com")
-			|| lowerCaseUrl.contains("documentation.ird.fr") || lowerCaseUrl.contains("library.unisa.edu.au") || lowerCaseUrl.contains("publications.cnr.it") )	// The "documentation.ird.fr" works in "UrlCheck-test" but not when running multiple urls from the inputFile.
-		{
-			loggingMessage = "Discarded after matching to a JavaScript-using domain, other than the 'sciencedirect.com'.";
-			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
-			if ( !LoaderAndChecker.useIdUrlPairs )
-				javascriptPageUrls.incrementAndGet();
-			return true;
-		}
-		// Avoid resultPages (containing multiple publication-results).
-		else if ( lowerCaseUrl.contains("doaj.org/toc/") ) {
-			loggingMessage = "Discarded after matching to the Results-directory: 'doaj.org/toc/'.";
-			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
-			if ( !LoaderAndChecker.useIdUrlPairs )
-				doajResultPageUrls.incrementAndGet();
-			return true;
-		}
-		// Avoid HTML docUrls. These are shown simply inside the html-text of the page. No binary to download.
-		else if ( lowerCaseUrl.contains("dlib.org") || lowerCaseUrl.contains("saberes.fcecon.unr.edu.ar") || lowerCaseUrl.contains("eumed.net") ) {
-			loggingMessage = "Discarded after matching to a site containing the full-text as plain-text inside its HTML.";
-			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
-			if ( !LoaderAndChecker.useIdUrlPairs )
-				pagesWithHtmlDocUrls.incrementAndGet();
-			return true;
-		}
-		// Avoid pages known to not provide docUrls (just metadata).
-		else if ( lowerCaseUrl.contains("rivisteweb.it") || lowerCaseUrl.contains("wur.nl") || lowerCaseUrl.contains("remeri.org.mx")	// Keep only "remeri" subDomain of "org.mx", as the TLD is having a lot of different sites.
-				|| lowerCaseUrl.contains("cam.ac.uk") || lowerCaseUrl.contains("scindeks.ceon.rs") || lowerCaseUrl.contains("egms.de") ) {
-			loggingMessage = "Discarded after matching to a domain which doesn't provide docUrls.";
-			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
-			if ( !LoaderAndChecker.useIdUrlPairs )
-				pagesNotProvidingDocUrls.incrementAndGet();
-			return true;
-		}
-		// Avoid domains requiring login to access docUrls.
-		else if ( lowerCaseUrl.contains("bibliotecadigital.uel.br") || lowerCaseUrl.contains("cepr.org") ) {
-			loggingMessage = "Discarded after matching to a domain which needs login to access docFiles.";
-			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
-			if ( !LoaderAndChecker.useIdUrlPairs )
-				pagesRequireLoginToAccessDocFiles.incrementAndGet();
-			return true;
-		}
-		// Avoid crawling pages having their DocUrls in larger depth (internalPagesToDocUrls or PreviousOfDocUrls).
-		else if ( (lowerCaseUrl.contains("/view/") && !lowerCaseUrl.contains(".pdf")) || (lowerCaseUrl.contains("scielosp.org") && !lowerCaseUrl.contains("/pdf/")) || lowerCaseUrl.contains("dk.um.si") || lowerCaseUrl.contains("apospublications.com")
-				|| lowerCaseUrl.contains("jorr.org") || lowerCaseUrl.contains("rwth-aachen.de") || lowerCaseUrl.contains("pubmed.ncbi.nlm.nih.gov") ) {
-			loggingMessage = "Discarded after matching to a site having its DocUrls in larger depth.";
-			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
-			if ( !LoaderAndChecker.useIdUrlPairs )
-				pagesWithLargerCrawlingDepth.incrementAndGet();
-			return true;
-		}
-		// Avoid "PANGAEA."-urls with problematic form and non docUrl internal links (yes WITH the "DOT").
-		// Some pangaea urls are fine and they give datasets: https://doi.pangaea.de/10.1594/PANGAEA.806440
-		else if ( lowerCaseUrl.contains("doi.org/https://doi.org/") && lowerCaseUrl.contains("pangaea.") ) {
-			loggingMessage = "Discarded after matching to a 'PANGAEA.' url with invalid form and non-docUrls in their internal links.";
-			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
-			if ( !LoaderAndChecker.useIdUrlPairs )
-				pangaeaUrls.incrementAndGet();
-			return true;
-		}
-		else if ( !LoaderAndChecker.retrieveDatasets && lowerCaseUrl.contains("pangaea.") ) {
-			loggingMessage = "Discarded after matching to a 'PANGAEA.' url which gives only datasets, not full-texts.";
-			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
-			if ( !LoaderAndChecker.useIdUrlPairs )
-				pangaeaUrls.incrementAndGet();
-			return true;
-		}
-		// Avoid known domains with connectivity problems.
-		else if ( lowerCaseUrl.contains("200.17.137.108") ) {
-			loggingMessage = "Discarded after matching to known urls with connectivity problems.";
-			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
-			if ( !LoaderAndChecker.useIdUrlPairs )
-				LoaderAndChecker.connProblematicUrls.incrementAndGet();
-			return true;
-		}
-		/*// Avoid slow urls (taking more than 3secs to connect). This is currently disabled since it was decided to let more pageUrl unblocked.
-		else if ( lowerCaseUrl.contains("handle.net") || lowerCaseUrl.contains("doors.doshisha.ac.jp") || lowerCaseUrl.contains("opac-ir.lib.osaka-kyoiku.ac.jp") ) {
-			loggingMessage = "Discarded after matching to domain, known to take long to respond.";
-			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, null);
-			if ( !LoaderAndChecker.useIdUrlPairs )
-				longToRespondUrls.incrementAndGet();
-			return true;
-		}*/
-		// Avoid urls which contain either "getSharedSiteSession" or "consumeSharedSiteSession" as these cause an infinite loop.
-		else if ( lowerCaseUrl.contains("sharedsitesession") ) {
-			ConnSupportUtils.blockSharedSiteSessionDomains(retrievedUrl, null);
-			loggingMessage = "It was discarded after participating in a 'sharedSiteSession-endlessRedirectionPack'.";
-			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
-			if ( !LoaderAndChecker.useIdUrlPairs )
-				LoaderAndChecker.connProblematicUrls.incrementAndGet();
-			return true;
-		}
-		// Avoid pages based on unwanted url-string-content.
-		else if ( shouldNotAcceptPageUrl(retrievedUrl, lowerCaseUrl) ) {
-			loggingMessage = "Discarded after matching to unwantedType-regex-rules.";
-			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			String couldRetry = (LoaderAndChecker.COULD_RETRY_URLS.matcher(retrievedUrl).matches() ? "true" : "false");
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
-			if ( !LoaderAndChecker.useIdUrlPairs )
-				urlsWithUnwantedForm.incrementAndGet();
-			return true;
-		}
-		else
-			return false;	// No logging needed here.
+	 * This method depends on the initialization of the "LoaderAndChecker.retrieveDatasets" variable, given by the user as cmd-arg, or defined by a service which wraps this software.
+	 * */
+	public static void setURLDirectoryFilterRegex() {
+		URL_DIRECTORY_FILTER =
+			Pattern.compile("[^/]+://.*/(?:(discover|profile|user|survey|index|media|theme|product|deposit|default|shop|view)/" + docOrDatasetNegativeLookAroundPattern	// Avoid blocking these if the url is likely to give a file.
+				+ "|(?:(?:ldap|password)-)?login|ac[c]?ess(?![./]+)|sign[-]?(?:in|out|up)|session|(?:how-to-)?(:?join[^t]|subscr)|regist(?:er|ration)|submi(?:t|ssion)|(?:post|send|export|(?:wp-)?admin|home|form|career[s]?|company)/|watch|browse|import|bookmark|announcement|feedback|share[^d]|about|(?:[^/]+-)?faq|wiki|news|events|cart|support|(?:site|html)map|documentation|help|license|disclaimer|copyright|(?:site-)?polic(?:y|ies)(?!.*paper)|privacy|terms|law|principles"
+				+ "|(?:my|your|create)?[-]?account|my(?:dspace|selection|cart)|(?:service|help)[-]?desk|settings|fund|aut[h]?or" + docOrDatasetNegativeLookAroundPattern + "|journal/key|(?:journal-)?editor|author:|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic(s)?/.*/view/|/view/" + docOrDatasetNegativeLookAroundPattern + "|conta[c]?t|wallet|contribute|donate|our[_-][\\w]+|template|logo|image|photo/|video|advertiser|most-popular|people|(?:the)?press|for-authors|customer-service[s]?|captcha|clipboard|dropdown|widget"
+				+ "|(?:forum|blog|column|row|js|css|rss|legal)/"	// These are absolute directory names.	TODO - Should I add the "|citation[s]?" rule ? BUT, The NASA-docUrls include it normally..
+				+ "|(?:(?:advanced[-]?)?search|search/advanced|search-results|(?:[e]?books|journals)(?:-catalog)?|issue|docs|oai|(?:abstracting-)?indexing|online[-]?early|honors|awards|meetings|calendar|diversity|scholarships|invo(?:ice|lved)|errata|classroom|publish(?:-with-us)?|upload|products|forgot|home|ethics|comics|podcast|trends|bestof|booksellers|recommendations|bibliographic|volume[s]?)[/]?$"	// Url ends with these. Note that some of them are likely to be part of a docUrl, for ex. the "/trends/"-dir.
+				+ "|rights[-]?permissions|publication[-]?ethics|advertising|reset[-]?password|\\*/|communit(?:y|ies)"
+				+ "|restricted|noaccess|crawlprevention|error|(?:mis|ab)use|\\?denied|gateway|defaultwebpage|sorryserver|(?<!response_type=)cookie|(?:page-)?not[-]?found"
+				+ "|(?:404(?:_response)?|accessibility|invalid|catalog(?:ue|ar|o)?)\\." + htOrPhpExtensionsPattern
+
+				// Add pages with a specific blocking-reason, in "capturing-groups", in order to be able to get the matched-group-number and know the exact reason the block occurred.
+				+ "|(.*/view/" + docOrDatasetNegativeLookAroundPattern + ")"	// 1. Avoid pages having their DocUrls in larger depth (internalPagesToDocUrls or PreviousOfDocUrls).
+				+ "|(.*sharedsitesession)"	// 2. Avoid urls which contain either "getSharedSiteSession" or "consumeSharedSiteSession" as these cause an infinite loop.
+				+ "|(doi.org/https://doi.org/.*pangaea." + (!LoaderAndChecker.retrieveDatasets ? "|pangaea.)" : ")")	// 3. Avoid "PANGAEA."-urls with problematic form and non docUrl internal links (yes WITH the "DOT", it's not a domain-name!).
+
+				// The following pattern is the reason we need to set this regex in runtime.
+				+ (!LoaderAndChecker.retrieveDatasets ? "|(?:bibtext|dc(?:terms)?|[^/]*(?:tei|endnote))$)" : ").*")
+			);
+
+		// We check the above rules, mostly as directories to avoid discarding publications' urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
+		if ( logger.isTraceEnabled() )
+			logger.trace("URL_DIRECTORY_FILTER:\n" + URL_DIRECTORY_FILTER);
 	}
-	
+
 	
 	/**
 	 * This method matches the given pageUrl against general regex-es.
 	 * It returns "true" if the givenUrl should not be accepted, otherwise, it returns "false".
+	 *
+	 * @param urlId
+	 * @param sourceUrl
 	 * @param pageUrl
 	 * @param lowerCaseUrl
+	 * @param calledForPageUrl
 	 * @return true / false
 	 */
-	public static boolean shouldNotAcceptPageUrl(String pageUrl, String lowerCaseUrl)
+	public static boolean shouldNotAcceptPageUrl(String urlId, String sourceUrl, String pageUrl, String lowerCaseUrl, boolean calledForPageUrl)
 	{
 		if ( lowerCaseUrl == null )
 			lowerCaseUrl = pageUrl.toLowerCase();
 		// If it's not "null", it means we have already done the transformation in the calling method.
-		
-		return	URL_DIRECTORY_FILTER.matcher(lowerCaseUrl).matches()
-				|| SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
-				|| PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl).matches()
-				|| URL_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl).matches()
-				|| PageCrawler.NON_VALID_DOCUMENT.matcher(lowerCaseUrl).matches()
-				|| CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseUrl).matches();	// TODO - To be removed when these docExtensions get supported.
+
+		String loggingMessage = null;
+		String wasUrlValid = "N/A";	// Default value to be used, in case the given url matches an unwanted type. We do not know if the url is valid (i.e. if it can be connected and give a non 4XX response) at this point.
+		String groupMatch = null;
+
+		Matcher matcher = URL_DIRECTORY_FILTER.matcher(lowerCaseUrl);
+		if ( matcher.matches() ) {	// This regex also matches with many other rules, which we do not care to individually capture.
+			if (calledForPageUrl ) {	// For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
+				if ( ((groupMatch = matcher.group(1)) != null) && !groupMatch.isEmpty() ) {
+					loggingMessage = "Discarded after matching to a site having its DocUrls in larger depth: '" + groupMatch + "'.";
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					pagesWithLargerCrawlingDepth.incrementAndGet();
+				}
+				else if ( ((groupMatch = matcher.group(2)) != null) && !groupMatch.isEmpty() ) {
+					ConnSupportUtils.blockSharedSiteSessionDomains(pageUrl, null);
+					loggingMessage = "It was discarded after participating in a 'sharedSiteSession-endlessRedirectionPack': '" + groupMatch + "'.";
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					LoaderAndChecker.connProblematicUrls.incrementAndGet();
+				}
+				else if ( ((groupMatch = matcher.group(3)) != null) && !groupMatch.isEmpty() ) {
+					loggingMessage = "Discarded after matching to a 'PANGAEA.' url with invalid form and non-docUrls in their internal links: '" + groupMatch + "'.";
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					pangaeaUrls.incrementAndGet();
+				} else {
+					loggingMessage = "Discarded after matching to a directory with problems.";
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+				}
+				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
+			}
+			return true;
+		}
+
+		matcher = SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl);
+		if ( matcher.matches() ) {
+			if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
+				if ( ((groupMatch = matcher.group(1)) != null) && !groupMatch.isEmpty() ) {
+					loggingMessage = "Discarded after matching to a JavaScript-using domain, other than the 'sciencedirect.com': '" + groupMatch + "'.";
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					javascriptPageUrls.incrementAndGet();
+				} else if ( ((groupMatch = matcher.group(2)) != null) && !groupMatch.isEmpty() ) {
+					loggingMessage = "Discarded after matching to the Results-directory: 'doaj.org/toc/': '" + groupMatch + "'.";
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					doajResultPageUrls.incrementAndGet();
+				} else if ( ((groupMatch = matcher.group(3)) != null) && !groupMatch.isEmpty() ) {
+					loggingMessage = "Discarded after matching to a site containing the full-text as plain-text inside its HTML: '" + groupMatch + "'.";
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					pagesWithHtmlDocUrls.incrementAndGet();
+				} else if ( ((groupMatch = matcher.group(4)) != null) && !groupMatch.isEmpty() ) {
+					loggingMessage = "Discarded after matching to a domain which doesn't provide docUrls: '" + groupMatch + "'.";
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					pagesNotProvidingDocUrls.incrementAndGet();
+				} else if ( ((groupMatch = matcher.group(5)) != null) && !groupMatch.isEmpty() ) {
+					loggingMessage = "Discarded after matching to a domain which needs login to access docFiles: '" + groupMatch + "'.";
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					pagesRequireLoginToAccessDocFiles.incrementAndGet();
+				} else if ( ((groupMatch = matcher.group(6)) != null) && !groupMatch.isEmpty() ) {
+					loggingMessage = "Discarded after matching to a site having its DocUrls in larger depth: '" + groupMatch + "'.";
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					pagesWithLargerCrawlingDepth.incrementAndGet();
+				} else if ( ((groupMatch = matcher.group(7)) != null) && !groupMatch.isEmpty() ) {
+					loggingMessage = "Discarded after matching to known domains with connectivity problems: '" + groupMatch + "'.";
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					LoaderAndChecker.connProblematicUrls.incrementAndGet();
+				} else {
+					loggingMessage = "Discarded after matching to a domain with problems.";
+					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+				}
+				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
+			}
+			return true;
+		}
+
+		matcher = PageCrawler.NON_VALID_DOCUMENT.matcher(lowerCaseUrl);
+		if ( matcher.matches() ) {
+			if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
+				loggingMessage = "Discarded after matching to a url leading to an invalid document!";
+				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
+				UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+				PageCrawler.contentProblematicUrls.incrementAndGet();
+			}
+			return true;
+		}
+
+		matcher = PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl);
+		if ( matcher.matches() ) {
+			if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
+				loggingMessage = "Discarded after matching to a url having only the domain part!";
+				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
+				UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+			}
+			return true;
+		}
+
+		matcher = URL_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl);
+		if ( matcher.matches() ) {
+			if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
+				loggingMessage = "Discarded after matching to a url having an irrelevant extension!";
+				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
+				UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+			}
+			return true;
+		}
+
+		matcher = CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseUrl);
+		if ( matcher.matches() ) {	// TODO - To be removed when these docExtensions get supported.
+			if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
+				loggingMessage = "Discarded after matching to a url having an unsupported document extension!";
+				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
+				UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+			}
+			return true;
+		}
+
+		return false;
 	}
 	
 	
@@ -255,8 +276,8 @@ public class UrlTypeChecker
 		if ( lowerCaseLink == null )
 			lowerCaseLink = linkStr.toLowerCase();
 		// If it's not "null", it means we have already done the transformation in the calling method.
-		
-		return	shouldNotAcceptPageUrl(linkStr, lowerCaseLink)
+
+		return	shouldNotAcceptPageUrl(null, null, linkStr, lowerCaseLink, false)
 				|| INTERNAL_LINKS_KEYWORDS_FILTER.matcher(lowerCaseLink).matches()
 				|| INTERNAL_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseLink).matches()
 				|| PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseLink).matches();

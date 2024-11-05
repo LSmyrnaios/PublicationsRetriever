@@ -597,7 +597,7 @@ public class LoaderAndChecker
 		
 		String lowerCaseUrl = retrievedUrl.toLowerCase();
 		
-		if ( UrlTypeChecker.matchesUnwantedUrlType(urlId, retrievedUrl, lowerCaseUrl) )
+		if ( UrlTypeChecker.shouldNotAcceptPageUrl(urlId, retrievedUrl, retrievedUrl, lowerCaseUrl, true) )
 			return null;	// The url-logging is happening inside this method (per urlType).
 		
 		// Remove the "temporalId" from the urls. Most of them, if not all, will already be expired. If an error occurs, the temporalId will remain in the url.

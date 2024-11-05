@@ -809,7 +809,7 @@ public class UrlChecker {
 				continue;
 			}
 
-			if ( UrlTypeChecker.matchesUnwantedUrlType(testID, urlToCheck, urlToCheck.toLowerCase()) )
+			if ( UrlTypeChecker.shouldNotAcceptPageUrl(testID, urlToCheck, urlToCheck, urlToCheck.toLowerCase(), true) )
 				continue;
 
 /*			String urlPath = UrlUtils.getPathStr(urlToCheck, null);

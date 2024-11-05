@@ -183,6 +183,7 @@ public class TestNonStandardInputOutput  {
 
 		logger.info("Starting PublicationsRetriever..");
 		ConnSupportUtils.setKnownMimeTypes();
+		UrlTypeChecker.setURLDirectoryFilterRegex();
 
 		// Use testing input/output files.
 		setInputOutput();

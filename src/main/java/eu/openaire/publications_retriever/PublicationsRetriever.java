@@ -79,6 +79,7 @@ public class PublicationsRetriever
 
 		logger.info("Starting PublicationsRetriever..");
 		ConnSupportUtils.setKnownMimeTypes();
+		UrlTypeChecker.setURLDirectoryFilterRegex();
 
 		// Check if the user gave the input file in the commandLineArgument, if not, then check for other options.
 		if ( PublicationsRetriever.inputStream == null ) {
