@@ -3,6 +3,7 @@ package eu.openaire.publications_retriever;
 import eu.openaire.publications_retriever.crawler.MachineLearning;
 import eu.openaire.publications_retriever.crawler.MetadataHandler;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
+import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.DomainConnectionData;
@@ -12,17 +13,20 @@ import eu.openaire.publications_retriever.util.url.GenericUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlTypeChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -40,24 +44,11 @@ public class PublicationsRetriever
 {
 	private static final Logger logger = LoggerFactory.getLogger(PublicationsRetriever.class);
 
-	private static int initialNumOfDocFile = 0;
-
-	public static boolean docFilesStorageGivenByUser = false;
-
-	public static boolean inputFromUrl = false;
-	public static String inputDataUrl = null;
-
-	public static InputStream inputStream = null;
-	public static String inputFileFullPath = null;
-
 	public static Instant startTime = null;
-	public static String targetUrlType = "docOrDatasetUrl";	// docUrl, documentUrl, docOrDatasetUrl ; this is set by the args-parser, and it's used when outputting data.
 
 	public static final DecimalFormat df = new DecimalFormat("0.00");
 
 	public static ExecutorService executor;
-	public static int workerThreadsCount = 0;
-	public static int threadsMultiplier = 2;	// Use *3 without downloading docFiles and when having the domains to appear in uniform distribution in the inputFile. Use *2 when downloading.
 
 
 	public static void main( String[] args )
@@ -70,7 +61,7 @@ public class PublicationsRetriever
 
 		startTime = Instant.now();
 
-		parseArgs(args);
+		ArgsUtils.parseArgs(args);
 
 		if ( ! GenericUtils.checkInternetConnectivity() ) {
 			FileUtils.closeIO();
@@ -82,13 +73,13 @@ public class PublicationsRetriever
 		UrlTypeChecker.setURLDirectoryFilterRegex();
 
 		// Check if the user gave the input file in the commandLineArgument, if not, then check for other options.
-		if ( PublicationsRetriever.inputStream == null ) {
-			if ( PublicationsRetriever.inputFromUrl )
-				PublicationsRetriever.inputStream = ConnSupportUtils.getInputStreamFromInputDataUrl();
+		if ( ArgsUtils.inputStream == null ) {
+			if ( ArgsUtils.inputFromUrl )
+				ArgsUtils.inputStream = ConnSupportUtils.getInputStreamFromInputDataUrl();
 			else
-				PublicationsRetriever.inputStream = new BufferedInputStream(System.in, FileUtils.fiveMb);
+				ArgsUtils.inputStream = new BufferedInputStream(System.in, FileUtils.fiveMb);
 		} else {
-			try ( Stream<String> linesStream = Files.lines(Paths.get(PublicationsRetriever.inputFileFullPath)) ) {
+			try ( Stream<String> linesStream = Files.lines(Paths.get(ArgsUtils.inputFileFullPath)) ) {
 				FileUtils.numOfLines = linesStream.count();
 				logger.info("The numOfLines in the inputFile is " + FileUtils.numOfLines);
 			} catch (IOException ioe) {
@@ -97,21 +88,21 @@ public class PublicationsRetriever
 		}
 
 		// Use standard input/output.
-		new FileUtils(inputStream, System.out);
+		new FileUtils(ArgsUtils.inputStream, System.out);
 
 		if ( MachineLearning.useMLA )
 			new MachineLearning();
 
-		if ( workerThreadsCount == 0 ) {	// If the user did not provide the "workerThreadsCount", then get the available number from the system.
+		if ( ArgsUtils.workerThreadsCount == 0 ) {	// If the user did not provide the "workerThreadsCount", then get the available number from the system.
 			int availableThreads = Runtime.getRuntime().availableProcessors();
-			availableThreads *= threadsMultiplier;
+			availableThreads *= ArgsUtils.threadsMultiplier;
 
 			// If the domains of the urls in the inputFile, are in "uniform distribution" (each one of them to be equally likely to appear in any place), then the more threads the better (triple the computer's number)
 			// Else, if there are far lees domains and/or closely placed inside the inputFile.. then use only the number of threads provided by the computer, since the "politenessDelay" will block them more than the I/O would ever do..
-			workerThreadsCount = availableThreads;	// Due to I/O, blocking the threads all the time, more threads handle the workload faster..
+			ArgsUtils.workerThreadsCount = availableThreads;	// Due to I/O, blocking the threads all the time, more threads handle the workload faster..
 		}
-		logger.info("Use " + workerThreadsCount + " worker-threads.");
-		executor = Executors.newFixedThreadPool(workerThreadsCount);
+		logger.info("Use " + ArgsUtils.workerThreadsCount + " worker-threads.");
+		executor = Executors.newFixedThreadPool(ArgsUtils.workerThreadsCount);
 
 		try {
 			new LoaderAndChecker();
@@ -148,197 +139,6 @@ public class PublicationsRetriever
     }
 
 
-	public static void parseArgs(String[] mainArgs)
-	{
-		String usageMessage = "\nUsage: java -jar publications_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all> -inputFileFullPath inputFile -downloadDocFiles(OPTIONAL) -docFileNameType(OPTIONAL) <nameType: originalName | idName | numberName> -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' -inputDataUrl(OPTIONAL) 'inputUrl' -numOfThreads(OPTIONAL) 'threadsNum' < 'input' > 'output'";
-
-		if ( mainArgs.length > 15 ) {
-			String errMessage = "\"PublicationsRetriever\" expected only up to 15 arguments, while you gave: " + mainArgs.length + "!" + usageMessage;
-			logger.error(errMessage);
-			System.err.println(errMessage);
-			System.exit(-1);
-		}
-
-		boolean firstNumGiven = false;
-
-		for ( short i = 0; i < mainArgs.length; i++ )
-		{
-			try {
-				switch ( mainArgs[i] ) {
-					case "-retrieveDataType":
-						i ++;
-						String dataType = mainArgs[i];
-						switch (dataType) {
-							case "document":
-								logger.info("Going to retrieve only records of \"document\"-type.");
-								LoaderAndChecker.retrieveDocuments = true;
-								LoaderAndChecker.retrieveDatasets = false;
-								targetUrlType = "docUrl";
-								break;
-							case "dataset":
-								logger.info("Going to retrieve only records of \"dataset\"-type.");
-								LoaderAndChecker.retrieveDocuments = false;
-								LoaderAndChecker.retrieveDatasets = true;
-								targetUrlType = "datasetUrl";
-								break;
-							case "all":
-								logger.info("Going to retrieve records of all types (documents and datasets).");
-								LoaderAndChecker.retrieveDocuments = true;
-								LoaderAndChecker.retrieveDatasets = true;
-								targetUrlType = "docOrDatasetUrl";
-								break;
-							default:
-								String errMessage = "Argument: \"" + dataType + "\" was invalid!\nExpected one of the following: \"docFiles | datasets | all\"" + usageMessage;
-								System.err.println(errMessage);
-								logger.error(errMessage);
-								System.exit(9);
-						}
-						break;
-					case "-inputFileFullPath":
-						i ++;
-						inputFileFullPath = mainArgs[i];
-						if ( !(inputFileFullPath.startsWith(File.separator) || inputFileFullPath.startsWith("~")) )
-						{
-							if ( inputFileFullPath.startsWith("." + File.separator) )	// Remove the starting "dot" + "/" or "\", if exists.
-								inputFileFullPath = StringUtils.replace(inputFileFullPath, "." + File.separator, "", 1);
-
-							inputFileFullPath = System.getProperty("user.dir") + File.separator + inputFileFullPath;	// In case the given path starts with "..", then this also works.
-						}
-						try {
-							inputStream = new BufferedInputStream(new FileInputStream(inputFileFullPath), FileUtils.fiveMb);
-						} catch (FileNotFoundException fnfe) {
-							String errMessage = "No inputFile was found in \"" + inputFileFullPath + "\"";
-							logger.error(errMessage);
-							System.err.println(errMessage);
-							System.exit(-144);
-						} catch (Exception e) {
-							String errMessage = e.toString();
-							logger.error(errMessage);
-							System.err.println(errMessage);
-							System.exit(-145);
-						}
-						break;
-					case "-downloadDocFiles":
-						FileUtils.shouldDownloadDocFiles = true;
-						break;
-					case "-docFileNameType":
-						i ++;
-						String nameType = mainArgs[i];
-						switch ( nameType ) {
-							case "originalName":
-								logger.info("Going to use the \"originalName\" type.");
-								FileUtils.docFileNameType = FileUtils.DocFileNameType.originalName;
-								break;
-							case "idName":
-								if ( !LoaderAndChecker.useIdUrlPairs ) {
-									String errMessage = "You provided the \"DocFileNameType.idName\", but the program's reader is not set to retrieve IDs from the inputFile! Set the program to retrieve IDs by setting the \"utils.url.LoaderAndChecker.useIdUrlPairs\"-variable to \"true\".";
-									System.err.println(errMessage);
-									logger.error(errMessage);
-									System.exit(10);
-								} else {
-									logger.info("Going to use the \"idName\" type.");
-									FileUtils.docFileNameType = FileUtils.DocFileNameType.idName;
-								}
-								break;
-							case "numberName":
-								logger.info("Going to use the \"numberName\" type.");
-								FileUtils.docFileNameType = FileUtils.DocFileNameType.numberName;
-								break;
-							default:
-								String errMessage = "Invalid \"docFileNameType\" given (\"" + nameType + "\")\nExpected one of the following: \"originalName | idName | numberName\"" + usageMessage;
-								System.err.println(errMessage);
-								logger.error(errMessage);
-								System.exit(11);
-						}
-						break;
-					case "-firstDocFileNum":
-						try {
-							i ++;	// Go get the following first-Number-argument.
-							FileUtils.numOfDocFile = PublicationsRetriever.initialNumOfDocFile = Integer.parseInt(mainArgs[i]);    // We use both variables in statistics.
-							if ( PublicationsRetriever.initialNumOfDocFile <= 0 ) {
-								logger.warn("The given \"initialNumOfDocFile\" (" + PublicationsRetriever.initialNumOfDocFile + ") was a number less or equal to zero! Setting that number to <1> and continuing downloading..");
-								PublicationsRetriever.initialNumOfDocFile = 1;
-							}
-							firstNumGiven = true;
-							break;
-						} catch (NumberFormatException nfe) {
-							String errorMessage = "Argument \"-firstDocFileNum\" must be followed by an integer value! Given one was: \"" + mainArgs[i] + "\"" + usageMessage;
-							System.err.println(errorMessage);
-							logger.error(errorMessage);
-							System.exit(-2);
-						}
-					case "-docFilesStorage":
-						i ++;
-						String storageDir = mainArgs[i];
-						if ( storageDir.equals("S3ObjectStore") )
-							FileUtils.shouldUploadFilesToS3 = true;
-						else
-							FileUtils.storeDocFilesDir = storageDir + (!storageDir.endsWith(File.separator) ? File.separator : "");    // Pre-process it.. otherwise, it may cause problems.
-						PublicationsRetriever.docFilesStorageGivenByUser = true;
-						break;
-					case "-inputDataUrl":
-						i++;
-						inputDataUrl = mainArgs[i];
-						inputFromUrl = true;
-						logger.info("Using the inputFile from the URL: " + inputDataUrl);
-						break;
-					case "-numOfThreads":
-						i++;
-						String workerCountString = mainArgs[i];
-						try {
-							workerThreadsCount = PublicationsRetriever.initialNumOfDocFile = Integer.parseInt(workerCountString);    // We use both variables in statistics.
-							if ( workerThreadsCount < 1 ) {
-								logger.warn("The \"workerThreadsCount\" given was less than < 1 > (" + workerThreadsCount + "), continuing with < 1 > instead..");
-								workerThreadsCount = 1;
-							}
-						} catch (NumberFormatException nfe) {
-							logger.error("Invalid \"workerThreadsCount\" was given: \"" + workerCountString + "\".\tContinue by using the system's available threads multiplied by " + threadsMultiplier);
-						}
-						break;
-					default:	// log & ignore the argument
-						String errMessage = "Argument: \"" + mainArgs[i] + "\" was not expected!" + usageMessage;
-						System.err.println(errMessage);
-						logger.error(errMessage);
-						break;
-				}
-			} catch (ArrayIndexOutOfBoundsException aioobe) {
-				String errMessage = "The argument-set of \"" + mainArgs[i] + "\" was not complete!\nThe provided arguments are: " + Arrays.toString(mainArgs) + usageMessage;
-				System.err.println(errMessage);
-				logger.error(errMessage);
-				System.exit(90);
-			}
-		}
-
-		if ( FileUtils.shouldDownloadDocFiles )
-		{
-			if ( FileUtils.docFileNameType == null ) {
-				logger.warn("You did not specified the docNameType!" + usageMessage);
-				if ( LoaderAndChecker.useIdUrlPairs ) {
-					FileUtils.docFileNameType = FileUtils.DocFileNameType.idName;
-					logger.warn("The program will use the \"idName\"-type!");
-				} else {
-					FileUtils.docFileNameType = FileUtils.DocFileNameType.numberName;
-					logger.warn("The program will use the \"numberName\"-type!");
-				}
-			}
-
-			if ( FileUtils.shouldUploadFilesToS3 && FileUtils.docFileNameType.equals(FileUtils.DocFileNameType.originalName) ) {
-				String baseMsg = "The uploading of the docFiles to the S3-ObjectStore requires the use of \"ID-names\" or \"Number-names\" for the DocFiles. You specified the \"originalName\" DocFileNameType.";
-				if ( LoaderAndChecker.useIdUrlPairs ) {
-					logger.warn(baseMsg + " Replacing the DocFileNameType \"originalName\" with \"idName\".");
-					FileUtils.docFileNameType = FileUtils.DocFileNameType.idName;
-				} else {
-					logger.warn(baseMsg + " Replacing the DocFileNameType \"originalName\" with \"numberName\".");
-					FileUtils.docFileNameType = FileUtils.DocFileNameType.numberName;
-				}
-			}
-
-			if ( firstNumGiven && !FileUtils.docFileNameType.equals(FileUtils.DocFileNameType.numberName) )
-				logger.warn("You provided the \"-firstDocFileNum\" a, but you also specified a \"docFileNameType\" of non numeric-type. The \"-firstDocFileNum\" will be ignored!" + usageMessage);
-		}
-	}
-
-
 	public static void showStatistics(Instant startTime)
 	{
 		long inputCheckedUrlNum = 0;
@@ -370,13 +170,13 @@ public class PublicationsRetriever
 		if ( SignalUtils.receivedSIGINT )
 			logger.warn("A SIGINT signal was received, so some of the \"checked-urls\" may have not been actually checked, that's more of a number of the \"loaded-urls\".");
 
-		logger.info("Total " + targetUrlType + "s found: " + UrlUtils.sumOfDocUrlsFound + ". That's about: " + df.format(UrlUtils.sumOfDocUrlsFound.get() * 100.0 / inputCheckedUrlNum) + "% from the total numOfUrls checked. The rest were problematic or non-handleable url-cases.");
+		logger.info("Total " + ArgsUtils.targetUrlType + "s found: " + UrlUtils.sumOfDocUrlsFound + ". That's about: " + df.format(UrlUtils.sumOfDocUrlsFound.get() * 100.0 / inputCheckedUrlNum) + "% from the total numOfUrls checked. The rest were problematic or non-handleable url-cases.");
 		if ( FileUtils.shouldDownloadDocFiles ) {
 			int numOfStoredDocFiles = 0;
 			if ( !FileUtils.docFileNameType.equals(FileUtils.DocFileNameType.numberName) )	// If we have anything different from the numberName-type..
 				numOfStoredDocFiles = FileUtils.numOfDocFiles.get();
 			else
-				numOfStoredDocFiles = FileUtils.numOfDocFile - initialNumOfDocFile;
+				numOfStoredDocFiles = FileUtils.numOfDocFile - ArgsUtils.initialNumOfDocFile;
 			logger.info("From which docUrls, we were able to retrieve: " + numOfStoredDocFiles + " distinct docFiles. That's about: " + df.format(numOfStoredDocFiles * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "%."
 					+ " The un-retrieved docFiles were either belonging to already-found docUrls or they had connection-issues.");
 		}
@@ -431,7 +231,7 @@ public class PublicationsRetriever
 		logger.debug("The number of paths blocked -due to HTTP 403- in total, was: " + ConnSupportUtils.domainsMultimapWithPaths403BlackListed.values().size());
 
 		calculateAndPrintElapsedTime(startTime, Instant.now(), null);
-		logger.debug("Used " + workerThreadsCount + " worker threads.");
+		logger.debug("Used " + ArgsUtils.workerThreadsCount + " worker threads.");
 
 		if ( logger.isDebugEnabled() )
 		{

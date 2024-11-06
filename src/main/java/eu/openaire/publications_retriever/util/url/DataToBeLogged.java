@@ -1,6 +1,6 @@
 package eu.openaire.publications_retriever.util.url;
 
-import eu.openaire.publications_retriever.PublicationsRetriever;
+import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -92,7 +92,7 @@ public class DataToBeLogged
 				jsonObject.put("id", this.urlId);
 			}
 			jsonObject.put("sourceUrl", this.sourceUrl);
-			jsonObject.put(PublicationsRetriever.targetUrlType, this.docOrDatasetUrl);
+			jsonObject.put(ArgsUtils.targetUrlType, this.docOrDatasetUrl);
 			jsonObject.put("wasUrlChecked", this.wasUrlChecked);
 			jsonObject.put("wasUrlValid", this.wasUrlValid);
 			jsonObject.put("wasDocumentOrDatasetAccessible", this.wasDocumentOrDatasetAccessible);

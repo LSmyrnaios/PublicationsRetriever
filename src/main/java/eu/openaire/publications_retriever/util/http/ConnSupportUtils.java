@@ -9,6 +9,7 @@ import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.exceptions.DomainBlockedException;
+import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.DocFileData;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.file.IdUrlTuple;
@@ -1157,7 +1158,7 @@ public class ConnSupportUtils
 
 	public static InputStream getInputStreamFromInputDataUrl()
 	{
-		if ( (PublicationsRetriever.inputDataUrl == null) || PublicationsRetriever.inputDataUrl.isEmpty() ) {
+		if ( (ArgsUtils.inputDataUrl == null) || ArgsUtils.inputDataUrl.isEmpty() ) {
 			String errorMessage = "The \"inputDataUrl\" was not given, even though";
 			logger.error(errorMessage);
 			System.err.println(errorMessage);
@@ -1167,7 +1168,7 @@ public class ConnSupportUtils
 
 		InputStream inputStream = null;
 		try {
-			HttpURLConnection conn = HttpConnUtils.handleConnection(null, PublicationsRetriever.inputDataUrl, PublicationsRetriever.inputDataUrl, PublicationsRetriever.inputDataUrl, null, true, true);
+			HttpURLConnection conn = HttpConnUtils.handleConnection(null, ArgsUtils.inputDataUrl, ArgsUtils.inputDataUrl, ArgsUtils.inputDataUrl, null, true, true);
 			String mimeType = conn.getHeaderField("Content-Type");
 			if ( (mimeType == null) || !mimeType.toLowerCase().contains("json") ) {
 				String errorMessage = "The mimeType of the url was either null or a non-json: " + mimeType;

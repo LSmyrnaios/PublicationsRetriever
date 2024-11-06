@@ -5,6 +5,7 @@ import com.google.common.collect.HashMultimap;
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.crawler.MachineLearning;
 import eu.openaire.publications_retriever.exceptions.DocFileNotRetrievedException;
+import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.url.DataToBeLogged;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
@@ -144,13 +145,13 @@ public class FileUtils
 			if ( !dir.exists() ) {
 				if ( !dir.mkdirs() ) {	// Try to create the directory(-ies) if they don't exist. If they exist OR if sth went wrong, the result is the same: "false".
 					String errorMessage;
-					if ( PublicationsRetriever.docFilesStorageGivenByUser )
+					if ( ArgsUtils.docFilesStorageGivenByUser )
 						errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
 								+ "\nPlease give a valid Directory-path.";
 					else	// User has left the storageDir to be the default one.
 						errorMessage = "Problem when creating the default \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
 								+ "\nPlease verify you have the necessary privileges in the directory you are running the program from or specify the directory you want to save the files to."
-								+ "\nIf the above is not an option, then you can set to retrieve just the " + PublicationsRetriever.targetUrlType + "s and download the full-texts later (on your own).";
+								+ "\nIf the above is not an option, then you can set to retrieve just the " + ArgsUtils.targetUrlType + "s and download the full-texts later (on your own).";
 					System.err.println(errorMessage);
 					logger.error(errorMessage);
 					FileUtils.closeIO();

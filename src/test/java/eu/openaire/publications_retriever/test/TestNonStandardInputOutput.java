@@ -2,6 +2,7 @@ package eu.openaire.publications_retriever.test;
 
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.crawler.MachineLearning;
+import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.signal.SignalUtils;
@@ -50,8 +51,8 @@ public class TestNonStandardInputOutput  {
 		if ( !LoaderAndChecker.useIdUrlPairs )
 			FileUtils.skipFirstRow = false;	// Use "true", if we have a "column-name" in our csv file. Default: "false".
 
-		if ( PublicationsRetriever.inputFromUrl )
-			logger.info("Using the inputFile from URL: \"" + PublicationsRetriever.inputDataUrl + "\" and the outputFile: \"" + outputFile.getName() + "\".");
+		if ( ArgsUtils.inputFromUrl )
+			logger.info("Using the inputFile from URL: \"" + ArgsUtils.inputDataUrl + "\" and the outputFile: \"" + outputFile.getName() + "\".");
 		else
 			logger.info("Using the inputFile: \"" + inputFile.getName() + "\" and the outputFile: \"" + outputFile.getName() + "\".");
 	}
@@ -175,7 +176,7 @@ public class TestNonStandardInputOutput  {
 		
 		PublicationsRetriever.startTime = Instant.now();
 		
-		PublicationsRetriever.parseArgs(args);
+		ArgsUtils.parseArgs(args);
 
 		if ( ! GenericUtils.checkInternetConnectivity() ) {
 			FileUtils.closeIO();
@@ -197,16 +198,16 @@ public class TestNonStandardInputOutput  {
 		if ( MachineLearning.useMLA )
 			new MachineLearning();
 
-		if ( PublicationsRetriever.workerThreadsCount == 0 ) {	// If the user did not provide the "workerThreadsCount", then get the available number from the system.
+		if ( ArgsUtils.workerThreadsCount == 0 ) {	// If the user did not provide the "workerThreadsCount", then get the available number from the system.
 			int availableThreads = Runtime.getRuntime().availableProcessors();
-			availableThreads *= PublicationsRetriever.threadsMultiplier;
+			availableThreads *= ArgsUtils.threadsMultiplier;
 
 			// If the domains of the urls in the inputFile, are in "uniform distribution" (each one of them to be equally likely to appear in any place), then the more threads the better (triple the computer's number)
 			// Else, if there are far lees domains or/and closely placed inside the inputFile.. then use only the number of threads provided by the computer, since the "politenessDelay" will block them more than the I/O would ever do..
-			PublicationsRetriever.workerThreadsCount = availableThreads;	// Due to I/O, blocking the threads all the time, more threads handle the workload faster..
+			ArgsUtils.workerThreadsCount = availableThreads;	// Due to I/O, blocking the threads all the time, more threads handle the workload faster..
 		}
-		logger.info("Use " + PublicationsRetriever.workerThreadsCount + " worker-threads.");
-		PublicationsRetriever.executor = Executors.newFixedThreadPool(PublicationsRetriever.workerThreadsCount);
+		logger.info("Use " + ArgsUtils.workerThreadsCount + " worker-threads.");
+		PublicationsRetriever.executor = Executors.newFixedThreadPool(ArgsUtils.workerThreadsCount);
 
 		try {
 			new LoaderAndChecker();
@@ -247,13 +248,13 @@ public class TestNonStandardInputOutput  {
 	{
 		try {
 			// Check if the user gave the input file in the commandLineArgument, if not, then check for other options.
-			if ( PublicationsRetriever.inputStream == null ) {
-				if ( PublicationsRetriever.inputFromUrl )
-					PublicationsRetriever.inputStream = ConnSupportUtils.getInputStreamFromInputDataUrl();
+			if ( ArgsUtils.inputStream == null ) {
+				if ( ArgsUtils.inputFromUrl )
+					ArgsUtils.inputStream = ConnSupportUtils.getInputStreamFromInputDataUrl();
 				else
-					PublicationsRetriever.inputStream = new BufferedInputStream(new FileInputStream(inputFile), FileUtils.fiveMb);
+					ArgsUtils.inputStream = new BufferedInputStream(new FileInputStream(inputFile), FileUtils.fiveMb);
 			} else {
-				try ( Stream<String> linesStream = Files.lines(Paths.get(PublicationsRetriever.inputFileFullPath), StandardCharsets.UTF_8) ) {
+				try ( Stream<String> linesStream = Files.lines(Paths.get(ArgsUtils.inputFileFullPath), StandardCharsets.UTF_8) ) {
 					FileUtils.numOfLines = linesStream.count();
 					logger.info("The numOfLines in the inputFile is " + FileUtils.numOfLines);
 				} catch (IOException ioe) {
@@ -261,16 +262,16 @@ public class TestNonStandardInputOutput  {
 				}
 			}
 
-			if ( PublicationsRetriever.inputFileFullPath != null ) {	// If the user gave the inputFile as a cmd-arg..
+			if ( ArgsUtils.inputFileFullPath != null ) {	// If the user gave the inputFile as a cmd-arg..
 				// Extract the path and the file-name. Do a split in reverse order.
 				String path = null;
 				String inputFileName = null;
 				char separatorChar = File.separator.charAt(0);	// The "inputFileFullPath" is guaranteed to have at least one "separator".
-				for ( int i = PublicationsRetriever.inputFileFullPath.length() -1; i >= 0 ; --i ) {
-					if ( PublicationsRetriever.inputFileFullPath.charAt(i) == separatorChar ) {
+				for ( int i = ArgsUtils.inputFileFullPath.length() -1; i >= 0 ; --i ) {
+					if ( ArgsUtils.inputFileFullPath.charAt(i) == separatorChar ) {
 						i++;	// The following methods need the increased < i >
-						path = PublicationsRetriever.inputFileFullPath.substring(0, i);
-						inputFileName = PublicationsRetriever.inputFileFullPath.substring(i);
+						path = ArgsUtils.inputFileFullPath.substring(0, i);
+						inputFileName = ArgsUtils.inputFileFullPath.substring(i);
 						break;
 					}
 				}
@@ -278,7 +279,7 @@ public class TestNonStandardInputOutput  {
 					outputFile = new File(path + "results_" + inputFileName);
 			}
 
-			new FileUtils(PublicationsRetriever.inputStream, new BufferedOutputStream(new FileOutputStream(outputFile), FileUtils.fiveMb));
+			new FileUtils(ArgsUtils.inputStream, new BufferedOutputStream(new FileOutputStream(outputFile), FileUtils.fiveMb));
 
 			setTypeOfInputData();
 

@@ -6,6 +6,7 @@ import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.exceptions.ConnTimeoutException;
 import eu.openaire.publications_retriever.exceptions.DomainBlockedException;
 import eu.openaire.publications_retriever.exceptions.DomainWithUnsupportedHEADmethodException;
+import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
@@ -108,7 +109,7 @@ public class LoaderAndChecker
 			else
 				isFirstRun = false;
 
-			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null) ? (" | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) + "%") : "") + " | every batch contains at most " + FileUtils.jsonBatchSize + " id-url pairs.");
+			logger.info("Batch counter: " + (++batchCount) + ((ArgsUtils.inputFileFullPath != null) ? (" | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) + "%") : "") + " | every batch contains at most " + FileUtils.jsonBatchSize + " id-url pairs.");
 
 			for ( String retrievedUrl : loadedUrlGroup )
 			{
@@ -179,7 +180,7 @@ public class LoaderAndChecker
 			else
 				isFirstRun = false;
 
-			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null) ? (" | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) + "%") : "") + " | every batch contains at most " + FileUtils.jsonBatchSize + " id-url pairs.");
+			logger.info("Batch counter: " + (++batchCount) + ((ArgsUtils.inputFileFullPath != null) ? (" | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) + "%") : "") + " | every batch contains at most " + FileUtils.jsonBatchSize + " id-url pairs.");
 			
 			Set<String> keys = loadedIdUrlPairs.keySet();
 			numOfIDs += keys.size();
@@ -332,7 +333,7 @@ public class LoaderAndChecker
 			else
 				isFirstRun = false;
 
-			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null) ? (" | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) + "%") : "") + " | every batch contains at most " + FileUtils.jsonBatchSize + " id-url pairs.");
+			logger.info("Batch counter: " + (++batchCount) + ((ArgsUtils.inputFileFullPath != null) ? (" | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) + "%") : "") + " | every batch contains at most " + FileUtils.jsonBatchSize + " id-url pairs.");
 
 			Set<Map.Entry<String, String>> pairs = loadedIdUrlPairs.entries();
 			numOfIDs += pairs.size();
@@ -412,7 +413,7 @@ public class LoaderAndChecker
 			else
 				isFirstRun = false;
 
-			logger.info("Batch counter: " + (++batchCount) + ((PublicationsRetriever.inputFileFullPath != null) ? (" | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) + "%") : "") + " | every batch contains at most " + FileUtils.jsonBatchSize + " id-url pairs.");
+			logger.info("Batch counter: " + (++batchCount) + ((ArgsUtils.inputFileFullPath != null) ? (" | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) + "%") : "") + " | every batch contains at most " + FileUtils.jsonBatchSize + " id-url pairs.");
 
 			for ( String retrievedId : loadedIdUrlPairs.keySet() ) {
 
