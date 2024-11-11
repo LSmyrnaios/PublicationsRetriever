@@ -164,22 +164,22 @@ public class UrlTypeChecker
 			if (calledForPageUrl ) {	// For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
 				if ( ((groupMatch = matcher.group(1)) != null) && !groupMatch.isEmpty() ) {
 					loggingMessage = "Discarded after matching to a site having its DocUrls in larger depth: '" + groupMatch + "'.";
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 					pagesWithLargerCrawlingDepth.incrementAndGet();
 				}
 				else if ( ((groupMatch = matcher.group(2)) != null) && !groupMatch.isEmpty() ) {
 					ConnSupportUtils.blockSharedSiteSessionDomains(pageUrl, null);
 					loggingMessage = "It was discarded after participating in a 'sharedSiteSession-endlessRedirectionPack': '" + groupMatch + "'.";
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 					LoaderAndChecker.connProblematicUrls.incrementAndGet();
 				}
 				else if ( ((groupMatch = matcher.group(3)) != null) && !groupMatch.isEmpty() ) {
 					loggingMessage = "Discarded after matching to a 'PANGAEA.' url with invalid form and non-docUrls in their internal links: '" + groupMatch + "'.";
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 					pangaeaUrls.incrementAndGet();
 				} else {
 					loggingMessage = "Discarded after matching to a directory with problems.";
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 				}
 				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
 			}
@@ -191,35 +191,35 @@ public class UrlTypeChecker
 			if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
 				if ( ((groupMatch = matcher.group(1)) != null) && !groupMatch.isEmpty() ) {
 					loggingMessage = "Discarded after matching to a JavaScript-using domain, other than the 'sciencedirect.com': '" + groupMatch + "'.";
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 					javascriptPageUrls.incrementAndGet();
 				} else if ( ((groupMatch = matcher.group(2)) != null) && !groupMatch.isEmpty() ) {
 					loggingMessage = "Discarded after matching to the Results-directory: 'doaj.org/toc/': '" + groupMatch + "'.";
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 					doajResultPageUrls.incrementAndGet();
 				} else if ( ((groupMatch = matcher.group(3)) != null) && !groupMatch.isEmpty() ) {
 					loggingMessage = "Discarded after matching to a site containing the full-text as plain-text inside its HTML: '" + groupMatch + "'.";
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 					pagesWithHtmlDocUrls.incrementAndGet();
 				} else if ( ((groupMatch = matcher.group(4)) != null) && !groupMatch.isEmpty() ) {
 					loggingMessage = "Discarded after matching to a domain which doesn't provide docUrls: '" + groupMatch + "'.";
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 					pagesNotProvidingDocUrls.incrementAndGet();
 				} else if ( ((groupMatch = matcher.group(5)) != null) && !groupMatch.isEmpty() ) {
 					loggingMessage = "Discarded after matching to a domain which needs login to access docFiles: '" + groupMatch + "'.";
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 					pagesRequireLoginToAccessDocFiles.incrementAndGet();
 				} else if ( ((groupMatch = matcher.group(6)) != null) && !groupMatch.isEmpty() ) {
 					loggingMessage = "Discarded after matching to a site having its DocUrls in larger depth: '" + groupMatch + "'.";
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 					pagesWithLargerCrawlingDepth.incrementAndGet();
 				} else if ( ((groupMatch = matcher.group(7)) != null) && !groupMatch.isEmpty() ) {
 					loggingMessage = "Discarded after matching to known domains with connectivity problems: '" + groupMatch + "'.";
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 					LoaderAndChecker.connProblematicUrls.incrementAndGet();
 				} else {
 					loggingMessage = "Discarded after matching to a domain with problems.";
-					UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 				}
 				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
 			}
@@ -231,7 +231,7 @@ public class UrlTypeChecker
 			if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
 				loggingMessage = "Discarded after matching to a url leading to an invalid document!";
 				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
-				UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+				UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 				PageCrawler.contentProblematicUrls.incrementAndGet();
 			}
 			return true;
@@ -242,7 +242,7 @@ public class UrlTypeChecker
 			if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
 				loggingMessage = "Discarded after matching to a url having only the domain part!";
 				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
-				UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+				UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 			}
 			return true;
 		}
@@ -252,7 +252,7 @@ public class UrlTypeChecker
 			if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
 				loggingMessage = "Discarded after matching to a url having an irrelevant extension!";
 				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
-				UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+				UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 			}
 			return true;
 		}
@@ -262,7 +262,7 @@ public class UrlTypeChecker
 			if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
 				loggingMessage = "Discarded after matching to a url having an unsupported document extension!";
 				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
-				UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+				UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
 			}
 			return true;
 		}

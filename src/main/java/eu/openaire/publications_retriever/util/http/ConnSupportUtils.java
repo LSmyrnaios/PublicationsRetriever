@@ -279,9 +279,9 @@ public class ConnSupportUtils
 		String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, docUrl);
 		if ( FileUtils.shouldDownloadDocFiles ) {
 			IdUrlTuple idUrlTuple = UrlUtils.docOrDatasetUrlsWithIDs.get(docUrl);
-			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, alreadyDownloadedFromIDMessage + idUrlTuple.id + alreadyDownloadedFromSourceUrlContinuedMessage + idUrlTuple.url, null, false, "true", "true", "true", wasDirectLink, "true", null, "null");
+			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, docUrl, alreadyDownloadedFromIDMessage + idUrlTuple.id + alreadyDownloadedFromSourceUrlContinuedMessage + idUrlTuple.url, null, false, "true", "true", "true", wasDirectLink, "true", null, "null");
 		} else
-			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, docUrl, "", null, false, "true", "true", "true", wasDirectLink, "true", null, "null");
+			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, docUrl, "", null, false, "true", "true", "true", wasDirectLink, "true", null, "null");
 	}
 
 	

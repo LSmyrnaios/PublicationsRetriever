@@ -58,7 +58,7 @@ public class FileUtils
 	public static int unretrievableInputLines = 0;	// For better statistics in the end.
 
 
-	public static final List<DataToBeLogged> dataToBeLoggedList = Collections.synchronizedList(new ArrayList<>(jsonBatchSize));
+	public static final List<DataToBeLogged> dataForOutput = Collections.synchronizedList(new ArrayList<>(jsonBatchSize));
 	
 	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<>();	// Holds docFileNames with their duplicatesNum.
 	// If we use the above without external synchronization, then the "ConcurrentHashMap" should be used instead.
@@ -275,7 +275,7 @@ public class FileUtils
 
 			if ( !idAndUrlMappedInput.put(inputIdUrlTuple.id, inputIdUrlTuple.url) ) {    // We have a duplicate id-url pair in the input, log it here as we cannot pass it through the HashMultimap. We will handle the first found pair only.
 				duplicateIdUrlEntries ++;
-				UrlUtils.logOutputData(inputIdUrlTuple.id, inputIdUrlTuple.url, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextIdUrlPairBatchFromJson(), as it is a duplicate.", null, false, "false", "N/A", "N/A", "N/A", "true", null, "null");
+				UrlUtils.addOutputData(inputIdUrlTuple.id, inputIdUrlTuple.url, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextIdUrlPairBatchFromJson(), as it is a duplicate.", null, false, "false", "N/A", "N/A", "N/A", "true", null, "null");
 			}
 		}
 
@@ -304,7 +304,7 @@ public class FileUtils
 
 		if ( urlStr.isEmpty() ) {
 			if ( !idStr.isEmpty() )	// If we only have the id, then go and log it.
-				UrlUtils.logOutputData(idStr, urlStr, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in FileUtils.jsonDecoder(), as the url was not found.", null, true, "true", "false", "false", "false", "false", null, "null");
+				UrlUtils.addOutputData(idStr, urlStr, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in FileUtils.jsonDecoder(), as the url was not found.", null, true, "true", "false", "false", "false", "false", null, "null");
 			return null;
 		}
 
@@ -321,7 +321,7 @@ public class FileUtils
 		if ( stringToBeWritten == null )
 			stringToBeWritten = new StringBuilder(jsonBatchSize * 900);  // 900: the usual-maximum-expected-length for an <id-sourceUrl-docUrl-comment> quadruple.
 
-		for ( DataToBeLogged data : FileUtils.dataToBeLoggedList )
+		for ( DataToBeLogged data : FileUtils.dataForOutput )
 		{
 			stringToBeWritten.append(data.toJsonString()).append(endOfLine);
 		}
@@ -330,9 +330,9 @@ public class FileUtils
 		printStream.flush();
 		
 		stringToBeWritten.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
-		logger.debug("Finished writing " + FileUtils.dataToBeLoggedList.size() + " quadruples to the outputFile.");
+		logger.debug("Finished writing " + FileUtils.dataForOutput.size() + " quadruples to the outputFile.");
 		
-		FileUtils.dataToBeLoggedList.clear();	// Clear the list to put the new <jsonBatchSize> values. The backing array used by List is not de-allocated. Only the String-references contained get GC-ed.
+		FileUtils.dataForOutput.clear();	// Clear the list to put the new <jsonBatchSize> values. The backing array used by List is not de-allocated. Only the String-references contained get GC-ed.
 	}
 
 
@@ -792,7 +792,7 @@ public class FileUtils
 			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
 
 			if ( !urlGroup.add(retrievedLineStr) )    // We have a duplicate in the input.. log it here as we cannot pass it through the HashSet. It's possible that this as well as the original might be/give a docUrl.
-				UrlUtils.logOutputData(null, retrievedLineStr, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null, false, "false", "N/A", "N/A", "N/A", "true", null, "null");
+				UrlUtils.addOutputData(null, retrievedLineStr, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null, false, "false", "N/A", "N/A", "N/A", "true", null, "null");
 		}
 
 		return urlGroup;

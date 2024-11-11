@@ -96,7 +96,7 @@ public class MetadataHandler {
                 if ( (noAccessCase == null) || noAccessCase.isEmpty() )
                     noAccessCase = "prohibited";    // This is not an "official" status, but a good description of the situation and makes it clear that there was a minor problem when determining the exact reason.
                 logger.debug("The metaAccessRights were found to be \"" + noAccessCase + "\"! Do not check the metaDocUrl, nor crawl the page!");
-                UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its accessRight were '" + noAccessCase + "'.", null, true, "true", "true", "false", "false", "true", null, "null");
+                UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its accessRight were '" + noAccessCase + "'.", null, true, "true", "true", "false", "false", "true", null, "null");
                 numOfProhibitedAccessPagesFound.incrementAndGet();
                 return true;   // This publication has "restricted" metaAccessRights, so it will not be handled in another way. Although, it may be rechecked in the future.
             }
@@ -123,7 +123,7 @@ public class MetadataHandler {
             // Block the domain and return "true" to indicate handled-state.
             HttpConnUtils.blacklistedDomains.add(pageDomain);
             logger.warn("Domain: \"" + pageDomain + "\" was blocked, after giving a dynamic metaDocUrl: " + metaDocUrl);
-            UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl was a dynamic-link.", null, true, "true", "true", "false", "false", "false", null, "null");
+            UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl was a dynamic-link.", null, true, "true", "true", "false", "false", "false", null, "null");
             PageCrawler.contentProblematicUrls.incrementAndGet();
             return true;    // Since the domain is blocked, there is no point in continuing to crawl.
         }
@@ -146,7 +146,7 @@ public class MetadataHandler {
         if ( PageCrawler.NON_VALID_DOCUMENT.matcher(lowerCaseMetaDocUrl).matches() ) {
             logger.warn("The retrieved metaDocUrl ( " + metaDocUrl + " ) is pointing to a false-positive full-text file, avoid crawling the page..!");
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
-            UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl is pointing to a false-positive full-text file.", null, true, "true", "true", "false", "false", "false", null, "null");
+            UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl is pointing to a false-positive full-text file.", null, true, "true", "true", "false", "false", "false", null, "null");
             return true;    // This pageUrl was handled. Nothing more can be done.
         }
 
@@ -180,7 +180,7 @@ public class MetadataHandler {
         } catch (DomainBlockedException dbe) {
             String metaDocUrlDomain = UrlUtils.getDomainStr(metaDocUrl, null);
             if ( (metaDocUrlDomain != null) && metaDocUrlDomain.equals(pageDomain) ) {
-                UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its domain was blocked.", null, true, "true", "true", "false", "false", "false", null, "null");
+                UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its domain was blocked.", null, true, "true", "true", "false", "false", "false", null, "null");
                 return true;    // Stop crawling the page.
             }
             return false;   // Continue crawling the page.
@@ -191,7 +191,7 @@ public class MetadataHandler {
                 String exceptionMessage = e.getMessage();
                 if ( (exceptionMessage != null) && (exceptionMessage.contains("HTTP 401") || exceptionMessage.contains("HTTP 403")) ) {
                     logger.warn("The MetaDocUrl < " + metaDocUrl + " > had authorization issues, so further crawling of this page is aborted.");
-                    UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl had authorization issues.", null, true, "true", "true", "false", "false", "false", null, "null");
+                    UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl had authorization issues.", null, true, "true", "true", "false", "false", "false", null, "null");
                     return true;    // It was handled, avoid crawling the page.
                 }
             }

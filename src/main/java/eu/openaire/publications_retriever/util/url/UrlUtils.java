@@ -65,8 +65,8 @@ public class UrlUtils
      * @param fileSize
      * @param fileHash
      */
-    public static void logOutputData(String urlId, String sourceUrl, String pageUrl, String docUrl, String comment, String pageDomain,
-                                     boolean isFirstCrossed, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String couldRetry, Long fileSize, String fileHash)
+    public static void addOutputData(String urlId, String sourceUrl, String pageUrl, String docUrl, String comment, String pageDomain,
+									 boolean isFirstCrossed, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String couldRetry, Long fileSize, String fileHash)
     {
         String finalDocUrl = docUrl;
 
@@ -110,7 +110,7 @@ public class UrlUtils
 				duplicateUrls.add(sourceUrl);	// Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future. We don't add docUrls here, as we want them to be separate for checking purposes.
 		}
 
-        FileUtils.dataToBeLoggedList.add(new DataToBeLogged(urlId, sourceUrl, finalDocUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, couldRetry, fileHash, fileSize, comment));    // Log it to be written later in the outputFile.
+        FileUtils.dataForOutput.add(new DataToBeLogged(urlId, sourceUrl, finalDocUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, couldRetry, fileHash, fileSize, comment));    // Log it to be written later in the outputFile.
     }
 
 
