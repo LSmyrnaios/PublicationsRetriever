@@ -606,7 +606,7 @@ public class PageCrawler
 			return true;
 		} catch (Exception e) {	// After connecting to the possibleDocLink.
 			logger.warn("The DocLink < " + docLink + " > was not reached!");	// The specific error has already been written inside the called method.
-			UrlUtils.logOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as the retrieved DocLink: < " + docLink + " > had connectivity problems.", null, true, "true", "true", "false", "false", "false", null, "null");
+			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as the retrieved DocLink: < " + docLink + " > had connectivity problems.", null, true, "true", "true", "false", "false", "false", null, "null");
 			return false;
 		}
 	}

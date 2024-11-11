@@ -15,26 +15,28 @@ import java.util.LinkedHashMap;
  * This class is responsible to store the quadruple <urlId, sourceUrl, docOrDatasetUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, errorCause / comment> for it to be written in the outputFile.
  * @author Lampros Smyrnaios
  */
-public class DataToBeLogged
+public class DataForOutput
 {
     private String urlId;
     private String sourceUrl;
+	private String pageUrl;
     private String docOrDatasetUrl;
 	private String wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, couldRetry;
 	private String hash;
 	private Long size;
 	private String comment;   // This will be an emptyString, unless there is an error causing the docUrl to be unreachable.
 
-	private static final Logger logger = LoggerFactory.getLogger(DataToBeLogged.class);
+	private static final Logger logger = LoggerFactory.getLogger(DataForOutput.class);
 
-	public DataToBeLogged(String urlId, String sourceUrl, String docOrDatasetUrl, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String couldRetry, String hash, Long size, String comment)
+	public DataForOutput(String urlId, String sourceUrl, String pageUrl, String docOrDatasetUrl, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String couldRetry, String hash, Long size, String comment)
     {
 		if ( urlId == null )
             urlId = "unretrievable";
         
         this.urlId = urlId;
-        this.sourceUrl = escapeSourceUrl(sourceUrl);	// The input may have non-expected '\"', '\\' or even '\\\"' which will be unescaped by JsonObject, and we have to re-escape them in the output.
-        this.docOrDatasetUrl = docOrDatasetUrl;
+        this.sourceUrl = escapeUrl(sourceUrl);	// The input may have non-expected '\"', '\\' or even '\\\"' which will be unescaped by JsonObject, and we have to re-escape them in the output.
+        this.pageUrl = escapeUrl(pageUrl);
+		this.docOrDatasetUrl = docOrDatasetUrl;
 		this.wasUrlChecked = wasUrlChecked;
 		this.wasUrlValid = wasUrlValid;
 		this.wasDocumentOrDatasetAccessible = wasDocumentOrDatasetAccessible;
@@ -47,15 +49,15 @@ public class DataToBeLogged
 	
 	
 	/**
-	 * This method, escapes the <backSlashes> and the <doubleQuotes> from the sourceUrl.
+	 * This method, escapes the <backSlashes> and the <doubleQuotes> from the sourceUrl and the pageUrl (in case it is the same).
 	 * When we read from jsonObjects, the string returns unescaped.
 	 * Now, there are libraries for escaping and unescaping chars, like "org.apache.commons.text.StringEscapeUtils".
-	 * But they can't handle the case where you want this: \"   to be this: \\\"   as they thing you are already satisfied what what you have.
+	 * But they can't handle the case where you want this: \"   to be this: \\\"   as they think you are already satisfied what what you have.
 	 * Tha might be true in general.. just not when you want to have a valid-jason-output.
-	 * @param sourceUrl
+	 * @param url
 	 * @return
 	 */
-	public static String escapeSourceUrl(String sourceUrl)
+	public static String escapeUrl(String url)
 	{
 		/*
 			Here we might even have these in the input  <\\\"> which will be read by jsonObject as <\"> and we will have to re-make them <\\\"> in order to have a valid-json-output.
@@ -63,10 +65,10 @@ public class DataToBeLogged
 		 */
 		
 		// Escape backSlash.
-		sourceUrl = StringUtils.replace(sourceUrl, "\\", "\\\\", -1);	// http://koara.lib.keio.ac.jp/xoonips/modules/xoonips/detail.php?koara_id=pdf\AN00150430-00000039--001
+		url = StringUtils.replace(url, "\\", "\\\\", -1);	// http://koara.lib.keio.ac.jp/xoonips/modules/xoonips/detail.php?koara_id=pdf\AN00150430-00000039--001
 		
 		// Escape doubleQuotes and return.
-		return StringUtils.replace(sourceUrl, "\"", "\\\"", -1);	// https://jual.nipissingu.ca/wp-content/uploads/sites/25/2016/03/v10202.pdf" rel="
+		return StringUtils.replace(url, "\"", "\\\"", -1);	// https://jual.nipissingu.ca/wp-content/uploads/sites/25/2016/03/v10202.pdf" rel="
 	}
     
     
@@ -92,6 +94,7 @@ public class DataToBeLogged
 				jsonObject.put("id", this.urlId);
 			}
 			jsonObject.put("sourceUrl", this.sourceUrl);
+			jsonObject.put("pageUrl", this.pageUrl);
 			jsonObject.put(ArgsUtils.targetUrlType, this.docOrDatasetUrl);
 			jsonObject.put("wasUrlChecked", this.wasUrlChecked);
 			jsonObject.put("wasUrlValid", this.wasUrlValid);
@@ -124,6 +127,14 @@ public class DataToBeLogged
 
 	public void setSourceUrl(String sourceUrl) {
 		this.sourceUrl = sourceUrl;
+	}
+
+	public String getPageUrl() {
+		return pageUrl;
+	}
+
+	public void setPageUrl(String pageUrl) {
+		this.pageUrl = pageUrl;
 	}
 
 	public String getDocOrDatasetUrl() {

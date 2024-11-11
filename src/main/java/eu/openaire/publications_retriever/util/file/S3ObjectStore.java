@@ -72,6 +72,8 @@ public class S3ObjectStore {
         // It's not safe, nor helpful to show the credentials in the logs.
 
         minioClient = MinioClient.builder().endpoint(endpoint).credentials(accessKey, secretKey).region(region).build();
+        // Default timeouts are: conn: 30secs, read: 60secs, write: 30secs.
+        minioClient.setTimeout(TimeUnit.MINUTES.toMillis(1), TimeUnit.MINUTES.toMillis(5), TimeUnit.MINUTES.toMillis(5));
 
         boolean bucketExists = false;
         try {

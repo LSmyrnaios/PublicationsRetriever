@@ -98,7 +98,7 @@ public class UrlUtils
 					// If the "goods" surpass the "bads", then that domain will not get blocked, even if the "minimum-accepted-bad-cases" was exceeded.
 					ConnSupportUtils.countInsertAndGetTimes(domainsAndHits, pageDomain);
 
-					// Now if the "finalDocUrl" is different than the "pageUrl", get the domain of the "finalDocUrl" and if it's different, then add it to "domainsAndHits"-HashMap.
+					// Now if the "finalDocUrl" is different from the "pageUrl", get the domain of the "finalDocUrl" and if it's different, then add it to "domainsAndHits"-HashMap.
 					if ( !pageUrl.equals(finalDocUrl) ) {
 						String docUrlDomain = UrlUtils.getDomainStr(finalDocUrl, null);
 						if ( (docUrlDomain != null) && !docUrlDomain.equals(pageDomain) )
@@ -110,7 +110,7 @@ public class UrlUtils
 				duplicateUrls.add(sourceUrl);	// Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future. We don't add docUrls here, as we want them to be separate for checking purposes.
 		}
 
-        FileUtils.dataForOutput.add(new DataToBeLogged(urlId, sourceUrl, finalDocUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, couldRetry, fileHash, fileSize, comment));    // Log it to be written later in the outputFile.
+        FileUtils.dataForOutput.add(new DataForOutput(urlId, sourceUrl, pageUrl, finalDocUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, couldRetry, fileHash, fileSize, comment));    // Log it to be written later in the outputFile.
     }
 
 

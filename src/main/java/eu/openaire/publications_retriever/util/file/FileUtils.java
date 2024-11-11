@@ -7,7 +7,7 @@ import eu.openaire.publications_retriever.crawler.MachineLearning;
 import eu.openaire.publications_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
-import eu.openaire.publications_retriever.util.url.DataToBeLogged;
+import eu.openaire.publications_retriever.util.url.DataForOutput;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
 import org.apache.commons.io.FileDeleteStrategy;
@@ -58,7 +58,7 @@ public class FileUtils
 	public static int unretrievableInputLines = 0;	// For better statistics in the end.
 
 
-	public static final List<DataToBeLogged> dataForOutput = Collections.synchronizedList(new ArrayList<>(jsonBatchSize));
+	public static final List<DataForOutput> dataForOutput = Collections.synchronizedList(new ArrayList<>(jsonBatchSize));
 	
 	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<>();	// Holds docFileNames with their duplicatesNum.
 	// If we use the above without external synchronization, then the "ConcurrentHashMap" should be used instead.
@@ -321,7 +321,7 @@ public class FileUtils
 		if ( stringToBeWritten == null )
 			stringToBeWritten = new StringBuilder(jsonBatchSize * 900);  // 900: the usual-maximum-expected-length for an <id-sourceUrl-docUrl-comment> quadruple.
 
-		for ( DataToBeLogged data : FileUtils.dataForOutput )
+		for ( DataForOutput data : FileUtils.dataForOutput )
 		{
 			stringToBeWritten.append(data.toJsonString()).append(endOfLine);
 		}

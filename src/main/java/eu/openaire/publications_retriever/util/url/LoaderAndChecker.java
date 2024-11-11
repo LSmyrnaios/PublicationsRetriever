@@ -415,8 +415,8 @@ public class LoaderAndChecker
 
 			logger.info("Batch counter: " + (++batchCount) + ((ArgsUtils.inputFileFullPath != null) ? (" | progress: " + PublicationsRetriever.df.format(((batchCount-1) * FileUtils.jsonBatchSize) * 100.0 / FileUtils.numOfLines) + "%") : "") + " | every batch contains at most " + FileUtils.jsonBatchSize + " id-url pairs.");
 
-			for ( String retrievedId : loadedIdUrlPairs.keySet() ) {
-
+			for ( String retrievedId : loadedIdUrlPairs.keySet() )
+			{
 				Set<String> retrievedUrlsOfCurrentId = loadedIdUrlPairs.get(retrievedId);
 				numOfIDs += retrievedUrlsOfCurrentId.size();
 
