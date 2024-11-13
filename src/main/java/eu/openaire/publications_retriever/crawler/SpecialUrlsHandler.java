@@ -55,20 +55,23 @@ public class SpecialUrlsHandler
 			//logger.debug("Ijcseonline-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		} else if ( (updatedUrl = checkAndHandleIeeeExplorer(resourceUrl)) != null ) {
-			//logger.debug("IeeeExplorer-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+			//logger.debug("IeeeExplorer-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		} else if ( (updatedUrl = checkAndHandleOSFurls(resourceUrl)) != null ) {
-			//logger.debug("OSF-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+			//logger.debug("OSF-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		} else if ( (updatedUrl = checkAndHandleWileyUrls(resourceUrl)) != null ) {
-			//logger.debug("Wiley-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+			//logger.debug("Wiley-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 			// The following in nte ready yet..
 		/*} else if ( (updatedUrl = checkAndHandleEmbopressUrls(resourceUrl)) != null ) {
-			//logger.debug("Embopress-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+			//logger.debug("Embopress-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;*/
 		} else if ( (updatedUrl = checkAndHandleScieloUrls(resourceUrl)) != null ) {
-			//logger.debug("Scielo-PageURL: " + resourceURL + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+			//logger.debug("Scielo-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
+			resourceUrl = updatedUrl;
+		} else if ( (updatedUrl = checkAndHandleDoiUrlsWithInnerLinks(resourceUrl)) != null ) {
+			logger.debug("WeirdDoiUrl-PageURL: " + resourceUrl + " to innerUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		} else
 			resourceUrl = checkAndHandleDergipark(resourceUrl);	// It returns the same url if nothing was handled.
@@ -413,6 +416,26 @@ public class SpecialUrlsHandler
 			return null;    // It's from another domain, keep looking..
 
 		return StringUtils.replace(pageUrl, "amp;", "&");
+	}
+
+
+	////////////////////////  doi.org with url inside ///////////////////////
+	//	https://dx.doi.org/https:/doi.org/10.1039/C6OB01382A
+	private static final Pattern DOI_URL_WITH_INNER_LINK = Pattern.compile("http[s]?://(?:dx.)?doi.org/(http.*)");
+
+	public static String checkAndHandleDoiUrlsWithInnerLinks(String weirdDoiUrl)
+	{
+		Matcher matcher = DOI_URL_WITH_INNER_LINK.matcher(weirdDoiUrl);
+		if ( matcher.matches() ) {
+			String innerLink = matcher.group(1);
+			if ( (innerLink != null) && !innerLink.isEmpty() )
+				return StringUtils.replace(innerLink, ":/", "://");
+			else {
+				logger.warn("Could not extract he inner-link from weird-doi-url: " + weirdDoiUrl);
+				return weirdDoiUrl;    // We could not extract the inner-link, return the original so that we can log it being invalid.
+			}
+		} else
+			return null;    // It's from another domain, keep looking..
 	}
 
 }
