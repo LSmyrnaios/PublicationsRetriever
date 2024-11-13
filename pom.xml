@@ -62,7 +62,8 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.5.2</version>
+        <version>3.2.5</version>
+        <!-- DO NOT UPDATE until the Jenkins-instance has its "maven" package updated. Otherwise, the release will not be able to be deployed on Nexus repository. -->
         <configuration>
           <!--<excludes>
             <exclude>some test to exclude here</exclude>

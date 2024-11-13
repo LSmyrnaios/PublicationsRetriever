@@ -18,9 +18,7 @@ import java.util.LinkedHashMap;
 public class DataForOutput
 {
     private String urlId;
-    private String sourceUrl;
-	private String pageUrl;
-    private String docOrDatasetUrl;
+    private String sourceUrl, pageUrl, docOrDatasetUrl;
 	private String wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, couldRetry;
 	private String hash;
 	private Long size;
