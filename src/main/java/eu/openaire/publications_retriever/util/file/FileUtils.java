@@ -695,10 +695,8 @@ public class FileUtils
 	}
 
 
-	static final int mb = 1_048_576;
-
+	public static final int mb = 1_048_576;
 	public static final int fiveMb = (5 * mb);
-
 	static final int fiftyMBInBytes = (50 * mb);
 	static final int oneHundredMBInBytes = (100 * mb);
 	static final int twoHundredMBInBytes = (200 * mb);
