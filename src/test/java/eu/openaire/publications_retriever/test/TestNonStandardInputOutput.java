@@ -139,6 +139,20 @@ public class TestNonStandardInputOutput  {
 
 	@Disabled
 	@Test
+	public void testCustomInputOutputWithDatasets()
+	{
+		String[] args = new String[4];
+		args[0] = "-retrieveDataType";
+		args[1] = "dataset";	// "document" OR "dataset" OR "all"
+		args[2] = "-inputFileFullPath";
+		args[3] = "./testData/idUrlPairs/datasets_100.json";
+		main(args);
+	}
+
+
+
+	@Disabled
+	@Test
 	public void testCustomInputOutputWithoutDownloadingWithInputFile()
 	{
 		String[] args = new String[6];

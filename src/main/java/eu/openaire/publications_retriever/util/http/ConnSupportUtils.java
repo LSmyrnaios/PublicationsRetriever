@@ -132,33 +132,55 @@ public class ConnSupportUtils
 		knownDocMimeTypes.add("application/pdf");
 		knownDocMimeTypes.add("application/x-pdf");
 		knownDocMimeTypes.add("image/pdf");
+		knownDocMimeTypes.add("application/acrobat");
+		knownDocMimeTypes.add("application/vnd.adobe.pdf");
+		knownDocMimeTypes.add("application/vnd.pdf");
+		knownDocMimeTypes.add("application/vnd.ms-pdf");
+		knownDocMimeTypes.add("application/x-pdf-stream");
+		// TODO - Add support for other document formats, like "ps", "doc", "docx", ...
+			// Then create a file to keep all mimetypes and load them in memory, just like we do for the datasets below.
 	}
+
+
+	private static final Pattern FILTER_COMMENT_FROM_MIMETYPE = Pattern.compile("([^/]+/[^/]+)(?:[\\s]*//.*)?");
 
 
 	public static void setKnownDatasetMimeTypes()
 	{
-		logger.debug("Setting up the official dataset mime types. Currently there is support for xls, xlsx, csv, tsv, tab, json, geojson, xml, ods, rdf, zip, gzip, rar, tar, 7z, tgz, gz[\\d]*, bz[\\d]*, xz, smi, por, ascii, dta, sav, dat, txt, ti[f]+, twf, svg, sas7bdat, spss, sas, stata, sql, mysql, postgresql, sqlite, bigquery, shp, shx, prj, sbx, sbn, dbf, mdb, accdb, dwg, mat, pcd, bt, n[sc]?[\\d]*, h4, h5, hdf, hdf4, hdf5, trs, opj, fcs, fas, fasta, values datasets.");
-		knownDatasetMimeTypes.add("application/vnd.ms-excel");
-		knownDatasetMimeTypes.add("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-		knownDatasetMimeTypes.add("text/csv");
-		knownDatasetMimeTypes.add("text/tab-separated-values");
-		knownDatasetMimeTypes.add("application/json");
-		knownDatasetMimeTypes.add("application/xml");	// There is also the "text/xml", but that is not a binary-dataset-file.
-		knownDatasetMimeTypes.add("application/rdf+xml");
-		knownDatasetMimeTypes.add("application/smil+xml");	// .smi
-		knownDatasetMimeTypes.add("application/smil");	// .smi
-		knownDatasetMimeTypes.add("text/rdf+n3");
-		knownDatasetMimeTypes.add("text/plain");	// Some csv and txt datasets
-		knownDatasetMimeTypes.add("application/zip");
-		knownDatasetMimeTypes.add("application/gzip");
-		knownDatasetMimeTypes.add("application/rar");
-		knownDatasetMimeTypes.add("application/vnd.rar");
-		knownDatasetMimeTypes.add("application/x-tar");
-		knownDatasetMimeTypes.add("application/x-7z-compressed");
-		knownDatasetMimeTypes.add("application/x-sas-data");	// ".sas7bdat" file
-		knownDatasetMimeTypes.add("application/x-netcdf");	// nc3, nc4, ns
-		knownDatasetMimeTypes.add("application/x-sql");
-		knownDatasetMimeTypes.add("image/tiff");
+		logger.debug("Setting up the official dataset mime-types.");
+		String resourcePath = "dataset-mimetypes.txt";
+		try (InputStream inputStream = ConnSupportUtils.class.getClassLoader().getResourceAsStream(resourcePath))
+		{
+			if ( inputStream == null ) {
+				String errorMsg = "File not found in resources: " + resourcePath;
+				logger.error(errorMsg);
+				System.err.println(errorMsg);
+				System.exit(77);
+			}
+
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8), FileUtils.mb)) {
+				String line;
+				while ( (line = reader.readLine()) != null ) {
+					Matcher matcher = FILTER_COMMENT_FROM_MIMETYPE.matcher(line);
+					if ( matcher.matches() ) {
+						String mimeType = matcher.group(1);
+						if ( (mimeType != null) && !mimeType.isEmpty() ) {
+							knownDatasetMimeTypes.add(mimeType.trim());
+						} else
+							logger.error("Failed to extract the mimetype from line: " + line);
+					} else
+						logger.error("Failed to match the line using the \"FILTER_COMMENT_FROM_MIMETYPE\"-regex: " + line);
+				}
+
+				if ( logger.isTraceEnabled() )
+					logger.trace(knownDatasetMimeTypes.toString());
+			}
+		} catch (IOException ioe) {
+			String errorMsg = "Could not read file:" + resourcePath;
+			logger.error(errorMsg, ioe);
+			System.err.println(errorMsg);
+			System.exit(78);
+		}
 	}
 
 	

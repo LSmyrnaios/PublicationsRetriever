@@ -39,7 +39,8 @@ public class UrlChecker {
 
 		ArrayList<String> urlList = new ArrayList<>();
 
-		ConnSupportUtils.setKnownMimeTypes();
+
+		// TODO - After that test runs I should be able to observe any such conflicts and try to resolve them.. resulting in more DocUrls and faster processing times!
 
 		//urlList.add("http://repositorio.ipen.br:8080/xmlui/bitstream/handle/123456789/11176/09808.pdf?sequence=1&isAllowed=y");
 		//urlList.add("https://ris.utwente.nl/ws/portalfiles/portal/5118887");
@@ -792,6 +793,8 @@ public class UrlChecker {
 		if ( FileUtils.shouldDownloadDocFiles ) {
 			FileUtils.shouldDeleteOlderDocFiles = true;
 			FileUtils.storeDocFilesDir = FileUtils.workingDir + "testDocFiles" + File.separator;
+		ConnSupportUtils.setKnownMimeTypes();
+		UrlTypeChecker.setURLDirectoryFilterRegex();
 			FileUtils.handleStoreDocFileDirectory();
 		}
 
@@ -827,6 +830,7 @@ public class UrlChecker {
 			try {
 				HttpConnUtils.connectAndCheckMimeType(testID, urlToCheck, urlToCheck, urlToCheck, null, true, false);	// Sent the < null > in quotes to avoid an NPE in the concurrent data-structures.
 			} catch (Exception e) {
+				// The problem was logged inside.
 				UrlUtils.addOutputData(testID, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", "true", "false", "false", "false", null, "null");
 			}
 		}

@@ -1,0 +1,76 @@
+application/vnd.ms-excel
+application/vnd.ms-excel.sheet.binary.macroenabled.12
+application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+application/vnd.oasis.opendocument.spreadsheet
+application/vnd.las
+text/csv
+text/tab-separated-values
+text/plain  // Some csv and txt datasets
+application/json
+application/bson
+application/geo+json
+application/xml // There is also the "text/xml", but that is not a binary-dataset-file.
+application/rdf+xml
+text/turtle
+application/n-triples
+application/xml (schema)    // The space with the "parenthesis" is part of the mimetype.
+application/smil+xml
+application/smil
+application/yaml
+text/yaml
+application/x-rdata
+text/rdf+n3
+application/zip
+application/gzip
+application/rar
+application/vnd.rar
+application/x-tar
+application/x-7z-compressed
+application/x-sas-data  // ".sas7bdat" file
+application/x-netcdf    // nc3, nc4, ns
+application/netcdf  // nc3, nc4, ns
+application/x-parquet
+application/x-avro
+application/x-sql
+application/sql
+image/tiff
+application/fits
+application/x-esri-shapefile
+application/vnd.google-earth.kml+xml
+application/gml+xml
+application/x-hdf5
+application/x-spss-sav
+application/x-stata-dta
+application/x-sas7bdat
+application/x-feather
+application/x-matlab-data
+application/dicom
+application/grib
+application/vnd.tcpdump.pcap
+text/x-vcard
+application/vcf
+application/cbor
+image/x-exr
+application/x-biosample
+application/x-hic
+application/warc
+application/iges
+application/sla
+application/dxf
+chemical/x-pdb
+chemical/x-mdl-sdfile
+chemical/x-cif
+text/x-fastaq
+text/x-fasta
+image/apng
+application/nmrml+xml
+application/sbml+xml
+application/vnd.wileyml+xml
+application/x-sra
+application/x-cdf
+application/x-vtp
+model/gltf+json
+model/stl
+application/x-ply
+application/x-mtl
+application/abc
