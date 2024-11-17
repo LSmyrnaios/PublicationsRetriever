@@ -180,7 +180,7 @@ public class PageCrawler
 
 				if ( (++possibleDocOrDatasetUrlsCounter) > MAX_POSSIBLE_DOC_OR_DATASET_LINKS_TO_CONNECT ) {
 					logger.warn("The maximum limit (" + MAX_POSSIBLE_DOC_OR_DATASET_LINKS_TO_CONNECT + ") of possible doc or dataset links to be connected was reached for pageUrl: \"" + pageUrl + "\". The page was discarded.");
-					handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, true, false);
+					handlePageWithNoDocOrDatasetUrls(urlId, sourceUrl, pageUrl, pageDomain, true, false);
 					return;
 				}
 
@@ -227,7 +227,7 @@ public class PageCrawler
 		if ( should_check_remaining_links && !remainingLinks.isEmpty() )
 			checkRemainingInternalLinks(urlId, sourceUrl, pageUrl, pageDomain, remainingLinks);
 		else
-			handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false, false);
+			handlePageWithNoDocOrDatasetUrls(urlId, sourceUrl, pageUrl, pageDomain, false, false);
 	}
 
 
@@ -240,18 +240,18 @@ public class PageCrawler
 	 * @param hasWarningLogBeenShown
 	 * @param isAlreadyLoggedToOutput
 	 */
-	private static void handlePageWithNoDocUrls(String urlId, String sourceUrl, String pageUrl, String pageDomain, boolean hasWarningLogBeenShown, boolean isAlreadyLoggedToOutput)
+	private static void handlePageWithNoDocOrDatasetUrls(String urlId, String sourceUrl, String pageUrl, String pageDomain, boolean hasWarningLogBeenShown, boolean isAlreadyLoggedToOutput)
 	{
 		// If we get here it means that this pageUrl is not a docUrl itself, nor it contains a docUrl..
 		if ( !hasWarningLogBeenShown )
-			logger.warn("Page: \"" + pageUrl + "\" does not contain a docUrl.");
+			logger.warn("Page: \"" + pageUrl + "\" does not contain a " + ArgsUtils.targetUrlType + ".");
 
 		UrlTypeChecker.pagesNotProvidingDocUrls.incrementAndGet();
 		if ( !isAlreadyLoggedToOutput )	// This check is used in error-cases, where we have already logged the Quadruple.
 			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Logged in 'PageCrawler.visit()' method, as no " + ArgsUtils.targetUrlType + " was found inside.", null, true, "true", "true", "false", "false", "false", null, "null");
 
 		if ( ConnSupportUtils.countAndBlockDomainAfterTimes(HttpConnUtils.blacklistedDomains, PageCrawler.timesDomainNotGivingDocUrls, pageDomain, PageCrawler.timesToGiveNoDocUrlsBeforeBlocked, true) )
-			logger.warn("Domain: \"" + pageDomain + "\" was blocked after giving no docUrls more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
+			logger.warn("Domain: \"" + pageDomain + "\" was blocked after giving no " + ArgsUtils.targetUrlType + " more than " + PageCrawler.timesToGiveNoDocUrlsBeforeBlocked + " times.");
 	}
 
 
@@ -275,13 +275,13 @@ public class PageCrawler
 			return null;
 		} catch ( DocLinkFoundException dlfe) {
 			if ( !verifyDocLink(urlId, sourceUrl, pageUrl, pageContentType, dlfe) )	// url-logging is handled inside.
-				handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false, true);
+				handlePageWithNoDocOrDatasetUrls(urlId, sourceUrl, pageUrl, pageDomain, false, true);
 			return null;	// This DocLink is the only docLink we will ever go to get from this page. The sourceUrl is logged inside the called method.
 			// If this "DocLink" is a DocUrl, then returning "null" here, will trigger the 'PageCrawler.retrieveInternalLinks()' method to exit immediately (and normally).
 		} catch ( DocLinkInvalidException dlie ) {
 			//logger.warn("An invalid docLink < " + dlie.getMessage() + " > was found for pageUrl: \"" + pageUrl + "\". Search was stopped.");	// DEBUG!
 			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.retrieveInternalLinks()' method, as there was an invalid docLink. Its contentType is: '" + pageContentType + "'", null, true, "true", "true", "false", "false", "false", null, "null");
-			handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false, true);
+			handlePageWithNoDocOrDatasetUrls(urlId, sourceUrl, pageUrl, pageDomain, false, true);
 			return null;
 		} catch (DocLinkUnavailableException dlue) {
 			logger.warn("The docLink was not available inside pageUrl: " + pageUrl);
@@ -626,7 +626,7 @@ public class PageCrawler
 			if ( percentage < leastPercentageOfHitsFromRemainingLinks ) {
 				logger.warn("The percentage of found docUrls from the remaining links is too low ( " + percentage + "% ). Stop checking the remaining-internalLinks for any pageUrl..");
 				should_check_remaining_links = false;
-				handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false, false);
+				handlePageWithNoDocOrDatasetUrls(urlId, sourceUrl, pageUrl, pageDomain, false, false);
 				return false;
 			}
 		}
@@ -649,7 +649,7 @@ public class PageCrawler
 
 			if ( (++remainingUrlsCounter) > MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT ) {    // The counter is incremented only on "aboutToConnect" links, so no need to pre-clean the "remainingLinks"-set.
 				logger.warn("The maximum limit (" + MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT + ") of remaining links to be connected was reached for pageUrl: \"" + pageUrl + "\". The page was discarded.");
-				handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, true, false);
+				handlePageWithNoDocOrDatasetUrls(urlId, sourceUrl, pageUrl, pageDomain, true, false);
 				return false;
 			}
 
@@ -694,7 +694,7 @@ public class PageCrawler
 			}
 		}// end for-loop
 
-		handlePageWithNoDocUrls(urlId, sourceUrl, pageUrl, pageDomain, false, false);
+		handlePageWithNoDocOrDatasetUrls(urlId, sourceUrl, pageUrl, pageDomain, false, false);
 		return false;
 	}
 

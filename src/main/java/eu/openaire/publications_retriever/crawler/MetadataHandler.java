@@ -102,6 +102,9 @@ public class MetadataHandler {
             }
         }
 
+        if ( !LoaderAndChecker.retrieveDocuments )
+            return false;    // There was no definitive handling, nor we want to check for metaDocUrl, go get the internal-links.
+
         // Check if the docLink is provided in a metaTag and connect to it directly.
         String metaDocUrl = null;
         if ( (metaDocUrl = getMetaDocUrlFromHTML(pageHtml)) == null ) { // This is mostly the case when the page does not have a docUrl, although not always, so we continue crawling it.
