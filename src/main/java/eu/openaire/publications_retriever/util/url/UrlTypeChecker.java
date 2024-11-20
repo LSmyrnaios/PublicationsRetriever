@@ -35,7 +35,7 @@ public class UrlTypeChecker
 	// In the above, don't include .php and relative extensions, since even this can be a docUrl. For example: https://www.dovepress.com/getfile.php?fileID=5337
 	// Some docUrls might end with capital "CC", so we apply a "lookaround" which ,makes sure the url is not blocked if it's possible to lead to a publication-file.
 
-	public static final Pattern INTERNAL_LINKS_KEYWORDS_FILTER = Pattern.compile(".*(?:doi.org|\\?l[a]?n[g]?=|isallowed=n|site=|linkout|login|linklistener).*");	// Plain key-words inside internalLinks-String. We avoid "doi.org" in internal links, as, after many redirects, they will reach the same pageUrl.
+	public static final Pattern INTERNAL_LINKS_KEYWORDS_FILTER = Pattern.compile(".*(?:doi.org|\\?l[a]?n[g]?=|isallowed=n|site=|link(?:out|listener)|login).*");	// Plain key-words inside internalLinks-String. We avoid "doi.org" in internal links, as, after many redirects, they will reach the same pageUrl.
 	// The diff with the "login" being here, in compare with being in "URL_DIRECTORY_FILTER"-regex, is that it can be found in a random place inside a url.. not just as a directory..
 
 	// So, we make a new REGEX for these extensions, this time, without a potential argument in the end (e.g. ?id=XXX..), except for the potential "lang".
@@ -43,12 +43,14 @@ public class UrlTypeChecker
 	
 	public static final Pattern INTERNAL_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+format=(?:xml|" + htOrPhpExtensionsPattern + "|rss|ris|bib).*");	// This exists as a url-parameter.
 
+	// TODO - SET THE ABOVE REGEX AT RUNTIME TO AVOID EXCLUDING XML WHEN THE USE WANTS DATASETS..
+
 	public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile("[^/]+://[^/]*(?<=[/.])(?:(?<!drive.)google\\.|goo.gl|gstatic|facebook|fb.me|twitter|(?:meta|xing|baidu|t|x|vk).co|insta(?:gram|paper)|tiktok|youtube|vimeo|linkedin|ebay|bing|(?:amazon|[./]analytics)\\.|s.w.org|wikipedia|myspace|yahoo|mail|pinterest|reddit|tumblr"
 			+ "|www.ccdc.cam.ac.uk|figshare.com/collections/|datadryad.org/stash/dataset/"
 			+ "|evernote|skype|microsoft|adobe|buffer|digg|stumbleupon|addthis|delicious|dailymotion|gostats|blog(?:ger)?|copyright|friendfeed|newsvine|telegram|getpocket"
 			+ "|flipboard|line.me|ok.rudouban|qzone|renren|weibo|doubleclick|bit.ly|github|reviewofbooks|plu.mx"
 			+ "|(?<!files.)wordpress|orcid.org"
-			+ "|auth(?:orize|entication)?\\."
+			+ "|auth(?:oriz(?:e|ation)|entication)?\\."
 
 			// Block nearly all the "elsevier.com" urls, as well as the "sciencedirect.com" urls.
 			// The "(linkinghub|api).elsevier.com" urls redirect -automatically or can be redirected manually- to the "sciencedirect.com", where the pdf is provided, BUT they cannot be retrieved.

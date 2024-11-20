@@ -71,7 +71,7 @@ public class SpecialUrlsHandler
 			//logger.debug("Scielo-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		} else if ( (updatedUrl = checkAndHandleDoiUrlsWithInnerLinks(resourceUrl)) != null ) {
-			logger.debug("WeirdDoiUrl-PageURL: " + resourceUrl + " to innerUrl: " + updatedUrl);	// DEBUG!
+			//logger.debug("WeirdDoiUrl-PageURL: " + resourceUrl + " to innerUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		} else
 			resourceUrl = checkAndHandleDergipark(resourceUrl);	// It returns the same url if nothing was handled.

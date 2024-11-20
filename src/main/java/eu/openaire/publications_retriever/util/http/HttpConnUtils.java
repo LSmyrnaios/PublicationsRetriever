@@ -532,7 +532,7 @@ public class HttpConnUtils
 						throw new RuntimeException("No \"Location\" field was found in the HTTP Header of \"" + currentUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code.");
 				}
 
-				String targetUrl = ConnSupportUtils.getFullyFormedUrl(null, location, currentUrlObject);
+				String targetUrl = ConnSupportUtils.getFullyFormedUrl(pageUrl, location, currentUrlObject);
 				if ( targetUrl == null )
 					throw new RuntimeException("Could not create target url for resourceUrl: " + currentUrl + " having location: " + location);
 

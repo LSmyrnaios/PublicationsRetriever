@@ -178,7 +178,6 @@ public class LinkExtraction {
 			}
 
 			logger.info("The number of accepted links is: " + acceptedLinksCount + " (out of " + numberOfExtractedLinks + ").");
-
 		} catch (Exception e) {
 			logger.error("", e);
 		}
@@ -212,7 +211,7 @@ public class LinkExtraction {
 			logger.info("\nThe accepted links from the above are:");
 			for ( String link : extractedLinksHashSet )
 			{
-				String targetUrl = ConnSupportUtils.getFullyFormedUrl(null, link, conn.getURL());
+				String targetUrl = ConnSupportUtils.getFullyFormedUrl(exampleUrl, link, conn.getURL());
 				if ( targetUrl == null ) {
 					logger.debug("Could not create target url for resourceUrl: " + conn.getURL().toString() + " having location: " + link);
 					continue;

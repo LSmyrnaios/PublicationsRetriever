@@ -1114,7 +1114,11 @@ public class ConnSupportUtils
 					return null;
 				}
 			}
-			return	new URL(urlBase, currentLink).toString();	// Return the TargetUrl.
+
+			if ( currentLink.startsWith("?") )	// This case is mishandled by the automatic generation, unless we use this custom logic.
+				return (urlBase + currentLink);
+			else
+				return new URL(urlBase, currentLink).toString();	// Return the TargetUrl.
 		} catch (Exception e) {
 			logger.error("Error when producing fully-formedUrl for internal-link: " + currentLink, e.getMessage());
 			return null;
