@@ -4,7 +4,7 @@ import ch.qos.logback.classic.LoggerContext;
 import com.google.common.collect.HashMultimap;
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.crawler.MachineLearning;
-import eu.openaire.publications_retriever.exceptions.DocFileNotRetrievedException;
+import eu.openaire.publications_retriever.exceptions.FileNotRetrievedException;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.url.DataForOutput;
@@ -63,19 +63,10 @@ public class FileUtils
 	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<>();	// Holds docFileNames with their duplicatesNum.
 	// If we use the above without external synchronization, then the "ConcurrentHashMap" should be used instead.
 
-	public static boolean shouldDownloadDocFiles = false;	// It will be set to "true" if the related command-line-argument is given.
-	public static boolean shouldUploadFilesToS3 = false;	// Should we upload the files to S3 ObjectStore? Otherwise, they will be stored locally.
-	public static boolean shouldDeleteOlderDocFiles = false;	// Should we delete any older stored docFiles? This is useful for testing.
-
-	public enum DocFileNameType {
-		originalName, idName, numberName
-	}
-	public static DocFileNameType docFileNameType = null;
-
 	public static final boolean shouldLogFullPathName = true;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
 	public static int numOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremental system.
 	public static final String workingDir = System.getProperty("user.dir") + File.separator;
-	public static String storeDocFilesDir = workingDir + "docFiles" + File.separator;
+
 	public static int unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
 	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*filename[*]?=(?:.*[\"'])?([^\"^;]+)[\";]*.*");
 	
@@ -103,7 +94,7 @@ public class FileUtils
 
 		setOutput(output);
 
-		if ( shouldUploadFilesToS3 )
+		if ( ArgsUtils.shouldUploadFilesToS3 )
 			new S3ObjectStore();
 	}
 
@@ -118,24 +109,24 @@ public class FileUtils
 			System.exit(20);
 		}
 
-		if ( shouldDownloadDocFiles )
+		if ( ArgsUtils.shouldDownloadDocFiles )
 			handleStoreDocFileDirectory();
 	}
 
 
 	public static void handleStoreDocFileDirectory()
 	{
-		File dir = new File(storeDocFilesDir);
-		if ( shouldDeleteOlderDocFiles ) {
+		File dir = new File(ArgsUtils.storeDocFilesDir);
+		if ( ArgsUtils.shouldDeleteOlderDocFiles ) {
 			logger.info("Deleting old docFiles..");
 			try {
 				deleteDirectory(dir);	// org.apache.commons.io.FileUtils
 			} catch (IOException ioe) {
-				logger.error("The following directory could not be deleted: " + storeDocFilesDir, ioe);
-				FileUtils.shouldDownloadDocFiles = false;	// Continue without downloading the docFiles, just create the jsonOutput.
+				logger.error("The following directory could not be deleted: " + ArgsUtils.storeDocFilesDir, ioe);
+				ArgsUtils.shouldDownloadDocFiles = false;	// Continue without downloading the docFiles, just create the jsonOutput.
 				return;
 			} catch (IllegalArgumentException iae) {
-				logger.error("This directory does not exist: " + storeDocFilesDir + "\n" + iae.getMessage());
+				logger.error("This directory does not exist: " + ArgsUtils.storeDocFilesDir + "\n" + iae.getMessage());
 				return;
 			}
 		}
@@ -146,10 +137,10 @@ public class FileUtils
 				if ( !dir.mkdirs() ) {	// Try to create the directory(-ies) if they don't exist. If they exist OR if sth went wrong, the result is the same: "false".
 					String errorMessage;
 					if ( ArgsUtils.docFilesStorageGivenByUser )
-						errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
+						errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + ArgsUtils.storeDocFilesDir + "\"."
 								+ "\nPlease give a valid Directory-path.";
 					else	// User has left the storageDir to be the default one.
-						errorMessage = "Problem when creating the default \"storeDocFilesDir\": \"" + FileUtils.storeDocFilesDir + "\"."
+						errorMessage = "Problem when creating the default \"storeDocFilesDir\": \"" + ArgsUtils.storeDocFilesDir + "\"."
 								+ "\nPlease verify you have the necessary privileges in the directory you are running the program from or specify the directory you want to save the files to."
 								+ "\nIf the above is not an option, then you can set to retrieve just the " + ArgsUtils.targetUrlType + "s and download the full-texts later (on your own).";
 					System.err.println(errorMessage);
@@ -161,9 +152,9 @@ public class FileUtils
 		} catch (SecurityException se) {
 			logger.error(se.getMessage(), se);
 			logger.warn("There was an error creating the docFiles-storageDir! Continuing without downloading the docFiles, while creating the jsonOutput with the docUrls.");
-			FileUtils.shouldDownloadDocFiles = false;
 		}
 	}
+			ArgsUtils.shouldDownloadDocFiles = false;
 
 	
 	public static long getInputNumOfLines()
@@ -338,23 +329,23 @@ public class FileUtils
 
 	public static final AtomicInteger numOfDocFiles = new AtomicInteger(0);
 
-	public static DocFileData storeDocFileWithIdOrOriginalFileName(HttpURLConnection conn, String docUrl, String id, int contentSize) throws DocFileNotRetrievedException
+	public static FileData storeDocFileWithIdOrOriginalFileName(HttpURLConnection conn, String docUrl, String id, int contentSize) throws FileNotRetrievedException, NoSpaceLeftException
 	{
-		DocFileData docFileData;
-		if ( docFileNameType.equals(DocFileNameType.idName) )
-			docFileData = getDocFileAndHandleExisting(id, ".pdf", false);    // TODO - Later, on different fileTypes, take care of the extension properly.
-		else if ( docFileNameType.equals(DocFileNameType.originalName) )
-			docFileData = getDocFileWithOriginalFileName(docUrl, conn.getHeaderField("Content-Disposition"));
+		FileData fileData;
+		if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.idName) )
+			fileData = getDocFileAndHandleExisting(id, ".pdf", false, contentSize, ArgsUtils.storeDocFilesDir, numbersOfDuplicateDocFileNames);    // TODO - Later, on different fileTypes, take care of the extension properly.
+		else if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.originalName) )
+			fileData = getDocFileWithOriginalFileName(docUrl, conn.getHeaderField("Content-Disposition"), contentSize);
 		else
-			throw new DocFileNotRetrievedException("The 'docFileNameType' was invalid: " + docFileNameType);
+			throw new FileNotRetrievedException("The 'docFileNameType' was invalid: " + ArgsUtils.fileNameType);
 
 		numOfDocFiles.incrementAndGet();
 
-		File docFile = docFileData.getDocFile();
+		File docFile = fileData.getFile();
 
 		InputStream inputStream = ConnSupportUtils.checkEncodingAndGetInputStream(conn, false);
 		if ( inputStream == null )
-			throw new DocFileNotRetrievedException("Could not acquire the inputStream!");
+			throw new FileNotRetrievedException("Could not acquire the inputStream!");
 
 		MessageDigest md;
 		try {
@@ -364,7 +355,7 @@ public class FileUtils
 			throw new RuntimeException("MD5 HASH ALGO MISSING");
 		}
 		long bytesCount = 0;
-		FileOutputStream fileOutputStream = docFileData.getFileOutputStream();
+		FileOutputStream fileOutputStream = fileData.getFileOutputStream();
 		int bufferSize = (((contentSize != -2) && contentSize < fiveMb) ? contentSize : fiveMb);
 
 		try ( BufferedInputStream inStream = new BufferedInputStream(inputStream, bufferSize);
@@ -385,7 +376,7 @@ public class FileUtils
 						logger.error("Error when deleting the half-retrieved file from docUrl: " + docUrl);
 					}
 					numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved.
-					throw new DocFileNotRetrievedException(errMsg);
+					throw new FileNotRetrievedException(errMsg);
 				} else {
 					outStream.write(readByte);
 					md.update((byte) readByte);
@@ -396,19 +387,19 @@ public class FileUtils
 
 			String md5Hash = DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
 
-			if ( shouldUploadFilesToS3 ) {
-				docFileData = S3ObjectStore.uploadToS3(docFile.getName(), docFile.getAbsolutePath());
-				if ( docFileData != null ) {    // Otherwise, the returned object will be null.
-					docFileData.setDocFile(docFile);
-					docFileData.setHash(md5Hash);
-					docFileData.setSize(bytesCount);
+			if ( ArgsUtils.shouldUploadFilesToS3 ) {
+				fileData = S3ObjectStore.uploadToS3(docFile.getName(), docFile.getAbsolutePath());
+				if ( fileData != null ) {    // Otherwise, the returned object will be null.
+					fileData.setFile(docFile);
+					fileData.setHash(md5Hash);
+					fileData.setSize(bytesCount);
 					// In the S3 case, we use IDs or increment-numbers as the names, so no duplicate-overwrite should be a problem here.
 					// as we delete the local files and the online tool just overwrites the file, without responding if it was overwritten.
 					// So if the other naming methods were used with S3, we would have to check if the file existed online and then rename of needed and upload back.
 				} else
 					numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 			} else
-				docFileData = new DocFileData(docFile, md5Hash, bytesCount, ((FileUtils.shouldLogFullPathName) ? docFile.getAbsolutePath() : docFile.getName()));
+				fileData = new FileData(docFile, md5Hash, bytesCount, ((FileUtils.shouldLogFullPathName) ? docFile.getAbsolutePath() : docFile.getName()));
 
 			// TODO - HOW TO SPOT DUPLICATE-NAMES IN THE S3 MODE?
 			// The local files are deleted after uploaded.. (as they should be)
@@ -418,9 +409,9 @@ public class FileUtils
 			// Of-course the above fast-check algorithm would work only if the bucket was created or filled for the first time, from this program, in a single machine.
 			// Otherwise, a file-key-name (with incremented number-string) might already exist, from a previous or parallel upload from another run and so it will be overwritten!
 
-			return docFileData;	// It may be null.
+			return fileData;	// It may be null.
 
-		} catch (DocFileNotRetrievedException dfnre) {
+		} catch (FileNotRetrievedException dfnre) {
 			throw dfnre;	// No reversion of the number needed.
 		} catch (FileNotFoundException fnfe) {	// This may be thrown in case the file cannot be created.
 			logger.error("", fnfe);
@@ -433,14 +424,14 @@ public class FileUtils
 			} catch (Exception e) {
 				logger.error("Error when deleting the half-created file from docUrl: " + docUrl);
 			}
-			throw new DocFileNotRetrievedException(fnfe.getMessage());
+			throw new FileNotRetrievedException(fnfe.getMessage());
 		} catch (IOException ioe) {
 			numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved.
-			throw new DocFileNotRetrievedException(ioe.getMessage());
+			throw new FileNotRetrievedException(ioe.getMessage());
 		} catch (Exception e) {
 			numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved.
 			logger.error("", e);
-			throw new DocFileNotRetrievedException(e.getMessage());
+			throw new FileNotRetrievedException(e.getMessage());
 		}
 	}
 
@@ -452,16 +443,16 @@ public class FileUtils
 	 * @param conn
 	 * @param docUrl
 	 * @param contentSize
-	 * @throws DocFileNotRetrievedException
+	 * @throws FileNotRetrievedException
 	 */
-	public static synchronized DocFileData storeDocFileWithNumberName(HttpURLConnection conn, String docUrl, int contentSize) throws DocFileNotRetrievedException
+	public static synchronized FileData storeDocFileWithNumberName(HttpURLConnection conn, String docUrl, int contentSize) throws FileNotRetrievedException
 	{
-		File docFile = new File(storeDocFilesDir + (numOfDocFile++) + ".pdf");	// First use the "numOfDocFile" and then increment it.
+		File docFile = new File(ArgsUtils.storeDocFilesDir + (numOfDocFile++) + ".pdf");	// First use the "numOfDocFile" and then increment it.
 		// TODO - Later, on different fileTypes, take care of the extension properly.
 
 		InputStream inputStream = ConnSupportUtils.checkEncodingAndGetInputStream(conn, false);
 		if ( inputStream == null )
-			throw new DocFileNotRetrievedException("Could not acquire the inputStream!");
+			throw new FileNotRetrievedException("Could not acquire the inputStream!");
 
 		MessageDigest md;
 		try {
@@ -491,7 +482,7 @@ public class FileUtils
 						logger.error("Error when deleting the half-retrieved file from docUrl: " + docUrl);
 					}
 					numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
-					throw new DocFileNotRetrievedException(errMsg);
+					throw new FileNotRetrievedException(errMsg);
 				} else {
 					outStream.write(readByte);
 					md.update((byte) readByte);
@@ -502,20 +493,20 @@ public class FileUtils
 
 			String md5Hash = DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
 
-			DocFileData docFileData;
-			if ( shouldUploadFilesToS3 ) {
-				docFileData = S3ObjectStore.uploadToS3(docFile.getName(), docFile.getAbsolutePath());
-				if ( docFileData != null ) {    // Otherwise, the returned object will be null.
-					docFileData.setDocFile(docFile);
-					docFileData.setHash(md5Hash);
-					docFileData.setSize(bytesCount);
+			FileData fileData;
+			if ( ArgsUtils.shouldUploadFilesToS3 ) {
+				fileData = S3ObjectStore.uploadToS3(docFile.getName(), docFile.getAbsolutePath());
+				if ( fileData != null ) {    // Otherwise, the returned object will be null.
+					fileData.setFile(docFile);
+					fileData.setHash(md5Hash);
+					fileData.setSize(bytesCount);
 					// In the S3 case, we use IDs or increment-numbers as the names, so no duplicate-overwrite should be a problem here.
 					// as we delete the local files and the online tool just overwrites the file, without responding if it was overwritten.
 					// So if the other naming methods were used with S3, we would have to check if the file existed online and then rename of needed and upload back.
 				} else
 					numOfDocFile --;
 			} else
-				docFileData = new DocFileData(docFile, md5Hash, bytesCount, ((FileUtils.shouldLogFullPathName) ? docFile.getAbsolutePath() : docFile.getName()));
+				fileData = new FileData(docFile, md5Hash, bytesCount, ((FileUtils.shouldLogFullPathName) ? docFile.getAbsolutePath() : docFile.getName()));
 
 			// TODO - HOW TO SPOT DUPLICATE-NAMES IN THE S3 MODE?
 			// The local files are deleted after uploaded.. (as they should be)
@@ -525,9 +516,9 @@ public class FileUtils
 			// Of-course the above fast-check algorithm would work only if the bucket was created or filled for the first time, from this program, in a single machine.
 			// Otherwise, a file-key-name (with incremented number-string) might already exist, from a previous or parallel upload from another run and so it will be overwritten!
 
-			return docFileData;	// It may be null.
+			return fileData;	// It may be null.
 			
-		} catch (DocFileNotRetrievedException dfnre) {
+		} catch (FileNotRetrievedException dfnre) {
 			throw dfnre;	// No reversion of the number needed.
 		} catch (FileNotFoundException fnfe) {	// This may be thrown in the file cannot be created.
 			logger.error("", fnfe);
@@ -540,14 +531,14 @@ public class FileUtils
 			} catch (Exception e) {
 				logger.error("Error when deleting the half-created file from docUrl: " + docUrl);
 			}
-			throw new DocFileNotRetrievedException(fnfe.getMessage());
+			throw new FileNotRetrievedException(fnfe.getMessage());
 		} catch (IOException ioe) {
 			numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
-			throw new DocFileNotRetrievedException(ioe.getMessage());
+			throw new FileNotRetrievedException(ioe.getMessage());
 		} catch (Exception e) {
 			numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 			logger.error("", e);
-			throw new DocFileNotRetrievedException(e.getMessage());
+			throw new FileNotRetrievedException(e.getMessage());
 		}
 	}
 
@@ -558,9 +549,9 @@ public class FileUtils
 	 * @param docUrl
 	 * @param contentDisposition
 	 * @return
-	 * @throws DocFileNotRetrievedException
+	 * @throws FileNotRetrievedException
 	 */
-	public static DocFileData getDocFileWithOriginalFileName(String docUrl, String contentDisposition) throws  DocFileNotRetrievedException
+	public static FileData getDocFileWithOriginalFileName(String docUrl, String contentDisposition, int contentSize) throws FileNotRetrievedException, NoSpaceLeftException
 	{
 		String docFileName = null;
 		boolean hasUnretrievableDocName = false;
@@ -598,7 +589,7 @@ public class FileUtils
 			if ( !docFileName.endsWith(dotFileExtension) )
 				docFileName += dotFileExtension;
 			
-			String fullDocName = storeDocFilesDir + docFileName;
+			String fullDocName = ArgsUtils.storeDocFilesDir + docFileName;
 
 			// Check if the FileName is too long, and we are going to get an error at file-creation.
 			int docFullNameLength = fullDocName.length();
@@ -627,10 +618,12 @@ public class FileUtils
 
 	private static final Lock fileNameLock = new ReentrantLock(true);
 
-	public static DocFileData getDocFileAndHandleExisting(String docFileName, String dotFileExtension, boolean hasUnretrievableDocName) throws  DocFileNotRetrievedException
+	public static FileData getDocFileAndHandleExisting(String fileName, String dotFileExtension, boolean hasUnretrievableDocName
+	)
+			, NoSpaceLeftException
 	{
-		String saveDocFileFullPath = storeDocFilesDir + docFileName;
-		if ( ! docFileName.endsWith(dotFileExtension) )
+		String saveDocFileFullPath = storeFilesDir + fileName;
+		if ( ! fileName.endsWith(dotFileExtension) )
 			saveDocFileFullPath += dotFileExtension;
 
 		File docFile = new File(saveDocFileFullPath);
@@ -644,7 +637,7 @@ public class FileUtils
 		try {
 			if ( !hasUnretrievableDocName )	// If we retrieved the fileName, go check if it's a duplicate.
 			{
-				if ( (curDuplicateNum = numbersOfDuplicateDocFileNames.get(docFileName)) != null )	// Since this data-structure is accessed inside the SYNCHRONIZED BLOCK, it can simpy be a HashMap without any internal sync, in order to speed it up.
+				if ( (curDuplicateNum = numbersOfDuplicateFileNames.get(fileName)) != null )	// Since this data-structure is accessed inside the SYNCHRONIZED BLOCK, it can simpy be a HashMap without any internal sync, in order to speed it up.
 					curDuplicateNum += 1;
 				else if ( docFile.exists() )	// If it's not an already-known duplicate (this is the first duplicate-case for this file), go check if it exists in the fileSystem.
 					curDuplicateNum = 1;	// It was "null", after the "ConcurrentHashMap.get()" check.
@@ -652,19 +645,19 @@ public class FileUtils
 					curDuplicateNum = 0;
 
 				if ( curDuplicateNum > 0 ) {	// Construct final-DocFileName for this docFile.
-					String preExtensionFileName = docFileName;
-					int lastIndexOfDot = docFileName.lastIndexOf(".");
+					String preExtensionFileName = fileName;
+					int lastIndexOfDot = fileName.lastIndexOf(".");
 					if ( lastIndexOfDot != -1 )
-						preExtensionFileName = docFileName.substring(0, lastIndexOfDot);
-					docFileName = preExtensionFileName + "(" + curDuplicateNum + ")" + dotFileExtension;
-					saveDocFileFullPath = storeDocFilesDir + docFileName;
+						preExtensionFileName = fileName.substring(0, lastIndexOfDot);
+					fileName = preExtensionFileName + "(" + curDuplicateNum + ")" + dotFileExtension;
+					saveDocFileFullPath = storeFilesDir + fileName;
 					docFile = new File(saveDocFileFullPath);
 				}
 			}
 
 			fileOutputStream = new FileOutputStream(docFile);
 			if ( curDuplicateNum > 0 )	// After the file is created successfully, from the above outputStream-initialization, add the new duplicate-num in our HashMap.
-				numbersOfDuplicateDocFileNames.put(docFileName, curDuplicateNum);    // We should add the new "curDuplicateNum" for the original fileName, only if the new file can be created.
+				numbersOfDuplicateFileNames.put(fileName, curDuplicateNum);    // We should add the new "curDuplicateNum" for the original fileName, only if the new file can be created.
 
 		} catch (FileNotFoundException fnfe) {	// This may be thrown in case the file cannot be created.
 			logger.error("", fnfe);
@@ -677,21 +670,21 @@ public class FileUtils
 				logger.error("Error when deleting the half-created file: " + docFileName);
 			}
 			// The "fileOutputStream" was not created in this case, so no closing is needed.
-			throw new DocFileNotRetrievedException(fnfe.getMessage());
+			throw new FileNotRetrievedException(fnfe.getMessage());
 		} catch (Exception e) {	// Mostly I/O and Security Exceptions.
 			if ( fileOutputStream != null ) {
 				try {
 					fileOutputStream.close();
 				} catch (Exception ignored) {}
 			}
-			String errMsg = "Error when handling the fileName = \"" + docFileName + "\" and dotFileExtension = \"" + dotFileExtension + "\"!";
+			String errMsg = "Error when handling the fileName = \"" + fileName + "\" and dotFileExtension = \"" + dotFileExtension + "\"!";
 			logger.error(errMsg, e);
-			throw new DocFileNotRetrievedException(errMsg);
+			throw new FileNotRetrievedException(errMsg);
 		} finally {
 			fileNameLock.unlock();
 		}
 
-		return new DocFileData(docFile, fileOutputStream);
+		return new FileData(docFile, fileOutputStream);
 	}
 
 

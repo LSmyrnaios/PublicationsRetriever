@@ -3,6 +3,7 @@ package eu.openaire.publications_retriever.test;
 import com.google.common.collect.HashMultimap;
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
+import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.DetectedContentType;
@@ -795,6 +796,7 @@ public class UrlChecker {
 			FileUtils.storeDocFilesDir = FileUtils.workingDir + "testDocFiles" + File.separator;
 		ConnSupportUtils.setKnownMimeTypes();
 		UrlTypeChecker.setURLDirectoryFilterRegex();
+		ArgsUtils.fileNameType = ArgsUtils.fileNameTypeEnum.idName;
 			FileUtils.handleStoreDocFileDirectory();
 		}
 

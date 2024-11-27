@@ -126,7 +126,7 @@ public class S3ObjectStore {
      * @param fileFullPath = "**Path of the file to upload**";
      * @return
      */
-    public static DocFileData uploadToS3(String fileObjKeyName, String fileFullPath)
+    public static FileData uploadToS3(String fileObjKeyName, String fileFullPath)
     {
         String contentType = null;
 
@@ -167,7 +167,7 @@ public class S3ObjectStore {
 
         String s3Url = endpoint + "/" + bucketName + "/" + fileObjKeyName;  // Be aware: This url works only if the access to the bucket is public.
         logger.debug("Uploaded file \"" + fileObjKeyName + "\". The s3Url is: " + s3Url);
-        return new DocFileData(null, null, 0L, s3Url);
+        return new FileData(null, null, 0L, s3Url);
     }
 
 

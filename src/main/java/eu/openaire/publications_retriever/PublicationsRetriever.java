@@ -36,7 +36,7 @@ import java.util.stream.Stream;
 
 /**
  * This class contains the entry-point of this program, the "main()" method.
- * The "main()" method calls other methods to set the input/output streams and retrieve the docUrls for each docPage in the inputFile.
+ * The "main()" method calls other methods to set the input/output streams and retrieve the docOrDatasetUrls for each docPage in the inputFile.
  * In the end, the outputFile consists of docPages along with their docUrls.
  * @author Lampros Smyrnaios
  */
@@ -171,21 +171,21 @@ public class PublicationsRetriever
 			logger.warn("A SIGINT signal was received, so some of the \"checked-urls\" may have not been actually checked, that's more of a number of the \"loaded-urls\".");
 
 		logger.info("Total " + ArgsUtils.targetUrlType + "s found: " + UrlUtils.sumOfDocUrlsFound + ". That's about: " + df.format(UrlUtils.sumOfDocUrlsFound.get() * 100.0 / inputCheckedUrlNum) + "% from the total numOfUrls checked. The rest were problematic or non-handleable url-cases.");
-		if ( FileUtils.shouldDownloadDocFiles ) {
+		if ( ArgsUtils.shouldDownloadDocFiles ) {
 			int numOfStoredDocFiles = 0;
-			if ( !FileUtils.docFileNameType.equals(FileUtils.DocFileNameType.numberName) )	// If we have anything different from the numberName-type..
+			if ( !ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )	// If we have anything different from the numberName-type..
 				numOfStoredDocFiles = FileUtils.numOfDocFiles.get();
 			else
 				numOfStoredDocFiles = FileUtils.numOfDocFile - ArgsUtils.initialNumOfDocFile;
 			logger.info("From which docUrls, we were able to retrieve: " + numOfStoredDocFiles + " distinct docFiles. That's about: " + df.format(numOfStoredDocFiles * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "%."
-					+ " The un-retrieved docFiles were either belonging to already-found docUrls or they had connection-issues.");
+					+ " The un-retrieved docFiles were either belonging to already-found " + ArgsUtils.targetUrlType + "s or they had connection-issues or they had problematic content.");
 		}
 		logger.debug("The metaDocUrl-handler is responsible for the discovery of " + MetadataHandler.numOfMetaDocUrlsFound + " docUrls (" + df.format(MetadataHandler.numOfMetaDocUrlsFound.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "% of the found docUrls).");
-		logger.debug("The re-crossed docUrls (from all handlers) were " + ConnSupportUtils.reCrossedDocUrls.get() + ". That's about " + df.format(ConnSupportUtils.reCrossedDocUrls.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "% of the found docUrls.");
+		logger.debug("The re-crossed " + ArgsUtils.targetUrlType + "s (from all handlers) were " + ConnSupportUtils.reCrossedDocUrls.get() + ". That's about " + df.format(ConnSupportUtils.reCrossedDocUrls.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "% of the found docUrls.");
 		if ( MachineLearning.useMLA )
-			logger.debug("The M.L.A. is responsible for the discovery of " + MachineLearning.docUrlsFoundByMLA.get() + " of the docUrls (" + df.format(MachineLearning.docUrlsFoundByMLA.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "%). The M.L.A.'s average success-rate was: " + df.format(MachineLearning.getAverageSuccessRate()) + "%. Gathered data for " + MachineLearning.timesGatheredData.get() + " valid pageUrl-docUrl pairs.");
+			logger.debug("The legacy M.L.A. is responsible for the discovery of " + MachineLearning.docUrlsFoundByMLA.get() + " of the " + ArgsUtils.targetUrlType + "s (" + df.format(MachineLearning.docUrlsFoundByMLA.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "%). The M.L.A.'s average success-rate was: " + df.format(MachineLearning.getAverageSuccessRate()) + "%. Gathered data for " + MachineLearning.timesGatheredData.get() + " valid pageUrl-docUrl pairs.");
 		else
-			logger.debug("The M.L.A. was not enabled.");
+			logger.debug("The legacy M.L.A. was not enabled.");
 
 		logger.debug("About " + df.format(LoaderAndChecker.connProblematicUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + LoaderAndChecker.connProblematicUrls.get() + " urls) were pages which had connectivity problems.");
 		logger.debug("About " + df.format(MetadataHandler.numOfProhibitedAccessPagesFound.get() * 100.0 / inputCheckedUrlNum) + "% (" + MetadataHandler.numOfProhibitedAccessPagesFound.get() + " urls) were pages with prohibited access.");
@@ -322,7 +322,7 @@ public class PublicationsRetriever
 			else
 				return o1.getValue().compareTo(o2.getValue());
 		});
-		logger.debug("The " + list.size() + " domains which gave docUrls and their number:");
+		logger.debug("The " + list.size() + " domains which gave " + ArgsUtils.targetUrlType + "s and their number:");
 /*		for ( Map.Entry<String, Integer> entry : list )
 			logger.debug(entry.getKey() + " : " + entry.getValue());*/
 	}

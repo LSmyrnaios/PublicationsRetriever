@@ -9,11 +9,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Paths;
 
-public class DocFileData {
+public class FileData {
 
-    private static final Logger logger = LoggerFactory.getLogger(DocFileData.class);
+    private static final Logger logger = LoggerFactory.getLogger(FileData.class);
 
-    private File docFile;
+    private File file;
     private String hash;
     private Long size;
     private String location;
@@ -21,8 +21,8 @@ public class DocFileData {
     private FileOutputStream fileOutputStream;
 
 
-    public DocFileData(File docFile, String hash, Long size, String location, FileOutputStream fileOutputStream) {
-        this.docFile = docFile;
+    public FileData(File file, String hash, Long size, String location, FileOutputStream fileOutputStream) {
+        this.file = file;
         this.hash = hash;
         this.size = size;
         this.location = location;
@@ -30,24 +30,24 @@ public class DocFileData {
     }
 
 
-    public DocFileData(File docFile, String hash, Long size, String location) {
-        this.docFile = docFile;
+    public FileData(File file, String hash, Long size, String location) {
+        this.file = file;
         this.hash = hash;
         this.size = size;
         this.location = location;
     }
 
-    public DocFileData(File docFile, FileOutputStream fileOutputStream) {
-        this.docFile = docFile;
+    public FileData(File file, FileOutputStream fileOutputStream) {
+        this.file = file;
         this.fileOutputStream = fileOutputStream;
     }
 
-    public File getDocFile() {
-        return docFile;
+    public File getFile() {
+        return file;
     }
 
-    public void setDocFile(File docFile) {
-        this.docFile = docFile;
+    public void setFile(File file) {
+        this.file = file;
     }
 
     public String getHash() {
@@ -70,14 +70,14 @@ public class DocFileData {
      * Set this as a separate method (not automatically applied in the contractor), in order to avoid long thread-blocking in the caller method, which downloads and constructs this object inside a synchronized block.
      * */
     public void calculateAndSetHashAndSize() {
-        if ( this.docFile == null ) {  // Verify the "docFile" is already set, otherwise we get an NPE.
-            logger.warn("The \"docFile\" was not previously set!");
+        if ( this.file == null ) {  // Verify the "docFile" is already set, otherwise we get an NPE.
+            logger.warn("The \"file\" was not previously set!");
             return;
         }
 
-        String fileLocation = this.docFile.getAbsolutePath();
+        String fileLocation = this.file.getAbsolutePath();
         try {
-            this.hash = Files.asByteSource(this.docFile).hash(Hashing.md5()).toString();	// These hashing functions are deprecated, but just to inform us that MD5 is not secure. Luckily, we use MD5 just to identify duplicate files.
+            this.hash = Files.asByteSource(this.file).hash(Hashing.md5()).toString();	// These hashing functions are deprecated, but just to inform us that MD5 is not secure. Luckily, we use MD5 just to identify duplicate files.
             //logger.debug("MD5 for file \"" + docFile.getName() + "\": " + this.hash); // DEBUG!
             this.size = java.nio.file.Files.size(Paths.get(fileLocation));
             //logger.debug("Size of file \"" + docFile.getName() + "\": " + this.size); // DEBUG!
@@ -104,8 +104,8 @@ public class DocFileData {
 
     @Override
     public String toString() {
-        return "DocFileData{" +
-                "docFile=" + docFile +
+        return "FileData{" +
+                "file=" + file +
                 ", hash='" + hash + '\'' +
                 ", size=" + size +
                 ", location='" + location + '\'' +

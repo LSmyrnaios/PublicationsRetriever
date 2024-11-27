@@ -6,11 +6,10 @@ import com.google.common.collect.SetMultimap;
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.crawler.MachineLearning;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
-import eu.openaire.publications_retriever.exceptions.DocFileNotRetrievedException;
 import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.exceptions.DomainBlockedException;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
-import eu.openaire.publications_retriever.util.file.DocFileData;
+import eu.openaire.publications_retriever.util.file.FileData;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.file.IdUrlTuple;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
@@ -299,7 +298,7 @@ public class ConnSupportUtils
 		logger.info("re-crossed docUrl found: < " + docUrl + " >");
 		reCrossedDocUrls.incrementAndGet();
 		String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, docUrl);
-		if ( FileUtils.shouldDownloadDocFiles ) {
+		if ( ArgsUtils.shouldDownloadDocFiles ) {
 			IdUrlTuple idUrlTuple = UrlUtils.docOrDatasetUrlsWithIDs.get(docUrl);
 			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, docUrl, alreadyDownloadedFromIDMessage + idUrlTuple.id + alreadyDownloadedFromSourceUrlContinuedMessage + idUrlTuple.url, null, false, "true", "true", "true", wasDirectLink, "true", null, "null");
 		} else
@@ -349,7 +348,7 @@ public class ConnSupportUtils
 	 * @param docUrl
 	 * @param calledForPageUrl
 	 * @return
-	 * @throws DocFileNotRetrievedException
+	 * @throws FileNotRetrievedException
 	 */
 	public static DocFileData downloadAndStoreDocFile(HttpURLConnection conn, String id, String domainStr, String docUrl, boolean calledForPageUrl)
 			throws DocFileNotRetrievedException
@@ -364,45 +363,45 @@ public class ConnSupportUtils
 				// Only a final-url will reach here, so no redirect should occur (thus, we don't check for it).
 				if ( (responseCode < 200) || (responseCode >= 400) ) {    // If we have unwanted/error codes.
 					String errorMessage = onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode, calledForPageUrl, conn);
-					throw new DocFileNotRetrievedException(errorMessage);
+					throw new FileNotRetrievedException(errorMessage);
 				}	// No redirection should exist in this re-connection with another HTTP-Method.
 			}
 
 			// Check if we should abort the download based on its content-size.
 			int contentSize = 0;
 			if ( (contentSize = getContentSize(conn, true, false)) == -1 )	// "Unacceptable size"-code..
-				throw new DocFileNotRetrievedException("The HTTP-reported size of this file was unacceptable!");
+				throw new FileNotRetrievedException("The HTTP-reported size of this file was unacceptable!");
 			// It may be "-2", in case it was not retrieved..
 
 			// Write the downloaded bytes to the docFile and return the docFileName.
-			DocFileData docFileData =  null;
-			if ( FileUtils.docFileNameType.equals(FileUtils.DocFileNameType.numberName) )
-				docFileData = FileUtils.storeDocFileWithNumberName(conn, docUrl, contentSize);
+			FileData fileData =  null;
+			if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
+				fileData = FileUtils.storeDocFileWithNumberName(conn, docUrl, contentSize);
 			else
-				docFileData = FileUtils.storeDocFileWithIdOrOriginalFileName(conn, docUrl, id, contentSize);
+				fileData = FileUtils.storeDocFileWithIdOrOriginalFileName(conn, docUrl, id, contentSize);
 
-			if ( docFileData == null ) {
-				String errMsg = "The file could not be " + (FileUtils.shouldUploadFilesToS3 ? "uploaded to S3" : "downloaded") + " from the docUrl " + docUrl;
+			if ( fileData == null ) {
+				String errMsg = "The file could not be " + (ArgsUtils.shouldUploadFilesToS3 ? "uploaded to S3" : "downloaded") + " from the docUrl " + docUrl;
 				logger.warn(errMsg);
-				throw new DocFileNotRetrievedException(errMsg);
+				throw new FileNotRetrievedException(errMsg);
 			}
 
-			if ( FileUtils.shouldUploadFilesToS3 ) {
 				File docFile = docFileData.getDocFile();
 				try {	// In the "S3"-mode, we don't keep the files locally.
+			if ( ArgsUtils.shouldUploadFilesToS3 ) {
 					FileDeleteStrategy.FORCE.delete(docFile);    // We don't need the local file anymore..
 				} catch (Exception e) {
 					logger.warn("The file \"" + docFile.getName() + "\" could not be deleted after being uploaded to S3 ObjectStore!");
 				}
 			}
 
-			return docFileData;
+			return fileData;
 
-		} catch (DocFileNotRetrievedException dfnre ) {	// Catch it here, otherwise it will be caught as a general exception.
+		} catch (FileNotRetrievedException dfnre ) {	// Catch it here, otherwise it will be caught as a general exception.
 			throw dfnre;	// Avoid creating a new "DocFileNotRetrievedException" if it's already created. By doing this we have a better stack-trace if we decide to log it in the caller-method.
 		} catch (Exception e) {
 			logger.error("", e);
-			throw new DocFileNotRetrievedException(e.getMessage());
+			throw new FileNotRetrievedException(e.getMessage());
 		} finally {
 			if ( reconnected )	// Otherwise the given-previous connection will be closed by the calling method.
 				conn.disconnect();
@@ -1211,7 +1210,7 @@ public class ConnSupportUtils
 			// Check if we should abort the download based on its content-size.
 			int contentSize = 0;
 			if ( (contentSize = getContentSize(conn, true, false)) == -1 )	// "Unacceptable size"-code..
-				throw new DocFileNotRetrievedException("The HTTP-reported size of this file was unacceptable!");
+				throw new FileNotRetrievedException("The HTTP-reported size of this file was unacceptable!");
 			// It may be "-2", in case it was not retrieved..
 			int bufferSize = (((contentSize != -2) && contentSize < FileUtils.fiveMb) ? contentSize : FileUtils.fiveMb);
 

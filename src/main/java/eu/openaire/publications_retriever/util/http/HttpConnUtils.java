@@ -4,8 +4,7 @@ import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.crawler.SpecialUrlsHandler;
 import eu.openaire.publications_retriever.exceptions.*;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
-import eu.openaire.publications_retriever.util.file.DocFileData;
-import eu.openaire.publications_retriever.util.file.FileUtils;
+import eu.openaire.publications_retriever.util.file.FileData;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlTypeChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
@@ -74,7 +73,7 @@ public class HttpConnUtils
 
 	public static ThreadLocal<Boolean> isSpecialUrl = new ThreadLocal<Boolean>();	// Every Thread has its own variable. This variable is used only in non-failure cases.
 
-	public static final String docFileNotRetrievedMessage = DocFileNotRetrievedException.class.getSimpleName() + " was thrown before the docFile could be stored. ";  // Get the class-name programmatically, in order to easily spot the error if the exception-name changes.
+	public static final String docFileNotRetrievedMessage = FileNotRetrievedException.class.getSimpleName() + " was thrown before the docFile could be stored. ";  // Get the class-name programmatically, in order to easily spot the error if the exception-name changes.
 
 	public static final CookieManager cookieManager = new java.net.CookieManager();
 	static {
@@ -150,18 +149,18 @@ public class HttpConnUtils
 					logger.info("docUrl found: < " + finalUrlStr + " >");
 					String fullPathFileName = "";
 					String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
-					DocFileData docFileData = null;
-					if ( FileUtils.shouldDownloadDocFiles ) {
+					FileData fileData = null;
+					if ( ArgsUtils.shouldDownloadDocFiles ) {
 						if ( foundDetectedContentType ) {	// If we went and detected the pdf from the request-code, then reconnect and proceed with downloading (reasons explained elsewhere).
 							conn = handleConnection(urlId, sourceUrl, pageUrl, finalUrlStr, domainStr, calledForPageUrl, calledForPossibleDocOrDatasetUrl);	// No need to "conn.disconnect()" before, as we are re-connecting to the same domain.
 						}
 						try {
-							docFileData = ConnSupportUtils.downloadAndStoreDocFile(conn, urlId, domainStr, finalUrlStr, calledForPageUrl);	// It does not return "null".
-							fullPathFileName = docFileData.getLocation();
+							fileData = ConnSupportUtils.downloadAndStoreDocFile(conn, urlId, domainStr, finalUrlStr, calledForPageUrl);	// It does not return "null".
+							fullPathFileName = fileData.getLocation();
 							logger.info("DocFile: \"" + fullPathFileName + "\" has been downloaded.");
-							UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", docFileData.getSize(), docFileData.getHash());	// we send the urls, before and after potential redirections.
+							UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", fileData.getSize(), fileData.getHash());	// we send the urls, before and after potential redirections.
 							return true;
-						} catch (DocFileNotRetrievedException dfnde) {
+						} catch (FileNotRetrievedException dfnde) {
 							fullPathFileName = docFileNotRetrievedMessage + dfnde.getMessage();
 						}	// We log below and then return.
 					}
@@ -171,7 +170,7 @@ public class HttpConnUtils
 				else if ( LoaderAndChecker.retrieveDatasets && returnedType.equals("dataset") ) {
 					logger.info("datasetUrl found: < " + finalUrlStr + " >");
 					// TODO - handle possible download and improve logging... The dataset might have huge size each. Downloading these, isn't a requirement at the moment.
-					String fullPathFileName = FileUtils.shouldDownloadDocFiles ? "It's a dataset-url. The download is not supported." : "It's a dataset-url.";
+					String fullPathFileName = ArgsUtils.shouldDownloadDocFiles ? "It's a dataset-url. The download is not supported." : "It's a dataset-url.";
 					String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
 					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", null, "null");	// we send the urls, before and after potential redirections.
 					return true;
@@ -326,7 +325,7 @@ public class HttpConnUtils
 			boolean useHttpGetMethod = false;
 
 			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// For just-webPages, we want to use "GET" in order to download the content.
-				|| (calledForPossibleDocUrl && FileUtils.shouldDownloadDocFiles)	// For docUrls, if we should download them.
+				|| (calledForPossibleDocUrl && ArgsUtils.shouldDownloadDocFiles)	// For docUrls, if we should download them.
 				|| weirdMetaDocUrlWhichNeedsGET	// If we have a weirdMetaDocUrl-case then we need "GET".
 				|| domainsWithUnsupportedHeadMethod.contains(domainStr)	// If the domain doesn't support "HEAD", then we only do "GET".
 				|| domainStr.contains("meetingorganizer.copernicus.org") )	// This domain has pdf-urls which are discovered (via their ContentType) only when using "GET".

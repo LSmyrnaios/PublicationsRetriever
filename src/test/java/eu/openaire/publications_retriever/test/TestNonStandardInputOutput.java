@@ -204,8 +204,8 @@ public class TestNonStandardInputOutput  {
 		// Use testing input/output files.
 		setInputOutput();
 
-		if ( FileUtils.shouldDownloadDocFiles ) {
-			FileUtils.shouldDeleteOlderDocFiles = true;
+		if ( ArgsUtils.shouldDownloadDocFiles ) {
+			ArgsUtils.shouldDeleteOlderDocFiles = true;
 			FileUtils.handleStoreDocFileDirectory();
 		}
 
