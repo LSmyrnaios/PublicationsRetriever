@@ -152,9 +152,9 @@ public class FileUtils
 		} catch (SecurityException se) {
 			logger.error(se.getMessage(), se);
 			logger.warn("There was an error creating the docFiles-storageDir! Continuing without downloading the docFiles, while creating the jsonOutput with the docUrls.");
+			ArgsUtils.shouldDownloadDocFiles = false;
 		}
 	}
-			ArgsUtils.shouldDownloadDocFiles = false;
 
 	
 	public static long getInputNumOfLines()
