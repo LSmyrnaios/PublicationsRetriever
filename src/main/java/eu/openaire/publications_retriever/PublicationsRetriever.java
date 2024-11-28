@@ -176,7 +176,7 @@ public class PublicationsRetriever
 			if ( !ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )	// If we have anything different from the numberName-type..
 				numOfStoredDocFiles = FileUtils.numOfDocFiles.get();
 			else
-				numOfStoredDocFiles = FileUtils.numOfDocFile - ArgsUtils.initialNumOfDocFile;
+				numOfStoredDocFiles = FileUtils.numOfDocFile - ArgsUtils.initialNumOfFile;
 			logger.info("From which docUrls, we were able to retrieve: " + numOfStoredDocFiles + " distinct docFiles. That's about: " + df.format(numOfStoredDocFiles * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "%."
 					+ " The un-retrieved docFiles were either belonging to already-found " + ArgsUtils.targetUrlType + "s or they had connection-issues or they had problematic content.");
 		}

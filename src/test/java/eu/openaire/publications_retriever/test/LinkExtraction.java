@@ -37,7 +37,7 @@ public class LinkExtraction {
 		LoaderAndChecker.retrieveDocuments = true;
 		LoaderAndChecker.retrieveDatasets = true;
 		ConnSupportUtils.setKnownMimeTypes();
-		UrlTypeChecker.setURLDirectoryFilterRegex();
+		UrlTypeChecker.setRuntimeInitializedRegexes();
 		exampleHtml = "<head><head>" +
 				"<body>" +
 					"<p>Select a link from below!</p>" +

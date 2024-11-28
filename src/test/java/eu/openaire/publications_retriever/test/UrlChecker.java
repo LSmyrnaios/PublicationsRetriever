@@ -788,15 +788,18 @@ public class UrlChecker {
 		for ( String url: urlList )
 			logger.info(url);
 
-		LoaderAndChecker.retrieveDatasets = false;
-		FileUtils.shouldDownloadDocFiles = true;
-		FileUtils.docFileNameType = FileUtils.DocFileNameType.idName;
-		if ( FileUtils.shouldDownloadDocFiles ) {
-			FileUtils.shouldDeleteOlderDocFiles = true;
-			FileUtils.storeDocFilesDir = FileUtils.workingDir + "testDocFiles" + File.separator;
+		LoaderAndChecker.retrieveDatasets = true;
+		LoaderAndChecker.retrieveDocuments = false;
+
+		// Set some needed data.
 		ConnSupportUtils.setKnownMimeTypes();
 		UrlTypeChecker.setURLDirectoryFilterRegex();
+
+		ArgsUtils.shouldDownloadDocFiles = true;
 		ArgsUtils.fileNameType = ArgsUtils.fileNameTypeEnum.idName;
+		if ( ArgsUtils.shouldDownloadDocFiles ) {
+			ArgsUtils.shouldDeleteOlderDocFiles = true;
+			ArgsUtils.storeDocFilesDir = FileUtils.workingDir + "testDocFiles" + File.separator;
 			FileUtils.handleStoreDocFileDirectory();
 		}
 

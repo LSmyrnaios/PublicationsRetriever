@@ -8,6 +8,7 @@ import eu.openaire.publications_retriever.crawler.MachineLearning;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.exceptions.DomainBlockedException;
+import eu.openaire.publications_retriever.exceptions.FileNotRetrievedException;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileData;
 import eu.openaire.publications_retriever.util.file.FileUtils;

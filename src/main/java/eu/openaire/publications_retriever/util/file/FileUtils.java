@@ -620,6 +620,7 @@ public class FileUtils
 
 	public static FileData getDocFileAndHandleExisting(String fileName, String dotFileExtension, boolean hasUnretrievableDocName
 	)
+			throws FileNotRetrievedException
 			, NoSpaceLeftException
 	{
 		String saveDocFileFullPath = storeFilesDir + fileName;
