@@ -38,7 +38,7 @@ public class ArgsUtils {
 	public static int workerThreadsCount = 0;
 	public static int threadsMultiplier = 2;	// Use *3 without downloading docFiles and when having the domains to appear in uniform distribution in the inputFile. Use *2 when downloading.
 
-	private static final String usageMessage = "\nUsage: java -jar publications_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all> -inputFileFullPath inputFile -downloadDocFiles(OPTIONAL) -docFileNameType(OPTIONAL) <nameType: originalName | idName | numberName> -firstDocFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' -inputDataUrl(OPTIONAL) 'inputUrl' -numOfThreads(OPTIONAL) 'threadsNum' < 'input' > 'output'";
+	private static final String usageMessage = "\nUsage: java -jar publications_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all> -inputFileFullPath inputFile -downloadDocFiles(OPTIONAL) -fileNameType(OPTIONAL) <nameType: originalName | idName | numberName> -firstFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' -inputDataUrl(OPTIONAL) 'inputUrl' -numOfThreads(OPTIONAL) 'threadsNum' < 'input' > 'output'";
 
 	private static boolean firstNumGiven = false;
 
@@ -72,17 +72,17 @@ public class ArgsUtils {
 					case "-downloadDocFiles":
 						shouldDownloadDocFiles = true;
 						break;
+					case "-docFilesStorage":
+						i ++;
+						handleDocFilesStorage(mainArgs[i]);
+						break;
 					case "-fileNameType":
 						i ++;
 						handleFileNameType(mainArgs[i]);
 						break;
-					case "-firstfileNum":
+					case "-firstFileNum":
 						i ++;
 						handleFirstFileNum(mainArgs[i]);
-						break;
-					case "-docFilesStorage":
-						i ++;
-						handleDocFilesStorage(mainArgs[i]);
 						break;
 					case "-inputDataUrl":
 						i++;
@@ -178,7 +178,7 @@ public class ArgsUtils {
 				break;
 			case "idName":
 				if ( !LoaderAndChecker.useIdUrlPairs ) {
-					String errMessage = "You provided the \"DocFileNameType.idName\", but the program's reader is not set to retrieve IDs from the inputFile! Set the program to retrieve IDs by setting the \"utils.url.LoaderAndChecker.useIdUrlPairs\"-variable to \"true\".";
+					String errMessage = "You provided the \"fileNameType.idName\", but the program's reader is not set to retrieve IDs from the inputFile! Set the program to retrieve IDs by setting the \"utils.url.LoaderAndChecker.useIdUrlPairs\"-variable to \"true\".";
 					System.err.println(errMessage);
 					logger.error(errMessage);
 					System.exit(10);
@@ -192,7 +192,7 @@ public class ArgsUtils {
 				fileNameType = fileNameTypeEnum.numberName;
 				break;
 			default:
-				String errMessage = "Invalid \"docFileNameType\" given (\"" + nameType + "\")\nExpected one of the following: \"originalName | idName | numberName\"" + usageMessage;
+				String errMessage = "Invalid \"fileNameType\" given (\"" + nameType + "\")\nExpected one of the following: \"originalName | idName | numberName\"" + usageMessage;
 				System.err.println(errMessage);
 				logger.error(errMessage);
 				System.exit(11);
@@ -256,18 +256,18 @@ public class ArgsUtils {
 		}
 
 		if ( shouldUploadFilesToS3 && fileNameType.equals(fileNameTypeEnum.originalName) ) {
-			String baseMsg = "The uploading of the docFiles to the S3-ObjectStore requires the use of \"ID-names\" or \"Number-names\" for the DocFiles. You specified the \"originalName\" DocFileNameType.";
+			String baseMsg = "The uploading of the docFiles to the S3-ObjectStore requires the use of \"ID-names\" or \"Number-names\" for the DocFiles. You specified the \"originalName\" fileNameType.";
 			if ( LoaderAndChecker.useIdUrlPairs ) {
-				logger.warn(baseMsg + " Replacing the DocFileNameType \"originalName\" with \"idName\".");
+				logger.warn(baseMsg + " Replacing the fileNameType \"originalName\" with \"idName\".");
 				fileNameType = fileNameTypeEnum.idName;
 			} else {
-				logger.warn(baseMsg + " Replacing the DocFileNameType \"originalName\" with \"numberName\".");
+				logger.warn(baseMsg + " Replacing the fileNameType \"originalName\" with \"numberName\".");
 				fileNameType = fileNameTypeEnum.numberName;
 			}
 		}
 
 		if ( firstNumGiven && !fileNameType.equals(fileNameTypeEnum.numberName) )
-			logger.warn("You provided the \"-firstDocFileNum\" a, but you also specified a \"docFileNameType\" of non numeric-type. The \"-firstDocFileNum\" will be ignored!" + usageMessage);
+			logger.warn("You provided the \"-firstFileNum\" a, but you also specified a \"fileNameType\" of non numeric-type. The \"-firstFileNum\" will be ignored!" + usageMessage);
 	}
 
 }

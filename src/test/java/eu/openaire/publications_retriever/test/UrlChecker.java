@@ -798,7 +798,7 @@ public class UrlChecker {
 		if ( ArgsUtils.shouldDownloadDocFiles ) {
 			ArgsUtils.shouldDeleteOlderDocFiles = true;
 			ArgsUtils.storeDocFilesDir = FileUtils.workingDir + "testDocFiles" + File.separator;
-			FileUtils.handleStoreDocFileDirectory();
+			FileUtils.handleStoreFilesDirectory(ArgsUtils.storeDocFilesDir, ArgsUtils.shouldDeleteOlderDocFiles , true);
 		}
 
 		String testID = "testID";

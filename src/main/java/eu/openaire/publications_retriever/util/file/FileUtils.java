@@ -125,8 +125,8 @@ public class FileUtils
 				logger.error("The following directory could not be deleted: " + storeFilesDir, ioe);
 				if ( calledForDocFiles )
 					ArgsUtils.shouldDownloadDocFiles = false;	// Continue without downloading the docFiles, just create the jsonOutput.
-				else
-					ArgsUtils.shouldDownloadHTMLFiles = false;
+				//else
+					//ArgsUtils.shouldDownloadHTMLFiles = false;
 				return;
 			} catch (IllegalArgumentException iae) {
 				logger.error("This directory does not exist: " + storeFilesDir + "\n" + iae.getMessage());
@@ -157,8 +157,8 @@ public class FileUtils
 			logger.warn("There was an error creating the docFiles-storageDir! Continuing without downloading the docFiles, while creating the jsonOutput with the docUrls.");
 			if ( calledForDocFiles )
 				ArgsUtils.shouldDownloadDocFiles = false;	// Continue without downloading the docFiles, just create the jsonOutput.
-			else
-				ArgsUtils.shouldDownloadHTMLFiles = false;
+			//else
+				//ArgsUtils.shouldDownloadHTMLFiles = false;
 		}
 	}
 
@@ -344,7 +344,7 @@ public class FileUtils
 		else if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.originalName) )
 			fileData = getDocFileWithOriginalFileName(docUrl, conn.getHeaderField("Content-Disposition"), contentSize);
 		else
-			throw new FileNotRetrievedException("The 'docFileNameType' was invalid: " + ArgsUtils.fileNameType);
+			throw new FileNotRetrievedException("The 'fileNameType' was invalid: " + ArgsUtils.fileNameType);
 
 		numOfDocFiles.incrementAndGet();
 

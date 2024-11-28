@@ -66,12 +66,12 @@ public class TestNonStandardInputOutput  {
 		args[0] = "-retrieveDataType";
 		args[1] = "document";	// "document" OR "dataset" OR "all"
 		args[2] = "-downloadDocFiles";
-		args[3] = "-docFileNameType";
+		args[3] = "-fileNameType";
 		args[4] = "numberName";
-		args[5] = "-firstDocFileNum";
+		args[5] = "-firstFileNum";
 		args[6] = "1";
 		args[7] = "-docFilesStorage";
-		args[8] = "/storage/docFiles";
+		args[8] = "docFiles";
 		main(args);
 	}
 
@@ -84,7 +84,7 @@ public class TestNonStandardInputOutput  {
 		args[0] = "-retrieveDataType";
 		args[1] = "document";	// "document" OR "dataset" OR "all"
 		args[2] = "-downloadDocFiles";
-		args[3] = "-docFileNameType";
+		args[3] = "-fileNameType";
 		args[4] = "originalName";
 		args[5] = "-docFilesStorage";
 		args[6] = "docFiles";
@@ -100,7 +100,7 @@ public class TestNonStandardInputOutput  {
 		args[0] = "-retrieveDataType";
 		args[1] = "document";	// "document" OR "dataset" OR "all"
 		args[2] = "-downloadDocFiles";
-		args[3] = "-docFileNameType";
+		args[3] = "-fileNameType";
 		args[4] = "idName";
 		args[5] = "-docFilesStorage";
 		args[6] = "docFiles";
@@ -116,7 +116,7 @@ public class TestNonStandardInputOutput  {
 		args[0] = "-retrieveDataType";
 		args[1] = "document";	// "document" OR "dataset" OR "all"
 		args[2] = "-downloadDocFiles";
-		args[3] = "-docFileNameType";
+		args[3] = "-fileNameType";
 		args[4] = "idName";
 		args[5] = "-docFilesStorage";
 		args[6] = "S3ObjectStore";
@@ -201,13 +201,11 @@ public class TestNonStandardInputOutput  {
 		ConnSupportUtils.setKnownMimeTypes();
 		UrlTypeChecker.setRuntimeInitializedRegexes();
 
+		// When testing, always delete old files.
+		ArgsUtils.shouldDeleteOlderDocFiles = true;
+
 		// Use testing input/output files.
 		setInputOutput();
-
-		if ( ArgsUtils.shouldDownloadDocFiles ) {
-			ArgsUtils.shouldDeleteOlderDocFiles = true;
-			FileUtils.handleStoreDocFileDirectory();
-		}
 
 		if ( MachineLearning.useMLA )
 			new MachineLearning();
