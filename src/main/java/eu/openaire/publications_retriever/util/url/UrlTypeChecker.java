@@ -41,9 +41,7 @@ public class UrlTypeChecker
 	// So, we make a new REGEX for these extensions, this time, without a potential argument in the end (e.g. ?id=XXX..), except for the potential "lang".
 	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+(?<!" + docOrDatasetKeywords + ")\\.(?:" + htOrPhpExtensionsPattern+ "|[aj]sp[x]?|jsf|do|asc|cgi|cfm)(?:\\?(?!.*" + docOrDatasetKeywords + ").*)?$");	// We may have this page, which runs a script to return the pdf: "https://www.ijcseonline.org/pdf_paper_view.php?paper_id=4547&48-IJCSE-07375.pdf" or this pdf-internal-link: "https://meetingorganizer.copernicus.org/EGU2020/EGU2020-6296.html?pdf"
 	
-	public static final Pattern INTERNAL_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+format=(?:xml|" + htOrPhpExtensionsPattern + "|rss|ris|bib).*");	// This exists as a url-parameter.
-
-	// TODO - SET THE ABOVE REGEX AT RUNTIME TO AVOID EXCLUDING XML WHEN THE USE WANTS DATASETS..
+	public static Pattern INTERNAL_LINKS_FILE_FORMAT_FILTER = null;	// This includes filter for url-parameters.
 
 	public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile("[^/]+://[^/]*(?<=[/.])(?:(?<!drive.)google\\.|goo.gl|gstatic|facebook|fb.me|twitter|(?:meta|xing|baidu|t|x|vk).co|insta(?:gram|paper)|tiktok|youtube|vimeo|linkedin|ebay|bing|(?:amazon|[./]analytics)\\.|s.w.org|wikipedia|myspace|yahoo|mail|pinterest|reddit|tumblr"
 			+ "|www.ccdc.cam.ac.uk|figshare.com/collections/|datadryad.org/stash/dataset/"
@@ -114,7 +112,7 @@ public class UrlTypeChecker
 	/**
 	 * This method depends on the initialization of the "LoaderAndChecker.retrieveDatasets" variable, given by the user as cmd-arg, or defined by a service which wraps this software.
 	 * */
-	public static void setURLDirectoryFilterRegex() {
+	public static void setRuntimeInitializedRegexes() {
 		URL_DIRECTORY_FILTER =
 			Pattern.compile("[^/]+://.*/(?:(discover|profile|user|survey|index|media|theme|product|deposit|default|shop|view)/" + docOrDatasetNegativeLookAroundPattern	// Avoid blocking these if the url is likely to give a file.
 				+ "|(?:(?:ldap|password)-)?login|ac[c]?ess(?![./]+)|sign[-]?(?:in|out|up)|session|(?:how-to-)?(:?join[^t]|subscr)|regist(?:er|ration)|submi(?:t|ssion)|(?:post|send|export|(?:wp-)?admin|home|form|career[s]?|company)/|watch|browse|import|bookmark|announcement|feedback|share[^d]|about|(?:[^/]+-)?faq|wiki|news|events|cart|support|(?:site|html)map|documentation|help|license|disclaimer|copyright|(?:site-)?polic(?:y|ies)(?!.*paper)|privacy|terms|law|principles"
@@ -137,6 +135,9 @@ public class UrlTypeChecker
 		// We check the above rules, mostly as directories to avoid discarding publications' urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
 		if ( logger.isTraceEnabled() )
 			logger.trace("URL_DIRECTORY_FILTER:\n" + URL_DIRECTORY_FILTER);
+
+		INTERNAL_LINKS_FILE_FORMAT_FILTER =
+				Pattern.compile(".+format=(?:" + (!LoaderAndChecker.retrieveDatasets ? "xml|" : "") + htOrPhpExtensionsPattern + "|rss|ris|bib|citation_|events_kml).*");
 	}
 
 	

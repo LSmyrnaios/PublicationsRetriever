@@ -34,8 +34,6 @@ public class UrlChecker {
 	@Test
 	public void checkUrlConnectivity()
 	{
-		FileUtils.shouldDownloadDocFiles = false;	// Default is: "true".
-
 		// Here test individual urls.
 
 		ArrayList<String> urlList = new ArrayList<>();
@@ -793,7 +791,7 @@ public class UrlChecker {
 
 		// Set some needed data.
 		ConnSupportUtils.setKnownMimeTypes();
-		UrlTypeChecker.setURLDirectoryFilterRegex();
+		UrlTypeChecker.setRuntimeInitializedRegexes();
 
 		ArgsUtils.shouldDownloadDocFiles = true;
 		ArgsUtils.fileNameType = ArgsUtils.fileNameTypeEnum.idName;
