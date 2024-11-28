@@ -110,23 +110,26 @@ public class FileUtils
 		}
 
 		if ( ArgsUtils.shouldDownloadDocFiles )
-			handleStoreDocFileDirectory();
+			handleStoreFilesDirectory(ArgsUtils.storeDocFilesDir, ArgsUtils.shouldDeleteOlderDocFiles , true);
 	}
 
 
-	public static void handleStoreDocFileDirectory()
+	public static void handleStoreFilesDirectory(String storeFilesDir, boolean shouldDeleteOlderFiles, boolean calledForDocFiles)
 	{
-		File dir = new File(ArgsUtils.storeDocFilesDir);
-		if ( ArgsUtils.shouldDeleteOlderDocFiles ) {
+		File dir = new File(storeFilesDir);
+		if ( shouldDeleteOlderFiles ) {
 			logger.info("Deleting old docFiles..");
 			try {
 				deleteDirectory(dir);	// org.apache.commons.io.FileUtils
 			} catch (IOException ioe) {
-				logger.error("The following directory could not be deleted: " + ArgsUtils.storeDocFilesDir, ioe);
-				ArgsUtils.shouldDownloadDocFiles = false;	// Continue without downloading the docFiles, just create the jsonOutput.
+				logger.error("The following directory could not be deleted: " + storeFilesDir, ioe);
+				if ( calledForDocFiles )
+					ArgsUtils.shouldDownloadDocFiles = false;	// Continue without downloading the docFiles, just create the jsonOutput.
+				else
+					ArgsUtils.shouldDownloadHTMLFiles = false;
 				return;
 			} catch (IllegalArgumentException iae) {
-				logger.error("This directory does not exist: " + ArgsUtils.storeDocFilesDir + "\n" + iae.getMessage());
+				logger.error("This directory does not exist: " + storeFilesDir + "\n" + iae.getMessage());
 				return;
 			}
 		}
@@ -137,10 +140,10 @@ public class FileUtils
 				if ( !dir.mkdirs() ) {	// Try to create the directory(-ies) if they don't exist. If they exist OR if sth went wrong, the result is the same: "false".
 					String errorMessage;
 					if ( ArgsUtils.docFilesStorageGivenByUser )
-						errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + ArgsUtils.storeDocFilesDir + "\"."
+						errorMessage = "Problem when creating the \"storeDocFilesDir\": \"" + storeFilesDir + "\"."
 								+ "\nPlease give a valid Directory-path.";
 					else	// User has left the storageDir to be the default one.
-						errorMessage = "Problem when creating the default \"storeDocFilesDir\": \"" + ArgsUtils.storeDocFilesDir + "\"."
+						errorMessage = "Problem when creating the default \"storeDocFilesDir\": \"" + storeFilesDir + "\"."
 								+ "\nPlease verify you have the necessary privileges in the directory you are running the program from or specify the directory you want to save the files to."
 								+ "\nIf the above is not an option, then you can set to retrieve just the " + ArgsUtils.targetUrlType + "s and download the full-texts later (on your own).";
 					System.err.println(errorMessage);
@@ -152,7 +155,10 @@ public class FileUtils
 		} catch (SecurityException se) {
 			logger.error(se.getMessage(), se);
 			logger.warn("There was an error creating the docFiles-storageDir! Continuing without downloading the docFiles, while creating the jsonOutput with the docUrls.");
-			ArgsUtils.shouldDownloadDocFiles = false;
+			if ( calledForDocFiles )
+				ArgsUtils.shouldDownloadDocFiles = false;	// Continue without downloading the docFiles, just create the jsonOutput.
+			else
+				ArgsUtils.shouldDownloadHTMLFiles = false;
 		}
 	}
 
