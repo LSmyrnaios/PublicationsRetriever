@@ -329,7 +329,8 @@ public class FileUtils
 
 	public static final AtomicInteger numOfDocFiles = new AtomicInteger(0);
 
-	public static FileData storeDocFileWithIdOrOriginalFileName(HttpURLConnection conn, String docUrl, String id, int contentSize) throws FileNotRetrievedException, NoSpaceLeftException
+	public static FileData storeDocFileWithIdOrOriginalFileName(HttpURLConnection conn, String docUrl, String id, int contentSize) throws FileNotRetrievedException
+			//, NoSpaceLeftException
 	{
 		FileData fileData;
 		if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.idName) )
@@ -546,12 +547,15 @@ public class FileUtils
 	/**
 	 * This method Returns the Document-"File" object which has the original file name as the final fileName.
 	 * It is effectively synchronized, since it's always called from a synchronized method.
+	 *
 	 * @param docUrl
 	 * @param contentDisposition
+	 * @param contentSize
 	 * @return
 	 * @throws FileNotRetrievedException
 	 */
-	public static FileData getDocFileWithOriginalFileName(String docUrl, String contentDisposition, int contentSize) throws FileNotRetrievedException, NoSpaceLeftException
+	public static FileData getDocFileWithOriginalFileName(String docUrl, String contentDisposition, int contentSize) throws FileNotRetrievedException
+			//, NoSpaceLeftException
 	{
 		String docFileName = null;
 		boolean hasUnretrievableDocName = false;
@@ -612,16 +616,16 @@ public class FileUtils
 		
 		//logger.debug("docFileName: " + docFileName);
 
-		return getDocFileAndHandleExisting(docFileName, dotFileExtension, hasUnretrievableDocName);
+		return getDocFileAndHandleExisting(docFileName, dotFileExtension, hasUnretrievableDocName, contentSize, ArgsUtils.storeDocFilesDir, numbersOfDuplicateDocFileNames);
 	}
 
 
 	private static final Lock fileNameLock = new ReentrantLock(true);
 
-	public static FileData getDocFileAndHandleExisting(String fileName, String dotFileExtension, boolean hasUnretrievableDocName
+	public static FileData getDocFileAndHandleExisting(String fileName, String dotFileExtension, boolean hasUnretrievableDocName, int contentSize, String storeFilesDir,
+													   HashMap<String, Integer> numbersOfDuplicateFileNames
 	)
-			throws FileNotRetrievedException
-			, NoSpaceLeftException
+			throws FileNotRetrievedException	//, NoSpaceLeftException
 	{
 		String saveDocFileFullPath = storeFilesDir + fileName;
 		if ( ! fileName.endsWith(dotFileExtension) )
