@@ -89,7 +89,7 @@ public class ConnSupportUtils
 
 	public static final ConcurrentHashMap<String, DomainConnectionData> domainsWithConnectionData = new ConcurrentHashMap<>();
 
-	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0";	// This should not be "final", another program, using this software as a library, should be able to set its own "UserAgent".
+	public static String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0";	// This should not be "final", another program, using this software as a library, should be able to set its own "UserAgent".
 	public static String acceptLanguage = "en-US,en;q=0.5";
 
 
@@ -351,8 +351,8 @@ public class ConnSupportUtils
 	 * @return
 	 * @throws FileNotRetrievedException
 	 */
-	public static DocFileData downloadAndStoreDocFile(HttpURLConnection conn, String id, String domainStr, String docUrl, boolean calledForPageUrl)
-			throws DocFileNotRetrievedException
+	public static FileData downloadAndStoreDocFile(HttpURLConnection conn, String id, String domainStr, String docUrl, boolean calledForPageUrl)
+			throws FileNotRetrievedException
 	{
 		boolean reconnected = false;
 		try {
@@ -387,9 +387,9 @@ public class ConnSupportUtils
 				throw new FileNotRetrievedException(errMsg);
 			}
 
-				File docFile = docFileData.getDocFile();
-				try {	// In the "S3"-mode, we don't keep the files locally.
+			File docFile = fileData.getFile();
 			if ( ArgsUtils.shouldUploadFilesToS3 ) {
+				try {	// In the "S3"-mode, we don't keep the files locally, after they get transferred.
 					FileDeleteStrategy.FORCE.delete(docFile);    // We don't need the local file anymore..
 				} catch (Exception e) {
 					logger.warn("The file \"" + docFile.getName() + "\" could not be deleted after being uploaded to S3 ObjectStore!");
@@ -528,6 +528,12 @@ public class ConnSupportUtils
 			if ( calledForPageUrl && (errorStatusCode != 404) && (errorStatusCode != 410) ) {
 				String errorText = getErrorMessageFromResponseBody(conn);
 				if ( errorText != null ) {
+
+					if ( domainStr.contains("doi.org") && errorText.contains("Not a DOI") ) {
+						logger.warn("Found a \"doi.org\" url with an invalid DOI: " + urlStr);
+						// In this case it is highly likely that the "DOI" in the url is a DOI-LINK.
+					}
+
 					errorLogMessage += " Error-text: " + errorText;
 					/*if ( errorStatusCode == 403 && errorText.toLowerCase().contains("javascript") ) {
 						// Use selenium to execute the JS.

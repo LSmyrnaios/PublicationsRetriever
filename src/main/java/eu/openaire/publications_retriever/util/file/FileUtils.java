@@ -699,20 +699,19 @@ public class FileUtils
 
 	private static int getMaxStoringWaitingTime(int contentSize)
 	{
-		if ( contentSize != -2 ) {
-			if ( contentSize <= fiftyMBInBytes )
-				return 45_000;	// 45 seconds
-			else if ( contentSize <= oneHundredMBInBytes )
-				return 60_000;	// 1 min.
-			else if ( contentSize <= twoHundredMBInBytes )
-				return 120_000;	// 2 mins.
-			else if ( contentSize <= threeHundredMBInBytes )
-				return 180_000;	// 3 mins.
-			else
-				return 300_000;	// 5 mins.
-		}
-		else	// In case the server did not provide the "Content Length" header.
+		if ( contentSize == -2 )	// In case the server did not provide the "Content Length" header.
 			return 45_000;	// 45 seconds
+
+		if ( contentSize <= fiftyMBInBytes )
+			return 45_000;	// 45 seconds
+		else if ( contentSize <= oneHundredMBInBytes )
+			return 60_000;	// 1 min.
+		else if ( contentSize <= twoHundredMBInBytes )
+			return 120_000;	// 2 mins.
+		else if ( contentSize <= threeHundredMBInBytes )
+			return 180_000;	// 3 mins.
+		else
+			return 300_000;	// 5 mins.
 	}
 
 	
