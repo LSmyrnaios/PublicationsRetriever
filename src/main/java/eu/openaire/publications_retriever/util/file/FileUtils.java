@@ -672,8 +672,8 @@ public class FileUtils
 				if ( docFile.exists() )
 					FileDeleteStrategy.FORCE.delete(docFile);
 			} catch (Exception e) {
-				logger.error("Error when deleting the half-created file: " + docFileName);
 			}
+					logger.error("Error when deleting the half-created file: " + fileName);
 			// The "fileOutputStream" was not created in this case, so no closing is needed.
 			throw new FileNotRetrievedException(fnfe.getMessage());
 		} catch (Exception e) {	// Mostly I/O and Security Exceptions.
