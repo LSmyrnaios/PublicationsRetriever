@@ -132,13 +132,53 @@ public class ConnSupportUtils
 		knownDocMimeTypes.add("application/pdf");
 		knownDocMimeTypes.add("application/x-pdf");
 		knownDocMimeTypes.add("image/pdf");
+		knownDocMimeTypes.add("image/x-pdf");
+		knownDocMimeTypes.add("text/pdf");
+		knownDocMimeTypes.add("text/x-pdf");
 		knownDocMimeTypes.add("application/acrobat");
 		knownDocMimeTypes.add("application/vnd.adobe.pdf");
+		knownDocMimeTypes.add("application/vnd.adobe.portable-document-format");
 		knownDocMimeTypes.add("application/vnd.pdf");
 		knownDocMimeTypes.add("application/vnd.ms-pdf");
+		knownDocMimeTypes.add("application/pdf-stream");
 		knownDocMimeTypes.add("application/x-pdf-stream");
 		// TODO - Add support for other document formats, like "ps", "doc", "docx", ...
 			// Then create a file to keep all mimetypes and load them in memory, just like we do for the datasets below.
+
+		// For now, allow the detection of more docTypes, only when they are not downloaded.
+		if ( !ArgsUtils.shouldDownloadDocFiles ) {
+			knownDocMimeTypes.add("application/postscript");
+			knownDocMimeTypes.add("application/x-postscript");
+			knownDocMimeTypes.add("application/vnd.cups-postscript");
+			knownDocMimeTypes.add("application/eps");
+			knownDocMimeTypes.add("application/ps");
+			knownDocMimeTypes.add("application/x-ps");
+			knownDocMimeTypes.add("application/x-postscript-not-eps");
+			knownDocMimeTypes.add("text/postscript");
+			knownDocMimeTypes.add("image/eps");
+			knownDocMimeTypes.add("image/ps");
+			knownDocMimeTypes.add("application/msword");
+			knownDocMimeTypes.add("application/vnd.ms-word");
+			knownDocMimeTypes.add("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+			knownDocMimeTypes.add("application/vnd.openxmlformats-officedocument.presentationml.presentation");
+			knownDocMimeTypes.add("application/vnd.openxmlformats-officedocument.spreadsheetml.template");
+			knownDocMimeTypes.add("application/vnd.ms-powerpoint");
+			knownDocMimeTypes.add("application/vnd.oasis.opendocument.presentation");
+			knownDocMimeTypes.add("application/x-tex");
+			knownDocMimeTypes.add("application/vnd.oasis.opendocument.text");
+			knownDocMimeTypes.add("application/vnd.ms-xpsdocument");
+			knownDocMimeTypes.add("application/epub+zip");
+			knownDocMimeTypes.add("application/oxps");
+			knownDocMimeTypes.add("application/rtf");
+			knownDocMimeTypes.add("application/x-impress");
+			knownDocMimeTypes.add("application/vnd.oasis.opendocument.formula");
+			knownDocMimeTypes.add("application/vnd.oasis.opendocument.graphics");
+			knownDocMimeTypes.add("application/vnd.oasis.opendocument.chart");
+			knownDocMimeTypes.add("application/vnd.oasis.opendocument.image");
+			knownDocMimeTypes.add("application/vnd.apple.pages");
+			knownDocMimeTypes.add("application/vnd.apple.keynote");
+			knownDocMimeTypes.add("application/vnd.wordperfect");
+		}
 	}
 
 

@@ -1,6 +1,7 @@
 package eu.openaire.publications_retriever.util.url;
 
 import eu.openaire.publications_retriever.crawler.PageCrawler;
+import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -260,14 +261,16 @@ public class UrlTypeChecker
 			return true;
 		}
 
-		matcher = CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseUrl);
-		if ( matcher.matches() ) {	// TODO - To be removed when these docExtensions get supported.
-			if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
-				loggingMessage = "Discarded after matching to a url having an unsupported document extension!";
-				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
-				UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+		if ( ArgsUtils.shouldDownloadDocFiles ) {
+			matcher = CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseUrl);
+			if ( matcher.matches() ) {	// TODO - To be removed when these docExtensions get supported for download.
+				if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
+					loggingMessage = "Discarded after matching to a url having an unsupported document extension!";
+					logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+				}
+				return true;
 			}
-			return true;
 		}
 
 		return false;
