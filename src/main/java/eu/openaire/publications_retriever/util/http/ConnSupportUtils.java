@@ -358,6 +358,9 @@ public class ConnSupportUtils
 		if ( mimeType == null ) {	// Null-check to avoid NPE in "matcher()".
 			logger.warn("A null mimeType was given to \"getPlainMimeType()\".");
 			return null;
+		} else if ( mimeType.length() > 200 ) {
+			logger.warn("A suspiciously large mimeType was given to \"getPlainMimeType()\", having length: " + mimeType.length());
+			return null;	// If it contains garbage, it may cause a "ReDoS"-attack, when being processed by "MIME_TYPE_FILTER"-regex.
 		}
 		
 		String plainMimeType = null;

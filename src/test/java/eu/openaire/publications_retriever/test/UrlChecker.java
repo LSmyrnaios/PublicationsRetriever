@@ -792,6 +792,7 @@ public class UrlChecker {
 		// Set some needed data.
 		ConnSupportUtils.setKnownMimeTypes();
 		UrlTypeChecker.setRuntimeInitializedRegexes();
+		LoaderAndChecker.setCouldRetryRegex();
 
 		ArgsUtils.shouldDownloadDocFiles = true;
 		ArgsUtils.fileNameType = ArgsUtils.fileNameTypeEnum.idName;
