@@ -141,6 +141,14 @@
       </exclusions>
     </dependency>
 
+    <!-- https://mvnrepository.com/artifact/org.brotli/dec -->
+    <!-- This is needed during runtime, in order to use the Brotli (de-)compression algorithms. -->
+    <dependency>
+      <groupId>org.brotli</groupId>
+      <artifactId>dec</artifactId>
+      <version>0.1.2</version>
+    </dependency>
+
     <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
     <dependency>
       <groupId>org.apache.commons</groupId>
