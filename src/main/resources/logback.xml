@@ -28,6 +28,7 @@
     </appender>
 
     <logger name="crawlercommons" level="warn"/>
+    <logger name="eu.openaire.publications_retriever.crawler.MetadataHandler" level="debug"/>
 
     <root level="debug">
         <appender-ref ref="RollingFile" />

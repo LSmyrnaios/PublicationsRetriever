@@ -3,6 +3,7 @@ package eu.openaire.publications_retriever.test;
 import com.google.common.collect.HashMultimap;
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
+import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.DetectedContentType;
@@ -33,8 +34,6 @@ public class UrlChecker {
 	@Test
 	public void checkUrlConnectivity()
 	{
-		FileUtils.shouldDownloadDocFiles = false;	// Default is: "true".
-
 		// Here test individual urls.
 
 		ArrayList<String> urlList = new ArrayList<>();
@@ -787,15 +786,19 @@ public class UrlChecker {
 		for ( String url: urlList )
 			logger.info(url);
 
-		LoaderAndChecker.retrieveDatasets = false;
-		FileUtils.shouldDownloadDocFiles = true;
-		FileUtils.docFileNameType = FileUtils.DocFileNameType.idName;
-		if ( FileUtils.shouldDownloadDocFiles ) {
-			FileUtils.shouldDeleteOlderDocFiles = true;
-			FileUtils.storeDocFilesDir = FileUtils.workingDir + "testDocFiles" + File.separator;
+		LoaderAndChecker.retrieveDatasets = true;
+		LoaderAndChecker.retrieveDocuments = false;
+
+		// Set some needed data.
 		ConnSupportUtils.setKnownMimeTypes();
-		UrlTypeChecker.setURLDirectoryFilterRegex();
-			FileUtils.handleStoreDocFileDirectory();
+		UrlTypeChecker.setRuntimeInitializedRegexes();
+
+		ArgsUtils.shouldDownloadDocFiles = true;
+		ArgsUtils.fileNameType = ArgsUtils.fileNameTypeEnum.idName;
+		if ( ArgsUtils.shouldDownloadDocFiles ) {
+			ArgsUtils.shouldDeleteOlderDocFiles = true;
+			ArgsUtils.storeDocFilesDir = FileUtils.workingDir + "testDocFiles" + File.separator;
+			FileUtils.handleStoreFilesDirectory(ArgsUtils.storeDocFilesDir, ArgsUtils.shouldDeleteOlderDocFiles , true);
 		}
 
 		String testID = "testID";

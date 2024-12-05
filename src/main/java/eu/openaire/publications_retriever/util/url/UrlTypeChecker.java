@@ -1,6 +1,7 @@
 package eu.openaire.publications_retriever.util.url;
 
 import eu.openaire.publications_retriever.crawler.PageCrawler;
+import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +19,7 @@ public class UrlTypeChecker
 {
 	private static final Logger logger = LoggerFactory.getLogger(UrlTypeChecker.class);
 
-	private static final String htOrPhpExtensionsPattern = "(?:[\\w]?ht(?:[\\w]{1,2})?|php[\\d]?)";
+	private static final String htOrPhpExtensionsPattern = "(?:[\\w]?ht(?:[\\w]{1,2})?|php[\\d]{0,2})";
 	private static final String mediaExtensionsPattern = "ico|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov";
 
 
@@ -27,9 +28,10 @@ public class UrlTypeChecker
 	private static final String docOrDatasetNegativeLookAroundPattern = "(?<!" + wordsPattern + docOrDatasetKeywords + wordsPattern + ")(?!.*" + docOrDatasetKeywords + ".*)";
 	// Note: Up to Java 8, we cannot use the "*" or "+" inside the lookbehind, so we use character-class with limits.
 
-	public static Pattern URL_DIRECTORY_FILTER;	// Set this regex during runtime to account for the user's preference in selecting to retrieve documents only (not datasets).
+	public static Pattern URL_DIRECTORY_FILTER = null;	// Set this regex during runtime to account for the user's preference in selecting to retrieve documents only (not datasets).
 
-	public static final Pattern CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER = Pattern.compile(".+\\.(?:(?:doc|ppt)[x]?|ps|epub|od[tp]|djvu|rtf)(?:\\?.+)?$");	// Doc-extensions which are currently unsupported. Some pageUrls give also .zip files, but that's another story.
+	public static final String unsupportedDocFileTypes = "(?:doc|ppt)[x]?|ps|epub|od[tp]|djvu|rtf)";
+	public static final Pattern CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER = Pattern.compile(".+\\.(?:" + unsupportedDocFileTypes + "(?:\\?.+)?$");	// Doc-extensions which are currently unsupported. Some pageUrls give also .zip files, but that's another story.
 
 	public static final Pattern URL_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:css|js(?:\\?y)?|" + mediaExtensionsPattern + "|pt|bib|nt|refer|enw|ris|mso|dtl|do|asc|c|cc" + docOrDatasetNegativeLookAroundPattern + "|cxx|cpp|java|py)(?:\\?.+)?$");
 	// In the above, don't include .php and relative extensions, since even this can be a docUrl. For example: https://www.dovepress.com/getfile.php?fileID=5337
@@ -41,9 +43,7 @@ public class UrlTypeChecker
 	// So, we make a new REGEX for these extensions, this time, without a potential argument in the end (e.g. ?id=XXX..), except for the potential "lang".
 	public static final Pattern PLAIN_PAGE_EXTENSION_FILTER = Pattern.compile(".+(?<!" + docOrDatasetKeywords + ")\\.(?:" + htOrPhpExtensionsPattern+ "|[aj]sp[x]?|jsf|do|asc|cgi|cfm)(?:\\?(?!.*" + docOrDatasetKeywords + ").*)?$");	// We may have this page, which runs a script to return the pdf: "https://www.ijcseonline.org/pdf_paper_view.php?paper_id=4547&48-IJCSE-07375.pdf" or this pdf-internal-link: "https://meetingorganizer.copernicus.org/EGU2020/EGU2020-6296.html?pdf"
 	
-	public static final Pattern INTERNAL_LINKS_FILE_FORMAT_FILTER = Pattern.compile(".+format=(?:xml|" + htOrPhpExtensionsPattern + "|rss|ris|bib).*");	// This exists as a url-parameter.
-
-	// TODO - SET THE ABOVE REGEX AT RUNTIME TO AVOID EXCLUDING XML WHEN THE USE WANTS DATASETS..
+	public static Pattern INTERNAL_LINKS_FILE_FORMAT_FILTER = null;	// This includes filter for url-parameters.
 
 	public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile("[^/]+://[^/]*(?<=[/.])(?:(?<!drive.)google\\.|goo.gl|gstatic|facebook|fb.me|twitter|(?:meta|xing|baidu|t|x|vk).co|insta(?:gram|paper)|tiktok|youtube|vimeo|linkedin|ebay|bing|(?:amazon|[./]analytics)\\.|s.w.org|wikipedia|myspace|yahoo|mail|pinterest|reddit|tumblr"
 			+ "|www.ccdc.cam.ac.uk|figshare.com/collections/|datadryad.org/stash/dataset/"
@@ -114,16 +114,16 @@ public class UrlTypeChecker
 	/**
 	 * This method depends on the initialization of the "LoaderAndChecker.retrieveDatasets" variable, given by the user as cmd-arg, or defined by a service which wraps this software.
 	 * */
-	public static void setURLDirectoryFilterRegex() {
+	public static void setRuntimeInitializedRegexes() {
 		URL_DIRECTORY_FILTER =
-			Pattern.compile("[^/]+://.*/(?:(discover|profile|user|survey|index|media|theme|product|deposit|default|shop|view)/" + docOrDatasetNegativeLookAroundPattern	// Avoid blocking these if the url is likely to give a file.
+			Pattern.compile("[^/]+://.*/(?:(?:(?:(?:discover|profile|user|survey|index|media|theme|product|deposit|default|shop|view)/" + docOrDatasetNegativeLookAroundPattern	// Avoid blocking these if the url is likely to give a file.
 				+ "|(?:(?:ldap|password)-)?login|ac[c]?ess(?![./]+)|sign[-]?(?:in|out|up)|session|(?:how-to-)?(:?join[^t]|subscr)|regist(?:er|ration)|submi(?:t|ssion)|(?:post|send|export|(?:wp-)?admin|home|form|career[s]?|company)/|watch|browse|import|bookmark|announcement|feedback|share[^d]|about|(?:[^/]+-)?faq|wiki|news|events|cart|support|(?:site|html)map|documentation|help|license|disclaimer|copyright|(?:site-)?polic(?:y|ies)(?!.*paper)|privacy|terms|law|principles"
 				+ "|(?:my|your|create)?[-]?account|my(?:dspace|selection|cart)|(?:service|help)[-]?desk|settings|fund|aut[h]?or" + docOrDatasetNegativeLookAroundPattern + "|journal/key|(?:journal-)?editor|author:|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic(s)?/.*/view/|/view/" + docOrDatasetNegativeLookAroundPattern + "|conta[c]?t|wallet|contribute|donate|our[_-][\\w]+|template|logo|image|photo/|video|advertiser|most-popular|people|(?:the)?press|for-authors|customer-service[s]?|captcha|clipboard|dropdown|widget"
-				+ "|(?:forum|blog|column|row|js|css|rss|legal)/"	// These are absolute directory names.	TODO - Should I add the "|citation[s]?" rule ? BUT, The NASA-docUrls include it normally..
+				+ "|(?:forum|blog|column|row|js|[cr]ss|legal)/"	// These are absolute directory names.	TODO - Should I add the "|citation[s]?" rule ? BUT, The NASA-docUrls include it normally..
 				+ "|(?:(?:advanced[-]?)?search|search/advanced|search-results|(?:[e]?books|journals)(?:-catalog)?|issue|docs|oai|(?:abstracting-)?indexing|online[-]?early|honors|awards|meetings|calendar|diversity|scholarships|invo(?:ice|lved)|errata|classroom|publish(?:-with-us)?|upload|products|forgot|home|ethics|comics|podcast|trends|bestof|booksellers|recommendations|bibliographic|volume[s]?)[/]?$"	// Url ends with these. Note that some of them are likely to be part of a docUrl, for ex. the "/trends/"-dir.
 				+ "|rights[-]?permissions|publication[-]?ethics|advertising|reset[-]?password|\\*/|communit(?:y|ies)"
 				+ "|restricted|noaccess|crawlprevention|error|(?:mis|ab)use|\\?denied|gateway|defaultwebpage|sorryserver|(?<!response_type=)cookie|(?:page-)?not[-]?found"
-				+ "|(?:404(?:_response)?|accessibility|invalid|catalog(?:ue|ar|o)?)\\." + htOrPhpExtensionsPattern
+				+ "|(?:(?:error)?404(?:_response)?|accessibility|invalid|catalog(?:ue|ar|o)?)\\." + htOrPhpExtensionsPattern
 
 				// Add pages with a specific blocking-reason, in "capturing-groups", in order to be able to get the matched-group-number and know the exact reason the block occurred.
 				+ "|(.*/view/" + docOrDatasetNegativeLookAroundPattern + ")"	// 1. Avoid pages having their DocUrls in larger depth (internalPagesToDocUrls or PreviousOfDocUrls).
@@ -131,12 +131,15 @@ public class UrlTypeChecker
 				+ "|(doi.org/https://doi.org/.*pangaea." + (!LoaderAndChecker.retrieveDatasets ? "|pangaea.)" : ")")	// 3. Avoid "PANGAEA."-urls with problematic form and non docUrl internal links (yes WITH the "DOT", it's not a domain-name!).
 
 				// The following pattern is the reason we need to set this regex in runtime.
-				+ (!LoaderAndChecker.retrieveDatasets ? "|(?:bibtext|dc(?:terms)?|[^/]*(?:tei|endnote))$)" : ").*")
+				+ (!LoaderAndChecker.retrieveDatasets ? ").*)|(?:bibtext|dc(?:terms)?|[^/]*(?:tei|endnote))$)" : ").*")
 			);
 
 		// We check the above rules, mostly as directories to avoid discarding publications' urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
 		if ( logger.isTraceEnabled() )
 			logger.trace("URL_DIRECTORY_FILTER:\n" + URL_DIRECTORY_FILTER);
+
+		INTERNAL_LINKS_FILE_FORMAT_FILTER =
+				Pattern.compile(".+format=(?:" + (!LoaderAndChecker.retrieveDatasets ? "xml|" : "") + htOrPhpExtensionsPattern + "|rss|ris|bib|citation_|events_kml).*");
 	}
 
 	
@@ -259,14 +262,16 @@ public class UrlTypeChecker
 			return true;
 		}
 
-		matcher = CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseUrl);
-		if ( matcher.matches() ) {	// TODO - To be removed when these docExtensions get supported.
-			if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
-				loggingMessage = "Discarded after matching to a url having an unsupported document extension!";
-				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
-				UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+		if ( ArgsUtils.shouldDownloadDocFiles ) {
+			matcher = CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseUrl);
+			if ( matcher.matches() ) {	// TODO - To be removed when these docExtensions get supported for download.
+				if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
+					loggingMessage = "Discarded after matching to a url having an unsupported document extension!";
+					logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, null, true, "true", wasUrlValid, "false", "false", "false", null, "null");
+				}
+				return true;
 			}
-			return true;
 		}
 
 		return false;

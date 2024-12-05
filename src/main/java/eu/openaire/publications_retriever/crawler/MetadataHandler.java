@@ -1,6 +1,7 @@
 package eu.openaire.publications_retriever.crawler;
 
 import eu.openaire.publications_retriever.exceptions.DomainBlockedException;
+import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
@@ -43,12 +44,12 @@ public class MetadataHandler {
         String regex = ".+\\.(?:";
 
         if ( !LoaderAndChecker.retrieveDatasets )
-            regex += "zip|rar|";  // If no datasets retrieved, block these types.
+            regex += LoaderAndChecker.dataset_formats;  // If no datasets retrieved, block these types.
         else if ( !LoaderAndChecker.retrieveDocuments )
-            regex += "pdf|doc[x]?|";  // If no documents retrieved, block these types.
+            regex += "pdf|" + UrlTypeChecker.unsupportedDocFileTypes;  // If no documents retrieved, block these types.
         //else -> no more datatype-dependent additions
 
-        regex += "apk|jpg|png)(?:\\?.+)?$";
+        regex += "|apk|jpg|png)(?:\\?.+)?$";
         logger.debug("COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS -> REGEX: " + regex);
         COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS = Pattern.compile(regex);
     }
@@ -133,7 +134,7 @@ public class MetadataHandler {
 
         String lowerCaseMetaDocUrl = metaDocUrl.toLowerCase();
 
-        if ( UrlTypeChecker.CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseMetaDocUrl).matches()
+        if ( (ArgsUtils.shouldDownloadDocFiles && UrlTypeChecker.CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseMetaDocUrl).matches())
             || UrlTypeChecker.PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseMetaDocUrl).matches()
             || UrlTypeChecker.URL_DIRECTORY_FILTER.matcher(lowerCaseMetaDocUrl).matches()
             || COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS.matcher(lowerCaseMetaDocUrl).matches() )   // These do not lead us to avoid crawling the page, since the metaDocUrl may be an image, but the page may also include a full-text inside.

@@ -599,7 +599,7 @@ public class PageCrawler
 		//logger.debug("Going to check DocLink: " + docLink);	// DEBUG!
 		try {
 			if ( !HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, docLink, null, false, true) ) {    // We log the docUrl inside this method.
-				logger.warn("The DocLink < " + docLink + " > was not a docUrl (unexpected)!");
+				logger.warn("The DocLink < " + docLink + " > was not a " + ArgsUtils.targetUrlType + " (unexpected)!");
 				UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as the retrieved DocLink: < " + docLink + " > was not a docUrl.", null, true, "true", "true", "false", "false", "false", null, "null");
 				return false;
 			}

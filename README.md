@@ -81,7 +81,7 @@ To run the application you should navigate to the ***target*** directory, which 
 while choosing the appropriate run-command.<br> 
 
 **Run with standard input/output:**<br>
-**``java -jar publications_retriever-1.2-SNAPSHOT.jar arg1:'-inputFileFullPath' arg2:<inputFile> arg3:'-retrieveDataType' arg4:'<dataType: document | dataset | all>' arg5:'-downloadDocFiles' arg6:'-docFileNameType' arg7:'idName' arg8:'-firstDocFileNum' arg9:'NUM' arg10:'-docFilesStorage'
+**``java -jar publications_retriever-1.2-SNAPSHOT.jar arg1:'-inputFileFullPath' arg2:<inputFile> arg3:'-retrieveDataType' arg4:'<dataType: document | dataset | all>' arg5:'-downloadDocFiles' arg6:'-fileNameType' arg7:'idName' arg8:'-firstFileNum' arg9:'NUM' arg10:'-docFilesStorage'
 arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
 
 **Run tests with custom input/output:**
@@ -93,7 +93,7 @@ arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
     and change the ***appender-ref***, from ***File*** to ***Console***.<br>
 - Run ``mvn clean install`` to create the new ***JAR*** file.<br>
 - Execute the program with the following command:<br>
-**``java -jar publications_retriever-1.2-SNAPSHOT.jar arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-docFileNameType' arg5:'numberName' arg6:'-firstDocFileNum' arg7:'NUM' arg8:'-docFilesStorage' arg9:'storageDir' arg10:'-inputDataUrl' arg11: 'inputUrl' arg12: '-numOfThreads' arg13: <NUM>``**
+**``java -jar publications_retriever-1.2-SNAPSHOT.jar arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-fileNameType' arg5:'numberName' arg6:'-firstFileNum' arg7:'NUM' arg8:'-docFilesStorage' arg9:'storageDir' arg10:'-inputDataUrl' arg11: 'inputUrl' arg12: '-numOfThreads' arg13: <NUM>``**
 <br><br>
 *You can use the argument '-inputFileFullPath' to define the inputFile, instead of the stdin-redirection. That way, the progress percentage will appear in the logging file.*
 <br><br>
@@ -103,8 +103,8 @@ arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
 - **-downloadDocFiles** will tell the program to download the DocFiles.
     The absence of this argument will cause the program to NOT download the docFiles, but just to find the *DocUrls* instead.
     Either way the DocUrls will be written to the JsonOutputFile.
-- **-docFileNameType** and **< fileNameType >** will tell the program which fileName-type to use (*originalName, idName, numberName*).
-- **-firstDocFileNum** and **< NUM >** will tell the program to use numbers as *DocFileNames* and the first *DocFile* will have the given number "*NUM*".
+- **-fileNameType** and **< fileNameType >** will tell the program which fileName-type to use (*originalName, idName, numberName*).
+- **-firstFileNum** and **< NUM >** will tell the program to use numbers as *DocFileNames* and the first *DocFile* will have the given number "*NUM*".
     The absence of this argument-group will cause the program to use the original-docFileNames.
 - **-docFilesStorage** and **storageDir** will tell the program to use the given DocFiles-*storageDir*.
     If the *storageDir* is equal to **"S3ObjectStore"** , then the program uploads the DocFiles to an S3 storage (see the **note** below).
@@ -127,15 +127,15 @@ The above script will run the following commands:
 - **`mvn clean install`**: Does a *clean install*.
 - **`rm -rf example/sample_output/*`**: Removes any previous example-results.
 - **``cd target &&
-    java -jar publications_retriever-1.2-SNAPSHOT.jar -retrieveDataType document -downloadDocFiles -docFileNameType numberName -firstDocFileNum 1 -docFilesStorage ../example/sample_output/DocFiles
+    java -jar publications_retriever-1.2-SNAPSHOT.jar -retrieveDataType document -downloadDocFiles -fileNameType numberName -firstFileNum 1 -docFilesStorage ../example/sample_output/DocFiles
     < ../example/sample_input/sample_input.json > ../example/sample_output/sample_output.json``**<br>
     This command will run the program with "**../example/sample_input/sample_input.json**" as input
     and "**../example/sample_output/sample_output.json**" as the output.<br>
     The arguments used are:
     - **-retrieveDataType** and **document** will tell the program to retrieve the urls of type "*document*".
     - **-downloadDocFiles** which will tell the program to download the DocFiles.
-    - **-docFileNameType numberName** which will tell the program to use numbers as the docFileNames.
-    - **-firstDocFileNum 1** which will tell the program to use numbers as DocFileNames and the first DocFile will have the number <*1*>.
+    - **-fileNameType numberName** which will tell the program to use numbers as the docFileNames.
+    - **-firstFileNum 1** which will tell the program to use numbers as DocFileNames and the first DocFile will have the number <*1*>.
     - **-docFilesStorage ../example/sample_output/DocFiles** which will tell the program to use the custom DocFilesStorageDir: "*../example/sample_output/DocFiles*".
 <br>
 

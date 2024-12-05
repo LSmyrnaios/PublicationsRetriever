@@ -34,7 +34,7 @@ public class UrlUtils
 	public static final Pattern ANCHOR_FILTER = Pattern.compile("(.+)(#(?!/).+)");	// Remove the anchor at the end of the url to avoid duplicate versions. (anchors might exist even in docUrls themselves)
 	// Note that we may have this: https://academic.microsoft.com/#/detail/2945595536 (these urls are dead now, but others like it , may exist)
 
-	public static AtomicInteger sumOfDocUrlsFound = new AtomicInteger(0);	// Change it back to simple int if finally in singleThread mode
+	public static AtomicInteger sumOfDocUrlsFound = new AtomicInteger(0);
 
 	public static final Set<String> duplicateUrls = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
@@ -53,7 +53,7 @@ public class UrlUtils
      * @param urlId (it may be null if no id was provided in the input)
      * @param sourceUrl
      * @param pageUrl
-     * @param docUrl
+     * @param docOrDatasetUrl
      * @param comment
      * @param pageDomain (it may be null)
      * @param isFirstCrossed
@@ -65,24 +65,24 @@ public class UrlUtils
      * @param fileSize
      * @param fileHash
      */
-    public static void addOutputData(String urlId, String sourceUrl, String pageUrl, String docUrl, String comment, String pageDomain,
+    public static void addOutputData(String urlId, String sourceUrl, String pageUrl, String docOrDatasetUrl, String comment, String pageDomain,
 									 boolean isFirstCrossed, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String couldRetry, Long fileSize, String fileHash)
     {
-        String finalDocUrl = docUrl;
+        String finalDocOrDatasetUrl = docOrDatasetUrl;
 
-        if ( !finalDocUrl.equals(duplicateUrlIndicator) )
+        if ( !finalDocOrDatasetUrl.equals(duplicateUrlIndicator) )
         {
-			if ( !finalDocUrl.equals(unreachableDocOrDatasetUrlIndicator) )
+			if ( !finalDocOrDatasetUrl.equals(unreachableDocOrDatasetUrlIndicator) )
 			{
 				sumOfDocUrlsFound.incrementAndGet();
 
-				// Remove the "temporalId" from urls for "cleaner" output and "already found docUrl"-matching. These IDs will expire eventually anyway.
-				String lowerCaseUrl = finalDocUrl.toLowerCase();
+				// Remove the "temporalId" from urls for "cleaner" output and "already found docOrDatasetUrl"-matching. These IDs will expire eventually anyway.
+				String lowerCaseUrl = finalDocOrDatasetUrl.toLowerCase();
 				if ( lowerCaseUrl.contains("token") || lowerCaseUrl.contains("jsessionid") )
-					finalDocUrl = UrlUtils.removeTemporalIdentifier(finalDocUrl);	// We send the non-lowerCase-url as we may want to continue with that docUrl in case of an error.
+					finalDocOrDatasetUrl = UrlUtils.removeTemporalIdentifier(finalDocOrDatasetUrl);	// We send the non-lowerCase-url as we may want to continue with that docOrDatasetUrl in case of an error.
 
-				if ( isFirstCrossed )	// Add this id, only if this is a first-crossed docUrl.
-					docOrDatasetUrlsWithIDs.put(finalDocUrl, new IdUrlTuple(urlId, sourceUrl));	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
+				if ( isFirstCrossed )	// Add this id, only if this is a first-crossed docOrDatasetUrl.
+					docOrDatasetUrlsWithIDs.put(finalDocOrDatasetUrl, new IdUrlTuple(urlId, sourceUrl));	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
 
 				if ( pageDomain == null )
 					pageDomain = UrlUtils.getDomainStr(pageUrl, null);
@@ -91,26 +91,26 @@ public class UrlUtils
 				{
 					// Gather data for the MLA, if we decide to have it enabled.
 					if ( MachineLearning.useMLA )
-						MachineLearning.gatherMLData(pageUrl, finalDocUrl, pageDomain);
+						MachineLearning.gatherMLData(pageUrl, finalDocOrDatasetUrl, pageDomain);
 
-					// Add the domains of the pageUrl and the finalDocUrl to the successful domains as both lead in some way to a docUrl.
+					// Add the domains of the pageUrl and the finalDocOrDatasetUrl to the successful domains as both lead in some way to a docOrDatasetUrl.
 					// The data inside ConcurrentHashMap "domainsAndHits" is used to evaluate how good the domain is doing while is having some problems.
 					// If the "goods" surpass the "bads", then that domain will not get blocked, even if the "minimum-accepted-bad-cases" was exceeded.
 					ConnSupportUtils.countInsertAndGetTimes(domainsAndHits, pageDomain);
 
-					// Now if the "finalDocUrl" is different from the "pageUrl", get the domain of the "finalDocUrl" and if it's different, then add it to "domainsAndHits"-HashMap.
-					if ( !pageUrl.equals(finalDocUrl) ) {
-						String docUrlDomain = UrlUtils.getDomainStr(finalDocUrl, null);
+					// Now if the "finalDocOrDatasetUrl" is different from the "pageUrl", get the domain of the "finalDocOrDatasetUrl" and if it's different, then add it to "domainsAndHits"-HashMap.
+					if ( !pageUrl.equals(finalDocOrDatasetUrl) ) {
+						String docUrlDomain = UrlUtils.getDomainStr(finalDocOrDatasetUrl, null);
 						if ( (docUrlDomain != null) && !docUrlDomain.equals(pageDomain) )
 							ConnSupportUtils.countInsertAndGetTimes(domainsAndHits, docUrlDomain);
 					}
 				}
 			}
-			else	// Else if this url is not a docUrl and has not been processed before..
+			else	// Else if this url is not a docOrDatasetUrl and has not been processed before..
 				duplicateUrls.add(sourceUrl);	// Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future. We don't add docUrls here, as we want them to be separate for checking purposes.
 		}
 
-        FileUtils.dataForOutput.add(new DataForOutput(urlId, sourceUrl, pageUrl, finalDocUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, couldRetry, fileHash, fileSize, comment));    // Log it to be written later in the outputFile.
+        FileUtils.dataForOutput.add(new DataForOutput(urlId, sourceUrl, pageUrl, finalDocOrDatasetUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, couldRetry, fileHash, fileSize, comment));    // Log it to be written later in the outputFile.
     }
 
 
