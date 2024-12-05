@@ -44,12 +44,12 @@ public class MetadataHandler {
         String regex = ".+\\.(?:";
 
         if ( !LoaderAndChecker.retrieveDatasets )
-            regex += "zip|rar|";  // If no datasets retrieved, block these types.
+            regex += LoaderAndChecker.dataset_formats;  // If no datasets retrieved, block these types.
         else if ( !LoaderAndChecker.retrieveDocuments )
-            regex += "pdf|doc[x]?|";  // If no documents retrieved, block these types.
+            regex += "pdf|" + UrlTypeChecker.unsupportedDocFileTypes;  // If no documents retrieved, block these types.
         //else -> no more datatype-dependent additions
 
-        regex += "apk|jpg|png)(?:\\?.+)?$";
+        regex += "|apk|jpg|png)(?:\\?.+)?$";
         logger.debug("COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS -> REGEX: " + regex);
         COMMON_UNSUPPORTED_META_DOC_OR_DATASET_URL_EXTENSIONS = Pattern.compile(regex);
     }

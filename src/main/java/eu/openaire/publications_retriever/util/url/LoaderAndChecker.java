@@ -40,9 +40,9 @@ public class LoaderAndChecker
 	// "DOC_URL_FILTER" works for lowerCase Strings (we make sure they are in lowerCase before we check).
 	// Note that we still need to check if it's an alive link and if it's actually a docUrl (though it's mimeType).
 
-	private static final String dataset_formats = "xls[xbm]?|xlt[x]?|[ct]sv|tab|(?:(?:geo)?j|b)son|(?:x|k|g|nmr|sb|wiley|y[a]?)ml|xsd|o[dt]s|ddi|rdf|[g]?zip|zipx|[rt]ar|[7x]z|[t]?gz|[gb]z[\\d]*|smi[l]?|por|ascii|dta|sav|dat|txt|ti[f]{1,2}|tfw|dwg|nt|fits|feather"
+	public static final String dataset_formats = "(?:xls[xbm]?|xlt[x]?|[ct]sv|tab|(?:(?:geo)?j|b)son|(?:x|k|g|nmr|sb|wiley|y[a]?)ml|xsd|o[dt]s|ddi|rdf|[g]?zip|zipx|[rt]ar|[7x]z|[t]?gz|[gb]z[\\d]*|smi[l]?|por|ascii|dta|sav|dat|txt|ti[f]{1,2}|tfw|dwg|nt|fits|feather"
 			+ "|svg|sas7b(?:dat|ve)|spss|sas|stata|(?:my|postgre)?sql(?:ite)?|bigquery|sh[px]|sb[xn]|prj|dbf|(?:m|acc)db|mif|mat|pcd|bt|n[sc]?[\\d]*|h[\\d]+|hdf[\\d]*|trs|opj|jcamp|fcs|fas(?:ta)?|keys|values|las|rdata|parquet|avro|sql|dcm|gr[i]?b]|rds"
-			+ "|[p]?cap|dmp|vcf|cbor|biosample|hic|warc|ig[e]?s|sla|dxf|pdb|[sc]df|cif|f(?:ast)?[qa]|apng|sra|vtp|gltf|[sm]tl|ply|abc|md|rtf|ttl|shp|shx|exr|cdf|glb|mtl|kmz|textFile";
+			+ "|[p]?cap|dmp|vcf|cbor|biosample|hic|warc|ig[e]?s|sla|dxf|pdb|[sc]df|cif|f(?:ast)?[qa]|apng|sra|vtp|gltf|[sm]tl|ply|abc|md|rtf|ttl|shp|shx|exr|cdf|glb|mtl|kmz|textFile)";
 	public static final Pattern DATASET_URL_FILTER = Pattern.compile(".+(?:dataset[s]?/.*|(?:\\.|format=)" + dataset_formats + "(?:\\?.+)?$)");
 
 
