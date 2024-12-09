@@ -30,8 +30,8 @@ public class UrlTypeChecker
 
 	public static Pattern URL_DIRECTORY_FILTER = null;	// Set this regex during runtime to account for the user's preference in selecting to retrieve documents only (not datasets).
 
-	public static final String unsupportedDocFileTypes = "(?:doc|ppt)[x]?|ps|epub|od[tp]|djvu|rtf)";
-	public static final Pattern CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER = Pattern.compile(".+\\.(?:" + unsupportedDocFileTypes + "(?:\\?.+)?$");	// Doc-extensions which are currently unsupported. Some pageUrls give also .zip files, but that's another story.
+	public static final String unsupportedDocFileTypes = "(?:(?:doc|ppt)[x]?|ps|epub|od[tp]|djvu|rtf)";
+	public static final Pattern CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER = Pattern.compile(".+\\." + unsupportedDocFileTypes + "(?:\\?.+)?$");	// Doc-extensions which are currently unsupported. Some pageUrls give also .zip files, but that's another story.
 
 	public static final Pattern URL_FILE_EXTENSION_FILTER = Pattern.compile(".+\\.(?:css|js(?:\\?y)?|" + mediaExtensionsPattern + "|pt|bib|nt|refer|enw|ris|mso|dtl|do|asc|c|cc" + docOrDatasetNegativeLookAroundPattern + "|cxx|cpp|java|py)(?:\\?.+)?$");
 	// In the above, don't include .php and relative extensions, since even this can be a docUrl. For example: https://www.dovepress.com/getfile.php?fileID=5337
@@ -131,7 +131,7 @@ public class UrlTypeChecker
 				+ "|(doi.org/https://doi.org/.*pangaea." + (!LoaderAndChecker.retrieveDatasets ? "|pangaea.)" : ")")	// 3. Avoid "PANGAEA."-urls with problematic form and non docUrl internal links (yes WITH the "DOT", it's not a domain-name!).
 
 				// The following pattern is the reason we need to set this regex in runtime.
-				+ (!LoaderAndChecker.retrieveDatasets ? ").*)|(?:bibtext|dc(?:terms)?|[^/]*(?:tei|endnote))$)" : ").*")
+				+ (!LoaderAndChecker.retrieveDatasets ? ").*)|(?:bibtext|dc(?:terms)?|[^/]*(?:tei|endnote))$)" : ")).*)")
 			);
 
 		// We check the above rules, mostly as directories to avoid discarding publications' urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
