@@ -541,7 +541,7 @@ public class HttpConnUtils
 				String lowerCaseTargetUrl = targetUrl.toLowerCase();
 				if ( (calledForPageUrl && UrlTypeChecker.shouldNotAcceptPageUrl(urlId, sourceUrl, targetUrl, lowerCaseTargetUrl, calledForPageUrl))	// Redirecting a pageUrl.
 						|| (!calledForPageUrl && UrlTypeChecker.shouldNotAcceptInternalLink(targetUrl, lowerCaseTargetUrl)) )	// Redirecting an internalPageLink.
-					throw new RuntimeException("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + targetUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code, in redirection-number: " + curRedirectsNum);
+					throw new RuntimeException("Url: \"" + initialUrl + "\" was prevented to redirect to the unwanted location: \"" + targetUrl + "\", after receiving an \"HTTP " + responseCode + "\" Redirect Code, in redirection-number: " + curRedirectsNum + (calledForPageUrl ? " | " + LoaderAndChecker.alreadyLoggedMessage : ""));
 				else if ( lowerCaseTargetUrl.contains("sharedsitesession") ) {	// either "getSharedSiteSession" or "consumeSharedSiteSession".
 					logger.warn("Initial-url: \"" + initialUrl + "\" tried to cause a \"sharedSiteSession-redirectionPack\" by redirecting to \"" + targetUrl + "\"!");
 					List<String> blockedDomains = ConnSupportUtils.blockSharedSiteSessionDomains(targetUrl, currentUrl);

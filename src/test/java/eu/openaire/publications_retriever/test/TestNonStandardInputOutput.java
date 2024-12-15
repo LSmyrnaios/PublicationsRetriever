@@ -150,6 +150,20 @@ public class TestNonStandardInputOutput  {
 	}
 
 
+	@Disabled
+	@Test
+	public void testCustomInputOutputWithDocsAndDatasets()
+	{
+		String[] args = new String[4];
+		args[0] = "-retrieveDataType";
+		args[1] = "all";	// "document" OR "dataset" OR "all"
+		args[2] = "-inputFileFullPath";
+		//args[3] = "./testData/idUrlPairs/test.json";
+		args[3] = "./testData/idUrlPairs/ukrn_data_test.json";
+		//args[3] = "./testData/idUrlPairs/docsAndDatasets.json";
+		main(args);
+	}
+
 
 	@Disabled
 	@Test
