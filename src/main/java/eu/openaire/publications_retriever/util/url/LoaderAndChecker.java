@@ -78,7 +78,7 @@ public class LoaderAndChecker
 		finally {
 			// Write any remaining quadruples from memory to disk (we normally write every "FileUtils.jasonGroupSize" quadruples, so a few last quadruples might have not be written yet).
 			if ( !FileUtils.dataForOutput.isEmpty() ) {
-				logger.debug("Writing last quadruples to the outputFile.");
+				logger.debug("Writing last data points to the outputFile.");
 				FileUtils.writeResultsToFile();
 			}
 		}

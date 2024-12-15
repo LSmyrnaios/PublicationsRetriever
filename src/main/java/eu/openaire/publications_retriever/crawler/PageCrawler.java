@@ -102,7 +102,7 @@ public class PageCrawler
 		}
 		//logger.debug(pageHtml);	// DEBUG!
 
-		if ( pageDomain.contains("turkjgastroenterol.org") ) {
+		if ( LoaderAndChecker.retrieveDocuments && pageDomain.contains("turkjgastroenterol.org") ) {
 			SpecialUrlsHandler.extractAndCheckTurkjgastroenterolDocUrl(pageHtml, urlId, sourceUrl, pageUrl, pageDomain);
 			return;
 		}
