@@ -9,11 +9,11 @@ import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.exceptions.DomainBlockedException;
 import eu.openaire.publications_retriever.exceptions.FileNotRetrievedException;
+import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.models.MimeTypeResult;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileData;
 import eu.openaire.publications_retriever.util.file.FileUtils;
-import eu.openaire.publications_retriever.util.file.IdUrlTuple;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
 import org.apache.commons.compress.compressors.brotli.BrotliCompressorInputStream;
@@ -82,8 +82,12 @@ public class ConnSupportUtils
 	private static final int timesToReturnNoTypeBeforeDomainBlocked = 10;
 	public static AtomicInteger reCrossedDocUrls = new AtomicInteger(0);
 
-	public static final String alreadyDownloadedFromIDMessage = "This file is probably already downloaded from ID=";
+	public static final String alreadyDownloadedFromIDMessage = "This file is probably already downloaded by ID=";
 	public static final String alreadyDownloadedFromSourceUrlContinuedMessage = " and SourceUrl=";
+
+	public static final String alreadyDetectedFromIDMessage = "This url was already detected by ID=";
+	public static final String alreadyDetectedFromSourceUrlContinuedMessage = " and SourceUrl=";
+
 
 	public static final Set<String> knownDocMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 	public static final Set<String> knownDatasetMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
@@ -349,11 +353,9 @@ public class ConnSupportUtils
 		logger.info("re-crossed docUrl found: < " + docUrl + " >");
 		reCrossedDocUrls.incrementAndGet();
 		String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, docUrl);
-		if ( ArgsUtils.shouldDownloadDocFiles ) {
-			IdUrlTuple idUrlTuple = UrlUtils.docOrDatasetUrlsWithIDs.get(docUrl);
-			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, docUrl, alreadyDownloadedFromIDMessage + idUrlTuple.id + alreadyDownloadedFromSourceUrlContinuedMessage + idUrlTuple.url, null, false, "true", "true", "true", wasDirectLink, "true", null, "null", "N/A");
-		} else
-			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, docUrl, "", null, false, "true", "true", "true", wasDirectLink, "true", null, "null", "N/A");
+		IdUrlMimeTypeTriple idUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(docUrl);	// It's guaranteed to not be null at this point.
+		String comment = ((ArgsUtils.shouldDownloadDocFiles ? (alreadyDownloadedFromIDMessage + idUrlMimeTypeTriple.id + alreadyDownloadedFromSourceUrlContinuedMessage) : (alreadyDetectedFromIDMessage + idUrlMimeTypeTriple.id + alreadyDetectedFromSourceUrlContinuedMessage)) + idUrlMimeTypeTriple.url);
+		UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, docUrl, comment, null, false, "true", "true", "true", wasDirectLink, "true", null, "null", idUrlMimeTypeTriple.mimeType);
 	}
 
 	

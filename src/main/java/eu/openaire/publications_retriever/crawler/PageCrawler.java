@@ -1,6 +1,7 @@
 package eu.openaire.publications_retriever.crawler;
 
 import eu.openaire.publications_retriever.exceptions.*;
+import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
@@ -159,7 +160,8 @@ public class PageCrawler
 			} else
 				urlToCheck = currentLink;
 
-            if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
+			IdUrlMimeTypeTriple idUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(urlToCheck);	// If we got into an already-found docUrl, log it and return.
+			if ( idUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
 				ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, urlToCheck, false);
 				return;
             }
@@ -591,7 +593,8 @@ public class PageCrawler
 			return false;
 		}
 
-		if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(docLink) ) {    // If we got into an already-found docUrl, log it and return.
+		IdUrlMimeTypeTriple idUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(docLink);
+		if ( idUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
 			ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, docLink, false);
 			return true;
 		}

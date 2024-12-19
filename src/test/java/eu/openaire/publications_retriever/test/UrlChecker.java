@@ -786,8 +786,8 @@ public class UrlChecker {
 		for ( String url: urlList )
 			logger.info(url);
 
+		LoaderAndChecker.retrieveDocuments = true;
 		LoaderAndChecker.retrieveDatasets = true;
-		LoaderAndChecker.retrieveDocuments = false;
 
 		// Set some needed data.
 		ConnSupportUtils.setKnownMimeTypes();
