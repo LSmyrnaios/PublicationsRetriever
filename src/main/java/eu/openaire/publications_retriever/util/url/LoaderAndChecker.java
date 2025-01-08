@@ -6,6 +6,7 @@ import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.exceptions.ConnTimeoutException;
 import eu.openaire.publications_retriever.exceptions.DomainBlockedException;
 import eu.openaire.publications_retriever.exceptions.DomainWithUnsupportedHEADmethodException;
+import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
@@ -129,8 +130,9 @@ public class LoaderAndChecker
 						return false;
 					}
 
-					if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
-						ConnSupportUtils.handleReCrossedDocUrl("null", retrievedUrl, retrievedUrl, retrievedUrl, true);
+					IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl);
+					if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
+						ConnSupportUtils.handleReCrossedDocUrl("null", retrievedUrl, retrievedUrl, retrievedUrl, originalIdUrlMimeTypeTriple, true);
 						return true;
 					}
 
@@ -221,8 +223,9 @@ public class LoaderAndChecker
 							continue;
 						}	// The "retrievedUrl" might have changed (inside "handleUrlChecks()").
 
-						if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
-							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, true);
+						IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl);
+						if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
+							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, originalIdUrlMimeTypeTriple, true);
 							if ( !isSingleIdUrlPair )
 								loggedUrlsOfCurrentId.add(retrievedUrl);
 							goToNextId = true;    // Skip the best-url evaluation & connection after this loop.
@@ -373,8 +376,9 @@ public class LoaderAndChecker
 						return false;
 					}
 
-					if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {    // If we got into an already-found docUrl, log it and return.
-						ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, true);
+					IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl);
+					if ( originalIdUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
+						ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, originalIdUrlMimeTypeTriple, true);
 						return true;
 					}
 
@@ -460,8 +464,9 @@ public class LoaderAndChecker
 							continue;
 						}
 
-						if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {    // If we got into an already-found docUrl, log it and return.
-							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, true);
+						IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl);
+						if ( originalIdUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
+							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, originalIdUrlMimeTypeTriple, true);
 							continue;
 						}
 

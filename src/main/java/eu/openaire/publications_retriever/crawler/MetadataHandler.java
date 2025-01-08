@@ -1,6 +1,7 @@
 package eu.openaire.publications_retriever.crawler;
 
 import eu.openaire.publications_retriever.exceptions.DomainBlockedException;
+import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
@@ -166,8 +167,9 @@ public class MetadataHandler {
         // For example: http://localhost:4000/bitstreams/98e649e7-a656-4a90-ad69-534178e63fbb/download
         metaDocUrl = LOCALHOST_DOMAIN_REPLACEMENT_PATTERN.matcher(metaDocUrl).replaceFirst("://" +  pageDomain);
 
-        if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(metaDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
-            ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, metaDocUrl, false);
+        IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(metaDocUrl);
+        if ( originalIdUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
+            ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, metaDocUrl, originalIdUrlMimeTypeTriple, false);
             numOfMetaDocUrlsFound.incrementAndGet();
             return true;
         }

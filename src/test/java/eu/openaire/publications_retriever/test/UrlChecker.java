@@ -3,6 +3,7 @@ package eu.openaire.publications_retriever.test;
 import com.google.common.collect.HashMultimap;
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
+import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
@@ -826,8 +827,9 @@ public class UrlChecker {
 			else
 				logger.debug("urlPath: " + urlPath);*/
 
-			if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(urlToCheck) ) {    // If we got into an already-found docUrl, log it and return.
-				ConnSupportUtils.handleReCrossedDocUrl(testID, urlToCheck, urlToCheck, urlToCheck, true);
+			IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(urlToCheck);
+			if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
+				ConnSupportUtils.handleReCrossedDocUrl(testID, urlToCheck, urlToCheck, urlToCheck, originalIdUrlMimeTypeTriple, true);
 				continue;
 			}
 

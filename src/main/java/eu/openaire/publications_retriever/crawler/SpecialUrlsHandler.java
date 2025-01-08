@@ -3,6 +3,7 @@ package eu.openaire.publications_retriever.crawler;
 
 import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.exceptions.DocLinkUnavailableException;
+import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
@@ -224,8 +225,9 @@ public class SpecialUrlsHandler
 		if ( (urlToCheck = LoaderAndChecker.handleUrlChecks(urlId, urlToCheck)) == null )
 			return false;	// The output-data was logged inside.
 
-		if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
-			ConnSupportUtils.handleReCrossedDocUrl(urlId, urlToCheck, urlToCheck, urlToCheck, true);	// The output-data was logged inside.
+		IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(urlToCheck);
+		if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
+			ConnSupportUtils.handleReCrossedDocUrl(urlId, urlToCheck, urlToCheck, urlToCheck, originalIdUrlMimeTypeTriple, true);	// The output-data was logged inside.
 			return false;
 		}
 

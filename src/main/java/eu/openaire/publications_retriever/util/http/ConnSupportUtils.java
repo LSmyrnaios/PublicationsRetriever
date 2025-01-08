@@ -349,13 +349,12 @@ public class ConnSupportUtils
 	}
 
 
-	public static void handleReCrossedDocUrl(String urlId, String sourceUrl, String pageUrl, String docUrl, boolean calledForPageUrl) {
+	public static void handleReCrossedDocUrl(String urlId, String sourceUrl, String pageUrl, String docUrl, IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple, boolean calledForPageUrl) {
 		logger.info("re-crossed docUrl found: < " + docUrl + " >");
 		reCrossedDocUrls.incrementAndGet();
 		String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, docUrl);
-		IdUrlMimeTypeTriple idUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(docUrl);	// It's guaranteed to not be null at this point.
-		String comment = ((ArgsUtils.shouldDownloadDocFiles ? (alreadyDownloadedFromIDMessage + idUrlMimeTypeTriple.id + alreadyDownloadedFromSourceUrlContinuedMessage) : (alreadyDetectedFromIDMessage + idUrlMimeTypeTriple.id + alreadyDetectedFromSourceUrlContinuedMessage)) + idUrlMimeTypeTriple.url);
-		UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, docUrl, comment, null, false, "true", "true", "true", wasDirectLink, "true", null, "null", idUrlMimeTypeTriple.mimeType);
+		String comment = ((ArgsUtils.shouldDownloadDocFiles ? (alreadyDownloadedFromIDMessage + originalIdUrlMimeTypeTriple.id + alreadyDownloadedFromSourceUrlContinuedMessage) : (alreadyDetectedFromIDMessage + originalIdUrlMimeTypeTriple.id + alreadyDetectedFromSourceUrlContinuedMessage)) + originalIdUrlMimeTypeTriple.url);
+		UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, docUrl, comment, null, false, "true", "true", "true", wasDirectLink, "true", null, "null", originalIdUrlMimeTypeTriple.mimeType);
 	}
 
 	

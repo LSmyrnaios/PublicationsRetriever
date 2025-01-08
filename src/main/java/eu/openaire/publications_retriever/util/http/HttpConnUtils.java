@@ -3,6 +3,7 @@ package eu.openaire.publications_retriever.util.http;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.crawler.SpecialUrlsHandler;
 import eu.openaire.publications_retriever.exceptions.*;
+import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.models.MimeTypeResult;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileData;
@@ -554,8 +555,9 @@ public class HttpConnUtils
 
 				//ConnSupportUtils.printRedirectDebugInfo(currentUrl, location, targetUrl, responseCode, curRedirectsNum);
 
-				if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(targetUrl) ) {	// If we got into an already-found docUrl, log it and return.
-					ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, targetUrl, calledForPageUrl);
+				IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(targetUrl);
+				if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
+					ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, targetUrl, originalIdUrlMimeTypeTriple, calledForPageUrl);
 					throw new AlreadyFoundDocUrlException();
 				}
 
