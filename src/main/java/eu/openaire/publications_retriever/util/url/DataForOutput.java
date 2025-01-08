@@ -22,11 +22,12 @@ public class DataForOutput
 	private String wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, couldRetry;
 	private String hash;
 	private Long size;
+	private String mimeType;
 	private String comment;   // This will be an emptyString, unless there is an error causing the docUrl to be unreachable.
 
 	private static final Logger logger = LoggerFactory.getLogger(DataForOutput.class);
 
-	public DataForOutput(String urlId, String sourceUrl, String pageUrl, String docOrDatasetUrl, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String couldRetry, String hash, Long size, String comment)
+	public DataForOutput(String urlId, String sourceUrl, String pageUrl, String docOrDatasetUrl, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String couldRetry, String hash, Long size, String mimeType, String comment)
     {
 		if ( urlId == null )
             urlId = "unretrievable";
@@ -42,6 +43,7 @@ public class DataForOutput
 		this.couldRetry = couldRetry;
 		this.hash = hash;
 		this.size = size;
+		this.mimeType = mimeType;
 		this.comment = comment;
 	}
 	
@@ -101,6 +103,7 @@ public class DataForOutput
 			jsonObject.put("couldRetry", this.couldRetry);
 			jsonObject.put("fileHash", String.valueOf(this.hash));	// The hash may be null,  convert it to the string "null".
 			jsonObject.put("fileSize", String.valueOf(this.size));	// Convert Long to String, otherwise the output-JSON will be broken. It may be null!
+			jsonObject.put("mimeType", this.mimeType);
 			jsonObject.put("comment", this.comment);
 		} catch (JSONException je) {
 			// Keep the jsonObject with what it has till now.. plus a "special" comment.
@@ -197,6 +200,14 @@ public class DataForOutput
 
 	public void setSize(Long size) {
 		this.size = size;
+	}
+
+	public String getMimeType() {
+		return mimeType;
+	}
+
+	public void setMimeType(String mimeType) {
+		this.mimeType = mimeType;
 	}
 
 	public String getComment() {

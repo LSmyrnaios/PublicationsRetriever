@@ -1,6 +1,7 @@
 package eu.openaire.publications_retriever.crawler;
 
 import eu.openaire.publications_retriever.exceptions.DomainBlockedException;
+import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
@@ -79,7 +80,7 @@ public class MetadataHandler {
         // e.g.: https://le.uwpress.org/content/78/2/260
 
         // Some websites use upper of mixed-case meta tags, names or contents or even the values.
-        // We cannot make the HTML lower-case or we will make the metaDocUrls invalid.
+        // We cannot make the HTML lower-case, or we will make the metaDocUrls invalid.
         // So the REGEXes have to be case-insensitive..!
 
         String metaAccessRights = null;
@@ -97,7 +98,7 @@ public class MetadataHandler {
                 if ( (noAccessCase == null) || noAccessCase.isEmpty() )
                     noAccessCase = "prohibited";    // This is not an "official" status, but a good description of the situation and makes it clear that there was a minor problem when determining the exact reason.
                 logger.debug("The metaAccessRights were found to be \"" + noAccessCase + "\"! Do not check the metaDocUrl, nor crawl the page!");
-                UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its accessRight were '" + noAccessCase + "'.", null, true, "true", "true", "false", "false", "true", null, "null");
+                UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its accessRight were '" + noAccessCase + "'.", null, true, "true", "true", "false", "false", "true", null, "null", "N/A");
                 numOfProhibitedAccessPagesFound.incrementAndGet();
                 return true;   // This publication has "restricted" metaAccessRights, so it will not be handled in another way. Although, it may be rechecked in the future.
             }
@@ -127,7 +128,7 @@ public class MetadataHandler {
             // Block the domain and return "true" to indicate handled-state.
             HttpConnUtils.blacklistedDomains.add(pageDomain);
             logger.warn("Domain: \"" + pageDomain + "\" was blocked, after giving a dynamic metaDocUrl: " + metaDocUrl);
-            UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl was a dynamic-link.", null, true, "true", "true", "false", "false", "false", null, "null");
+            UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl was a dynamic-link.", null, true, "true", "true", "false", "false", "false", null, "null", "N/A");
             PageCrawler.contentProblematicUrls.incrementAndGet();
             return true;    // Since the domain is blocked, there is no point in continuing to crawl.
         }
@@ -150,7 +151,7 @@ public class MetadataHandler {
         if ( PageCrawler.NON_VALID_DOCUMENT.matcher(lowerCaseMetaDocUrl).matches() ) {
             logger.warn("The retrieved metaDocUrl ( " + metaDocUrl + " ) is pointing to a false-positive full-text file, avoid crawling the page..!");
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
-            UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl is pointing to a false-positive full-text file.", null, true, "true", "true", "false", "false", "false", null, "null");
+            UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl is pointing to a false-positive full-text file.", null, true, "true", "true", "false", "false", "false", null, "null", "N/A");
             return true;    // This pageUrl was handled. Nothing more can be done.
         }
 
@@ -166,8 +167,9 @@ public class MetadataHandler {
         // For example: http://localhost:4000/bitstreams/98e649e7-a656-4a90-ad69-534178e63fbb/download
         metaDocUrl = LOCALHOST_DOMAIN_REPLACEMENT_PATTERN.matcher(metaDocUrl).replaceFirst("://" +  pageDomain);
 
-        if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(metaDocUrl) ) {    // If we got into an already-found docUrl, log it and return.
-            ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, metaDocUrl, false);
+        IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(metaDocUrl);
+        if ( originalIdUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
+            ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, metaDocUrl, originalIdUrlMimeTypeTriple, false);
             numOfMetaDocUrlsFound.incrementAndGet();
             return true;
         }
@@ -184,7 +186,7 @@ public class MetadataHandler {
         } catch (DomainBlockedException dbe) {
             String metaDocUrlDomain = UrlUtils.getDomainStr(metaDocUrl, null);
             if ( (metaDocUrlDomain != null) && metaDocUrlDomain.equals(pageDomain) ) {
-                UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its domain was blocked.", null, true, "true", "true", "false", "false", "false", null, "null");
+                UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its domain was blocked.", null, true, "true", "true", "false", "false", "false", null, "null", "N/A");
                 return true;    // Stop crawling the page.
             }
             return false;   // Continue crawling the page.
@@ -195,7 +197,7 @@ public class MetadataHandler {
                 String exceptionMessage = e.getMessage();
                 if ( (exceptionMessage != null) && (exceptionMessage.contains("HTTP 401") || exceptionMessage.contains("HTTP 403")) ) {
                     logger.warn("The MetaDocUrl < " + metaDocUrl + " > had authorization issues, so further crawling of this page is aborted.");
-                    UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl had authorization issues.", null, true, "true", "true", "false", "false", "false", null, "null");
+                    UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl had authorization issues.", null, true, "true", "true", "false", "false", "false", null, "null", "N/A");
                     return true;    // It was handled, avoid crawling the page.
                 }
             }

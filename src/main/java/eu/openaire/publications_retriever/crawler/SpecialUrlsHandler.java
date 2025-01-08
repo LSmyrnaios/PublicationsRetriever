@@ -3,6 +3,7 @@ package eu.openaire.publications_retriever.crawler;
 
 import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.exceptions.DocLinkUnavailableException;
+import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
@@ -192,7 +193,7 @@ public class SpecialUrlsHandler
 	{
 		Matcher matcher = Turkjgastroenterol_docUrl_pattern.matcher(pageHtml);
 		if ( !matcher.find() ) {
-			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving the \"turkjgastroenterol\"-pdf-url from its html.", pageDomain, true, "true", "true", "false", "false", "false", null, "null");
+			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving the \"turkjgastroenterol\"-pdf-url from its html.", pageDomain, true, "true", "true", "false", "false", "false", null, "null", "N/A");
 			return false;
 		}
 
@@ -201,13 +202,13 @@ public class SpecialUrlsHandler
 			pdfUrl = matcher.group(1);
 		} catch (Exception e) {
 			logger.warn("No pdf-url was found inside the html of page: " + pageUrl, e);
-			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving the \"turkjgastroenterol\"-pdf-url from its html.", pageDomain, true, "true", "true", "false", "false", "false", null, "null");
+			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving the \"turkjgastroenterol\"-pdf-url from its html.", pageDomain, true, "true", "true", "false", "false", "false", null, "null", "N/A");
 			PageCrawler.contentProblematicUrls.incrementAndGet();
 			return false;
 		}
 		if ( (pdfUrl == null) || pdfUrl.isEmpty() ) {
 			logger.warn("No pdf-url was found inside the html of page: " + pageUrl);
-			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving the \"turkjgastroenterol\"-pdf-url from its html.", pageDomain, true, "true", "true", "false", "false", "false", null, "null");
+			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving the \"turkjgastroenterol\"-pdf-url from its html.", pageDomain, true, "true", "true", "false", "false", "false", null, "null", "N/A");
 			PageCrawler.contentProblematicUrls.incrementAndGet();
 			return false;
 		}
@@ -216,7 +217,7 @@ public class SpecialUrlsHandler
 		if ( ((urlToCheck = ConnSupportUtils.getFullyFormedUrl(pageUrl, pdfUrl, null)) == null)	// Make it a full-URL.
 				|| ((urlToCheck = LoaderAndChecker.basicURLNormalizer.filter(urlToCheck)) == null) ) {	// Normalize it.
 			logger.warn("Could not normalize url: " + pdfUrl);
-			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as the retrievied \"turkjgastroenterol\"-pdf-url had normalization's problems.", pageDomain, true, "true", "true", "false", "false", "false", null, "null");
+			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as the retrievied \"turkjgastroenterol\"-pdf-url had normalization's problems.", pageDomain, true, "true", "true", "false", "false", "false", null, "null", "N/A");
 			LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			return false;
 		}
@@ -224,8 +225,9 @@ public class SpecialUrlsHandler
 		if ( (urlToCheck = LoaderAndChecker.handleUrlChecks(urlId, urlToCheck)) == null )
 			return false;	// The output-data was logged inside.
 
-		if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(urlToCheck) ) {	// If we got into an already-found docUrl, log it and return.
-			ConnSupportUtils.handleReCrossedDocUrl(urlId, urlToCheck, urlToCheck, urlToCheck, true);	// The output-data was logged inside.
+		IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(urlToCheck);
+		if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
+			ConnSupportUtils.handleReCrossedDocUrl(urlId, urlToCheck, urlToCheck, urlToCheck, originalIdUrlMimeTypeTriple, true);	// The output-data was logged inside.
 			return false;
 		}
 
@@ -239,7 +241,7 @@ public class SpecialUrlsHandler
 			String wasValid = list.get(0);
 			String couldRetry = list.get(1);
 			String errorMsg = "Discarded in 'PageCrawler.visit()' method, as there was a problem in checking the retrieved 'turkjgastroenterol'-pdf-url: " + list.get(2);
-			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, pageDomain, true, "true", wasValid, "false", "false", couldRetry, null, "null");
+			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, pageDomain, true, "true", wasValid, "false", "false", couldRetry, null, "null", "N/A");
 			return false;
 		}
 

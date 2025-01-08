@@ -9,10 +9,11 @@ import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.exceptions.DomainBlockedException;
 import eu.openaire.publications_retriever.exceptions.FileNotRetrievedException;
+import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
+import eu.openaire.publications_retriever.models.MimeTypeResult;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileData;
 import eu.openaire.publications_retriever.util.file.FileUtils;
-import eu.openaire.publications_retriever.util.file.IdUrlTuple;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
 import org.apache.commons.compress.compressors.brotli.BrotliCompressorInputStream;
@@ -81,8 +82,12 @@ public class ConnSupportUtils
 	private static final int timesToReturnNoTypeBeforeDomainBlocked = 10;
 	public static AtomicInteger reCrossedDocUrls = new AtomicInteger(0);
 
-	public static final String alreadyDownloadedFromIDMessage = "This file is probably already downloaded from ID=";
+	public static final String alreadyDownloadedFromIDMessage = "This file is probably already downloaded by ID=";
 	public static final String alreadyDownloadedFromSourceUrlContinuedMessage = " and SourceUrl=";
+
+	public static final String alreadyDetectedFromIDMessage = "This url was already detected by ID=";
+	public static final String alreadyDetectedFromSourceUrlContinuedMessage = " and SourceUrl=";
+
 
 	public static final Set<String> knownDocMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 	public static final Set<String> knownDatasetMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
@@ -226,16 +231,17 @@ public class ConnSupportUtils
 	
 	/**
 	 * This method takes a url and its mimeType and checks if it's a document mimeType or not.
+	 *
 	 * @param urlStr
-	 * @param mimeType in lowercase
+	 * @param mimeType                          in lowercase
 	 * @param contentDisposition
 	 * @param calledForPageUrl
 	 * @param calledForPossibleDocOrDatasetUrl)
 	 * @return boolean
 	 */
-	public static String hasDocOrDatasetMimeType(String urlStr, String mimeType, String contentDisposition, HttpURLConnection conn, boolean calledForPageUrl, boolean calledForPossibleDocOrDatasetUrl)
+	public static MimeTypeResult hasDocOrDatasetMimeType(String urlStr, String mimeType, String contentDisposition, HttpURLConnection conn, boolean calledForPageUrl, boolean calledForPossibleDocOrDatasetUrl)
 	{
-		String typeToReturn = null;
+		MimeTypeResult mimeTypeResult = null;
 		String lowerCaseUrl = null;
 
 		if ( mimeType != null )
@@ -248,11 +254,11 @@ public class ConnSupportUtils
 					if ( (contentDisposition != null) ) {
 						contentDisposition = contentDisposition.toLowerCase();
 						if ( !contentDisposition.equals("attachment") )
-							typeToReturn = contentDisposition.contains(".pdf") ? "document" : null;    // TODO - add more types as needed. Check: "http://www.esocialsciences.org/Download/repecDownload.aspx?qs=Uqn/rN48N8UOPcbSXUd2VFI+dpOD3MDPRfIL8B3DH+6L18eo/yEvpYEkgi9upp2t8kGzrjsWQHUl44vSn/l7Uc1SILR5pVtxv8VYECXSc8pKLF6QJn6MioA5dafPj/8GshHBvLyCex2df4aviMvImCZpwMHvKoPiO+4B7yHRb97u1IHg45E+Z6ai0Z/0vacWHoCsNT9O4FNZKMsSzen2Cw=="
+							mimeTypeResult = contentDisposition.contains(".pdf") ? new MimeTypeResult("application/pdf", "document") : null;    // TODO - add more types as needed. Check: "http://www.esocialsciences.org/Download/repecDownload.aspx?qs=Uqn/rN48N8UOPcbSXUd2VFI+dpOD3MDPRfIL8B3DH+6L18eo/yEvpYEkgi9upp2t8kGzrjsWQHUl44vSn/l7Uc1SILR5pVtxv8VYECXSc8pKLF6QJn6MioA5dafPj/8GshHBvLyCex2df4aviMvImCZpwMHvKoPiO+4B7yHRb97u1IHg45E+Z6ai0Z/0vacWHoCsNT9O4FNZKMsSzen2Cw=="
 					} else
-						typeToReturn = urlStr.toLowerCase().contains("pdf") ? "document" : null;
+						mimeTypeResult = urlStr.toLowerCase().contains(".pdf") ? new MimeTypeResult("application/pdf", "document") : null;
 				}
-				return typeToReturn;	// It may be null.
+				return mimeTypeResult;	// It may be null.
 			}
 
 			String plainMimeType = mimeType;	// Make sure we don't cause any NPE later on..
@@ -264,11 +270,11 @@ public class ConnSupportUtils
 					logger.warn("Url with problematic mimeType (" + mimeType + ") was: " + urlStr);
 					lowerCaseUrl = urlStr.toLowerCase();
 					if ( lowerCaseUrl.contains("pdf") )
-						typeToReturn = "document";
+						mimeTypeResult = new MimeTypeResult("application/pdf", "document");
 					else if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(lowerCaseUrl).matches() )
-						typeToReturn = "dataset";
+						mimeTypeResult = new MimeTypeResult("unspecified", "dataset");
 
-					return typeToReturn;	// Default is "null".
+					return mimeTypeResult;	// Default is "null".
 				}
 			}
 
@@ -277,9 +283,9 @@ public class ConnSupportUtils
 			plainMimeType = StringUtils.replace(plainMimeType, "\"", "", -1);
 
 			if ( knownDocMimeTypes.contains(plainMimeType) )
-				typeToReturn = "document";
+				mimeTypeResult = new MimeTypeResult(plainMimeType, "document");
 			else if ( knownDatasetMimeTypes.contains(plainMimeType) )
-				typeToReturn = "dataset";
+				mimeTypeResult = new MimeTypeResult(plainMimeType, "dataset");
 			else if ( POSSIBLE_DOC_OR_DATASET_MIME_TYPE.matcher(plainMimeType).matches() )
 			{
 				contentDisposition = conn.getHeaderField("Content-Disposition");
@@ -288,44 +294,52 @@ public class ConnSupportUtils
 					if ( !contentDisposition.equals("attachment") )    // It may be "attachment" but also be a pdf.. but we have to check if the "pdf" exists inside the url-string.
 					{
 						if ( contentDisposition.contains(".pdf") )
-							typeToReturn = "document";
+							mimeTypeResult = new MimeTypeResult("application/pdf", "document");
 						else {
 							String clearContentDisposition = StringUtils.replace(contentDisposition, "\"", "", -1);
 							clearContentDisposition = StringUtils.replace(clearContentDisposition, "'", "", -1);
 							if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
-								typeToReturn = "dataset";
+								mimeTypeResult = new MimeTypeResult(plainMimeType, "dataset");
 						}
-						return typeToReturn;
+						return mimeTypeResult;
 					}
 				}
 				// In case the content-disposition is null or "attachment", check the url.
 				lowerCaseUrl = urlStr.toLowerCase();
 				if ( lowerCaseUrl.contains("pdf") )
-					typeToReturn = "document";
+					mimeTypeResult = new MimeTypeResult("application/pdf", "document");
 				else if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(lowerCaseUrl).matches() )
-					typeToReturn = "dataset";
+					mimeTypeResult = new MimeTypeResult(plainMimeType, "dataset");
 			}	// TODO - When we will accept more docTypes, match it also against other docTypes, not just "pdf".
 			else {	// This url is going to be classified as a "page", so do one last check, if the content-disposition refers to a doc-file.
 				// The domain "bib.irb.hr" and possibly others as well, classify their full-texts as "html-pages" in the "content-type", but their "Content-Disposition" says there's a "filename.pdf", which is true.
 				if ( conn != null ) {    // Just to be sure we avoid an NPE.
 					contentDisposition = conn.getHeaderField("Content-Disposition");    // The "contentDisposition" will be definitely "null", since "mimeType != null" and so, the "contentDisposition" will not have been retrieved by the caller method.
-					if ( (contentDisposition != null) && contentDisposition.toLowerCase().contains(".pdf") )
-						typeToReturn = "document";
+					if ( contentDisposition != null )
+					{
+						if ( contentDisposition.toLowerCase().contains(".pdf") )
+							mimeTypeResult = new MimeTypeResult("application/pdf", "document");
+
+						String clearContentDisposition = StringUtils.replace(contentDisposition, "\"", "", -1);
+						clearContentDisposition = StringUtils.replace(clearContentDisposition, "'", "", -1);
+						if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
+							mimeTypeResult = new MimeTypeResult(plainMimeType, "dataset");
+					}
 				}
 			}
-			return typeToReturn;	// Default is "null".
+			return mimeTypeResult;	// Default is "null".
 		}
 		else if ( (contentDisposition != null) && !contentDisposition.equals("attachment") ) {	// If the mimeType was not retrieved, then try the "Content Disposition", which is already in "lowerCase".
 			// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
 			if ( contentDisposition.contains(".pdf") )
-				typeToReturn = "document";
+				mimeTypeResult = new MimeTypeResult("application/pdf", "document");
 			else {
 				String clearContentDisposition = StringUtils.replace(contentDisposition, "\"", "", -1);
 				clearContentDisposition = StringUtils.replace(clearContentDisposition, "'", "", -1);
 				if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
-					typeToReturn = "dataset";
+					mimeTypeResult = new MimeTypeResult("unspecified", "dataset");
 			}
-			return typeToReturn;	// Default is "null".
+			return mimeTypeResult;	// Default is "null".
 		}
 		else {	// This is not expected to be reached. Keep it for method-reusability.
 			if ( calledForPageUrl || calledForPossibleDocOrDatasetUrl )
@@ -335,15 +349,12 @@ public class ConnSupportUtils
 	}
 
 
-	public static void handleReCrossedDocUrl(String urlId, String sourceUrl, String pageUrl, String docUrl, boolean calledForPageUrl) {
+	public static void handleReCrossedDocUrl(String urlId, String sourceUrl, String pageUrl, String docUrl, IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple, boolean calledForPageUrl) {
 		logger.info("re-crossed docUrl found: < " + docUrl + " >");
 		reCrossedDocUrls.incrementAndGet();
 		String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, docUrl);
-		if ( ArgsUtils.shouldDownloadDocFiles ) {
-			IdUrlTuple idUrlTuple = UrlUtils.docOrDatasetUrlsWithIDs.get(docUrl);
-			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, docUrl, alreadyDownloadedFromIDMessage + idUrlTuple.id + alreadyDownloadedFromSourceUrlContinuedMessage + idUrlTuple.url, null, false, "true", "true", "true", wasDirectLink, "true", null, "null");
-		} else
-			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, docUrl, "", null, false, "true", "true", "true", wasDirectLink, "true", null, "null");
+		String comment = ((ArgsUtils.shouldDownloadDocFiles ? (alreadyDownloadedFromIDMessage + originalIdUrlMimeTypeTriple.id + alreadyDownloadedFromSourceUrlContinuedMessage) : (alreadyDetectedFromIDMessage + originalIdUrlMimeTypeTriple.id + alreadyDetectedFromSourceUrlContinuedMessage)) + originalIdUrlMimeTypeTriple.url);
+		UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, docUrl, comment, null, false, "true", "true", "true", wasDirectLink, "true", null, "null", originalIdUrlMimeTypeTriple.mimeType);
 	}
 
 	
@@ -358,6 +369,9 @@ public class ConnSupportUtils
 		if ( mimeType == null ) {	// Null-check to avoid NPE in "matcher()".
 			logger.warn("A null mimeType was given to \"getPlainMimeType()\".");
 			return null;
+		} else if ( mimeType.length() > 200 ) {
+			logger.warn("A suspiciously large mimeType was given to \"getPlainMimeType()\", having length: " + mimeType.length());
+			return null;	// If it contains garbage, it may cause a "ReDoS"-attack, when being processed by "MIME_TYPE_FILTER"-regex.
 		}
 		
 		String plainMimeType = null;

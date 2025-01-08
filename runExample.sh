@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Do a clean install
-mvn clean install
+mvn clean install -U
 
 # Remove any previous example-results.
 rm -rf example/sample_output/*

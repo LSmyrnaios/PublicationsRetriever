@@ -6,6 +6,7 @@ import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.exceptions.ConnTimeoutException;
 import eu.openaire.publications_retriever.exceptions.DomainBlockedException;
 import eu.openaire.publications_retriever.exceptions.DomainWithUnsupportedHEADmethodException;
+import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
@@ -45,6 +46,7 @@ public class LoaderAndChecker
 			+ "|[p]?cap|dmp|vcf|cbor|biosample|hic|warc|ig[e]?s|sla|dxf|pdb|[sc]df|cif|f(?:ast)?[qa]|apng|sra|vtp|gltf|[sm]tl|ply|abc|md|rtf|ttl|shp|shx|exr|cdf|glb|mtl|kmz|textFile)";
 	public static final Pattern DATASET_URL_FILTER = Pattern.compile(".+(?:dataset[s]?/.*|(?:\\.|format=)" + dataset_formats + "(?:\\?.+)?$)");
 
+	public static final String alreadyLoggedMessage = "__LOGGED__";
 
 	public static final BasicURLNormalizer basicURLNormalizer = BasicURLNormalizer.newBuilder().build();
 
@@ -78,7 +80,7 @@ public class LoaderAndChecker
 		finally {
 			// Write any remaining quadruples from memory to disk (we normally write every "FileUtils.jasonGroupSize" quadruples, so a few last quadruples might have not be written yet).
 			if ( !FileUtils.dataForOutput.isEmpty() ) {
-				logger.debug("Writing last quadruples to the outputFile.");
+				logger.debug("Writing last data points to the outputFile.");
 				FileUtils.writeResultsToFile();
 			}
 		}
@@ -123,13 +125,14 @@ public class LoaderAndChecker
 					String urlToCheck = retrievedUrlToCheck;
 					if ( (urlToCheck = basicURLNormalizer.filter(retrievedUrlToCheck)) == null ) {
 						logger.warn("Could not normalize url: " + retrievedUrlToCheck);
-						UrlUtils.addOutputData("null", retrievedUrlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to normalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
+						UrlUtils.addOutputData("null", retrievedUrlToCheck, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to normalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null", "N/A");
 						LoaderAndChecker.connProblematicUrls.incrementAndGet();
 						return false;
 					}
 
-					if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
-						ConnSupportUtils.handleReCrossedDocUrl("null", retrievedUrl, retrievedUrl, retrievedUrl, true);
+					IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl);
+					if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
+						ConnSupportUtils.handleReCrossedDocUrl("null", retrievedUrl, retrievedUrl, retrievedUrl, originalIdUrlMimeTypeTriple, true);
 						return true;
 					}
 
@@ -142,11 +145,18 @@ public class LoaderAndChecker
 					try {	// We sent the < null > into quotes to avoid causing NPEs in the thread-safe datastructures that do not support null input.
 						HttpConnUtils.connectAndCheckMimeType("null", retrievedUrlToCheck, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
 					} catch (Exception e) {
+
+						if ( e instanceof RuntimeException ) {
+							String msg = e.getMessage();
+							if ( (msg != null) && msg.contains(alreadyLoggedMessage) )
+								return false;	// The error has already been logged in better detail.
+						}
+
 						List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
 						String wasUrlValid = list.get(0);
 						String couldRetry = list.get(1);
 						String errorMsg = "Discarded at loading time, as " + list.get(2);
-						UrlUtils.addOutputData("null", retrievedUrlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
+						UrlUtils.addOutputData("null", retrievedUrlToCheck, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null", "N/A");
 						return false;
 					}
 					return true;
@@ -213,8 +223,9 @@ public class LoaderAndChecker
 							continue;
 						}	// The "retrievedUrl" might have changed (inside "handleUrlChecks()").
 
-						if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {	// If we got into an already-found docUrl, log it and return.
-							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, true);
+						IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl);
+						if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
+							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, originalIdUrlMimeTypeTriple, true);
 							if ( !isSingleIdUrlPair )
 								loggedUrlsOfCurrentId.add(retrievedUrl);
 							goToNextId = true;    // Skip the best-url evaluation & connection after this loop.
@@ -266,7 +277,7 @@ public class LoaderAndChecker
 					String sourceUrl = urlToCheck;	// Hold it here for the logging-messages.
 					if ( (urlToCheck = basicURLNormalizer.filter(sourceUrl)) == null ) {
 						logger.warn("Could not normalize url: " + sourceUrl);
-						UrlUtils.addOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to normalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
+						UrlUtils.addOutputData(retrievedId, sourceUrl, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to normalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null", "N/A");
 						LoaderAndChecker.connProblematicUrls.incrementAndGet();
 
 						// If other urls exits, then go and check those.
@@ -285,11 +296,18 @@ public class LoaderAndChecker
 							loggedUrlsOfCurrentId.add(urlToCheck);
 						// Here the runnable was successful in any case.
 					} catch (Exception e) {
+
+						if ( e instanceof RuntimeException ) {
+							String msg = e.getMessage();
+							if ( (msg != null) && msg.contains(alreadyLoggedMessage) )
+								return false;	// The error has already been logged in better detail.
+						}
+
 						List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
 						String wasUrlValid = list.get(0);
 						String couldRetry = list.get(1);
 						String errorMsg = "Discarded at loading time, as " + list.get(2);
-						UrlUtils.addOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
+						UrlUtils.addOutputData(retrievedId, urlToCheck, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null", "N/A");
 						// This url had connectivity problems.. but the rest might not, go check them out.
 						if ( !isSingleIdUrlPair ) {
 							loggedUrlsOfCurrentId.add(urlToCheck);
@@ -346,20 +364,21 @@ public class LoaderAndChecker
 					String retrievedUrl = pair.getValue();
 
 					if ( (retrievedUrl = handleUrlChecks(retrievedId, retrievedUrl)) == null ) {
-						return false;
+						return false;	// The logging happens inside.
 					}    // The "retrievedUrl" might have changed (inside "handleUrlChecks()").
 
 					String urlToCheck = retrievedUrl;
 					String sourceUrl = urlToCheck;    // Hold it here for the logging-messages.
 					if ( (urlToCheck = basicURLNormalizer.filter(sourceUrl)) == null ) {
 						logger.warn("Could not normalize url: " + sourceUrl);
-						UrlUtils.addOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to normalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
+						UrlUtils.addOutputData(retrievedId, sourceUrl, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to normalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null", "N/A");
 						LoaderAndChecker.connProblematicUrls.incrementAndGet();
 						return false;
 					}
 
-					if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {    // If we got into an already-found docUrl, log it and return.
-						ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, true);
+					IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl);
+					if ( originalIdUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
+						ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, originalIdUrlMimeTypeTriple, true);
 						return true;
 					}
 
@@ -375,11 +394,18 @@ public class LoaderAndChecker
 					try {    // Check if it's a docUrl, if not, it gets crawled.
 						HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
 					} catch (Exception e) {
+
+						if ( e instanceof RuntimeException ) {
+							String msg = e.getMessage();
+							if ( (msg != null) && msg.contains(alreadyLoggedMessage) )
+								return false;	// The error has already been logged in better detail.
+						}
+
 						List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
 						String wasUrlValid = list.get(0);
 						String couldRetry = list.get(1);
 						String errorMsg = "Discarded at loading time, as " + list.get(2);
-						UrlUtils.addOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
+						UrlUtils.addOutputData(retrievedId, urlToCheck, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null", "N/A");
 						return false;
 					}
 					return true;
@@ -433,13 +459,14 @@ public class LoaderAndChecker
 						String sourceUrl = urlToCheck;    // Hold it here for the logging-messages.
 						if ( (urlToCheck = basicURLNormalizer.filter(sourceUrl)) == null ) {
 							logger.warn("Could not normalize url: " + sourceUrl);
-							UrlUtils.addOutputData(retrievedId, sourceUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to normalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null");
+							UrlUtils.addOutputData(retrievedId, sourceUrl, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to normalization's problems.", null, true, "true", "false", "false", "false", "false", null, "null", "N/A");
 							LoaderAndChecker.connProblematicUrls.incrementAndGet();
 							continue;
 						}
 
-						if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(retrievedUrl) ) {    // If we got into an already-found docUrl, log it and return.
-							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, true);
+						IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl);
+						if ( originalIdUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
+							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, originalIdUrlMimeTypeTriple, true);
 							continue;
 						}
 
@@ -455,11 +482,18 @@ public class LoaderAndChecker
 						try {    // Check if it's a docUrl, if not, it gets crawled.
 							HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
 						} catch (Exception e) {
+
+							if ( e instanceof RuntimeException ) {
+								String msg = e.getMessage();
+								if ( (msg != null) && msg.contains(alreadyLoggedMessage) )
+									return false;	// The error has already been logged in better detail.
+							}
+
 							List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
 							String wasUrlValid = list.get(0);
 							String couldRetry = list.get(1);
 							String errorMsg = "Discarded at loading time, as " + list.get(2);
-							UrlUtils.addOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
+							UrlUtils.addOutputData(retrievedId, urlToCheck, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null", "N/A");
 							return false;
 						}
 					}
@@ -549,11 +583,18 @@ public class LoaderAndChecker
 					loggedUrlsOfThisId.add(urlToCheck);
 				return true;	// A url was checked and didn't have any problems, return and log the remaining urls.
 			} catch (Exception e) {
+
+				if ( e instanceof RuntimeException ) {
+					String msg = e.getMessage();
+					if ( (msg != null) && msg.contains(alreadyLoggedMessage) )
+						return false;	// The error has already been logged in better detail.
+				}
+
 				List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
 				String wasUrlValid = list.get(0);
 				String couldRetry = list.get(1);
 				String errorMsg = "Discarded at loading time, in checkRemainingUrls(), as " + list.get(2);
-				UrlUtils.addOutputData(retrievedId, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null");
+				UrlUtils.addOutputData(retrievedId, urlToCheck, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null", "N/A");
 				if ( !isSingleIdUrlPair )
 					loggedUrlsOfThisId.add(urlToCheck);
 				// Try the next url..
@@ -575,7 +616,7 @@ public class LoaderAndChecker
 		String urlDomain = UrlUtils.getDomainStr(retrievedUrl, null);
 		if ( urlDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage, and we shouldn't crawl it.
 			// The reason is already logged.
-			UrlUtils.addOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'LoaderAndChecker.handleUrlChecks()' method, after the occurrence of a domain-retrieval error.", null, true, "true", "false", "false", "false", "false", null, "null");
+			UrlUtils.addOutputData(urlId, retrievedUrl, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'LoaderAndChecker.handleUrlChecks()' method, after the occurrence of a domain-retrieval error.", null, true, "true", "false", "false", "false", "false", null, "null", "N/A");
 			if ( !useIdUrlPairs )
 				connProblematicUrls.incrementAndGet();
 			return null;
@@ -583,7 +624,7 @@ public class LoaderAndChecker
 		
 		if ( HttpConnUtils.blacklistedDomains.contains(urlDomain) ) {	// Check if it has been blacklisted after running internal links' checks.
 			logger.debug("Avoid connecting to blacklisted domain: \"" + urlDomain + "\" with url: " + retrievedUrl);
-			UrlUtils.addOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'LoaderAndChecker.handleUrlChecks()' method, as its domain was found blacklisted.", null, true, "true", "true", "false", "false", "false", null, "null");
+			UrlUtils.addOutputData(urlId, retrievedUrl, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'LoaderAndChecker.handleUrlChecks()' method, as its domain was found blacklisted.", null, true, "true", "true", "false", "false", "false", null, "null", "N/A");
 			if ( !useIdUrlPairs )
 				connProblematicUrls.incrementAndGet();
 			return null;
@@ -591,7 +632,7 @@ public class LoaderAndChecker
 		
 		if ( ConnSupportUtils.checkIfPathIs403BlackListed(retrievedUrl, urlDomain) ) {	// The path-extraction is independent of the jsessionid-removal, so this gets executed before.
 			logger.debug("Preventing reaching 403ErrorCode with url: \"" + retrievedUrl + "\"!");
-			UrlUtils.addOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'LoaderAndChecker.handleUrlChecks()' as it had a blacklisted urlPath.", null, true, "true", "true", "false", "false", "false", null, "null");
+			UrlUtils.addOutputData(urlId, retrievedUrl, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'LoaderAndChecker.handleUrlChecks()' as it had a blacklisted urlPath.", null, true, "true", "true", "false", "false", "false", null, "null", "N/A");
 			if ( !useIdUrlPairs )
 				connProblematicUrls.incrementAndGet();
 			return null;
@@ -609,7 +650,7 @@ public class LoaderAndChecker
 		// Check if it's a duplicate.
 		if ( UrlUtils.duplicateUrls.contains(retrievedUrl) ) {
 			logger.debug("Skipping non-DocOrDataset-url: \"" + retrievedUrl + "\", at loading, as it has already been checked.");
-			UrlUtils.addOutputData(urlId, retrievedUrl, null, UrlUtils.duplicateUrlIndicator, "Discarded in 'LoaderAndChecker.handleUrlChecks()', as it's a duplicate.", null, false, "true", "N/A", "N/A", "N/A", "true", null, "null");
+			UrlUtils.addOutputData(urlId, retrievedUrl, "N/A", UrlUtils.duplicateUrlIndicator, "Discarded in 'LoaderAndChecker.handleUrlChecks()', as it's a duplicate.", null, false, "true", "N/A", "N/A", "N/A", "true", null, "null", "N/A");
 			if ( !useIdUrlPairs )
 				inputDuplicatesNum.incrementAndGet();
 			return null;
@@ -673,14 +714,14 @@ public class LoaderAndChecker
 					retrievedUrl = tempUrl;	// Make sure we check the non-normalized version.
 
 			if ( !loggedUrlsOfThisId.contains(retrievedUrl) )
-				UrlUtils.addOutputData(retrievedId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator,
-					"Skipped in LoaderAndChecker, as a better url was selected for id: " + retrievedId, null, true, "false", "N/A", "N/A", "N/A", "true", null, "null");
+				UrlUtils.addOutputData(retrievedId, retrievedUrl, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator,
+					"Skipped in LoaderAndChecker, as a better url was selected for id: " + retrievedId, null, true, "false", "N/A", "N/A", "N/A", "true", null, "null", "N/A");
 		}
 	}
 
 
 	public static final Pattern INVALID_URL_HTTP_STATUS = Pattern.compile(".*HTTP 4(?:00|04|10|14|22) Client Error.*");
-	public static Pattern COULD_RETRY_HTTP_STATUS;
+	public static Pattern COULD_RETRY_HTTP_STATUS = null;
 
 	public static void setCouldRetryRegex()
 	{

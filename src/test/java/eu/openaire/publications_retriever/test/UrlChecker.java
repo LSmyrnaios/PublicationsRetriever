@@ -3,6 +3,7 @@ package eu.openaire.publications_retriever.test;
 import com.google.common.collect.HashMultimap;
 import eu.openaire.publications_retriever.PublicationsRetriever;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
+import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
@@ -786,12 +787,13 @@ public class UrlChecker {
 		for ( String url: urlList )
 			logger.info(url);
 
+		LoaderAndChecker.retrieveDocuments = true;
 		LoaderAndChecker.retrieveDatasets = true;
-		LoaderAndChecker.retrieveDocuments = false;
 
 		// Set some needed data.
 		ConnSupportUtils.setKnownMimeTypes();
 		UrlTypeChecker.setRuntimeInitializedRegexes();
+		LoaderAndChecker.setCouldRetryRegex();
 
 		ArgsUtils.shouldDownloadDocFiles = true;
 		ArgsUtils.fileNameType = ArgsUtils.fileNameTypeEnum.idName;
@@ -825,8 +827,9 @@ public class UrlChecker {
 			else
 				logger.debug("urlPath: " + urlPath);*/
 
-			if ( UrlUtils.docOrDatasetUrlsWithIDs.containsKey(urlToCheck) ) {    // If we got into an already-found docUrl, log it and return.
-				ConnSupportUtils.handleReCrossedDocUrl(testID, urlToCheck, urlToCheck, urlToCheck, true);
+			IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(urlToCheck);
+			if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
+				ConnSupportUtils.handleReCrossedDocUrl(testID, urlToCheck, urlToCheck, urlToCheck, originalIdUrlMimeTypeTriple, true);
 				continue;
 			}
 
@@ -834,7 +837,7 @@ public class UrlChecker {
 				HttpConnUtils.connectAndCheckMimeType(testID, urlToCheck, urlToCheck, urlToCheck, null, true, false);	// Sent the < null > in quotes to avoid an NPE in the concurrent data-structures.
 			} catch (Exception e) {
 				// The problem was logged inside.
-				UrlUtils.addOutputData(testID, urlToCheck, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", "true", "false", "false", "false", null, "null");
+				UrlUtils.addOutputData(testID, urlToCheck, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", "true", "false", "false", "false", null, "null", "N/A");
 			}
 		}
 

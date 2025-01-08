@@ -17,7 +17,6 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
@@ -272,7 +271,7 @@ public class FileUtils
 
 			if ( !idAndUrlMappedInput.put(inputIdUrlTuple.id, inputIdUrlTuple.url) ) {    // We have a duplicate id-url pair in the input, log it here as we cannot pass it through the HashMultimap. We will handle the first found pair only.
 				duplicateIdUrlEntries ++;
-				UrlUtils.addOutputData(inputIdUrlTuple.id, inputIdUrlTuple.url, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextIdUrlPairBatchFromJson(), as it is a duplicate.", null, false, "false", "N/A", "N/A", "N/A", "true", null, "null");
+				UrlUtils.addOutputData(inputIdUrlTuple.id, inputIdUrlTuple.url, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextIdUrlPairBatchFromJson(), as it is a duplicate.", null, false, "false", "N/A", "N/A", "N/A", "true", null, "null", "N/A");
 			}
 		}
 
@@ -301,7 +300,7 @@ public class FileUtils
 
 		if ( urlStr.isEmpty() ) {
 			if ( !idStr.isEmpty() )	// If we only have the id, then go and log it.
-				UrlUtils.addOutputData(idStr, urlStr, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in FileUtils.jsonDecoder(), as the url was not found.", null, true, "true", "false", "false", "false", "false", null, "null");
+				UrlUtils.addOutputData(idStr, urlStr, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in FileUtils.jsonDecoder(), as the url was not found.", null, true, "true", "false", "false", "false", "false", null, "null", "N/A");
 			return null;
 		}
 
@@ -392,7 +391,7 @@ public class FileUtils
 			}
 			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
 
-			String md5Hash = DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
+			String md5Hash = printHexBinary(md.digest()).toLowerCase();
 
 			if ( ArgsUtils.shouldUploadFilesToS3 ) {
 				fileData = S3ObjectStore.uploadToS3(docFile.getName(), docFile.getAbsolutePath());
@@ -498,7 +497,7 @@ public class FileUtils
 			}
 			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
 
-			String md5Hash = DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
+			String md5Hash = printHexBinary(md.digest()).toLowerCase();
 
 			FileData fileData;
 			if ( ArgsUtils.shouldUploadFilesToS3 ) {
@@ -793,10 +792,23 @@ public class FileUtils
 			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
 
 			if ( !urlGroup.add(retrievedLineStr) )    // We have a duplicate in the input.. log it here as we cannot pass it through the HashSet. It's possible that this as well as the original might be/give a docUrl.
-				UrlUtils.addOutputData(null, retrievedLineStr, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null, false, "false", "N/A", "N/A", "N/A", "true", null, "null");
+				UrlUtils.addOutputData(null, retrievedLineStr, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null, false, "false", "N/A", "N/A", "N/A", "true", null, "null", "N/A");
 		}
 
 		return urlGroup;
+	}
+
+
+	/**
+	 * Convert hash bytes to hexadecimal string.
+	 * */
+	private static String printHexBinary(byte[] hashBytes)
+	{
+		StringBuilder hexString = new StringBuilder(hashBytes.length);
+		for ( byte b : hashBytes ) {
+			hexString.append(String.format("%02x", b)); // Convert byte to hex and append
+		}
+		return hexString.toString();
 	}
 
 }
