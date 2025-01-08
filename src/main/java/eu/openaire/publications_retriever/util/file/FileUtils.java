@@ -17,7 +17,6 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
@@ -392,7 +391,7 @@ public class FileUtils
 			}
 			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
 
-			String md5Hash = DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
+			String md5Hash = printHexBinary(md.digest()).toLowerCase();
 
 			if ( ArgsUtils.shouldUploadFilesToS3 ) {
 				fileData = S3ObjectStore.uploadToS3(docFile.getName(), docFile.getAbsolutePath());
@@ -498,7 +497,7 @@ public class FileUtils
 			}
 			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
 
-			String md5Hash = DatatypeConverter.printHexBinary(md.digest()).toLowerCase();
+			String md5Hash = printHexBinary(md.digest()).toLowerCase();
 
 			FileData fileData;
 			if ( ArgsUtils.shouldUploadFilesToS3 ) {
@@ -797,6 +796,19 @@ public class FileUtils
 		}
 
 		return urlGroup;
+	}
+
+
+	/**
+	 * Convert hash bytes to hexadecimal string.
+	 * */
+	private static String printHexBinary(byte[] hashBytes)
+	{
+		StringBuilder hexString = new StringBuilder(hashBytes.length);
+		for ( byte b : hashBytes ) {
+			hexString.append(String.format("%02x", b)); // Convert byte to hex and append
+		}
+		return hexString.toString();
 	}
 
 }

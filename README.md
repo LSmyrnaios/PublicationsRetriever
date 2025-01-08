@@ -38,11 +38,11 @@ The "comment" can have the following values:
 
 Sample JSON-input:
 ```
-{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","url":"https://zenodo.org/record/884160"}
+{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","url":"https://zenodo.org/records/884160"}
 ```
 Sample JSON-output (with downloading of the full-texts):
 ```
-{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","sourceUrl":"https://zenodo.org/record/884160","docUrl":"https://zenodo.org/record/884160/files/Data_for_Policy_2017_paper_55.pdf","wasUrlChecked":"true","wasUrlValid":"true","wasDocumentOrDatasetAccessible":"true","wasDirectLink":"false","couldRetry":"true","fileHash":"4e38a82fe1182e62b1c752b50f5ea59b","fileSize":"263917","comment":"/home/lampros/PublicationsRetriever/target/../example/sample_output/DocFiles/dedup_wf_001::83872a151fd78b045e62275ca626ec94.pdf"}
+{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","sourceUrl":"https://zenodo.org/records/884160","pageUrl":"https://zenodo.org/records/884160","docOrDatasetUrl":"https://zenodo.org/records/884160/files/Data_for_Policy_2017_paper_55.pdf","wasUrlChecked":"true","wasUrlValid":"true","wasDocumentOrDatasetAccessible":"true","wasDirectLink":"false","couldRetry":"true","fileHash":"4e38a82fe1182e62b1c752b50f5ea59b","fileSize":"263917","mimeType":"application/pdf","comment":"/home/labros/PublicationsRetriever/target/../example/sample_output/DocFiles/dedup_wf_001::83872a151fd78b045e62275ca626ec94.pdf"}
 ```
 <br>
 
@@ -73,6 +73,13 @@ If you want to run it with distributed execution on multiple VMs, you may give a
 <br>
 
 ## Install & Run (using MAVEN)
+
+### Requirements
+- Java 11
+- Maven
+
+### Procedure
+
 To install the application, navigate to the directory of the project, where the ***pom.xml*** is located.<br>
 Then enter this command in the terminal:<br>
 **``mvn clean install``**<br>
@@ -115,7 +122,10 @@ arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
   The order of the program's arguments matters only **per pair**. For example, the argument **'storageDir'**, has to be placed always after the **'-docFilesStorage''** argument.
   <br><br>
 
-**Note**: In order to access the S3ObjectStore, you should provide the file *"S3_credentials.txt"*, inside the *working directory*, which must contain the *endpoint*, the *accessKey*, the *secretKey*, the *region* and the *bucket*, in that order, separated by commas.<br>
+**Notes**:
+- In order to access the S3ObjectStore, you should provide the file *"S3_credentials.txt"*, inside the *working directory*, which must contain the *endpoint*, the *accessKey*, the *secretKey*, the *region* and the *bucket*, in that order, separated by commas.<br>
+- In case you provide a very large input (over 100.000 records) or/and you have domains with very large html-pages, please consider setting the ***-Xms*** and ***-Xmx*** Java-arguments.
+  - For example: ***java -Xms1g -Xmx4g -jar publications_retriever-1.3-SNAPSHOT.jar ...***
 <br>
 
 
