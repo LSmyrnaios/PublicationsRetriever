@@ -17,7 +17,7 @@ Afterwards, these full-text documents are mined (by other pieces of software), i
 This program is used either as a stand-alone download-tool for full-texts and datasets, or as a library for the [UrlsWorker](https://code-repo.d4science.org/lsmyrnaios/UrlsWorker)'s code, of OpenAIRE's "**PDF Aggregation Service**". <br>
 
 The **PublicationsRetriever** takes as input the PubPages with their IDs -in JSON format- and gives an output -also in JSON format,
-which contains the IDs, the PubPages, the Document or Dataset Urls, a series of informative booleans, the *MD5* "fileHash", the "fileSize" and a "comment".<br>
+which contains the IDs, the source and target PubPages, the Document or Dataset Urls, a series of informative booleans, the *MD5* "fileHash", the "fileSize", the "mimeType" and a "comment".<br>
 The "booleans" are:
 - "wasUrlChecked": it signals whether the url was checked
 - "wasUrlValid": it signals whether the url was a valid url (one that can be connected)
@@ -82,7 +82,7 @@ If you want to run it with distributed execution on multiple VMs, you may give a
 
 To install the application, navigate to the directory of the project, where the ***pom.xml*** is located.<br>
 Then enter this command in the terminal:<br>
-**``mvn clean install``**<br>
+**``mvn clean install -U``**<br>
 
 To run the application you should navigate to the ***target*** directory, which will be created by *MAVEN* and run the executable ***JAR*** file,
 while choosing the appropriate run-command.<br> 
