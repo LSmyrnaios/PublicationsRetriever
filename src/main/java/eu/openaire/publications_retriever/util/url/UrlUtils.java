@@ -55,7 +55,8 @@ public class UrlUtils
 	 * @param sourceUrl
 	 * @param pageUrl
 	 * @param docOrDatasetUrl
-	 * @param comment
+	 * @param error
+	 * @param filePath
 	 * @param pageDomain                     (it may be null)
 	 * @param isFirstCrossed
 	 * @param wasUrlChecked
@@ -67,7 +68,7 @@ public class UrlUtils
 	 * @param fileHash
 	 * @param mimeType
 	 */
-    public static void addOutputData(String urlId, String sourceUrl, String pageUrl, String docOrDatasetUrl, String comment, String pageDomain,
+    public static void addOutputData(String urlId, String sourceUrl, String pageUrl, String docOrDatasetUrl, String error, String filePath, String pageDomain,
 									 boolean isFirstCrossed, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String couldRetry, Long fileSize, String fileHash, String mimeType)
     {
         String finalDocOrDatasetUrl = docOrDatasetUrl;
@@ -112,7 +113,7 @@ public class UrlUtils
 				duplicateUrls.add(sourceUrl);	// Add it in duplicates BlackList, in order not to be accessed for 2nd time in the future. We don't add docUrls here, as we want them to be separate for checking purposes.
 		}
 
-        FileUtils.dataForOutput.add(new DataForOutput(urlId, sourceUrl, pageUrl, finalDocOrDatasetUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, couldRetry, fileHash, fileSize, mimeType, comment));    // Log it to be written later in the outputFile.
+        FileUtils.dataForOutput.add(new DataForOutput(urlId, sourceUrl, pageUrl, finalDocOrDatasetUrl, wasUrlChecked, wasUrlValid, wasDocumentOrDatasetAccessible, wasDirectLink, couldRetry, fileHash, fileSize, mimeType, filePath, error));    // Log it to be written later in the outputFile.
     }
 
 
