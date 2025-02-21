@@ -249,6 +249,20 @@ public class ArgsUtils {
 	}
 
 
+	private static void handleHtmlFilesStorage(String htmlStorageDir)
+	{
+		htmlFilesStorageGivenByUser = true;
+		if ( htmlStorageDir.equals("S3ObjectStore") ) {
+			// At the moment, we will not support S3ObjectStore for the HTML-files.
+			String errorMessage = "Uploading html-files to S3ObjectStore is not supported at the moment!";
+			System.err.println(errorMessage);
+			logger.error(errorMessage);
+			System.exit(-22);
+		} else
+			storeHtmlFilesDir = htmlStorageDir + (!htmlStorageDir.endsWith(File.separator) ? File.separator : "");
+	}
+
+
 	private static void handleNumThreads(String workerCountString)
 	{
 		try {

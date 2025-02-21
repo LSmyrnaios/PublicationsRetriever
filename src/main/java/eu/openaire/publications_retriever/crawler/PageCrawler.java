@@ -3,6 +3,7 @@ package eu.openaire.publications_retriever.crawler;
 import eu.openaire.publications_retriever.exceptions.*;
 import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
+import eu.openaire.publications_retriever.util.file.HtmlFileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;

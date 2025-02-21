@@ -5,6 +5,7 @@ import eu.openaire.publications_retriever.crawler.MetadataHandler;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
+import eu.openaire.publications_retriever.util.file.HtmlFileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.DomainConnectionData;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
