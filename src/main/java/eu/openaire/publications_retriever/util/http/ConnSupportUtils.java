@@ -1114,6 +1114,9 @@ public class ConnSupportUtils
 		}
 	}
 
+
+	private static final int maxAllowedContentSizeMB = (HttpConnUtils.maxAllowedContentSize / FileUtils.mb);
+
 	
 	/**
 	 * This method returns the ContentSize of the content of an HttpURLConnection.
@@ -1130,7 +1133,7 @@ public class ConnSupportUtils
 			contentSize = Integer.parseInt(conn.getHeaderField("Content-Length"));
 			if ( (contentSize <= 0) || (contentSize > HttpConnUtils.maxAllowedContentSize) ) {
 				if ( !isForError )	// In case of an error, we expect it to be < 0 > most of the time. Do not show a message, but return that it's not acceptable to continue acquiring the content.
-					logger.warn((calledForFullTextDownload ? "DocUrl: \"" : "Url: \"") + conn.getURL().toString() + "\" had a non-acceptable contentSize: " + contentSize + ". The maxAllowed one is: " + HttpConnUtils.maxAllowedContentSize + " bytes.");
+					logger.warn((calledForFullTextDownload ? "DocUrl: \"" : "Url: \"") + conn.getURL().toString() + "\" had a non-acceptable contentSize: " + contentSize + ". The maxAllowed one is: " + maxAllowedContentSizeMB + " MB.");
 				return -1;
 			}
 			//logger.debug("Content-length of \"" + conn.getURL().toString() + "\" is: " + contentSize);	// DEBUG!
@@ -1307,7 +1310,7 @@ public class ConnSupportUtils
 	public static String getWasDirectLink(String sourceUrl, String pageUrl, boolean calledForPageUrl, String finalUrlStr) {
 		String wasDirectLink;
 		if ( calledForPageUrl ) {
-			boolean isSpecialUrl = HttpConnUtils.isSpecialUrl.get();
+			boolean isSpecialUrl = (!ArgsUtils.shouldJustDownloadHtmlFiles && HttpConnUtils.isSpecialUrl.get());
 			if ( (!isSpecialUrl && ( pageUrl.equals(finalUrlStr) || ConnSupportUtils.haveOnlyProtocolDifference(pageUrl, finalUrlStr) ))
 					|| sourceUrl.equals(finalUrlStr) || ConnSupportUtils.haveOnlyProtocolDifference(sourceUrl, finalUrlStr))	// Or if it was not a "specialUrl" and the pageUrl is the same as the docUrl.
 				wasDirectLink = "true";
@@ -1316,7 +1319,7 @@ public class ConnSupportUtils
 			else
 				wasDirectLink = "N/A";
 		} else {
-			// This datasetUrl came from crawling the pageUrl, so we know that it surely did not come directly from the sourceUrl.
+			// This docOrDatasetUrl came from crawling the pageUrl, so we know that it surely did not come directly from the sourceUrl.
 			wasDirectLink = "false";
 		}
 		return wasDirectLink;
