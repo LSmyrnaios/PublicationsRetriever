@@ -541,9 +541,9 @@ public class ConnSupportUtils
 				logger.warn("Could not retrieve the HTML-code for HTTP300PageUrl: " + url);
 				return null;
 			}
-
-			if ( extractedLinksHashSet == null || extractedLinksHashSet.size() == 0 )
+			
 			HashSet<String> extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(html, url);
+			if ( extractedLinksHashSet == null || extractedLinksHashSet.size() == 0 )
 				return null;	// Logging is handled inside..
 
 			return new ArrayList<>(extractedLinksHashSet).get(0);	// There will be only a couple of urls, so it's not a big deal to gather them all.
