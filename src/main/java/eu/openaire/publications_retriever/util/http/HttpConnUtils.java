@@ -166,7 +166,6 @@ public class HttpConnUtils
 							UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, "N/A", fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", fileData.getSize(), fileData.getHash(), finalMimeType);	// we send the urls, before and after potential redirections.
 							return true;
 						} catch (FileNotRetrievedException dfnde) {
-							fullPathFileName = docFileNotRetrievedMessage + dfnde.getMessage();
 							error = docFileNotRetrievedMessage + dfnde.getMessage();
 							fullPathFileName = "N/A";
 						}	// We log below and then return.
@@ -315,12 +314,15 @@ public class HttpConnUtils
 				weirdMetaDocUrlWhichNeedsGET = true;
 			}
 
-			isSpecialUrl.set(false);	// Reset its value (from the previous record).
-			if ( calledForPageUrl || calledForPossibleDocUrl ) {
-				String changedUrl = SpecialUrlsHandler.checkAndHandleSpecialUrls(resourceURL);	// May throw a "RuntimeException".
-				if ( !changedUrl.equals(resourceURL) ) {
-					isSpecialUrl.set(true);
-					resourceURL = changedUrl;
+			// In case we want to just download the HTML files, do not proceed into transforming the page-urls to doc-urls.
+			if ( ! ArgsUtils.shouldJustDownloadHtmlFiles ) {
+				isSpecialUrl.set(false);	// Reset its value (from the previous record).
+				if ( calledForPageUrl || calledForPossibleDocUrl ) {
+					String changedUrl = SpecialUrlsHandler.checkAndHandleSpecialUrls(resourceURL);	// May throw a "RuntimeException".
+					if ( !changedUrl.equals(resourceURL) ) {
+						isSpecialUrl.set(true);
+						resourceURL = changedUrl;
+					}
 				}
 			}
 

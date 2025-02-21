@@ -795,12 +795,20 @@ public class UrlChecker {
 		UrlTypeChecker.setRuntimeInitializedRegexes();
 		LoaderAndChecker.setCouldRetryRegex();
 
-		ArgsUtils.shouldDownloadDocFiles = true;
 		ArgsUtils.fileNameType = ArgsUtils.fileNameTypeEnum.idName;
+
+		ArgsUtils.shouldDownloadDocFiles = true;
 		if ( ArgsUtils.shouldDownloadDocFiles ) {
 			ArgsUtils.shouldDeleteOlderDocFiles = true;
 			ArgsUtils.storeDocFilesDir = FileUtils.workingDir + "testDocFiles" + File.separator;
 			FileUtils.handleStoreFilesDirectory(ArgsUtils.storeDocFilesDir, ArgsUtils.shouldDeleteOlderDocFiles , true);
+		}
+
+		ArgsUtils.shouldDownloadHTMLFiles = true;
+		if ( ArgsUtils.shouldDownloadHTMLFiles ) {
+			ArgsUtils.shouldDeleteOlderHTMLFiles = true;
+			ArgsUtils.storeHtmlFilesDir = FileUtils.workingDir + "testHTMLFiles" + File.separator;
+			FileUtils.handleStoreFilesDirectory(ArgsUtils.storeHtmlFilesDir, ArgsUtils.shouldDeleteOlderHTMLFiles , false);
 		}
 
 		String testID = "testID";

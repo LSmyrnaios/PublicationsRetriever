@@ -132,7 +132,7 @@ public class LinkExtraction {
 			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl, null), true, false);
 			String finalUrl = conn.getURL().toString();
 			String html = null;
-			if ( (html = ConnSupportUtils.getHtmlString(conn, null, false)) == null ) {
+			if ( (html = ConnSupportUtils.getHtmlString(conn, finalUrl, null, false)) == null ) {
 				logger.error("Could not retrieve the HTML-code for pageUrl: " + finalUrl);
 				link = null;
 			}
@@ -192,7 +192,7 @@ public class LinkExtraction {
 			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl, null), true, false);
 			String finalUrl = conn.getURL().toString();
 			String html = null;
-			if ( (html = ConnSupportUtils.getHtmlString(conn, null, false)) == null ) {
+			if ( (html = ConnSupportUtils.getHtmlString(conn, finalUrl, null, false)) == null ) {
 				logger.error("Could not retrieve the HTML-code for pageUrl: " + finalUrl);
 				return;
 			}

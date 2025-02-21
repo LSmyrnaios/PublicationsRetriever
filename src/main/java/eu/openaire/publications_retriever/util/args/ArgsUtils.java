@@ -25,7 +25,15 @@ public class ArgsUtils {
 	public static boolean shouldDeleteOlderDocFiles = false;	// Should we delete any older stored docFiles? This is useful for testing.
 
 	public static boolean docFilesStorageGivenByUser = false;
+	public static boolean htmlFilesStorageGivenByUser = false;
+
 	public static String storeDocFilesDir = FileUtils.workingDir + "docFiles" + File.separator;
+
+	public static String storeHtmlFilesDir = FileUtils.workingDir + "htmlFiles" + File.separator;
+	public static boolean shouldDownloadHTMLFiles = false;	// It will be set to "true" if the related command-line-argument is given.
+	public static boolean shouldDeleteOlderHTMLFiles = false;	// Should we delete any older stored docFiles? This is useful for testing.
+
+	public static boolean shouldJustDownloadHtmlFiles = false;
 
 	public static boolean inputFromUrl = false;
 	public static String inputDataUrl = null;
@@ -76,6 +84,16 @@ public class ArgsUtils {
 						i ++;
 						handleDocFilesStorage(mainArgs[i]);
 						break;
+					case "-downloadHTMLFiles":
+						shouldDownloadHTMLFiles = true;
+						break;
+					case "-htmlFilesStorage":
+						i ++;
+						handleHtmlFilesStorage(mainArgs[i]);
+						break;
+					case "-shouldJustDownloadHtmlFiles":
+						shouldJustDownloadHtmlFiles = true;
+						break;
 					case "-fileNameType":
 						i ++;
 						handleFileNameType(mainArgs[i]);
@@ -108,7 +126,10 @@ public class ArgsUtils {
 			}
 		}
 
-		if ( shouldDownloadDocFiles )
+		if ( shouldJustDownloadHtmlFiles && !shouldDownloadHTMLFiles )
+			shouldDownloadHTMLFiles = true;	// It's possible that the user missed adding both arguments. It's ok.
+
+		if ( shouldDownloadDocFiles || shouldDownloadHTMLFiles )
 			handleDownloadCase();
 	}
 

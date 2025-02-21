@@ -81,7 +81,16 @@ public class PageCrawler
 	{
 		logger.debug("Visiting pageUrl: \"" + pageUrl + "\".");
 
-		String pageDomain = UrlUtils.getDomainStr(pageUrl, null);
+		Matcher urlMatcher = UrlUtils.getUrlMatcher(pageUrl);
+		if ( urlMatcher == null ) {
+			logger.warn("Problematic URL in \"PageCrawler.visit()\": \"" + pageUrl + "\"");
+			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in PageCrawler.visit() method, after the occurrence of a urlMatcher error.", "N/A", null, true, "true", "false", "false", "false", "false", null, "null", "N/A");
+			LoaderAndChecker.connProblematicUrls.incrementAndGet();
+			ConnSupportUtils.closeBufferedReader(bufferedReader);	// This page's content-type was auto-detected, and the process fails before re-requesting the conn-inputStream, then make sure we close the last one.
+			return;
+		}
+
+		String pageDomain = UrlUtils.getDomainStr(pageUrl, urlMatcher);
 		if ( pageDomain == null ) {    // If the domain is not found, it means that a serious problem exists with this docPage, and we shouldn't crawl it.
 			logger.warn("Problematic URL in \"PageCrawler.visit()\": \"" + pageUrl + "\"");
 			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in PageCrawler.visit() method, after the occurrence of a domain-retrieval error.", "N/A", null, true, "true", "false", "false", "false", "false", null, "null", "N/A");
@@ -91,7 +100,7 @@ public class PageCrawler
 		}
 
 		String pageHtml = null;	// Get the pageHtml to parse the page.
-		if ( (pageHtml = ConnSupportUtils.getHtmlString(conn, bufferedReader, false)) == null ) {
+		if ( (pageHtml = ConnSupportUtils.getHtmlString(conn, pageUrl, bufferedReader, false)) == null ) {
 			logger.warn("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
 			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", "N/A", null, true, "true", "true", "false", "false", "true", null, "null", "N/A");
 			LoaderAndChecker.connProblematicUrls.incrementAndGet();
@@ -102,6 +111,12 @@ public class PageCrawler
 			pageHtml = firstHTMLlineFromDetectedContentType + pageHtml;
 		}
 		//logger.debug(pageHtml);	// DEBUG!
+
+		if ( ArgsUtils.shouldDownloadHTMLFiles ) {
+			HtmlFileUtils.downloadHtmlFile(urlId, pageUrl, pageHtml, urlMatcher);
+			if ( ArgsUtils.shouldJustDownloadHtmlFiles )
+				return;	// Do not proceed with retrieving the docUrls.
+		}
 
 		if ( LoaderAndChecker.retrieveDocuments && pageDomain.contains("turkjgastroenterol.org") ) {
 			SpecialUrlsHandler.extractAndCheckTurkjgastroenterolDocUrl(pageHtml, urlId, sourceUrl, pageUrl, pageDomain);

@@ -187,6 +187,9 @@ public class PublicationsRetriever
 		else
 			logger.debug("The legacy M.L.A. was not enabled.");
 
+		if ( ArgsUtils.shouldDownloadHTMLFiles )
+			logger.info("Downloaded " + HtmlFileUtils.htmlFilesNum.get() + " HTML files. That's about: " + df.format(HtmlFileUtils.htmlFilesNum.get() * 100.0 / inputCheckedUrlNum) + "% from the total numOfUrls checked. The rest either were not pageUrls or they had various issues.");
+
 		logger.debug("About " + df.format(LoaderAndChecker.connProblematicUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + LoaderAndChecker.connProblematicUrls.get() + " urls) were pages which had connectivity problems.");
 		logger.debug("About " + df.format(MetadataHandler.numOfProhibitedAccessPagesFound.get() * 100.0 / inputCheckedUrlNum) + "% (" + MetadataHandler.numOfProhibitedAccessPagesFound.get() + " urls) were pages with prohibited access.");
 		logger.debug("About " + df.format(UrlTypeChecker.pagesNotProvidingDocUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + UrlTypeChecker.pagesNotProvidingDocUrls.get() + " urls) were pages which did not provide docUrls.");

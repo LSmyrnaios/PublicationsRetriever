@@ -123,6 +123,22 @@ public class TestNonStandardInputOutput  {
 		main(args);
 	}
 
+	@Disabled
+	@Test
+	public void testCustomInputOutputWithIdHtmlFileNames()
+	{
+		String[] args = new String[8];
+		args[0] = "-retrieveDataType";
+		args[1] = "document";	// "document" OR "dataset" OR "all"
+		args[2] = "-downloadHTMLFiles";
+		args[3] = "-downloadDocFiles";
+		args[4] = "-fileNameType";
+		args[5] = "idName";
+		args[6] = "-htmlFilesStorage";
+		args[7] = "htmlFiles";
+		main(args);
+	}
+
 
 	@Disabled
 	@Test
@@ -217,6 +233,7 @@ public class TestNonStandardInputOutput  {
 
 		// When testing, always delete old files.
 		ArgsUtils.shouldDeleteOlderDocFiles = true;
+		ArgsUtils.shouldDeleteOlderHTMLFiles = true;
 
 		// Use testing input/output files.
 		setInputOutput();

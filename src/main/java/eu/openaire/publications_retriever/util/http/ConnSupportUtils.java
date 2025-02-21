@@ -533,17 +533,17 @@ public class ConnSupportUtils
 	 * @param conn
 	 * @return
 	 */
-	public static String getInternalLinkFromHTTP300Page(HttpURLConnection conn)
+	public static String getInternalLinkFromHTTP300Page(String url, HttpURLConnection conn)
 	{
 		try {
 			String html = null;
-			if ( (html = ConnSupportUtils.getHtmlString(conn, null, false)) == null ) {
-				logger.warn("Could not retrieve the HTML-code for HTTP300PageUrl: " + conn.getURL().toString());
+			if ( (html = ConnSupportUtils.getHtmlString(conn, url, null, false)) == null ) {
+				logger.warn("Could not retrieve the HTML-code for HTTP300PageUrl: " + url);
 				return null;
 			}
 
-			HashSet<String> extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(html, conn.getURL().toString());
 			if ( extractedLinksHashSet == null || extractedLinksHashSet.size() == 0 )
+			HashSet<String> extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(html, url);
 				return null;	// Logging is handled inside..
 
 			return new ArrayList<>(extractedLinksHashSet).get(0);	// There will be only a couple of urls, so it's not a big deal to gather them all.
@@ -580,7 +580,7 @@ public class ConnSupportUtils
 			errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received: HTTP " + errorStatusCode + " Client Error.";
 			// Get the error-response-body:
 			if ( calledForPageUrl && (errorStatusCode != 404) && (errorStatusCode != 410) ) {
-				String errorText = getErrorMessageFromResponseBody(conn);
+				String errorText = getErrorMessageFromResponseBody(conn, urlStr);
 				if ( errorText != null ) {
 
 					if ( domainStr.contains("doi.org") && errorText.contains("Not a DOI") ) {
@@ -621,7 +621,7 @@ public class ConnSupportUtils
 			} else {	// Unknown Error (including non-handled: 1XX and the weird one: 999 (used for example on Twitter), responseCodes).
 				errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received unexpected responseCode: " + errorStatusCode;
 				if ( calledForPageUrl ) {
-					String errorText = getErrorMessageFromResponseBody(conn);
+					String errorText = getErrorMessageFromResponseBody(conn, urlStr);
 					if ( errorText != null )
 						errorLogMessage += " Error-text: " + errorText;
 				}
@@ -695,9 +695,9 @@ public class ConnSupportUtils
 	}
 
 
-	public static String getErrorMessageFromResponseBody(HttpURLConnection conn)
+	public static String getErrorMessageFromResponseBody(HttpURLConnection conn, String url)
 	{
-		String html = getHtmlString(conn, null, true);
+		String html = getHtmlString(conn, url, null, true);
 		if ( html == null )
 			return null;
 
@@ -912,12 +912,12 @@ public class ConnSupportUtils
 
 	public static ThreadLocal<StringBuilder> htmlStrBuilder = new ThreadLocal<StringBuilder>();	// Every Thread has its own variable.
 
-	public static String getHtmlString(HttpURLConnection conn, BufferedReader bufferedReader, boolean isForError)
+	public static String getHtmlString(HttpURLConnection conn, String pageUrl, BufferedReader bufferedReader, boolean isForError)
 	{
 		int contentSize = 0;
 		if ( (contentSize = getContentSize(conn, false, isForError)) == -1 ) {	// "Unacceptable size"-code..
 			if ( !isForError )	// It's expected to have ZERO-length most times, and thus the extraction cannot continue. Do not show a message. It's rare that we get an error-message anyway.
-				logger.warn("Aborting HTML-extraction for pageUrl: " + conn.getURL().toString());
+				logger.warn("Aborting HTML-extraction for pageUrl: " + pageUrl);
 			ConnSupportUtils.closeBufferedReader(bufferedReader);	// This page's content-type was auto-detected, and the process fails before re-requesting the conn-inputStream, then make sure we close the last one.
 			return null;
 		}
@@ -941,19 +941,20 @@ public class ConnSupportUtils
 		try (BufferedReader br = ((bufferedReader != null) ? bufferedReader : new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8), bufferSize)) )	// Try-with-resources
 		{
 			String inputLine;
+			String htmlSpaceChar = (ArgsUtils.shouldDownloadHTMLFiles ? FileUtils.endOfLine : " ");
 			while ( (inputLine = br.readLine()) != null )
 			{
 				if ( !inputLine.isEmpty() && (inputLine.length() != 1) && !SPACE_ONLY_LINE.matcher(inputLine).matches() ) {	// We check for (inputLine.length() != 1), as some lines contain just an unrecognized byte.
-					htmlStrB.append(inputLine).append(" ");	// Add a space where the line-break was, in order to not join words in text, which are separated by a new line in the html-code.
+					htmlStrB.append(inputLine).append(htmlSpaceChar);	// Add the "spaceChar" to avoid joining words from different lines.
 					//logger.debug(inputLine);	// DEBUG!
 				}
 			}
 			//logger.debug("Chars in html: " + String.valueOf(htmlStrB.length()));	// DEBUG!
 
-			return (htmlStrB.length() != 0) ? htmlStrB.toString() : null;	// Make sure we return a "null" on empty string, to better handle the case in the caller-function.
+			return (htmlStrB.length() != 0) ? htmlStrB.toString() : null;	// Make sure we return a "null" on empty string, to better handle the case in the caller-method.
 
 		} catch ( IOException ioe ) {
-			logger.error("IOException when retrieving the HTML-code: " + ioe.getMessage());
+			logger.error("IOException when retrieving the HTML-code for pageUrl \"" + pageUrl + "\": " + ioe.getMessage());
 			return null;
 		} catch ( Exception e ) {
 			logger.error("", e);

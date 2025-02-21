@@ -110,6 +110,9 @@ public class FileUtils
 
 		if ( ArgsUtils.shouldDownloadDocFiles )
 			handleStoreFilesDirectory(ArgsUtils.storeDocFilesDir, ArgsUtils.shouldDeleteOlderDocFiles , true);
+
+		if ( ArgsUtils.shouldDownloadHTMLFiles )
+			handleStoreFilesDirectory(ArgsUtils.storeHtmlFilesDir, ArgsUtils.shouldDownloadHTMLFiles , false);
 	}
 
 
@@ -117,7 +120,7 @@ public class FileUtils
 	{
 		File dir = new File(storeFilesDir);
 		if ( shouldDeleteOlderFiles ) {
-			logger.info("Deleting old docFiles..");
+			logger.info("Deleting old " + (calledForDocFiles ? "doc" : "html") + "Files..");
 			try {
 				deleteDirectory(dir);	// org.apache.commons.io.FileUtils
 			} catch (IOException ioe) {
@@ -156,8 +159,10 @@ public class FileUtils
 			logger.warn("There was an error creating the docFiles-storageDir! Continuing without downloading the docFiles, while creating the jsonOutput with the docUrls.");
 			if ( calledForDocFiles )
 				ArgsUtils.shouldDownloadDocFiles = false;	// Continue without downloading the docFiles, just create the jsonOutput.
-			//else
-				//ArgsUtils.shouldDownloadHTMLFiles = false;
+			else {
+				ArgsUtils.shouldDownloadHTMLFiles = false;
+				ArgsUtils.shouldJustDownloadHtmlFiles = false;
+			}
 		}
 	}
 
