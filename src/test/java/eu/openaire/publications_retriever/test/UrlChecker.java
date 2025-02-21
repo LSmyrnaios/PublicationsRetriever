@@ -805,6 +805,7 @@ public class UrlChecker {
 		}
 
 		ArgsUtils.shouldDownloadHTMLFiles = true;
+		//ArgsUtils.shouldJustDownloadHtmlFiles = true;
 		if ( ArgsUtils.shouldDownloadHTMLFiles ) {
 			ArgsUtils.shouldDeleteOlderHTMLFiles = true;
 			ArgsUtils.storeHtmlFilesDir = FileUtils.workingDir + "testHTMLFiles" + File.separator;

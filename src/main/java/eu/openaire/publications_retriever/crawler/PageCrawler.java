@@ -114,8 +114,14 @@ public class PageCrawler
 		//logger.debug(pageHtml);	// DEBUG!
 
 		if ( ArgsUtils.shouldDownloadHTMLFiles ) {
-			HtmlFileUtils.downloadHtmlFile(urlId, pageUrl, pageHtml, urlMatcher);
-			if ( ArgsUtils.shouldJustDownloadHtmlFiles )
+			if ( ! HtmlFileUtils.downloadHtmlFile(urlId, sourceUrl, pageUrl, pageHtml, urlMatcher) ) {
+				if ( ArgsUtils.shouldJustDownloadHtmlFiles ) {
+					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after its html-file could not been downloaded.");
+					String couldRetry = (LoaderAndChecker.COULD_RETRY_URLS.matcher(pageUrl).matches() ? "true" : "false");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Logged in 'PageCrawler.visit()' method, as its html-file could not been downloaded.", "N/A", null, true, "true", "true", "false", "false", couldRetry, null, "null", "N/A");
+					return;	// Do not proceed with retrieving the docUrls.
+				}
+			} else if ( ArgsUtils.shouldJustDownloadHtmlFiles )
 				return;	// Do not proceed with retrieving the docUrls.
 		}
 
@@ -216,7 +222,7 @@ public class PageCrawler
 				} catch (DomainBlockedException dbe) {
 					String blockedDomain = dbe.getMessage();
 					if ( (blockedDomain != null) && blockedDomain.contains(pageDomain) ) {
-						logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after it's domain was blocked.");
+						logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after its domain was blocked.");
 						String couldRetry = (LoaderAndChecker.COULD_RETRY_URLS.matcher(pageUrl).matches() ? "true" : "false");
 						UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Logged in 'PageCrawler.visit()' method, as its domain was blocked during crawling.", "N/A", null, true, "true", "true", "false", "false", couldRetry, null, "null", "N/A");
 						LoaderAndChecker.connProblematicUrls.incrementAndGet();
@@ -686,7 +692,7 @@ public class PageCrawler
 			} catch (DomainBlockedException dbe) {
 				String blockedDomain = dbe.getMessage();
 				if ( (blockedDomain != null) && blockedDomain.contains(pageDomain) ) {
-					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.checkRemainingInternalLinks()\" after it's domain was blocked.");
+					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.checkRemainingInternalLinks()\" after its domain was blocked.");
 					String couldRetry = (LoaderAndChecker.COULD_RETRY_URLS.matcher(pageUrl).matches() ? "true" : "false");
 					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Logged in 'PageCrawler.checkRemainingInternalLinks()' method, as its domain was blocked during crawling.", "N/A", null, true, "true", "true", "false", "false", couldRetry, null, "null", "N/A");
 					LoaderAndChecker.connProblematicUrls.incrementAndGet();
@@ -694,7 +700,7 @@ public class PageCrawler
 				}
 			} catch (DomainWithUnsupportedHEADmethodException dwuhe) {
 				if ( currentLink.contains(pageDomain) ) {
-					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.checkRemainingInternalLinks()\" after it's domain was caught to not support the HTTP HEAD method, as a result, the internal-links will stop being checked.");
+					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.checkRemainingInternalLinks()\" after its domain was caught to not support the HTTP HEAD method, as a result, the internal-links will stop being checked.");
 					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Logged in 'PageCrawler.checkRemainingInternalLinks()' method, as its domain was caught to not support the HTTP HEAD method.", "N/A", null, true, "true", "true", "false", "false", "false", null, "null", "N/A");
 					LoaderAndChecker.connProblematicUrls.incrementAndGet();
 					return false;

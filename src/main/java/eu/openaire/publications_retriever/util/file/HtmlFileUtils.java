@@ -5,7 +5,9 @@ import eu.openaire.publications_retriever.util.url.UrlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 
@@ -16,7 +18,7 @@ public class HtmlFileUtils {
 	public static final AtomicInteger htmlFilesNum = new AtomicInteger(0);
 
 
-	public static boolean downloadHtmlFile(String urlId, String pageUrl, String pageHtml, Matcher urlMatcher)
+	public static boolean downloadHtmlFile(String urlId, String sourceUrl, String pageUrl, String pageHtml, Matcher urlMatcher)
 	{
 		String fileName = urlId;
 		if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.idName) )
@@ -27,10 +29,20 @@ public class HtmlFileUtils {
 		else if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
 			fileName = String.valueOf(HtmlFileUtils.htmlFilesNum.incrementAndGet());
 
-		try ( FileWriter writer = new FileWriter(ArgsUtils.storeHtmlFilesDir + fileName + ".html") ) {
-			writer.write(pageHtml);
+		String fullPathFileName = ArgsUtils.storeHtmlFilesDir + fileName + ".html";
+
+		// TODO - Add check for existing file, like we do with the full-texts.
+
+		try ( FileOutputStream fileOutputStream = new FileOutputStream(fullPathFileName) )
+		{
+			fileOutputStream.write(pageHtml.getBytes(StandardCharsets.UTF_8));
+			if ( ArgsUtils.shouldJustDownloadHtmlFiles ) {
+				FileData fileData = new FileData(new File(fullPathFileName), fileOutputStream);
+				fileData.calculateAndSetHashAndSize();
+				UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, "N/A", "N/A", fullPathFileName, null, true, "true", "true", "N/A", "N/A", "true", fileData.getSize(), fileData.getHash(), "text/html");    // we send the urls, before and after potential redirections.
+			}
 		} catch (Exception e) {
-			logger.error("Could not write output data to the file.", e);
+			logger.error("Could not write output data to the html-file.", e);
 			if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
 				HtmlFileUtils.htmlFilesNum.decrementAndGet();
 			return false;

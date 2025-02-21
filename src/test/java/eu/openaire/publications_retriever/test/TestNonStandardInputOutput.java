@@ -131,11 +131,11 @@ public class TestNonStandardInputOutput  {
 		args[0] = "-retrieveDataType";
 		args[1] = "document";	// "document" OR "dataset" OR "all"
 		args[2] = "-downloadHTMLFiles";
-		args[3] = "-downloadDocFiles";
+		args[3] = "-shouldJustDownloadHtmlFiles";
 		args[4] = "-fileNameType";
 		args[5] = "idName";
-		args[6] = "-htmlFilesStorage";
-		args[7] = "htmlFiles";
+		args[6] = "-inputFileFullPath";
+		args[7] = "./testData/idUrlPairs/orderedList100.json";
 		main(args);
 	}
 

@@ -112,7 +112,7 @@ public class FileUtils
 			handleStoreFilesDirectory(ArgsUtils.storeDocFilesDir, ArgsUtils.shouldDeleteOlderDocFiles , true);
 
 		if ( ArgsUtils.shouldDownloadHTMLFiles )
-			handleStoreFilesDirectory(ArgsUtils.storeHtmlFilesDir, ArgsUtils.shouldDownloadHTMLFiles , false);
+			handleStoreFilesDirectory(ArgsUtils.storeHtmlFilesDir, ArgsUtils.shouldDeleteOlderHTMLFiles , false);
 	}
 
 
