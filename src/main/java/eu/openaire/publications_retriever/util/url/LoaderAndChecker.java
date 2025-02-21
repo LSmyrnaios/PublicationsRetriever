@@ -769,12 +769,12 @@ public class LoaderAndChecker
 			couldRetry = "true";
 			errorMsg = "the url does not support HEAD method for checking most of the internal links.";
 		} else if ( e instanceof DomainBlockedException ) {
-			// the default values apply
+			couldRetry = "true";	// We could retry it in the future.
 			errorMsg = "the url had its initial or redirected domain blocked.";
 		} else
 			errorMsg = "there is a serious unspecified error.";
 
-		if ( (url != null) && COULD_RETRY_URLS.matcher(url).matches() )
+		if ( wasUrlValid.equals("true") && (url != null) && COULD_RETRY_URLS.matcher(url).matches() )
 			couldRetry = "true";
 
 		list.add(0, wasUrlValid);
