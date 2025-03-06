@@ -17,7 +17,7 @@ Afterwards, these full-text documents are mined (by other pieces of software), i
 This program is used either as a stand-alone download-tool for full-texts and datasets, or as a library for the [UrlsWorker](https://code-repo.d4science.org/lsmyrnaios/UrlsWorker)'s code, of OpenAIRE's "**PDF Aggregation Service**". <br>
 
 The **PublicationsRetriever** takes as input the PubPages with their IDs -in JSON format- and gives an output -also in JSON format,
-which contains the IDs, the source and target PubPages, the Document or Dataset Urls, a series of informative booleans, the *MD5* "fileHash", the "fileSize", the "mimeType" and a "comment".<br>
+which contains the IDs, the source and target PubPages, the Document or Dataset Urls, a series of informative booleans, the *MD5* "fileHash", the "fileSize", the "mimeType", "filePath" and "error".<br>
 The "booleans" are:
 - "wasUrlChecked": it signals whether the url was checked
 - "wasUrlValid": it signals whether the url was a valid url (one that can be connected)
@@ -25,15 +25,12 @@ The "booleans" are:
 - "wasDirectLink": it signals whether the url was a document or dataset link itself
 - "couldRetry": it signals whether it could be worth to check the url in the future (in case the sourceUrl gave the docOrDatasetUrl or it resulted in an error which might be eliminated in the future, like a "ConnectionTimeout")
 <br>
-
-Note: the values to the above "booleans" are Strings: "true", "false" or "N/A". 
+Note: the values to the above "booleans" are Strings: "true", "false" or "N/A", in order to get exported to json.
 <br>
 
-The "comment" can have the following values:
-- an empty string, if the document url is retrieved, and the user specified that the document files will not be downloaded
-- the information if the resulted url is a dataset url
-- the DocFileFullPath, if we have chosen to download the DocFiles
-- the ErrorCause, if there was any error which prevented the discovery of the DocOrDatasetUrl (in that case, the DocOrDatasetUrl is set to "unreachable")
+Additional fields:
+- "filePath": The path of the full-text, in case the user specified to download it, "N/A" otherwise.
+- "error": The error cause, in case a) the connection with the sourceUrl failed, b) there is no fulltext or there were connection issues with the download of the fulltext.
 <br>
 
 Sample JSON-input:
@@ -42,7 +39,7 @@ Sample JSON-input:
 ```
 Sample JSON-output (with downloading of the full-texts):
 ```
-{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","sourceUrl":"https://zenodo.org/records/884160","pageUrl":"https://zenodo.org/records/884160","docOrDatasetUrl":"https://zenodo.org/records/884160/files/Data_for_Policy_2017_paper_55.pdf","wasUrlChecked":"true","wasUrlValid":"true","wasDocumentOrDatasetAccessible":"true","wasDirectLink":"false","couldRetry":"true","fileHash":"4e38a82fe1182e62b1c752b50f5ea59b","fileSize":"263917","mimeType":"application/pdf","comment":"/home/labros/PublicationsRetriever/target/../example/sample_output/DocFiles/dedup_wf_001::83872a151fd78b045e62275ca626ec94.pdf"}
+{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","sourceUrl":"https://zenodo.org/records/884160","pageUrl":"https://zenodo.org/records/884160","docOrDatasetUrl":"https://zenodo.org/records/884160/files/Data_for_Policy_2017_paper_55.pdf","wasUrlChecked":"true","wasUrlValid":"true","wasDocumentOrDatasetAccessible":"true","wasDirectLink":"false","couldRetry":"true","fileHash":"4e38a82fe1182e62b1c752b50f5ea59b","fileSize":"263917","mimeType":"application/pdf","filePath":"/home/labros/PublicationsRetriever/target/../example/sample_output/DocFiles/dedup_wf_001::83872a151fd78b045e62275ca626ec94.pdf","error":"N/A"}
 ```
 <br>
 
@@ -75,7 +72,7 @@ If you want to run it with distributed execution on multiple VMs, you may give a
 ## Install & Run (using MAVEN)
 
 ### Requirements
-- Java 11
+- Java 17
 - Maven
 
 ### Procedure
@@ -88,7 +85,7 @@ To run the application you should navigate to the ***target*** directory, which 
 while choosing the appropriate run-command.<br> 
 
 **Run with standard input/output:**<br>
-**``java -jar publications_retriever-1.2-SNAPSHOT.jar arg1:'-inputFileFullPath' arg2:<inputFile> arg3:'-retrieveDataType' arg4:'<dataType: document | dataset | all>' arg5:'-downloadDocFiles' arg6:'-fileNameType' arg7:'idName' arg8:'-firstFileNum' arg9:'NUM' arg10:'-docFilesStorage'
+**``java -jar publications_retriever-1.3-SNAPSHOT.jar arg1:'-inputFileFullPath' arg2:<inputFile> arg3:'-retrieveDataType' arg4:'<dataType: document | dataset | all>' arg5:'-downloadDocFiles' arg6:'-fileNameType' arg7:'idName' arg8:'-firstFileNum' arg9:'NUM' arg10:'-docFilesStorage'
 arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
 
 **Run tests with custom input/output:**
@@ -98,9 +95,9 @@ arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
     you can specify it in the **util.file.FileUtils.skipFirstRow**-variable, in order for the first-row (headers) to be ignored.
 - If you want to see the logging-messages in the *Console*, open the ***resources/logback.xml***
     and change the ***appender-ref***, from ***File*** to ***Console***.<br>
-- Run ``mvn clean install`` to create the new ***JAR*** file.<br>
+- Run ``mvn clean install -U`` to create the new ***JAR*** file.<br>
 - Execute the program with the following command:<br>
-**``java -jar publications_retriever-1.2-SNAPSHOT.jar arg2:'<dataType: document | dataset | all>' arg3:'-downloadDocFiles' arg4:'-fileNameType' arg5:'numberName' arg6:'-firstFileNum' arg7:'NUM' arg8:'-docFilesStorage' arg9:'storageDir' arg10:'-inputDataUrl' arg11: 'inputUrl' arg12: '-numOfThreads' arg13: <NUM>``**
+**``java -jar publications_retriever-1.3-SNAPSHOT.jar arg2:'<dataType: document | dataset | all>' arg3:'-[downloadDocFiles|downloadJustHtmlFiles]' arg4:'-fileNameType' arg5:'numberName' arg6:'-firstFileNum' arg7:'NUM' arg8:'-docFilesStorage' arg9:'storageDir' arg10:'-inputDataUrl' arg11: 'inputUrl' arg12: '-numOfThreads' arg13: <NUM>``**
 <br><br>
 *You can use the argument '-inputFileFullPath' to define the inputFile, instead of the stdin-redirection. That way, the progress percentage will appear in the logging file.*
 <br><br>
@@ -110,6 +107,7 @@ arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
 - **-downloadDocFiles** will tell the program to download the DocFiles.
     The absence of this argument will cause the program to NOT download the docFiles, but just to find the *DocUrls* instead.
     Either way the DocUrls will be written to the JsonOutputFile.
+- **-downloadJustHtmlFiles** will tell the program to download just the HtmlFiles. This is absolutely optional.
 - **-fileNameType** and **< fileNameType >** will tell the program which fileName-type to use (*originalName, idName, numberName*).
 - **-firstFileNum** and **< NUM >** will tell the program to use numbers as *DocFileNames* and the first *DocFile* will have the given number "*NUM*".
     The absence of this argument-group will cause the program to use the original-docFileNames.
@@ -134,10 +132,10 @@ You can check the functionality of **PublicationsRetriever** by running an examp
 Type **`./runExample.sh`** in the terminal and hit `ENTER`.<br>
 Then you can see the results in the ***example/sample_output*** directory.<br>
 The above script will run the following commands:
-- **`mvn clean install`**: Does a *clean install*.
+- **`mvn clean install -U`**: Does a *clean install*.
 - **`rm -rf example/sample_output/*`**: Removes any previous example-results.
 - **``cd target &&
-    java -jar publications_retriever-1.2-SNAPSHOT.jar -retrieveDataType document -downloadDocFiles -fileNameType numberName -firstFileNum 1 -docFilesStorage ../example/sample_output/DocFiles
+    java -jar publications_retriever-1.3-SNAPSHOT.jar -retrieveDataType document -downloadDocFiles -fileNameType numberName -firstFileNum 1 -docFilesStorage ../example/sample_output/DocFiles
     < ../example/sample_input/sample_input.json > ../example/sample_output/sample_output.json``**<br>
     This command will run the program with "**../example/sample_input/sample_input.json**" as input
     and "**../example/sample_output/sample_output.json**" as the output.<br>

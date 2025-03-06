@@ -86,7 +86,7 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>2.0.16</version>
+      <version>2.0.17</version>
     </dependency>
 
     <!-- logback versions 1.4.X require Java-11 -->
@@ -96,14 +96,14 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
-      <version>1.5.16</version>
+      <version>1.5.17</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-classic -->
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.5.16</version>
+      <version>1.5.17</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -116,7 +116,7 @@
     <dependency>
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>
-      <version>1.18.3</version>
+      <version>1.19.1</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
@@ -140,7 +140,19 @@
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-lang3</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.github.luben</groupId>
+          <artifactId>zstd-jni</artifactId>
+        </exclusion>
       </exclusions>
+    </dependency>
+
+    <!-- Even though this is part of the above dependency, the Apache commons rarely updates it, while the zstd team makes improvements very often. -->
+    <!-- It also seems that the above dependency is not including the whole "zstd-jni", since without defining it here, the "ZstdCompressorInputStream" doesn't work. -->
+    <dependency>
+      <groupId>com.github.luben</groupId>
+      <artifactId>zstd-jni</artifactId>
+      <version>1.5.7-1</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.brotli/dec -->
@@ -176,7 +188,7 @@
     <dependency>
       <groupId>io.minio</groupId>
       <artifactId>minio</artifactId>
-      <version>8.5.15</version>
+      <version>8.5.17</version>
     </dependency>
 
     <!-- Use this dependency in case we want to use functionality that once was part of core java-code in version 1.8 -->
@@ -215,7 +227,7 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
-      <version>5.11.4</version>
+      <version>5.12.0</version>
       <scope>test</scope>
     </dependency>
 

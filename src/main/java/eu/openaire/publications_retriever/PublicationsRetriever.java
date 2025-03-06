@@ -5,6 +5,7 @@ import eu.openaire.publications_retriever.crawler.MetadataHandler;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
+import eu.openaire.publications_retriever.util.file.HtmlFileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.DomainConnectionData;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
@@ -170,7 +171,7 @@ public class PublicationsRetriever
 		if ( SignalUtils.receivedSIGINT )
 			logger.warn("A SIGINT signal was received, so some of the \"checked-urls\" may have not been actually checked, that's more of a number of the \"loaded-urls\".");
 
-		logger.info("Total " + ArgsUtils.targetUrlType + "s found: " + UrlUtils.sumOfDocUrlsFound + ". That's about: " + df.format(UrlUtils.sumOfDocUrlsFound.get() * 100.0 / inputCheckedUrlNum) + "% from the total numOfUrls checked. The rest were problematic or non-handleable url-cases.");
+		logger.info("Total " + ArgsUtils.targetUrlType + "s found: " + UrlUtils.sumOfDocUrlsFound + ". That's about: " + df.format(UrlUtils.sumOfDocUrlsFound.get() * 100.0 / inputCheckedUrlNum) + "% from the total numOfUrls checked (" + inputCheckedUrlNum + "). The rest were problematic or non-handleable url-cases.");
 		if ( ArgsUtils.shouldDownloadDocFiles ) {
 			int numOfStoredDocFiles = 0;
 			if ( !ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )	// If we have anything different from the numberName-type..
@@ -182,10 +183,16 @@ public class PublicationsRetriever
 		}
 		logger.debug("The metaDocUrl-handler is responsible for the discovery of " + MetadataHandler.numOfMetaDocUrlsFound + " docUrls (" + df.format(MetadataHandler.numOfMetaDocUrlsFound.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "% of the found docUrls).");
 		logger.debug("The re-crossed " + ArgsUtils.targetUrlType + "s (from all handlers) were " + ConnSupportUtils.reCrossedDocUrls.get() + ". That's about " + df.format(ConnSupportUtils.reCrossedDocUrls.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "% of the found docUrls.");
-		if ( MachineLearning.useMLA )
-			logger.debug("The legacy M.L.A. is responsible for the discovery of " + MachineLearning.docUrlsFoundByMLA.get() + " of the " + ArgsUtils.targetUrlType + "s (" + df.format(MachineLearning.docUrlsFoundByMLA.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "%). The M.L.A.'s average success-rate was: " + df.format(MachineLearning.getAverageSuccessRate()) + "%. Gathered data for " + MachineLearning.timesGatheredData.get() + " valid pageUrl-docUrl pairs.");
-		else
-			logger.debug("The legacy M.L.A. was not enabled.");
+
+		if ( ArgsUtils.shouldJustDownloadHtmlFiles )
+			logger.info("Downloaded " + HtmlFileUtils.htmlFilesNum.get() + " HTML files. That's about: " + df.format(HtmlFileUtils.htmlFilesNum.get() * 100.0 / inputCheckedUrlNum) + "% from the total numOfUrls checked (" + inputCheckedUrlNum + "). The rest either were not pageUrls or they had various issues.");
+		else {
+			if ( MachineLearning.useMLA )
+				logger.debug("The legacy M.L.A. is responsible for the discovery of " + MachineLearning.docUrlsFoundByMLA.get() + " of the " + ArgsUtils.targetUrlType + "s (" + df.format(MachineLearning.docUrlsFoundByMLA.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "%). The M.L.A.'s average success-rate was: " + df.format(MachineLearning.getAverageSuccessRate()) + "%. Gathered data for " + MachineLearning.timesGatheredData.get() + " valid pageUrl-docUrl pairs.");
+			else
+				logger.debug("The legacy M.L.A. was not enabled.");
+
+		}
 
 		logger.debug("About " + df.format(LoaderAndChecker.connProblematicUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + LoaderAndChecker.connProblematicUrls.get() + " urls) were pages which had connectivity problems.");
 		logger.debug("About " + df.format(MetadataHandler.numOfProhibitedAccessPagesFound.get() * 100.0 / inputCheckedUrlNum) + "% (" + MetadataHandler.numOfProhibitedAccessPagesFound.get() + " urls) were pages with prohibited access.");

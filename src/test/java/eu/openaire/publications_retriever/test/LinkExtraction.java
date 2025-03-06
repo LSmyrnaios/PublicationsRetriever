@@ -3,6 +3,7 @@ package eu.openaire.publications_retriever.test;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.exceptions.DocLinkInvalidException;
+import eu.openaire.publications_retriever.util.file.HtmlResult;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlTypeChecker;
@@ -131,12 +132,13 @@ public class LinkExtraction {
 		try {
 			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl, null), true, false);
 			String finalUrl = conn.getURL().toString();
-			String html = null;
-			if ( (html = ConnSupportUtils.getHtmlString(conn, null, false)) == null ) {
+			HtmlResult htmlResult = null;
+			if ( (htmlResult = ConnSupportUtils.getHtml(conn, null, finalUrl, null, false, null, null)) == null ) {
 				logger.error("Could not retrieve the HTML-code for pageUrl: " + finalUrl);
 				link = null;
 			}
 			else {
+				String html = htmlResult.getHtmlString();
 				HashSet<String> extractedLinksHashSet = getLinksList(html, finalUrl);
 				if ( extractedLinksHashSet == null )
 					return;	// Logging is handled inside..
@@ -191,11 +193,12 @@ public class LinkExtraction {
 		try {
 			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl, null), true, false);
 			String finalUrl = conn.getURL().toString();
-			String html = null;
-			if ( (html = ConnSupportUtils.getHtmlString(conn, null, false)) == null ) {
+			HtmlResult htmlResult = null;
+			if ( (htmlResult = ConnSupportUtils.getHtml(conn, null, finalUrl, null, false, null, null)) == null ) {
 				logger.error("Could not retrieve the HTML-code for pageUrl: " + finalUrl);
 				return;
 			}
+			String html = htmlResult.getHtmlString();
 			//logger.debug("HTML:\n" + html);
 
 			HashSet<String> extractedLinksHashSet = getLinksList(html, finalUrl);

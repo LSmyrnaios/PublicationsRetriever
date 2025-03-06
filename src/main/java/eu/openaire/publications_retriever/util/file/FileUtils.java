@@ -108,7 +108,9 @@ public class FileUtils
 			System.exit(20);
 		}
 
-		if ( ArgsUtils.shouldDownloadDocFiles )
+		if ( ArgsUtils.shouldJustDownloadHtmlFiles )
+			handleStoreFilesDirectory(ArgsUtils.storeHtmlFilesDir, ArgsUtils.shouldDeleteOlderHTMLFiles , false);
+		else if ( ArgsUtils.shouldDownloadDocFiles )
 			handleStoreFilesDirectory(ArgsUtils.storeDocFilesDir, ArgsUtils.shouldDeleteOlderDocFiles , true);
 	}
 
@@ -117,7 +119,7 @@ public class FileUtils
 	{
 		File dir = new File(storeFilesDir);
 		if ( shouldDeleteOlderFiles ) {
-			logger.info("Deleting old docFiles..");
+			logger.info("Deleting old " + (calledForDocFiles ? "doc" : "html") + "Files..");
 			try {
 				deleteDirectory(dir);	// org.apache.commons.io.FileUtils
 			} catch (IOException ioe) {
@@ -156,8 +158,8 @@ public class FileUtils
 			logger.warn("There was an error creating the docFiles-storageDir! Continuing without downloading the docFiles, while creating the jsonOutput with the docUrls.");
 			if ( calledForDocFiles )
 				ArgsUtils.shouldDownloadDocFiles = false;	// Continue without downloading the docFiles, just create the jsonOutput.
-			//else
-				//ArgsUtils.shouldDownloadHTMLFiles = false;
+			else
+				ArgsUtils.shouldJustDownloadHtmlFiles = false;
 		}
 	}
 
@@ -271,7 +273,7 @@ public class FileUtils
 
 			if ( !idAndUrlMappedInput.put(inputIdUrlTuple.id, inputIdUrlTuple.url) ) {    // We have a duplicate id-url pair in the input, log it here as we cannot pass it through the HashMultimap. We will handle the first found pair only.
 				duplicateIdUrlEntries ++;
-				UrlUtils.addOutputData(inputIdUrlTuple.id, inputIdUrlTuple.url, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextIdUrlPairBatchFromJson(), as it is a duplicate.", null, false, "false", "N/A", "N/A", "N/A", "true", null, "null", "N/A");
+				UrlUtils.addOutputData(inputIdUrlTuple.id, inputIdUrlTuple.url, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextIdUrlPairBatchFromJson(), as it is a duplicate.", "N/A", null, false, "false", "N/A", "N/A", "N/A", "true", null, "null", "N/A");
 			}
 		}
 
@@ -300,7 +302,7 @@ public class FileUtils
 
 		if ( urlStr.isEmpty() ) {
 			if ( !idStr.isEmpty() )	// If we only have the id, then go and log it.
-				UrlUtils.addOutputData(idStr, urlStr, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in FileUtils.jsonDecoder(), as the url was not found.", null, true, "true", "false", "false", "false", "false", null, "null", "N/A");
+				UrlUtils.addOutputData(idStr, urlStr, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in FileUtils.jsonDecoder(), as the url was not found.", "N/A", null, true, "true", "false", "false", "false", "false", null, "null", "N/A");
 			return null;
 		}
 
@@ -345,10 +347,6 @@ public class FileUtils
 		else
 			throw new FileNotRetrievedException("The 'fileNameType' was invalid: " + ArgsUtils.fileNameType);
 
-		numOfDocFiles.incrementAndGet();
-
-		File docFile = fileData.getFile();
-
 		InputStream inputStream = ConnSupportUtils.checkEncodingAndGetInputStream(conn, false);
 		if ( inputStream == null )
 			throw new FileNotRetrievedException("Could not acquire the inputStream!");
@@ -360,6 +358,10 @@ public class FileUtils
 			logger.error("Failed to get instance for MD5 hash-algorithm!", e);
 			throw new RuntimeException("MD5 HASH ALGO MISSING");
 		}
+
+		numOfDocFiles.incrementAndGet();
+
+		File docFile = fileData.getFile();
 		long bytesCount = 0;
 		FileOutputStream fileOutputStream = fileData.getFileOutputStream();
 		int bufferSize = (((contentSize != -2) && contentSize < fiveMb) ? contentSize : fiveMb);
@@ -636,11 +638,12 @@ public class FileUtils
 		if ( ! fileName.endsWith(dotFileExtension) )
 			saveDocFileFullPath += dotFileExtension;
 
-		File docFile = new File(saveDocFileFullPath);
+		File file = new File(saveDocFileFullPath);
 		FileOutputStream fileOutputStream = null;
 		Integer curDuplicateNum = 0;
+		String initialFileName = fileName;
 
-		// Synchronize to avoid file-overriding and corruption when multiple thread try to store a file with the same name (like when there are multiple files related with the same ID), which results also in loosing docFiles.
+		// Synchronize to avoid file-overriding and corruption when multiple threads try to store a file with the same name (like when there are multiple files related with the same ID), which results also in loosing docFiles.
 		// The file is created inside the synchronized block, by initializing the "fileOutputStream", so the next thread to check if it is going to download a duplicate-named file is guaranteed to find the previous file in the file-system
 		// (without putting the file-creation inside the locks, the previous thread might have not created the file in time and the next thread will just override it, instead of creating a new file)
 		fileNameLock.lock();
@@ -649,36 +652,39 @@ public class FileUtils
 			{
 				if ( (curDuplicateNum = numbersOfDuplicateFileNames.get(fileName)) != null )	// Since this data-structure is accessed inside the SYNCHRONIZED BLOCK, it can simpy be a HashMap without any internal sync, in order to speed it up.
 					curDuplicateNum += 1;
-				else if ( docFile.exists() )	// If it's not an already-known duplicate (this is the first duplicate-case for this file), go check if it exists in the fileSystem.
+				else if ( file.exists() )	// If it's not an already-known duplicate (this is the first duplicate-case for this file), go check if it exists in the fileSystem.
 					curDuplicateNum = 1;	// It was "null", after the "ConcurrentHashMap.get()" check.
 				else
-					curDuplicateNum = 0;
+					curDuplicateNum = 0;	// First-time.
 
-				if ( curDuplicateNum > 0 ) {	// Construct final-DocFileName for this docFile.
+				if ( curDuplicateNum > 0 ) {	// Construct final-DocFileName for this file.
 					String preExtensionFileName = fileName;
 					int lastIndexOfDot = fileName.lastIndexOf(".");
 					if ( lastIndexOfDot != -1 )
 						preExtensionFileName = fileName.substring(0, lastIndexOfDot);
 					fileName = preExtensionFileName + "(" + curDuplicateNum + ")" + dotFileExtension;
 					saveDocFileFullPath = storeFilesDir + fileName;
-					docFile = new File(saveDocFileFullPath);
+					file = new File(saveDocFileFullPath);
 				}
 			}
 
-			fileOutputStream = new FileOutputStream(docFile);
+			fileOutputStream = new FileOutputStream(file);
 			if ( curDuplicateNum > 0 )	// After the file is created successfully, from the above outputStream-initialization, add the new duplicate-num in our HashMap.
-				numbersOfDuplicateFileNames.put(fileName, curDuplicateNum);    // We should add the new "curDuplicateNum" for the original fileName, only if the new file can be created.
+				numbersOfDuplicateFileNames.put(initialFileName, curDuplicateNum);    // We should add the new "curDuplicateNum" for the original fileName, only if the new file can be created.
 
 		} catch (FileNotFoundException fnfe) {	// This may be thrown in case the file cannot be created.
-			logger.error("", fnfe);
-			// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
-			// So the empty file may exist, but we will also get the "FileNotFoundException".
-			try {
-				if ( docFile.exists() )
-					FileDeleteStrategy.FORCE.delete(docFile);
-			} catch (Exception e) {
-			}
+			String msg = fnfe.getMessage();
+			if ( msg != null && msg.contains("(No space left on device)") ) {
+				// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
+				// So the empty file may exist now, while also getting the "FileNotFoundException".
+				try {
+					if ( file.exists() )
+						FileDeleteStrategy.FORCE.delete(file);
+				} catch (Exception e) {
 					logger.error("Error when deleting the half-created file: " + fileName);
+				}
+			}
+			logger.error("", fnfe);
 			// The "fileOutputStream" was not created in this case, so no closing is needed.
 			throw new FileNotRetrievedException(fnfe.getMessage());
 		} catch (Exception e) {	// Mostly I/O and Security Exceptions.
@@ -694,7 +700,7 @@ public class FileUtils
 			fileNameLock.unlock();
 		}
 
-		return new FileData(docFile, fileOutputStream);
+		return new FileData(file, saveDocFileFullPath, fileOutputStream);
 	}
 
 
@@ -792,7 +798,7 @@ public class FileUtils
 			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
 
 			if ( !urlGroup.add(retrievedLineStr) )    // We have a duplicate in the input.. log it here as we cannot pass it through the HashSet. It's possible that this as well as the original might be/give a docUrl.
-				UrlUtils.addOutputData(null, retrievedLineStr, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", null, false, "false", "N/A", "N/A", "N/A", "true", null, "null", "N/A");
+				UrlUtils.addOutputData(null, retrievedLineStr, null, UrlUtils.duplicateUrlIndicator, "Discarded in FileUtils.getNextUrlGroupTest(), as it is a duplicate.", "N/A", null, false, "false", "N/A", "N/A", "N/A", "true", null, "null", "N/A");
 		}
 
 		return urlGroup;

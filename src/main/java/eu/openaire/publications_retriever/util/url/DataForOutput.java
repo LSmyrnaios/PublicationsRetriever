@@ -23,11 +23,12 @@ public class DataForOutput
 	private String hash;
 	private Long size;
 	private String mimeType;
-	private String comment;   // This will be an emptyString, unless there is an error causing the docUrl to be unreachable.
+	private String filePath;
+	private String error;
 
 	private static final Logger logger = LoggerFactory.getLogger(DataForOutput.class);
 
-	public DataForOutput(String urlId, String sourceUrl, String pageUrl, String docOrDatasetUrl, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String couldRetry, String hash, Long size, String mimeType, String comment)
+	public DataForOutput(String urlId, String sourceUrl, String pageUrl, String docOrDatasetUrl, String wasUrlChecked, String wasUrlValid, String wasDocumentOrDatasetAccessible, String wasDirectLink, String couldRetry, String hash, Long size, String mimeType, String filePath, String error)
     {
 		if ( urlId == null )
             urlId = "unretrievable";
@@ -44,7 +45,8 @@ public class DataForOutput
 		this.hash = hash;
 		this.size = size;
 		this.mimeType = mimeType;
-		this.comment = comment;
+		this.filePath = filePath;
+		this.error = error;
 	}
 	
 	
@@ -104,7 +106,8 @@ public class DataForOutput
 			jsonObject.put("fileHash", String.valueOf(this.hash));	// The hash may be null,  convert it to the string "null".
 			jsonObject.put("fileSize", String.valueOf(this.size));	// Convert Long to String, otherwise the output-JSON will be broken. It may be null!
 			jsonObject.put("mimeType", this.mimeType);
-			jsonObject.put("comment", this.comment);
+			jsonObject.put("filePath", this.filePath);
+			jsonObject.put("error", this.error);
 		} catch (JSONException je) {
 			// Keep the jsonObject with what it has till now.. plus a "special" comment.
 			jsonObject.put("comment", "There was a problem creating this JSON with the right values.");
@@ -210,11 +213,19 @@ public class DataForOutput
 		this.mimeType = mimeType;
 	}
 
-	public String getComment() {
-		return comment;
+	public String getFilePath() {
+		return filePath;
 	}
 
-	public void setComment(String comment) {
-		this.comment = comment;
+	public void setFilePath(String filePath) {
+		this.filePath = filePath;
+	}
+
+	public String getError() {
+		return error;
+	}
+
+	public void setError(String error) {
+		this.error = error;
 	}
 }

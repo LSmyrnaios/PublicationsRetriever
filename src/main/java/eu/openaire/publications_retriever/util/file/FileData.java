@@ -37,8 +37,9 @@ public class FileData {
         this.location = location;
     }
 
-    public FileData(File file, FileOutputStream fileOutputStream) {
+    public FileData(File file, String location, FileOutputStream fileOutputStream) {
         this.file = file;
+        this.location = location;
         this.fileOutputStream = fileOutputStream;
     }
 
@@ -75,14 +76,13 @@ public class FileData {
             return;
         }
 
-        String fileLocation = this.file.getAbsolutePath();
         try {
             this.hash = Files.asByteSource(this.file).hash(Hashing.md5()).toString();	// These hashing functions are deprecated, but just to inform us that MD5 is not secure. Luckily, we use MD5 just to identify duplicate files.
             //logger.debug("MD5 for file \"" + docFile.getName() + "\": " + this.hash); // DEBUG!
-            this.size = java.nio.file.Files.size(Paths.get(fileLocation));
+            this.size = java.nio.file.Files.size(Paths.get(this.location));
             //logger.debug("Size of file \"" + docFile.getName() + "\": " + this.size); // DEBUG!
         } catch (Exception e) {
-            logger.error("Could not retrieve the size " + ((this.hash == null) ? "and the MD5-hash " : "") + "of the file: " + fileLocation, e);
+            logger.error("Could not retrieve the size " + ((this.hash == null) ? "and the MD5-hash " : "") + "of the file: " + this.location, e);
         }
     }
 

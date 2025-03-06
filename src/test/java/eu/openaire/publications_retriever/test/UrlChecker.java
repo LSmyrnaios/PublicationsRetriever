@@ -795,9 +795,17 @@ public class UrlChecker {
 		UrlTypeChecker.setRuntimeInitializedRegexes();
 		LoaderAndChecker.setCouldRetryRegex();
 
-		ArgsUtils.shouldDownloadDocFiles = true;
 		ArgsUtils.fileNameType = ArgsUtils.fileNameTypeEnum.idName;
-		if ( ArgsUtils.shouldDownloadDocFiles ) {
+
+		ArgsUtils.shouldDownloadDocFiles = true;
+
+		ArgsUtils.shouldJustDownloadHtmlFiles = true;
+		if ( ArgsUtils.shouldJustDownloadHtmlFiles ) {
+			ArgsUtils.shouldDeleteOlderHTMLFiles = true;
+			ArgsUtils.storeHtmlFilesDir = FileUtils.workingDir + "testHTMLFiles" + File.separator;
+			FileUtils.handleStoreFilesDirectory(ArgsUtils.storeHtmlFilesDir, ArgsUtils.shouldDeleteOlderHTMLFiles , false);
+		}
+		else if ( ArgsUtils.shouldDownloadDocFiles ) {
 			ArgsUtils.shouldDeleteOlderDocFiles = true;
 			ArgsUtils.storeDocFilesDir = FileUtils.workingDir + "testDocFiles" + File.separator;
 			FileUtils.handleStoreFilesDirectory(ArgsUtils.storeDocFilesDir, ArgsUtils.shouldDeleteOlderDocFiles , true);
@@ -837,7 +845,7 @@ public class UrlChecker {
 				HttpConnUtils.connectAndCheckMimeType(testID, urlToCheck, urlToCheck, urlToCheck, null, true, false);	// Sent the < null > in quotes to avoid an NPE in the concurrent data-structures.
 			} catch (Exception e) {
 				// The problem was logged inside.
-				UrlUtils.addOutputData(testID, urlToCheck, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", null, true, "true", "true", "false", "false", "false", null, "null", "N/A");
+				UrlUtils.addOutputData(testID, urlToCheck, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", "N/A", null, true, "true", "true", "false", "false", "false", null, "null", "N/A");
 			}
 		}
 

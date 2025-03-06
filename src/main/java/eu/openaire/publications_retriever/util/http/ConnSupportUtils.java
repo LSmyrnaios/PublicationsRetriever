@@ -14,11 +14,14 @@ import eu.openaire.publications_retriever.models.MimeTypeResult;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileData;
 import eu.openaire.publications_retriever.util.file.FileUtils;
+import eu.openaire.publications_retriever.util.file.HtmlFileUtils;
+import eu.openaire.publications_retriever.util.file.HtmlResult;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
 import org.apache.commons.compress.compressors.brotli.BrotliCompressorInputStream;
 import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.compressors.zstandard.ZstdCompressorInputStream;
 import org.apache.commons.io.FileDeleteStrategy;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
@@ -102,7 +105,7 @@ public class ConnSupportUtils
 	{
 		conn.setRequestProperty("User-Agent", userAgent);
 		conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
-		conn.setRequestProperty("Accept-Encoding", "gzip, deflate, br");
+		conn.setRequestProperty("Accept-Encoding", "gzip, deflate, br, zstd");	// TODO - In case we use the "Firefox" user-agent, then implement support for the "zstd" encoding as well.
 		//conn.setRequestProperty("TE", "trailers");	// TODO - Investigate the "transfer-encoding" header.
 
 		if ( !HttpConnUtils.domainsWithUnsupportedAcceptLanguageParameter.contains(domainStr) )
@@ -353,8 +356,8 @@ public class ConnSupportUtils
 		logger.info("re-crossed docUrl found: < " + docUrl + " >");
 		reCrossedDocUrls.incrementAndGet();
 		String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, docUrl);
-		String comment = ((ArgsUtils.shouldDownloadDocFiles ? (alreadyDownloadedFromIDMessage + originalIdUrlMimeTypeTriple.id + alreadyDownloadedFromSourceUrlContinuedMessage) : (alreadyDetectedFromIDMessage + originalIdUrlMimeTypeTriple.id + alreadyDetectedFromSourceUrlContinuedMessage)) + originalIdUrlMimeTypeTriple.url);
-		UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, docUrl, comment, null, false, "true", "true", "true", wasDirectLink, "true", null, "null", originalIdUrlMimeTypeTriple.mimeType);
+		String filePath = ((ArgsUtils.shouldDownloadDocFiles ? (alreadyDownloadedFromIDMessage + originalIdUrlMimeTypeTriple.id + alreadyDownloadedFromSourceUrlContinuedMessage) : (alreadyDetectedFromIDMessage + originalIdUrlMimeTypeTriple.id + alreadyDetectedFromSourceUrlContinuedMessage)) + originalIdUrlMimeTypeTriple.url);
+		UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, docUrl, "N/A", filePath, null, false, "true", "true", "true", wasDirectLink, "true", null, "null", originalIdUrlMimeTypeTriple.mimeType);
 	}
 
 	
@@ -533,16 +536,17 @@ public class ConnSupportUtils
 	 * @param conn
 	 * @return
 	 */
-	public static String getInternalLinkFromHTTP300Page(HttpURLConnection conn)
+	public static String getInternalLinkFromHTTP300Page(String url, HttpURLConnection conn)
 	{
 		try {
 			String html = null;
-			if ( (html = ConnSupportUtils.getHtmlString(conn, null, false)) == null ) {
-				logger.warn("Could not retrieve the HTML-code for HTTP300PageUrl: " + conn.getURL().toString());
+			HtmlResult htmlResult = null;
+			if ( (htmlResult = ConnSupportUtils.getHtml(conn, null, url, null, false, null, null)) == null ) {
+				logger.warn("Could not retrieve the HTML-code for HTTP300PageUrl: " + url);
 				return null;
 			}
-
-			HashSet<String> extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(html, conn.getURL().toString());
+			html = htmlResult.getHtmlString();
+			HashSet<String> extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(html, url);
 			if ( extractedLinksHashSet == null || extractedLinksHashSet.size() == 0 )
 				return null;	// Logging is handled inside..
 
@@ -580,7 +584,7 @@ public class ConnSupportUtils
 			errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received: HTTP " + errorStatusCode + " Client Error.";
 			// Get the error-response-body:
 			if ( calledForPageUrl && (errorStatusCode != 404) && (errorStatusCode != 410) ) {
-				String errorText = getErrorMessageFromResponseBody(conn);
+				String errorText = getErrorMessageFromResponseBody(conn, urlStr);
 				if ( errorText != null ) {
 
 					if ( domainStr.contains("doi.org") && errorText.contains("Not a DOI") ) {
@@ -621,7 +625,7 @@ public class ConnSupportUtils
 			} else {	// Unknown Error (including non-handled: 1XX and the weird one: 999 (used for example on Twitter), responseCodes).
 				errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received unexpected responseCode: " + errorStatusCode;
 				if ( calledForPageUrl ) {
-					String errorText = getErrorMessageFromResponseBody(conn);
+					String errorText = getErrorMessageFromResponseBody(conn, urlStr);
 					if ( errorText != null )
 						errorLogMessage += " Error-text: " + errorText;
 				}
@@ -671,13 +675,16 @@ public class ConnSupportUtils
 	public static InputStream getCompressedInputStream(InputStream inputStream, String encoding, String url, boolean isForError)
 	{
 		InputStream compressedInputStream;
+		String lowercaseEncoding = encoding.toLowerCase();
 		try {
-			if ( encoding.equals("gzip") )
+			if ( lowercaseEncoding.equals("gzip") )
 				compressedInputStream = new GzipCompressorInputStream(inputStream);
-			else if ( encoding.equals("deflate") )
+			else if ( lowercaseEncoding.equals("deflate") )
 				compressedInputStream = new DeflateCompressorInputStream(inputStream);
-			else if ( encoding.equals("br") )
+			else if ( lowercaseEncoding.equals("br") )
 				compressedInputStream = new BrotliCompressorInputStream(inputStream);
+			else if ( lowercaseEncoding.equals("zstd") )
+				compressedInputStream = new ZstdCompressorInputStream(inputStream);
 			else {
 				logger.warn("An unsupported \"content-encoding\" (" + encoding + ") was received from url: " + url);
 				return null;
@@ -695,14 +702,15 @@ public class ConnSupportUtils
 	}
 
 
-	public static String getErrorMessageFromResponseBody(HttpURLConnection conn)
+	public static String getErrorMessageFromResponseBody(HttpURLConnection conn, String url)
 	{
-		String html = getHtmlString(conn, null, true);
-		if ( html == null )
+		HtmlResult htmlResult = getHtml(conn, null, url, null, true, null, null);
+		if ( htmlResult == null )
 			return null;
 
-		int htmlLength = html.length();
-		if ( (htmlLength == 0) || (htmlLength > 10000) )
+		String html = htmlResult.getHtmlString();
+		int htmlLength = html.length();	// It won't be 0;
+		if ( htmlLength > 10000 )
 			return null;
 
 		String errorText = Jsoup.parse(html).text();	// The result is already "trimmed".
@@ -912,20 +920,20 @@ public class ConnSupportUtils
 
 	public static ThreadLocal<StringBuilder> htmlStrBuilder = new ThreadLocal<StringBuilder>();	// Every Thread has its own variable.
 
-	public static String getHtmlString(HttpURLConnection conn, BufferedReader bufferedReader, boolean isForError)
+	public static HtmlResult getHtml(HttpURLConnection conn, String urlId, String pageUrl, BufferedReader bufferedReader, boolean isForError, Matcher urlMatcher, String firstHTMLlineFromDetectedContentType)
 	{
 		int contentSize = 0;
 		if ( (contentSize = getContentSize(conn, false, isForError)) == -1 ) {	// "Unacceptable size"-code..
 			if ( !isForError )	// It's expected to have ZERO-length most times, and thus the extraction cannot continue. Do not show a message. It's rare that we get an error-message anyway.
-				logger.warn("Aborting HTML-extraction for pageUrl: " + conn.getURL().toString());
+				logger.warn("Aborting HTML-extraction for pageUrl: " + pageUrl);
 			ConnSupportUtils.closeBufferedReader(bufferedReader);	// This page's content-type was auto-detected, and the process fails before re-requesting the conn-inputStream, then make sure we close the last one.
 			return null;
 		}
 		// It may be "-2" in case the "contentSize" was not available.
 
 		StringBuilder htmlStrB = htmlStrBuilder.get();
-		if ( htmlStrB == null ) {
-			htmlStrB = new StringBuilder(100000);	// Initialize and pre-allocate the StringBuilder.
+		if ( (htmlStrB == null) && (!ArgsUtils.shouldJustDownloadHtmlFiles || isForError) ) {
+			htmlStrB = new StringBuilder(100_000);	// Initialize and pre-allocate the StringBuilder.
 			htmlStrBuilder.set(htmlStrB);	// Save it for future use by this thread.
 		}
 
@@ -935,31 +943,80 @@ public class ConnSupportUtils
 			inputStream = checkEncodingAndGetInputStream(conn, isForError);
 			if ( inputStream == null )	// The error is already logged inside.
 				return null;
-			bufferSize = (((contentSize != -2) && contentSize < FileUtils.fiveMb) ? contentSize : FileUtils.fiveMb);
+			bufferSize = (((contentSize != -2) && (contentSize < FileUtils.mb)) ? contentSize : FileUtils.mb);
 		}
 
-		try (BufferedReader br = ((bufferedReader != null) ? bufferedReader : new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8), bufferSize)) )	// Try-with-resources
+		FileData htmlFileData = null;
+		String fullPathFileName = null;
+		if ( ArgsUtils.shouldJustDownloadHtmlFiles && !isForError ) {
+			try {
+				htmlFileData = HtmlFileUtils.getFinalHtmlFilePath(urlId, pageUrl, urlMatcher, contentSize);	// This will not be null.
+				fullPathFileName = htmlFileData.getLocation();
+				//} catch (FileNotRetrievedException fnre) {
+			} catch (Exception e) {
+				logger.error("Failed to acquire the \"fullPathFileName\": " + e.getMessage());
+				if ( ArgsUtils.shouldJustDownloadHtmlFiles && ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
+					HtmlFileUtils.htmlFilesNum.decrementAndGet();
+				return null;
+			}
+		}
+
+		try (BufferedReader br = ((bufferedReader != null) ? bufferedReader : new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8), bufferSize));
+			 BufferedWriter bw = ((ArgsUtils.shouldJustDownloadHtmlFiles && !isForError) ? new BufferedWriter(new FileWriter(fullPathFileName, StandardCharsets.UTF_8),  bufferSize) : null) )	// Try-with-resources
 		{
 			String inputLine;
+			String htmlSpaceChar = ((bw != null) ? FileUtils.endOfLine : " ");
+
+			// We may have extracted the first response-line in order to determine the content-type, in case no other method succeeded.
+			if ( firstHTMLlineFromDetectedContentType != null ) {
+				if ( !ArgsUtils.shouldJustDownloadHtmlFiles || isForError )
+					htmlStrB.append(firstHTMLlineFromDetectedContentType).append(htmlSpaceChar);
+				if ( bw != null ) {
+					bw.write(firstHTMLlineFromDetectedContentType);
+					bw.newLine();
+				}
+			}
+
 			while ( (inputLine = br.readLine()) != null )
 			{
 				if ( !inputLine.isEmpty() && (inputLine.length() != 1) && !SPACE_ONLY_LINE.matcher(inputLine).matches() ) {	// We check for (inputLine.length() != 1), as some lines contain just an unrecognized byte.
-					htmlStrB.append(inputLine).append(" ");	// Add a space where the line-break was, in order to not join words in text, which are separated by a new line in the html-code.
+					if ( !ArgsUtils.shouldJustDownloadHtmlFiles || isForError )
+						htmlStrB.append(inputLine).append(htmlSpaceChar);	// Add the "spaceChar" to avoid joining words from different lines.
+					if ( bw != null ) {
+						bw.write(inputLine);
+						bw.newLine();
+					}
 					//logger.debug(inputLine);	// DEBUG!
 				}
 			}
 			//logger.debug("Chars in html: " + String.valueOf(htmlStrB.length()));	// DEBUG!
 
-			return (htmlStrB.length() != 0) ? htmlStrB.toString() : null;	// Make sure we return a "null" on empty string, to better handle the case in the caller-function.
+			if ( bw != null ) {
+				bw.flush();	// Otherwise the "bw" will be flushed only upon closing and the calculation of "hash" and "size" will not work.
+				logger.info("HtmlFile '" + fullPathFileName + "' was downloaded.");
+				HtmlFileUtils.htmlFilesNum.incrementAndGet();
+				htmlFileData.calculateAndSetHashAndSize();
+			}
+
+			if ( !ArgsUtils.shouldJustDownloadHtmlFiles || isForError ) {
+				String htmlString = ((htmlStrB != null) && htmlStrB.length() != 0) ? htmlStrB.toString() : null;
+				return ((htmlString != null) ? new HtmlResult(htmlString, null) : null);
+			} else
+				return new HtmlResult(null, htmlFileData);	// Make sure we return a "null" on empty string, to better handle the case in the caller-method.
 
 		} catch ( IOException ioe ) {
-			logger.error("IOException when retrieving the HTML-code: " + ioe.getMessage());
+			logger.error("IOException when retrieving the HTML-code for pageUrl \"" + pageUrl + "\": " + ioe.getMessage());
+			if ( ArgsUtils.shouldJustDownloadHtmlFiles && ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
+				HtmlFileUtils.htmlFilesNum.decrementAndGet();
 			return null;
 		} catch ( Exception e ) {
 			logger.error("", e);
+			if ( ArgsUtils.shouldJustDownloadHtmlFiles && ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
+				HtmlFileUtils.htmlFilesNum.decrementAndGet();
 			return null;
 		} finally {
-			htmlStrB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating.
+			if ( htmlStrB != null )
+				htmlStrB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating.
 			try {
 				if ( inputStream != null )
 					inputStream.close();
@@ -1113,6 +1170,9 @@ public class ConnSupportUtils
 		}
 	}
 
+
+	private static final int maxAllowedContentSizeMB = (HttpConnUtils.maxAllowedContentSize / FileUtils.mb);
+
 	
 	/**
 	 * This method returns the ContentSize of the content of an HttpURLConnection.
@@ -1129,7 +1189,7 @@ public class ConnSupportUtils
 			contentSize = Integer.parseInt(conn.getHeaderField("Content-Length"));
 			if ( (contentSize <= 0) || (contentSize > HttpConnUtils.maxAllowedContentSize) ) {
 				if ( !isForError )	// In case of an error, we expect it to be < 0 > most of the time. Do not show a message, but return that it's not acceptable to continue acquiring the content.
-					logger.warn((calledForFullTextDownload ? "DocUrl: \"" : "Url: \"") + conn.getURL().toString() + "\" had a non-acceptable contentSize: " + contentSize + ". The maxAllowed one is: " + HttpConnUtils.maxAllowedContentSize + " bytes.");
+					logger.warn((calledForFullTextDownload ? "DocUrl: \"" : "Url: \"") + conn.getURL().toString() + "\" had a non-acceptable contentSize: " + contentSize + ". The maxAllowed one is: " + maxAllowedContentSizeMB + " MB.");
 				return -1;
 			}
 			//logger.debug("Content-length of \"" + conn.getURL().toString() + "\" is: " + contentSize);	// DEBUG!
@@ -1306,7 +1366,7 @@ public class ConnSupportUtils
 	public static String getWasDirectLink(String sourceUrl, String pageUrl, boolean calledForPageUrl, String finalUrlStr) {
 		String wasDirectLink;
 		if ( calledForPageUrl ) {
-			boolean isSpecialUrl = HttpConnUtils.isSpecialUrl.get();
+			boolean isSpecialUrl = (!ArgsUtils.shouldJustDownloadHtmlFiles && HttpConnUtils.isSpecialUrl.get());
 			if ( (!isSpecialUrl && ( pageUrl.equals(finalUrlStr) || ConnSupportUtils.haveOnlyProtocolDifference(pageUrl, finalUrlStr) ))
 					|| sourceUrl.equals(finalUrlStr) || ConnSupportUtils.haveOnlyProtocolDifference(sourceUrl, finalUrlStr))	// Or if it was not a "specialUrl" and the pageUrl is the same as the docUrl.
 				wasDirectLink = "true";
@@ -1315,7 +1375,7 @@ public class ConnSupportUtils
 			else
 				wasDirectLink = "N/A";
 		} else {
-			// This datasetUrl came from crawling the pageUrl, so we know that it surely did not come directly from the sourceUrl.
+			// This docOrDatasetUrl came from crawling the pageUrl, so we know that it surely did not come directly from the sourceUrl.
 			wasDirectLink = "false";
 		}
 		return wasDirectLink;
