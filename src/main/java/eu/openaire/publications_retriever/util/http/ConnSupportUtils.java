@@ -21,6 +21,7 @@ import eu.openaire.publications_retriever.util.url.UrlUtils;
 import org.apache.commons.compress.compressors.brotli.BrotliCompressorInputStream;
 import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.compressors.zstandard.ZstdCompressorInputStream;
 import org.apache.commons.io.FileDeleteStrategy;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
@@ -104,7 +105,7 @@ public class ConnSupportUtils
 	{
 		conn.setRequestProperty("User-Agent", userAgent);
 		conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
-		conn.setRequestProperty("Accept-Encoding", "gzip, deflate, br");
+		conn.setRequestProperty("Accept-Encoding", "gzip, deflate, br, zstd");	// TODO - In case we use the "Firefox" user-agent, then implement support for the "zstd" encoding as well.
 		//conn.setRequestProperty("TE", "trailers");	// TODO - Investigate the "transfer-encoding" header.
 
 		if ( !HttpConnUtils.domainsWithUnsupportedAcceptLanguageParameter.contains(domainStr) )
@@ -674,13 +675,16 @@ public class ConnSupportUtils
 	public static InputStream getCompressedInputStream(InputStream inputStream, String encoding, String url, boolean isForError)
 	{
 		InputStream compressedInputStream;
+		String lowercaseEncoding = encoding.toLowerCase();
 		try {
-			if ( encoding.equals("gzip") )
+			if ( lowercaseEncoding.equals("gzip") )
 				compressedInputStream = new GzipCompressorInputStream(inputStream);
-			else if ( encoding.equals("deflate") )
+			else if ( lowercaseEncoding.equals("deflate") )
 				compressedInputStream = new DeflateCompressorInputStream(inputStream);
-			else if ( encoding.equals("br") )
+			else if ( lowercaseEncoding.equals("br") )
 				compressedInputStream = new BrotliCompressorInputStream(inputStream);
+			else if ( lowercaseEncoding.equals("zstd") )
+				compressedInputStream = new ZstdCompressorInputStream(inputStream);
 			else {
 				logger.warn("An unsupported \"content-encoding\" (" + encoding + ") was received from url: " + url);
 				return null;

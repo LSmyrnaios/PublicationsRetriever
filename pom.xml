@@ -140,7 +140,19 @@
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-lang3</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.github.luben</groupId>
+          <artifactId>zstd-jni</artifactId>
+        </exclusion>
       </exclusions>
+    </dependency>
+
+    <!-- Even though this is part of the above dependency, the Apache commons rarely updates it, while the zstd team makes improvements very often. -->
+    <!-- It also seems that the above dependency is not including the whole "zstd-jni", since without defining it here, the "ZstdCompressorInputStream" doesn't work. -->
+    <dependency>
+      <groupId>com.github.luben</groupId>
+      <artifactId>zstd-jni</artifactId>
+      <version>1.5.7-1</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.brotli/dec -->
