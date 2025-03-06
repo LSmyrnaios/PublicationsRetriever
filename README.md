@@ -107,6 +107,7 @@ arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
 - **-downloadDocFiles** will tell the program to download the DocFiles.
     The absence of this argument will cause the program to NOT download the docFiles, but just to find the *DocUrls* instead.
     Either way the DocUrls will be written to the JsonOutputFile.
+- **-downloadJustHtmlFiles** will tell the program to download just the HtmlFiles. This is absolutely optional.
 - **-fileNameType** and **< fileNameType >** will tell the program which fileName-type to use (*originalName, idName, numberName*).
 - **-firstFileNum** and **< NUM >** will tell the program to use numbers as *DocFileNames* and the first *DocFile* will have the given number "*NUM*".
     The absence of this argument-group will cause the program to use the original-docFileNames.

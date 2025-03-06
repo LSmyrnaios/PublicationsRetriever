@@ -127,15 +127,14 @@ public class TestNonStandardInputOutput  {
 	@Test
 	public void testCustomInputOutputWithIdHtmlFileNames()
 	{
-		String[] args = new String[8];
+		String[] args = new String[7];
 		args[0] = "-retrieveDataType";
 		args[1] = "document";	// "document" OR "dataset" OR "all"
-		args[2] = "-downloadHTMLFiles";
-		args[3] = "-shouldJustDownloadHtmlFiles";
-		args[4] = "-fileNameType";
-		args[5] = "idName";
-		args[6] = "-inputFileFullPath";
-		args[7] = "./testData/idUrlPairs/orderedList100.json";
+		args[2] = "-downloadJustHtmlFiles";
+		args[3] = "-fileNameType";
+		args[4] = "idName";
+		args[5] = "-inputFileFullPath";
+		args[6] = "./testData/idUrlPairs/orderedList500.json";
 		main(args);
 	}
 

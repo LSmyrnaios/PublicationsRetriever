@@ -798,18 +798,17 @@ public class UrlChecker {
 		ArgsUtils.fileNameType = ArgsUtils.fileNameTypeEnum.idName;
 
 		ArgsUtils.shouldDownloadDocFiles = true;
-		if ( ArgsUtils.shouldDownloadDocFiles ) {
-			ArgsUtils.shouldDeleteOlderDocFiles = true;
-			ArgsUtils.storeDocFilesDir = FileUtils.workingDir + "testDocFiles" + File.separator;
-			FileUtils.handleStoreFilesDirectory(ArgsUtils.storeDocFilesDir, ArgsUtils.shouldDeleteOlderDocFiles , true);
-		}
 
-		ArgsUtils.shouldDownloadHTMLFiles = true;
-		//ArgsUtils.shouldJustDownloadHtmlFiles = true;
-		if ( ArgsUtils.shouldDownloadHTMLFiles ) {
+		ArgsUtils.shouldJustDownloadHtmlFiles = true;
+		if ( ArgsUtils.shouldJustDownloadHtmlFiles ) {
 			ArgsUtils.shouldDeleteOlderHTMLFiles = true;
 			ArgsUtils.storeHtmlFilesDir = FileUtils.workingDir + "testHTMLFiles" + File.separator;
 			FileUtils.handleStoreFilesDirectory(ArgsUtils.storeHtmlFilesDir, ArgsUtils.shouldDeleteOlderHTMLFiles , false);
+		}
+		else if ( ArgsUtils.shouldDownloadDocFiles ) {
+			ArgsUtils.shouldDeleteOlderDocFiles = true;
+			ArgsUtils.storeDocFilesDir = FileUtils.workingDir + "testDocFiles" + File.separator;
+			FileUtils.handleStoreFilesDirectory(ArgsUtils.storeDocFilesDir, ArgsUtils.shouldDeleteOlderDocFiles , true);
 		}
 
 		String testID = "testID";

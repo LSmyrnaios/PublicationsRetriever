@@ -108,11 +108,10 @@ public class FileUtils
 			System.exit(20);
 		}
 
-		if ( ArgsUtils.shouldDownloadDocFiles )
-			handleStoreFilesDirectory(ArgsUtils.storeDocFilesDir, ArgsUtils.shouldDeleteOlderDocFiles , true);
-
-		if ( ArgsUtils.shouldDownloadHTMLFiles )
+		if ( ArgsUtils.shouldJustDownloadHtmlFiles )
 			handleStoreFilesDirectory(ArgsUtils.storeHtmlFilesDir, ArgsUtils.shouldDeleteOlderHTMLFiles , false);
+		else if ( ArgsUtils.shouldDownloadDocFiles )
+			handleStoreFilesDirectory(ArgsUtils.storeDocFilesDir, ArgsUtils.shouldDeleteOlderDocFiles , true);
 	}
 
 
@@ -159,10 +158,8 @@ public class FileUtils
 			logger.warn("There was an error creating the docFiles-storageDir! Continuing without downloading the docFiles, while creating the jsonOutput with the docUrls.");
 			if ( calledForDocFiles )
 				ArgsUtils.shouldDownloadDocFiles = false;	// Continue without downloading the docFiles, just create the jsonOutput.
-			else {
-				ArgsUtils.shouldDownloadHTMLFiles = false;
+			else
 				ArgsUtils.shouldJustDownloadHtmlFiles = false;
-			}
 		}
 	}
 
@@ -676,15 +673,18 @@ public class FileUtils
 				numbersOfDuplicateFileNames.put(initialFileName, curDuplicateNum);    // We should add the new "curDuplicateNum" for the original fileName, only if the new file can be created.
 
 		} catch (FileNotFoundException fnfe) {	// This may be thrown in case the file cannot be created.
-			logger.error("", fnfe);
-			// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
-			// So the empty file may exist, but we will also get the "FileNotFoundException".
-			try {
-			} catch (Exception e) {
-			}
+			String msg = fnfe.getMessage();
+			if ( msg != null && msg.contains("(No space left on device)") ) {
+				// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
+				// So the empty file may exist now, while also getting the "FileNotFoundException".
+				try {
 					if ( file.exists() )
 						FileDeleteStrategy.FORCE.delete(file);
+				} catch (Exception e) {
 					logger.error("Error when deleting the half-created file: " + fileName);
+				}
+			}
+			logger.error("", fnfe);
 			// The "fileOutputStream" was not created in this case, so no closing is needed.
 			throw new FileNotRetrievedException(fnfe.getMessage());
 		} catch (Exception e) {	// Mostly I/O and Security Exceptions.

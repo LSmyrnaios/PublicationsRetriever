@@ -3,7 +3,8 @@ package eu.openaire.publications_retriever.crawler;
 import eu.openaire.publications_retriever.exceptions.*;
 import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
-import eu.openaire.publications_retriever.util.file.HtmlFileUtils;
+import eu.openaire.publications_retriever.util.file.FileData;
+import eu.openaire.publications_retriever.util.file.HtmlResult;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
@@ -100,30 +101,24 @@ public class PageCrawler
 			return;
 		}
 
-		String pageHtml = null;	// Get the pageHtml to parse the page.
-		if ( (pageHtml = ConnSupportUtils.getHtmlString(conn, pageUrl, bufferedReader, false)) == null ) {
+		// Take the html from the page and in case we want to save it permanently, write it into a file.
+		HtmlResult htmlResult = null;
+		if ( (htmlResult = ConnSupportUtils.getHtml(conn, urlId, pageUrl, bufferedReader, false, urlMatcher, firstHTMLlineFromDetectedContentType)) == null ) {
 			logger.warn("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
 			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", "N/A", null, true, "true", "true", "false", "false", "true", null, "null", "N/A");
 			LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			// The "bufferedReader" is closed inside the above method.
 			return;
 		}
-		else if ( firstHTMLlineFromDetectedContentType != null ) {
-			pageHtml = firstHTMLlineFromDetectedContentType + pageHtml;
-		}
-		//logger.debug(pageHtml);	// DEBUG!
 
-		if ( ArgsUtils.shouldDownloadHTMLFiles ) {
-			if ( ! HtmlFileUtils.downloadHtmlFile(urlId, sourceUrl, pageUrl, pageHtml, urlMatcher) ) {
-				if ( ArgsUtils.shouldJustDownloadHtmlFiles ) {
-					logger.warn("Page: \"" + pageUrl + "\" left \"PageCrawler.visit()\" after its html-file could not been downloaded.");
-					String couldRetry = (LoaderAndChecker.COULD_RETRY_URLS.matcher(pageUrl).matches() ? "true" : "false");
-					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Logged in 'PageCrawler.visit()' method, as its html-file could not been downloaded.", "N/A", null, true, "true", "true", "false", "false", couldRetry, null, "null", "N/A");
-					return;	// Do not proceed with retrieving the docUrls.
-				}
-			} else if ( ArgsUtils.shouldJustDownloadHtmlFiles )
-				return;	// Do not proceed with retrieving the docUrls.
+		if ( ArgsUtils.shouldJustDownloadHtmlFiles ) {
+			FileData htmlFileData = htmlResult.getHtmlFileData();
+			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, "N/A", "N/A", htmlFileData.getLocation(), null, true, "true", "true", "N/A", "N/A", "true", htmlFileData.getSize(), htmlFileData.getHash(), "text/html");
+			return;
 		}
+
+		String pageHtml = htmlResult.getHtmlString();
+		//logger.debug(pageHtml);	// DEBUG!
 
 		if ( LoaderAndChecker.retrieveDocuments && pageDomain.contains("turkjgastroenterol.org") ) {
 			SpecialUrlsHandler.extractAndCheckTurkjgastroenterolDocUrl(pageHtml, urlId, sourceUrl, pageUrl, pageDomain);

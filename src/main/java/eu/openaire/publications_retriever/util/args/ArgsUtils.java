@@ -30,10 +30,9 @@ public class ArgsUtils {
 	public static String storeDocFilesDir = FileUtils.workingDir + "docFiles" + File.separator;
 
 	public static String storeHtmlFilesDir = FileUtils.workingDir + "htmlFiles" + File.separator;
-	public static boolean shouldDownloadHTMLFiles = false;	// It will be set to "true" if the related command-line-argument is given.
 	public static boolean shouldDeleteOlderHTMLFiles = false;	// Should we delete any older stored docFiles? This is useful for testing.
 
-	public static boolean shouldJustDownloadHtmlFiles = false;
+	public static boolean shouldJustDownloadHtmlFiles = false;	// It will be set to "true" if the related command-line-argument is given.
 
 	public static boolean inputFromUrl = false;
 	public static String inputDataUrl = null;
@@ -46,7 +45,7 @@ public class ArgsUtils {
 	public static int workerThreadsCount = 0;
 	public static int threadsMultiplier = 2;	// Use *3 without downloading docFiles and when having the domains to appear in uniform distribution in the inputFile. Use *2 when downloading.
 
-	private static final String usageMessage = "\nUsage: java -jar publications_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all> -inputFileFullPath inputFile -downloadDocFiles(OPTIONAL) -fileNameType(OPTIONAL) <nameType: originalName | idName | numberName> -firstFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' -inputDataUrl(OPTIONAL) 'inputUrl' -numOfThreads(OPTIONAL) 'threadsNum' < 'input' > 'output'";
+	private static final String usageMessage = "\nUsage: java -jar publications_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all> -inputFileFullPath inputFile [-downloadDocFiles(OPTIONAL) | -downloadJustHtmlFiles(OPTIONAL)] -fileNameType(OPTIONAL) <nameType: originalName | idName | numberName> -firstFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' -inputDataUrl(OPTIONAL) 'inputUrl' -numOfThreads(OPTIONAL) 'threadsNum' < 'input' > 'output'";
 
 	private static boolean firstNumGiven = false;
 
@@ -84,15 +83,12 @@ public class ArgsUtils {
 						i ++;
 						handleDocFilesStorage(mainArgs[i]);
 						break;
-					case "-downloadHTMLFiles":
-						shouldDownloadHTMLFiles = true;
+					case "-downloadJustHtmlFiles":
+						shouldJustDownloadHtmlFiles = true;
 						break;
 					case "-htmlFilesStorage":
 						i ++;
 						handleHtmlFilesStorage(mainArgs[i]);
-						break;
-					case "-shouldJustDownloadHtmlFiles":
-						shouldJustDownloadHtmlFiles = true;
 						break;
 					case "-fileNameType":
 						i ++;
@@ -126,10 +122,14 @@ public class ArgsUtils {
 			}
 		}
 
-		if ( shouldJustDownloadHtmlFiles && !shouldDownloadHTMLFiles )
-			shouldDownloadHTMLFiles = true;	// It's possible that the user missed adding both arguments. It's ok.
+		if ( shouldJustDownloadHtmlFiles && shouldDownloadDocFiles ) {
+			String errMessage = "The \"downloadJustHtmlFiles\" was given alongside \"downloadDocFiles\"! Using both of them is not possible." + usageMessage;
+			System.err.println(errMessage);
+			logger.error(errMessage);
+			System.exit(91);
+		}
 
-		if ( shouldDownloadDocFiles || shouldDownloadHTMLFiles )
+		if ( shouldDownloadDocFiles || shouldJustDownloadHtmlFiles )
 			handleDownloadCase();
 	}
 

@@ -14,6 +14,8 @@ import eu.openaire.publications_retriever.models.MimeTypeResult;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileData;
 import eu.openaire.publications_retriever.util.file.FileUtils;
+import eu.openaire.publications_retriever.util.file.HtmlFileUtils;
+import eu.openaire.publications_retriever.util.file.HtmlResult;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
 import org.apache.commons.compress.compressors.brotli.BrotliCompressorInputStream;
@@ -537,11 +539,12 @@ public class ConnSupportUtils
 	{
 		try {
 			String html = null;
-			if ( (html = ConnSupportUtils.getHtmlString(conn, url, null, false)) == null ) {
+			HtmlResult htmlResult = null;
+			if ( (htmlResult = ConnSupportUtils.getHtml(conn, null, url, null, false, null, null)) == null ) {
 				logger.warn("Could not retrieve the HTML-code for HTTP300PageUrl: " + url);
 				return null;
 			}
-			
+			html = htmlResult.getHtmlString();
 			HashSet<String> extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(html, url);
 			if ( extractedLinksHashSet == null || extractedLinksHashSet.size() == 0 )
 				return null;	// Logging is handled inside..
@@ -697,12 +700,13 @@ public class ConnSupportUtils
 
 	public static String getErrorMessageFromResponseBody(HttpURLConnection conn, String url)
 	{
-		String html = getHtmlString(conn, url, null, true);
-		if ( html == null )
+		HtmlResult htmlResult = getHtml(conn, null, url, null, true, null, null);
+		if ( htmlResult == null )
 			return null;
 
-		int htmlLength = html.length();
-		if ( (htmlLength == 0) || (htmlLength > 10000) )
+		String html = htmlResult.getHtmlString();
+		int htmlLength = html.length();	// It won't be 0;
+		if ( htmlLength > 10000 )
 			return null;
 
 		String errorText = Jsoup.parse(html).text();	// The result is already "trimmed".
@@ -912,7 +916,7 @@ public class ConnSupportUtils
 
 	public static ThreadLocal<StringBuilder> htmlStrBuilder = new ThreadLocal<StringBuilder>();	// Every Thread has its own variable.
 
-	public static String getHtmlString(HttpURLConnection conn, String pageUrl, BufferedReader bufferedReader, boolean isForError)
+	public static HtmlResult getHtml(HttpURLConnection conn, String urlId, String pageUrl, BufferedReader bufferedReader, boolean isForError, Matcher urlMatcher, String firstHTMLlineFromDetectedContentType)
 	{
 		int contentSize = 0;
 		if ( (contentSize = getContentSize(conn, false, isForError)) == -1 ) {	// "Unacceptable size"-code..
@@ -924,8 +928,8 @@ public class ConnSupportUtils
 		// It may be "-2" in case the "contentSize" was not available.
 
 		StringBuilder htmlStrB = htmlStrBuilder.get();
-		if ( htmlStrB == null ) {
-			htmlStrB = new StringBuilder(100000);	// Initialize and pre-allocate the StringBuilder.
+		if ( (htmlStrB == null) && (!ArgsUtils.shouldJustDownloadHtmlFiles || isForError) ) {
+			htmlStrB = new StringBuilder(100_000);	// Initialize and pre-allocate the StringBuilder.
 			htmlStrBuilder.set(htmlStrB);	// Save it for future use by this thread.
 		}
 
@@ -935,32 +939,80 @@ public class ConnSupportUtils
 			inputStream = checkEncodingAndGetInputStream(conn, isForError);
 			if ( inputStream == null )	// The error is already logged inside.
 				return null;
-			bufferSize = (((contentSize != -2) && contentSize < FileUtils.fiveMb) ? contentSize : FileUtils.fiveMb);
+			bufferSize = (((contentSize != -2) && (contentSize < FileUtils.mb)) ? contentSize : FileUtils.mb);
 		}
 
-		try (BufferedReader br = ((bufferedReader != null) ? bufferedReader : new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8), bufferSize)) )	// Try-with-resources
+		FileData htmlFileData = null;
+		String fullPathFileName = null;
+		if ( ArgsUtils.shouldJustDownloadHtmlFiles && !isForError ) {
+			try {
+				htmlFileData = HtmlFileUtils.getFinalHtmlFilePath(urlId, pageUrl, urlMatcher, contentSize);	// This will not be null.
+				fullPathFileName = htmlFileData.getLocation();
+				//} catch (FileNotRetrievedException fnre) {
+			} catch (Exception e) {
+				logger.error("Failed to acquire the \"fullPathFileName\": " + e.getMessage());
+				if ( ArgsUtils.shouldJustDownloadHtmlFiles && ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
+					HtmlFileUtils.htmlFilesNum.decrementAndGet();
+				return null;
+			}
+		}
+
+		try (BufferedReader br = ((bufferedReader != null) ? bufferedReader : new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8), bufferSize));
+			 BufferedWriter bw = ((ArgsUtils.shouldJustDownloadHtmlFiles && !isForError) ? new BufferedWriter(new FileWriter(fullPathFileName, StandardCharsets.UTF_8),  bufferSize) : null) )	// Try-with-resources
 		{
 			String inputLine;
-			String htmlSpaceChar = (ArgsUtils.shouldDownloadHTMLFiles ? FileUtils.endOfLine : " ");
+			String htmlSpaceChar = ((bw != null) ? FileUtils.endOfLine : " ");
+
+			// We may have extracted the first response-line in order to determine the content-type, in case no other method succeeded.
+			if ( firstHTMLlineFromDetectedContentType != null ) {
+				if ( !ArgsUtils.shouldJustDownloadHtmlFiles || isForError )
+					htmlStrB.append(firstHTMLlineFromDetectedContentType).append(htmlSpaceChar);
+				if ( bw != null ) {
+					bw.write(firstHTMLlineFromDetectedContentType);
+					bw.newLine();
+				}
+			}
+
 			while ( (inputLine = br.readLine()) != null )
 			{
 				if ( !inputLine.isEmpty() && (inputLine.length() != 1) && !SPACE_ONLY_LINE.matcher(inputLine).matches() ) {	// We check for (inputLine.length() != 1), as some lines contain just an unrecognized byte.
-					htmlStrB.append(inputLine).append(htmlSpaceChar);	// Add the "spaceChar" to avoid joining words from different lines.
+					if ( !ArgsUtils.shouldJustDownloadHtmlFiles || isForError )
+						htmlStrB.append(inputLine).append(htmlSpaceChar);	// Add the "spaceChar" to avoid joining words from different lines.
+					if ( bw != null ) {
+						bw.write(inputLine);
+						bw.newLine();
+					}
 					//logger.debug(inputLine);	// DEBUG!
 				}
 			}
 			//logger.debug("Chars in html: " + String.valueOf(htmlStrB.length()));	// DEBUG!
 
-			return (htmlStrB.length() != 0) ? htmlStrB.toString() : null;	// Make sure we return a "null" on empty string, to better handle the case in the caller-method.
+			if ( bw != null ) {
+				bw.flush();	// Otherwise the "bw" will be flushed only upon closing and the calculation of "hash" and "size" will not work.
+				logger.info("HtmlFile '" + fullPathFileName + "' was downloaded.");
+				HtmlFileUtils.htmlFilesNum.incrementAndGet();
+				htmlFileData.calculateAndSetHashAndSize();
+			}
+
+			if ( !ArgsUtils.shouldJustDownloadHtmlFiles || isForError ) {
+				String htmlString = ((htmlStrB != null) && htmlStrB.length() != 0) ? htmlStrB.toString() : null;
+				return ((htmlString != null) ? new HtmlResult(htmlString, null) : null);
+			} else
+				return new HtmlResult(null, htmlFileData);	// Make sure we return a "null" on empty string, to better handle the case in the caller-method.
 
 		} catch ( IOException ioe ) {
 			logger.error("IOException when retrieving the HTML-code for pageUrl \"" + pageUrl + "\": " + ioe.getMessage());
+			if ( ArgsUtils.shouldJustDownloadHtmlFiles && ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
+				HtmlFileUtils.htmlFilesNum.decrementAndGet();
 			return null;
 		} catch ( Exception e ) {
 			logger.error("", e);
+			if ( ArgsUtils.shouldJustDownloadHtmlFiles && ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
+				HtmlFileUtils.htmlFilesNum.decrementAndGet();
 			return null;
 		} finally {
-			htmlStrB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating.
+			if ( htmlStrB != null )
+				htmlStrB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating.
 			try {
 				if ( inputStream != null )
 					inputStream.close();
