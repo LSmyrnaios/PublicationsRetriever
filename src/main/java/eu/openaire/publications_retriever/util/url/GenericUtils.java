@@ -41,8 +41,7 @@ public class GenericUtils {
         ConnSupportUtils.timesDomainsHadTimeoutEx.clear();
         PageCrawler.timesDomainNotGivingInternalLinks.clear();
         PageCrawler.timesDomainNotGivingDocUrls.clear();
-        UrlUtils.docOrDatasetUrlsWithIDs.clear();
-        UrlUtils.domainsAndHits.clear();
+        UrlUtils.domainsAndNumHits.clear();    // This hashMap is used to determine if a domain is successful enough to keep it non-blocked.
 
         // Paths' data, which also contribute to domain-blocking.
         ConnSupportUtils.timesPathsReturned403.clear();
@@ -65,6 +64,10 @@ public class GenericUtils {
     public static void clearTrackingData()
     {
         clearBlockingData();
+
+        // Clear tracking data of successful detections and downloads.
+        UrlUtils.docOrDatasetUrlsWithIDs.clear();
+        ConnSupportUtils.fileHashesWithLocations.clear();
 
         // Domain additional data, which does not contribute in blocking the domains, but they do contribute in performance.
         HttpConnUtils.domainsSupportingHTTPS.clear();
