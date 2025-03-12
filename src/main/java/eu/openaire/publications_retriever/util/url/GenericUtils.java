@@ -75,8 +75,8 @@ public class GenericUtils {
         HttpConnUtils.domainsWithUnsupportedHeadMethod.clear();
         HttpConnUtils.domainsWithUnsupportedAcceptLanguageParameter.clear();
 
-        // Other data which is handled per-batch by the PDF-AggregationService. These are commented-out here, as they will be cleared anyway.
-        //ConnSupportUtils.domainsWithConnectionData.clear();
+        // Other data.
+        ConnSupportUtils.domainsWithConnectionData.clear();
 
         // The data-structures from the "MachineLearning" class are not added here, since it is in experimental phase and not running in production, thus these data-structures will most likely be empty.
     }

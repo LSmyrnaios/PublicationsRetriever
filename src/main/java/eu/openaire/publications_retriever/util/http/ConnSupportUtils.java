@@ -892,7 +892,7 @@ public class ConnSupportUtils
 		if ( badTimes > timesBeforeBlock )
 		{
 			if ( checkAgainstDocUrlsHits ) {	// This will not be the case for MLA-blocked-domains. We cannot take into account ALL retrieved docUrls when only a part was retrieved by the MLA.
-				Integer goodTimes = UrlUtils.domainsAndHits.get(domainStr);
+				Integer goodTimes = UrlUtils.domainsAndNumHits.get(domainStr);
 				if ( (goodTimes != null)
 						&& (badTimes <= (goodTimes + timesBeforeBlock)) )	// If the badTimes are less/equal to the goodTimes PLUS the predefined "bufferZone", do not block this domain.
 					return false;

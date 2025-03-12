@@ -40,7 +40,7 @@ public class UrlUtils
 
 	public static final ConcurrentHashMap<String, IdUrlMimeTypeTriple> docOrDatasetUrlsWithIDs = new ConcurrentHashMap<>();	// Null keys are allowed (in case they are not available in the input).
 
-	public static final ConcurrentHashMap<String, Integer> domainsAndHits = new ConcurrentHashMap<>();
+	public static final ConcurrentHashMap<String, Integer> domainsAndNumHits = new ConcurrentHashMap<>();
 	// The data inside ConcurrentHashMap "domainsAndHits" is used to evaluate how good the domain is doing while is having some problems.
 
 	public static final String duplicateUrlIndicator = "duplicate";
@@ -99,13 +99,13 @@ public class UrlUtils
 					// Add the domains of the pageUrl and the finalDocOrDatasetUrl to the successful domains as both lead in some way to a docOrDatasetUrl.
 					// The data inside ConcurrentHashMap "domainsAndHits" is used to evaluate how good the domain is doing while is having some problems.
 					// If the "goods" surpass the "bads", then that domain will not get blocked, even if the "minimum-accepted-bad-cases" was exceeded.
-					ConnSupportUtils.countInsertAndGetTimes(domainsAndHits, pageDomain);
+					ConnSupportUtils.countInsertAndGetTimes(domainsAndNumHits, pageDomain);
 
 					// Now if the "finalDocOrDatasetUrl" is different from the "pageUrl", get the domain of the "finalDocOrDatasetUrl" and if it's different, then add it to "domainsAndHits"-HashMap.
 					if ( !pageUrl.equals(finalDocOrDatasetUrl) ) {
 						String docUrlDomain = UrlUtils.getDomainStr(finalDocOrDatasetUrl, null);
 						if ( (docUrlDomain != null) && !docUrlDomain.equals(pageDomain) )
-							ConnSupportUtils.countInsertAndGetTimes(domainsAndHits, docUrlDomain);
+							ConnSupportUtils.countInsertAndGetTimes(domainsAndNumHits, docUrlDomain);
 					}
 				}
 			}
