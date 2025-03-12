@@ -431,7 +431,7 @@ public class FileUtils
 			if ( e instanceof FileNotRetrievedException )
 				throw (FileNotRetrievedException) e;
 			else {
-				if (! (e instanceof IOException) )
+				if ( ! (e instanceof IOException) )
 					logger.error("", e);
 
 				throw new FileNotRetrievedException(e.getMessage());
@@ -451,9 +451,6 @@ public class FileUtils
 	 */
 	public static synchronized FileData storeDocFileWithNumberName(HttpURLConnection conn, String docUrl, int contentSize) throws FileNotRetrievedException
 	{
-		File docFile = new File(ArgsUtils.storeDocFilesDir + (numOfDocFile++) + ".pdf");	// First use the "numOfDocFile" and then increment it.
-		// TODO - Later, on different fileTypes, take care of the extension properly.
-
 		InputStream inputStream = ConnSupportUtils.checkEncodingAndGetInputStream(conn, false);
 		if ( inputStream == null )
 			throw new FileNotRetrievedException("Could not acquire the inputStream!");
@@ -465,6 +462,10 @@ public class FileUtils
 			logger.error("Failed to get instance for MD5 hash-algorithm!", e);
 			throw new RuntimeException("MD5 HASH ALGO MISSING");
 		}
+
+		File docFile = new File(ArgsUtils.storeDocFilesDir + (numOfDocFile++) + ".pdf");	// First use the "numOfDocFile" and then increment it.
+		// TODO - Later, on different fileTypes, take care of the extension properly.
+
 		long bytesCount = 0;
 		int bufferSize = (((contentSize != -2) && contentSize < fiveMb) ? contentSize : fiveMb);
 
@@ -534,7 +535,7 @@ public class FileUtils
 			if ( e instanceof FileNotRetrievedException )
 				throw (FileNotRetrievedException) e;
 			else {
-				if (! (e instanceof IOException) )
+				if ( ! (e instanceof IOException) )
 					logger.error("", e);
 
 				throw new FileNotRetrievedException(e.getMessage());
