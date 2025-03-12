@@ -376,14 +376,8 @@ public class FileUtils
 			{
 				long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
 				if ( (elapsedTime > maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {
-					String errMsg = "Storing docFile from docUrl: \"" + docUrl + "\" is taking over " + TimeUnit.MILLISECONDS.toSeconds(maxStoringWaitingTime) + " seconds! Aborting..";
+					String errMsg = "Storing docFile from docUrl: \"" + docUrl + "\" is taking over " + TimeUnit.MILLISECONDS.toSeconds(maxStoringWaitingTime) + " seconds (for contentSize: " + (PublicationsRetriever.df.format((double) contentSize / FileUtils.mb)) + " MB)! Aborting..";
 					logger.warn(errMsg);
-					try {
-						FileDeleteStrategy.FORCE.delete(docFile);
-					} catch (Exception e) {
-						logger.error("Error when deleting the half-retrieved file from docUrl: " + docUrl);
-					}
-					numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved.
 					throw new FileNotRetrievedException(errMsg);
 				} else {
 					outStream.write(readByte);
@@ -418,28 +412,30 @@ public class FileUtils
 			// Otherwise, a file-key-name (with incremented number-string) might already exist, from a previous or parallel upload from another run and so it will be overwritten!
 
 			return fileData;	// It may be null.
-
-		} catch (FileNotRetrievedException dfnre) {
-			throw dfnre;	// No reversion of the number needed.
-		} catch (FileNotFoundException fnfe) {	// This may be thrown in case the file cannot be created.
-			logger.error("", fnfe);
-			numOfDocFiles.decrementAndGet();
+		} catch (Exception e) {
+			numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved.
 			// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
 			// So the empty file may exist, but we will also get the "FileNotFoundException".
 			try {
-				if ( docFile.exists() )
-					FileDeleteStrategy.FORCE.delete(docFile);
-			} catch (Exception e) {
-				logger.error("Error when deleting the half-created file from docUrl: " + docUrl);
+				if ( docFile.exists() ) {
+					try {
+						FileDeleteStrategy.FORCE.delete(docFile);
+					} catch (Exception e1) {
+						logger.error("Error when deleting the half-created file from docUrl: " + docUrl, e1);
+					}
+				}
+			} catch (Exception e2) {
+				logger.error("Error when checking if there is a half-created file from docUrl: " + docUrl, e2);
 			}
-			throw new FileNotRetrievedException(fnfe.getMessage());
-		} catch (IOException ioe) {
-			numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved.
-			throw new FileNotRetrievedException(ioe.getMessage());
-		} catch (Exception e) {
-			numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved.
-			logger.error("", e);
-			throw new FileNotRetrievedException(e.getMessage());
+
+			if ( e instanceof FileNotRetrievedException )
+				throw (FileNotRetrievedException) e;
+			else {
+				if (! (e instanceof IOException) )
+					logger.error("", e);
+
+				throw new FileNotRetrievedException(e.getMessage());
+			}
 		}
 	}
 
@@ -482,14 +478,8 @@ public class FileUtils
 			{
 				long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
 				if ( (elapsedTime > maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {
-					String errMsg = "Storing docFile from docUrl: \"" + docUrl + "\" is taking over " + TimeUnit.MILLISECONDS.toSeconds(maxStoringWaitingTime) + " seconds! Aborting..";
+					String errMsg = "Storing docFile from docUrl: \"" + docUrl + "\" is taking over " + TimeUnit.MILLISECONDS.toSeconds(maxStoringWaitingTime) + " seconds (for contentSize: " + (PublicationsRetriever.df.format((double) contentSize / FileUtils.mb)) + " MB)! Aborting..";
 					logger.warn(errMsg);
-					try {
-						FileDeleteStrategy.FORCE.delete(docFile);
-					} catch (Exception e) {
-						logger.error("Error when deleting the half-retrieved file from docUrl: " + docUrl);
-					}
-					numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 					throw new FileNotRetrievedException(errMsg);
 				} else {
 					outStream.write(readByte);
@@ -525,28 +515,30 @@ public class FileUtils
 			// Otherwise, a file-key-name (with incremented number-string) might already exist, from a previous or parallel upload from another run and so it will be overwritten!
 
 			return fileData;	// It may be null.
-			
-		} catch (FileNotRetrievedException dfnre) {
-			throw dfnre;	// No reversion of the number needed.
-		} catch (FileNotFoundException fnfe) {	// This may be thrown in the file cannot be created.
-			logger.error("", fnfe);
+		} catch (Exception e) {
 			numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 			// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
 			// So the empty file may exist, but we will also get the "FileNotFoundException".
 			try {
-				if ( docFile.exists() )
-					FileDeleteStrategy.FORCE.delete(docFile);
-			} catch (Exception e) {
-				logger.error("Error when deleting the half-created file from docUrl: " + docUrl);
+				if ( docFile.exists() ) {
+					try {
+						FileDeleteStrategy.FORCE.delete(docFile);
+					} catch (Exception e1) {
+						logger.error("Error when deleting the half-created file from docUrl: " + docUrl, e1);
+					}
+				}
+			} catch (Exception e2) {
+				logger.error("Error when checking if there is a half-created file from docUrl: " + docUrl, e2);
 			}
-			throw new FileNotRetrievedException(fnfe.getMessage());
-		} catch (IOException ioe) {
-			numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
-			throw new FileNotRetrievedException(ioe.getMessage());
-		} catch (Exception e) {
-			numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
-			logger.error("", e);
-			throw new FileNotRetrievedException(e.getMessage());
+
+			if ( e instanceof FileNotRetrievedException )
+				throw (FileNotRetrievedException) e;
+			else {
+				if (! (e instanceof IOException) )
+					logger.error("", e);
+
+				throw new FileNotRetrievedException(e.getMessage());
+			}
 		}
 	}
 
@@ -720,13 +712,13 @@ public class FileUtils
 		if ( contentSize <= fiftyMBInBytes )
 			return 45_000;	// 45 seconds
 		else if ( contentSize <= oneHundredMBInBytes )
-			return 60_000;	// 1 min.
+			return 70_000;	// 1 min & 10 seconds.
 		else if ( contentSize <= twoHundredMBInBytes )
-			return 120_000;	// 2 mins.
+			return 140_000;	// 2 mins & 20 seconds.
 		else if ( contentSize <= threeHundredMBInBytes )
-			return 180_000;	// 3 mins.
+			return 210_000;	// 3.5 mins.
 		else
-			return 300_000;	// 5 mins.
+			return 330_000;	// 5.5 mins.
 	}
 
 	
