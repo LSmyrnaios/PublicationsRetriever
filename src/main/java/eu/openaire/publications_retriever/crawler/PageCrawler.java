@@ -177,7 +177,7 @@ public class PageCrawler
 			} else
 				urlToCheck = currentLink;
 
-			IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(urlToCheck);	// If we got into an already-found docUrl, log it and return.
+			IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(urlToCheck);	// If we got into an already-found docUrl, log it and return.
 			if ( originalIdUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
 				ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, urlToCheck, originalIdUrlMimeTypeTriple, false);
 					return;
@@ -610,7 +610,7 @@ public class PageCrawler
 			return false;
 		}
 
-		IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(docLink);
+		IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(docLink);
 		if ( originalIdUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
 			ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, docLink, originalIdUrlMimeTypeTriple, false);
 			return true;

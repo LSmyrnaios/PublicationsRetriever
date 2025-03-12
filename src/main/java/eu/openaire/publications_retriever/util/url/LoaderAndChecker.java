@@ -130,7 +130,7 @@ public class LoaderAndChecker
 						return false;
 					}
 
-					IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl);
+					IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(retrievedUrl);
 					if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
 						ConnSupportUtils.handleReCrossedDocUrl("null", retrievedUrl, retrievedUrl, retrievedUrl, originalIdUrlMimeTypeTriple, true);
 						return true;
@@ -223,7 +223,7 @@ public class LoaderAndChecker
 							continue;
 						}	// The "retrievedUrl" might have changed (inside "handleUrlChecks()").
 
-						IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl);
+						IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(retrievedUrl);
 						if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
 							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, originalIdUrlMimeTypeTriple, true);
 							if ( !isSingleIdUrlPair )
@@ -376,7 +376,7 @@ public class LoaderAndChecker
 						return false;
 					}
 
-					IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl);
+					IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(retrievedUrl);
 					if ( originalIdUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
 						ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, originalIdUrlMimeTypeTriple, true);
 						return true;
@@ -464,7 +464,7 @@ public class LoaderAndChecker
 							continue;
 						}
 
-						IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl);
+						IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(retrievedUrl);
 						if ( originalIdUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
 							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, originalIdUrlMimeTypeTriple, true);
 							continue;

@@ -560,7 +560,7 @@ public class HttpConnUtils
 
 				//ConnSupportUtils.printRedirectDebugInfo(currentUrl, location, targetUrl, responseCode, curRedirectsNum);
 
-				IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(targetUrl);
+				IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(targetUrl);
 				if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
 					ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, targetUrl, originalIdUrlMimeTypeTriple, calledForPageUrl);
 					throw new AlreadyFoundDocUrlException();

@@ -66,7 +66,7 @@ public class GenericUtils {
         clearBlockingData();
 
         // Clear tracking data of successful detections and downloads.
-        UrlUtils.docOrDatasetUrlsWithIDs.clear();
+        UrlUtils.resultUrlsWithIDs.clear();
         ConnSupportUtils.fileHashesWithLocations.clear();
 
         // Domain additional data, which does not contribute in blocking the domains, but they do contribute in performance.

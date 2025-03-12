@@ -167,7 +167,7 @@ public class MetadataHandler {
         // For example: http://localhost:4000/bitstreams/98e649e7-a656-4a90-ad69-534178e63fbb/download
         metaDocUrl = LOCALHOST_DOMAIN_REPLACEMENT_PATTERN.matcher(metaDocUrl).replaceFirst("://" +  pageDomain);
 
-        IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(metaDocUrl);
+        IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(metaDocUrl);
         if ( originalIdUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
             ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, metaDocUrl, originalIdUrlMimeTypeTriple, false);
             numOfMetaDocUrlsFound.incrementAndGet();
