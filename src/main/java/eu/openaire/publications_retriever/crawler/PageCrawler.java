@@ -81,7 +81,7 @@ public class PageCrawler
 
 	public static void visit(String urlId, String sourceUrl, String pageUrl, String pageContentType, HttpURLConnection conn, String firstHTMLlineFromDetectedContentType, BufferedReader bufferedReader)
 	{
-		logger.debug("Visiting pageUrl: \"" + pageUrl + "\".");
+		logger.debug("Visiting pageUrl: \"" + pageUrl + "\", from id: \"" + urlId + "\".");
 
 		Matcher urlMatcher = UrlUtils.getUrlMatcher(pageUrl);
 		if ( urlMatcher == null ) {

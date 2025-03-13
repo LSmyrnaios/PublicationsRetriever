@@ -397,6 +397,43 @@ public class ConnSupportUtils
 
 	public static final ConcurrentHashMap<String, String> fileHashesWithLocations = new ConcurrentHashMap<>();
 
+	public static FileData checkAndHandleDuplicateHash(FileData fileData, String url)
+	{
+		// Check whether the file-hash has been found before.
+		// That would mean that the same file was detected from a DIFFERENT url (otherwise we would have caught the duplicate url and not re-download the file..)
+		String fileHash = fileData.getHash();
+		String alreadyDownloadedFileLocation = fileHashesWithLocations.get(fileHash);
+		if ( alreadyDownloadedFileLocation != null ) {
+			// Delete the new duplicate file and keep the first downloaded one, which was downloaded by a different "sourceUrl".
+			logger.info("The file of url \"" + url + "\" has been already downloaded in location: " + alreadyDownloadedFileLocation);
+			File file = fileData.getFile();
+			try {
+				if ( file.exists() ) {
+					try {
+						FileDeleteStrategy.FORCE.delete(file);
+					} catch (Exception e) {
+						logger.error("Error when deleting the duplicate file from url: " + url, e);
+					}
+				}
+			} catch (Exception e1) {
+				logger.error("Error when checking if the duplicate file exists, from url: " + url, e1);
+			}
+			if ( ArgsUtils.shouldDownloadDocFiles ) {	// Instead of HTML-files.
+				if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
+						FileUtils.numOfDocFile--;
+				else
+					FileUtils.numOfDocFiles.decrementAndGet();
+			}	// In case of HTML-files, no "decrementation" is needed.
+			fileData.setLocation(alreadyDownloadedFileLocation);
+			fileData.setFile(new File(alreadyDownloadedFileLocation));
+			return fileData;
+		} else {
+			fileHashesWithLocations.put(fileData.getHash(), fileData.getLocation());
+			return null;
+		}
+	}
+
+
 	/**
 	 * This method first checks which "HTTP METHOD" was used to connect to the docUrl.
 	 * If this docUrl was connected using "GET" (i.e. when this docURL was fast-found as a possibleDocUrl), just write the data to the disk.
@@ -446,35 +483,10 @@ public class ConnSupportUtils
 				throw new FileNotRetrievedException(errMsg);
 			}
 
-			// Check whether the file-hash has been found before.
-			// That would mean that the same file was detected from a DIFFERENT url (otherwise we would have caught the duplicate url and not re-download the file..)
-
-			String fileHash = fileData.getHash();
-			String alreadyDownloadedFileLocation = fileHashesWithLocations.get(fileHash);
-			if ( alreadyDownloadedFileLocation != null ) {
-				// Delete the new duplicate file and keep the first downloaded one, which was downloaded by a different "sourceUrl".
-				logger.info("The file of docUrl \"" + docUrl + "\" has been already downloaded in location: " + alreadyDownloadedFileLocation);
-				File docFile = fileData.getFile();
-				try {
-					if ( docFile.exists() ) {
-						try {
-							FileDeleteStrategy.FORCE.delete(docFile);
-						} catch (Exception e) {
-							logger.error("Error when deleting the duplicate file from docUrl: " + docUrl, e);
-						}
-					}
-				} catch (Exception e1) {
-					logger.error("Error when checking if the duplicate file exists, from docUrl: " + docUrl, e1);
-				}
-				if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
-					FileUtils.numOfDocFile --;
-				else
-					FileUtils.numOfDocFiles.decrementAndGet();
-				fileData.setLocation(alreadyDownloadedFileLocation);
-				fileData.setFile(new File(alreadyDownloadedFileLocation));
-				return fileData;
-			} else
-				fileHashesWithLocations.put(fileData.getHash(), fileData.getLocation());
+			FileData newFileData = checkAndHandleDuplicateHash(fileData, docUrl);
+			if ( newFileData != null )
+				return newFileData;
+			// Else, it's no a duplicate.
 
 			File docFile = fileData.getFile();
 			if ( ArgsUtils.shouldUploadFilesToS3 ) {
@@ -1026,8 +1038,12 @@ public class ConnSupportUtils
 			if ( bw != null ) {
 				bw.flush();	// Otherwise the "bw" will be flushed only upon closing and the calculation of "hash" and "size" will not work.
 				logger.info("HtmlFile '" + fullPathFileName + "' was downloaded.");
-				HtmlFileUtils.htmlFilesNum.incrementAndGet();
 				htmlFileData.calculateAndSetHashAndSize();
+				FileData newFileData = checkAndHandleDuplicateHash(htmlFileData, pageUrl);
+				if ( newFileData != null )
+					htmlFileData = newFileData;
+				else	// It's not a duplicate.
+					HtmlFileUtils.htmlFilesNum.incrementAndGet();
 			}
 
 			if ( !ArgsUtils.shouldJustDownloadHtmlFiles || isForError ) {
