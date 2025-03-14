@@ -2,6 +2,7 @@ package eu.openaire.publications_retriever.util.url;
 
 import eu.openaire.publications_retriever.crawler.MachineLearning;
 import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
+import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -38,9 +39,9 @@ public class UrlUtils
 
 	public static final Set<String> duplicateUrls = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
-	public static final ConcurrentHashMap<String, IdUrlMimeTypeTriple> docOrDatasetUrlsWithIDs = new ConcurrentHashMap<>();	// Null keys are allowed (in case they are not available in the input).
+	public static final ConcurrentHashMap<String, IdUrlMimeTypeTriple> resultUrlsWithIDs = new ConcurrentHashMap<>();	// Null keys are allowed (in case they are not available in the input).
 
-	public static final ConcurrentHashMap<String, Integer> domainsAndHits = new ConcurrentHashMap<>();
+	public static final ConcurrentHashMap<String, Integer> domainsAndNumHits = new ConcurrentHashMap<>();
 	// The data inside ConcurrentHashMap "domainsAndHits" is used to evaluate how good the domain is doing while is having some problems.
 
 	public static final String duplicateUrlIndicator = "duplicate";
@@ -84,8 +85,17 @@ public class UrlUtils
 				if ( lowerCaseUrl.contains("token") || lowerCaseUrl.contains("jsessionid") )
 					finalDocOrDatasetUrl = UrlUtils.removeTemporalIdentifier(finalDocOrDatasetUrl);	// We send the non-lowerCase-url as we may want to continue with that docOrDatasetUrl in case of an error.
 
-				if ( isFirstCrossed )	// Add this id, only if this is a first-crossed docOrDatasetUrl.
-					docOrDatasetUrlsWithIDs.put(finalDocOrDatasetUrl, new IdUrlMimeTypeTriple(urlId, sourceUrl, mimeType));	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
+				if ( isFirstCrossed
+						&& ((!ArgsUtils.shouldDownloadDocFiles && !ArgsUtils.shouldJustDownloadHtmlFiles) || (fileHash != null)) ) {
+					// Save the data to the "docOrDatasetUrlsWithIDs" map here, only if this is first-crossed, after downloading the file, if it's applicable.
+					// In case we download the files, we want to be sure that "resultUrlsWithIDs" is used to link records to initial records with successfully already downloaded files..
+					// even if that means that a web-page has to be re-scraped to rediscover the resultUrl, because then we have the opportunity to retry the download!
+
+					// It may cause the re-downloading of the same file if the same url is processed concurrently by multiple threads.. (this is mitigated by hash-checks and removal of the duplicate)
+					// BUT, doing it here it guarantees that if another record says that its file was downloaded by another ID, then that ID will be guaranteed to have a downloaded file.
+					// Otherwise, the file of that ID maybe failed to be download at that time, but in the future it would succeed.
+					resultUrlsWithIDs.put(finalDocOrDatasetUrl, new IdUrlMimeTypeTriple(urlId, sourceUrl, mimeType));	// Add it here, in order to be able to recognize it and quick-log it later, but also to distinguish it from other duplicates.
+				}
 
 				if ( pageDomain == null )
 					pageDomain = UrlUtils.getDomainStr(pageUrl, null);
@@ -99,13 +109,13 @@ public class UrlUtils
 					// Add the domains of the pageUrl and the finalDocOrDatasetUrl to the successful domains as both lead in some way to a docOrDatasetUrl.
 					// The data inside ConcurrentHashMap "domainsAndHits" is used to evaluate how good the domain is doing while is having some problems.
 					// If the "goods" surpass the "bads", then that domain will not get blocked, even if the "minimum-accepted-bad-cases" was exceeded.
-					ConnSupportUtils.countInsertAndGetTimes(domainsAndHits, pageDomain);
+					ConnSupportUtils.countInsertAndGetTimes(domainsAndNumHits, pageDomain);
 
 					// Now if the "finalDocOrDatasetUrl" is different from the "pageUrl", get the domain of the "finalDocOrDatasetUrl" and if it's different, then add it to "domainsAndHits"-HashMap.
 					if ( !pageUrl.equals(finalDocOrDatasetUrl) ) {
 						String docUrlDomain = UrlUtils.getDomainStr(finalDocOrDatasetUrl, null);
 						if ( (docUrlDomain != null) && !docUrlDomain.equals(pageDomain) )
-							ConnSupportUtils.countInsertAndGetTimes(domainsAndHits, docUrlDomain);
+							ConnSupportUtils.countInsertAndGetTimes(domainsAndNumHits, docUrlDomain);
 					}
 				}
 			}

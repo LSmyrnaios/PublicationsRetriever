@@ -41,8 +41,7 @@ public class GenericUtils {
         ConnSupportUtils.timesDomainsHadTimeoutEx.clear();
         PageCrawler.timesDomainNotGivingInternalLinks.clear();
         PageCrawler.timesDomainNotGivingDocUrls.clear();
-        UrlUtils.docOrDatasetUrlsWithIDs.clear();
-        UrlUtils.domainsAndHits.clear();
+        UrlUtils.domainsAndNumHits.clear();    // This hashMap is used to determine if a domain is successful enough to keep it non-blocked.
 
         // Paths' data, which also contribute to domain-blocking.
         ConnSupportUtils.timesPathsReturned403.clear();
@@ -66,14 +65,18 @@ public class GenericUtils {
     {
         clearBlockingData();
 
+        // Clear tracking data of successful detections and downloads.
+        UrlUtils.resultUrlsWithIDs.clear();
+        ConnSupportUtils.fileHashesWithLocations.clear();
+
         // Domain additional data, which does not contribute in blocking the domains, but they do contribute in performance.
         HttpConnUtils.domainsSupportingHTTPS.clear();
         HttpConnUtils.domainsWithSlashRedirect.clear();
         HttpConnUtils.domainsWithUnsupportedHeadMethod.clear();
         HttpConnUtils.domainsWithUnsupportedAcceptLanguageParameter.clear();
 
-        // Other data which is handled per-batch by the PDF-AggregationService. These are commented-out here, as they will be cleared anyway.
-        //ConnSupportUtils.domainsWithConnectionData.clear();
+        // Other data.
+        ConnSupportUtils.domainsWithConnectionData.clear();
 
         // The data-structures from the "MachineLearning" class are not added here, since it is in experimental phase and not running in production, thus these data-structures will most likely be empty.
     }

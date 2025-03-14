@@ -69,6 +69,8 @@ public class HttpConnUtils
 	// The above regex, assumes file-extensions up to 7-chars long. Rare file-extensions with app to 10 or more characters exist,
 	// but then the risk of identifying irrelevant dot-prepended strings as extensions, increases (some urls end with: "<other chars>.NOTEXTENSIONSTRING").
 
+	public static final Pattern PAGE_MIMETYPE_RULES = Pattern.compile(".*(?:htm|text(?!.*" + LoaderAndChecker.dataset_formats + ")).*");
+
 	public static AtomicInteger timesDidOfflineHTTPSredirect = new AtomicInteger(0);
 
 	public static AtomicInteger timesDidOfflineSlashRedirect = new AtomicInteger(0);
@@ -128,9 +130,9 @@ public class HttpConnUtils
 				contentDisposition = conn.getHeaderField("Content-Disposition");
 				if ( contentDisposition == null ) {
 					ArrayList<Object> detectionList = ConnSupportUtils.detectContentTypeFromResponseBody(finalUrlStr, domainStr, conn, calledForPageUrl);
-					mimeType = (String)detectionList.get(0);
+					mimeType = (String) detectionList.get(0);
 					foundDetectedContentType = (boolean) detectionList.get(1);
-					firstHtmlLine = (String)detectionList.get(2);
+					firstHtmlLine = (String) detectionList.get(2);
 					bufferedReader = (BufferedReader) detectionList.get(3);	// This can be reused when getting the html of the page.
 					calledForPossibleDocOrDatasetUrl = (boolean) detectionList.get(4);
 					//logger.debug(mimeType); logger.debug(String.valueOf(foundDetectedContentType)); logger.debug(firstHtmlLine); logger.debug(String.valueOf(bufferedReader)); logger.debug(String.valueOf(calledForPossibleDocUrl));	// DEBUG!
@@ -138,9 +140,10 @@ public class HttpConnUtils
 					contentDisposition = contentDisposition.toLowerCase();
 			}
 
-			String lowerCaseMimeType = mimeType;
-			if ( mimeType != null && !foundDetectedContentType )	// It may have gained a value after auto-detection, so we check again. If it was auto-detected, then it's already in lowercase.
+			String lowerCaseMimeType = mimeType;	// It may be null.
+			if ( (mimeType != null) && !foundDetectedContentType )	// It may have gained a value after auto-detection, so we check again. If it was auto-detected, then it's already in lowercase.
 				lowerCaseMimeType = mimeType.toLowerCase();	// I found the rare case of "Application/pdf", so we need lowercase as any mimeType could have either uppercase or lowercase version..
+			// The "lowerCaseMimeType" may still be null here. We need to check it later.
 
 			//logger.debug("Url: " + finalUrlStr);	// DEBUG!
 			//logger.debug("MimeType: " + mimeType);	// DEBUG!
@@ -149,7 +152,7 @@ public class HttpConnUtils
 			{
 				String finalMimeType = mimeTypeResult.getMimeType();
 				String category = mimeTypeResult.getCategory();
-				if ( LoaderAndChecker.retrieveDocuments && category.equals("document") ) {
+				if ( ArgsUtils.retrieveDocuments && category.equals("document") ) {
 					logger.info("docUrl found: < " + finalUrlStr + " >");
 					String error = "N/A";
 					String fullPathFileName = category;
@@ -173,7 +176,7 @@ public class HttpConnUtils
 					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, error, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", null, "null", finalMimeType);	// we send the urls, before and after potential redirections.
 					return true;
 				}
-				else if ( LoaderAndChecker.retrieveDatasets && category.equals("dataset") ) {
+				else if ( ArgsUtils.retrieveDatasets && category.equals("dataset") ) {
 					logger.info("datasetUrl found: < " + finalUrlStr + " >");
 					// TODO - handle possible download and improve logging... The dataset might have huge size each. Downloading these, isn't a requirement at the moment.
 					String fullPathFileName = ArgsUtils.shouldDownloadDocFiles ? "It's a dataset-url. The download is not supported." : category;
@@ -195,8 +198,7 @@ public class HttpConnUtils
 					UrlTypeChecker.pagesNotProvidingDocUrls.incrementAndGet();
 					return false;
 				}
-				else if ( (lowerCaseMimeType != null) && ((lowerCaseMimeType.contains("htm") || (lowerCaseMimeType.contains("text") && !lowerCaseMimeType.contains("xml") && !lowerCaseMimeType.contains("csv") && !lowerCaseMimeType.contains("tsv")))) )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
-					// TODO - Better make a regex for the above checks.. (be careful to respect the "||" and "&&" operators)
+				else if ( (lowerCaseMimeType != null) && (lowerCaseMimeType.length() <= 255)  && PAGE_MIMETYPE_RULES.matcher(lowerCaseMimeType).matches() )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
 					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn, firstHtmlLine, bufferedReader);
 				else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" with mimeType: \"" + mimeType + "\" will not be visited!");
@@ -560,7 +562,7 @@ public class HttpConnUtils
 
 				//ConnSupportUtils.printRedirectDebugInfo(currentUrl, location, targetUrl, responseCode, curRedirectsNum);
 
-				IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(targetUrl);
+				IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(targetUrl);
 				if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
 					ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, targetUrl, originalIdUrlMimeTypeTriple, calledForPageUrl);
 					throw new AlreadyFoundDocUrlException();

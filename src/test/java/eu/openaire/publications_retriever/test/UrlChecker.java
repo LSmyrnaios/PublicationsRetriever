@@ -787,8 +787,8 @@ public class UrlChecker {
 		for ( String url: urlList )
 			logger.info(url);
 
-		LoaderAndChecker.retrieveDocuments = true;
-		LoaderAndChecker.retrieveDatasets = true;
+		ArgsUtils.retrieveDocuments = true;
+		ArgsUtils.retrieveDatasets = true;
 
 		// Set some needed data.
 		ConnSupportUtils.setKnownMimeTypes();
@@ -835,7 +835,7 @@ public class UrlChecker {
 			else
 				logger.debug("urlPath: " + urlPath);*/
 
-			IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(urlToCheck);
+			IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(urlToCheck);
 			if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
 				ConnSupportUtils.handleReCrossedDocUrl(testID, urlToCheck, urlToCheck, urlToCheck, originalIdUrlMimeTypeTriple, true);
 				continue;
@@ -849,7 +849,7 @@ public class UrlChecker {
 			}
 		}
 
-		logger.debug("Found " + UrlUtils.docOrDatasetUrlsWithIDs.keySet().size() + " docOrDataset-urls!");
+		logger.debug("Found " + UrlUtils.resultUrlsWithIDs.size() + " docOrDataset-urls!");
 		logger.debug("Connection-problematic-urls: " + LoaderAndChecker.connProblematicUrls);
 		logger.debug("Content-problematic-urls: " + PageCrawler.contentProblematicUrls);
 

@@ -225,7 +225,7 @@ public class SpecialUrlsHandler
 		if ( (urlToCheck = LoaderAndChecker.handleUrlChecks(urlId, urlToCheck)) == null )
 			return false;	// The output-data was logged inside.
 
-		IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(urlToCheck);
+		IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(urlToCheck);
 		if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
 			ConnSupportUtils.handleReCrossedDocUrl(urlId, urlToCheck, urlToCheck, urlToCheck, originalIdUrlMimeTypeTriple, true);	// The output-data was logged inside.
 			return false;

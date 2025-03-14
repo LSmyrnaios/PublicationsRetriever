@@ -317,7 +317,7 @@ public class MachineLearning
 			logger.debug("Found a \"predictedDocUrl\" which exists in the \"currentPageLinks\": " + predictedDocUrl);	// DEBUG!
 
 			// Check if the "predictedDocUrl" has been found before, but only if it exists in the set of this page's internal-links, as we may end up with a "docUrl" which is not related with this pageUrl.
-			IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(predictedDocUrl);
+			IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(predictedDocUrl);
 			if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return true.
 				logger.info("MachineLearningAlgorithm got a hit for pageUrl: \""+ pageUrl + "\"! Resulted (already found before) docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
 				ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, predictedDocUrl, originalIdUrlMimeTypeTriple, false);

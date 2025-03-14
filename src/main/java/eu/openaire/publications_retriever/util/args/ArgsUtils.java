@@ -54,6 +54,9 @@ public class ArgsUtils {
 	}
 	public static fileNameTypeEnum fileNameType = null;
 
+	public static boolean retrieveDocuments = true;
+	public static boolean retrieveDatasets = true;
+
 
 	public static void parseArgs(String[] mainArgs)
 	{
@@ -139,20 +142,20 @@ public class ArgsUtils {
 		switch (dataType) {
 			case "document":
 				logger.info("Going to retrieve only records of \"document\"-type.");
-				LoaderAndChecker.retrieveDocuments = true;
-				LoaderAndChecker.retrieveDatasets = false;
+				retrieveDocuments = true;
+				retrieveDatasets = false;
 				targetUrlType = "docUrl";
 				break;
 			case "dataset":
 				logger.info("Going to retrieve only records of \"dataset\"-type.");
-				LoaderAndChecker.retrieveDocuments = false;
-				LoaderAndChecker.retrieveDatasets = true;
+				retrieveDocuments = false;
+				retrieveDatasets = true;
 				targetUrlType = "datasetUrl";
 				break;
 			case "all":
 				logger.info("Going to retrieve records of all types (documents and datasets).");
-				LoaderAndChecker.retrieveDocuments = true;
-				LoaderAndChecker.retrieveDatasets = true;
+				retrieveDocuments = true;
+				retrieveDatasets = true;
 				targetUrlType = "docOrDatasetUrl";
 				break;
 			default:

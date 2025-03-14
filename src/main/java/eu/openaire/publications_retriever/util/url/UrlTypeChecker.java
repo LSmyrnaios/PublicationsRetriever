@@ -112,7 +112,7 @@ public class UrlTypeChecker
 
 
 	/**
-	 * This method depends on the initialization of the "LoaderAndChecker.retrieveDatasets" variable, given by the user as cmd-arg, or defined by a service which wraps this software.
+	 * This method depends on the initialization of the "ArgsUtils.retrieveDatasets" variable, given by the user as cmd-arg, or defined by a service which wraps this software.
 	 * */
 	public static void setRuntimeInitializedRegexes() {
 		URL_DIRECTORY_FILTER =
@@ -128,10 +128,10 @@ public class UrlTypeChecker
 				// Add pages with a specific blocking-reason, in "capturing-groups", in order to be able to get the matched-group-number and know the exact reason the block occurred.
 				+ "|(.*/view/" + docOrDatasetNegativeLookAroundPattern + ")"	// 1. Avoid pages having their DocUrls in larger depth (internalPagesToDocUrls or PreviousOfDocUrls).
 				+ "|(.*sharedsitesession)"	// 2. Avoid urls which contain either "getSharedSiteSession" or "consumeSharedSiteSession" as these cause an infinite loop.
-				+ "|(doi.org/https://doi.org/.*pangaea." + (!LoaderAndChecker.retrieveDatasets ? "|pangaea.)" : ")")	// 3. Avoid "PANGAEA."-urls with problematic form and non docUrl internal links (yes WITH the "DOT", it's not a domain-name!).
+				+ "|(doi.org/https://doi.org/.*pangaea." + (!ArgsUtils.retrieveDatasets ? "|pangaea.)" : ")")	// 3. Avoid "PANGAEA."-urls with problematic form and non docUrl internal links (yes WITH the "DOT", it's not a domain-name!).
 
 				// The following pattern is the reason we need to set this regex in runtime.
-				+ (!LoaderAndChecker.retrieveDatasets ? ").*)|(?:bibtext|dc(?:terms)?|[^/]*(?:tei|endnote))$)" : ")).*)")
+				+ (!ArgsUtils.retrieveDatasets ? ").*)|(?:bibtext|dc(?:terms)?|[^/]*(?:tei|endnote))$)" : ")).*)")
 			);
 
 		// We check the above rules, mostly as directories to avoid discarding publications' urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
@@ -139,7 +139,7 @@ public class UrlTypeChecker
 			logger.trace("URL_DIRECTORY_FILTER:\n" + URL_DIRECTORY_FILTER);
 
 		INTERNAL_LINKS_FILE_FORMAT_FILTER =
-				Pattern.compile(".+format=(?:" + (!LoaderAndChecker.retrieveDatasets ? "xml|" : "") + htOrPhpExtensionsPattern + "|rss|ris|bib|citation_|events_kml).*");
+				Pattern.compile(".+format=(?:" + (!ArgsUtils.retrieveDatasets ? "xml|" : "") + htOrPhpExtensionsPattern + "|rss|ris|bib|citation_|events_kml).*");
 	}
 
 	

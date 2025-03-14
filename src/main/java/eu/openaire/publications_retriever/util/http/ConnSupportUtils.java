@@ -55,6 +55,8 @@ public class ConnSupportUtils
 	// There are special cases. (see: "https://kb.iu.edu/d/agtj" for "octet" info.
 	// and an example for "unknown" : "http://imagebank.osa.org/getExport.xqy?img=OG0kcC5vZS0yMy0xNy0yMjE0OS1nMDAy&xtype=pdf&article=oe-23-17-22149-g002")
 
+	public static final Pattern DATASET_MIME_TYPE = Pattern.compile("(?:application|binary)/" + LoaderAndChecker.dataset_formats);
+
 	public static final Pattern HTML_STRING_MATCH = Pattern.compile("^(?:[\\s]*<(?:!doctype\\s)?html).*");
 	public static final Pattern RESPONSE_BODY_UNWANTED_MATCH = Pattern.compile("^(?:[\\s]+|[\\s]*<(?:\\?xml|!--).*)");	// TODO - Avoid matching to "  <?xml>sddfs<html[...]" (as some times the whole page-code is a single line)
 
@@ -105,7 +107,7 @@ public class ConnSupportUtils
 	{
 		conn.setRequestProperty("User-Agent", userAgent);
 		conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
-		conn.setRequestProperty("Accept-Encoding", "gzip, deflate, br, zstd");	// TODO - In case we use the "Firefox" user-agent, then implement support for the "zstd" encoding as well.
+		conn.setRequestProperty("Accept-Encoding", "gzip, deflate, br, zstd");	// TODO - In case we use other user-agents than "Firefox" (in a rotating way), then make sure they support "zstd" encoding as well, if not, then it should not be used for them.
 		//conn.setRequestProperty("TE", "trailers");	// TODO - Investigate the "transfer-encoding" header.
 
 		if ( !HttpConnUtils.domainsWithUnsupportedAcceptLanguageParameter.contains(domainStr) )
@@ -125,9 +127,9 @@ public class ConnSupportUtils
 
 	public static void setKnownMimeTypes()
 	{
-		if ( LoaderAndChecker.retrieveDocuments ) {
+		if ( ArgsUtils.retrieveDocuments ) {
 			setKnownDocMimeTypes();
-			if ( LoaderAndChecker.retrieveDatasets )
+			if ( ArgsUtils.retrieveDatasets )
 				setKnownDatasetMimeTypes();
 		} else
 			setKnownDatasetMimeTypes();
@@ -285,9 +287,10 @@ public class ConnSupportUtils
 			plainMimeType = StringUtils.replace(plainMimeType, "'", "", -1);
 			plainMimeType = StringUtils.replace(plainMimeType, "\"", "", -1);
 
-			if ( knownDocMimeTypes.contains(plainMimeType) )
+			if ( ArgsUtils.retrieveDocuments && knownDocMimeTypes.contains(plainMimeType) )
 				mimeTypeResult = new MimeTypeResult(plainMimeType, "document");
-			else if ( knownDatasetMimeTypes.contains(plainMimeType) )
+			else if ( ArgsUtils.retrieveDatasets
+					&& (knownDatasetMimeTypes.contains(plainMimeType) || DATASET_MIME_TYPE.matcher(plainMimeType).matches()) )
 				mimeTypeResult = new MimeTypeResult(plainMimeType, "dataset");
 			else if ( POSSIBLE_DOC_OR_DATASET_MIME_TYPE.matcher(plainMimeType).matches() )
 			{
@@ -296,12 +299,12 @@ public class ConnSupportUtils
 					contentDisposition = contentDisposition.toLowerCase();
 					if ( !contentDisposition.equals("attachment") )    // It may be "attachment" but also be a pdf.. but we have to check if the "pdf" exists inside the url-string.
 					{
-						if ( contentDisposition.contains(".pdf") )
+						if ( ArgsUtils.retrieveDocuments && contentDisposition.contains(".pdf") )
 							mimeTypeResult = new MimeTypeResult("application/pdf", "document");
 						else {
 							String clearContentDisposition = StringUtils.replace(contentDisposition, "\"", "", -1);
 							clearContentDisposition = StringUtils.replace(clearContentDisposition, "'", "", -1);
-							if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
+							if ( ArgsUtils.retrieveDatasets && LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
 								mimeTypeResult = new MimeTypeResult(plainMimeType, "dataset");
 						}
 						return mimeTypeResult;
@@ -309,9 +312,9 @@ public class ConnSupportUtils
 				}
 				// In case the content-disposition is null or "attachment", check the url.
 				lowerCaseUrl = urlStr.toLowerCase();
-				if ( lowerCaseUrl.contains("pdf") )
+				if ( ArgsUtils.retrieveDocuments && lowerCaseUrl.contains("pdf") )
 					mimeTypeResult = new MimeTypeResult("application/pdf", "document");
-				else if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(lowerCaseUrl).matches() )
+				else if ( ArgsUtils.retrieveDatasets && LoaderAndChecker.DATASET_URL_FILTER.matcher(lowerCaseUrl).matches() )
 					mimeTypeResult = new MimeTypeResult(plainMimeType, "dataset");
 			}	// TODO - When we will accept more docTypes, match it also against other docTypes, not just "pdf".
 			else {	// This url is going to be classified as a "page", so do one last check, if the content-disposition refers to a doc-file.
@@ -320,12 +323,12 @@ public class ConnSupportUtils
 					contentDisposition = conn.getHeaderField("Content-Disposition");    // The "contentDisposition" will be definitely "null", since "mimeType != null" and so, the "contentDisposition" will not have been retrieved by the caller method.
 					if ( contentDisposition != null )
 					{
-						if ( contentDisposition.toLowerCase().contains(".pdf") )
+						if ( ArgsUtils.retrieveDocuments && contentDisposition.toLowerCase().contains(".pdf") )
 							mimeTypeResult = new MimeTypeResult("application/pdf", "document");
 
 						String clearContentDisposition = StringUtils.replace(contentDisposition, "\"", "", -1);
 						clearContentDisposition = StringUtils.replace(clearContentDisposition, "'", "", -1);
-						if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
+						if ( ArgsUtils.retrieveDatasets && LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
 							mimeTypeResult = new MimeTypeResult(plainMimeType, "dataset");
 					}
 				}
@@ -334,12 +337,12 @@ public class ConnSupportUtils
 		}
 		else if ( (contentDisposition != null) && !contentDisposition.equals("attachment") ) {	// If the mimeType was not retrieved, then try the "Content Disposition", which is already in "lowerCase".
 			// TODO - When we will accept more docTypes, match it also against other docTypes instead of just "pdf".
-			if ( contentDisposition.contains(".pdf") )
+			if ( ArgsUtils.retrieveDocuments && contentDisposition.contains(".pdf") )
 				mimeTypeResult = new MimeTypeResult("application/pdf", "document");
 			else {
 				String clearContentDisposition = StringUtils.replace(contentDisposition, "\"", "", -1);
 				clearContentDisposition = StringUtils.replace(clearContentDisposition, "'", "", -1);
-				if ( LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
+				if ( ArgsUtils.retrieveDatasets && LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
 					mimeTypeResult = new MimeTypeResult("unspecified", "dataset");
 			}
 			return mimeTypeResult;	// Default is "null".
@@ -372,7 +375,7 @@ public class ConnSupportUtils
 		if ( mimeType == null ) {	// Null-check to avoid NPE in "matcher()".
 			logger.warn("A null mimeType was given to \"getPlainMimeType()\".");
 			return null;
-		} else if ( mimeType.length() > 200 ) {
+		} else if ( mimeType.length() > 255 ) {
 			logger.warn("A suspiciously large mimeType was given to \"getPlainMimeType()\", having length: " + mimeType.length());
 			return null;	// If it contains garbage, it may cause a "ReDoS"-attack, when being processed by "MIME_TYPE_FILTER"-regex.
 		}
@@ -393,8 +396,47 @@ public class ConnSupportUtils
 		}
 		return plainMimeType;
 	}
-	
-	
+
+
+	public static final ConcurrentHashMap<String, String> fileHashesWithLocations = new ConcurrentHashMap<>();
+
+	public static FileData checkAndHandleDuplicateHash(FileData fileData, String url)
+	{
+		// Check whether the file-hash has been found before.
+		// That would mean that the same file was detected from a DIFFERENT url (otherwise we would have caught the duplicate url and not re-download the file..)
+		String fileHash = fileData.getHash();
+		String alreadyDownloadedFileLocation = fileHashesWithLocations.get(fileHash);
+		if ( alreadyDownloadedFileLocation != null ) {
+			// Delete the new duplicate file and keep the first downloaded one, which was downloaded by a different "sourceUrl".
+			logger.info("The file of url \"" + url + "\" has been already downloaded in location: " + alreadyDownloadedFileLocation);
+			File file = fileData.getFile();
+			try {
+				if ( file.exists() ) {
+					try {
+						FileDeleteStrategy.FORCE.delete(file);
+					} catch (Exception e) {
+						logger.error("Error when deleting the duplicate file from url: " + url, e);
+					}
+				}
+			} catch (Exception e1) {
+				logger.error("Error when checking if the duplicate file exists, from url: " + url, e1);
+			}
+			if ( ArgsUtils.shouldDownloadDocFiles ) {	// Instead of HTML-files.
+				if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
+						FileUtils.numOfDocFile--;
+				else
+					FileUtils.numOfDocFiles.decrementAndGet();
+			}	// In case of HTML-files, no "decrementation" is needed.
+			fileData.setLocation(alreadyDownloadedFileLocation);
+			fileData.setFile(new File(alreadyDownloadedFileLocation));
+			return fileData;
+		} else {
+			fileHashesWithLocations.put(fileData.getHash(), fileData.getLocation());
+			return null;
+		}
+	}
+
+
 	/**
 	 * This method first checks which "HTTP METHOD" was used to connect to the docUrl.
 	 * If this docUrl was connected using "GET" (i.e. when this docURL was fast-found as a possibleDocUrl), just write the data to the disk.
@@ -443,6 +485,11 @@ public class ConnSupportUtils
 				logger.warn(errMsg);
 				throw new FileNotRetrievedException(errMsg);
 			}
+
+			FileData newFileData = checkAndHandleDuplicateHash(fileData, docUrl);
+			if ( newFileData != null )
+				return newFileData;
+			// Else, it's no a duplicate.
 
 			File docFile = fileData.getFile();
 			if ( ArgsUtils.shouldUploadFilesToS3 ) {
@@ -860,7 +907,7 @@ public class ConnSupportUtils
 		if ( badTimes > timesBeforeBlock )
 		{
 			if ( checkAgainstDocUrlsHits ) {	// This will not be the case for MLA-blocked-domains. We cannot take into account ALL retrieved docUrls when only a part was retrieved by the MLA.
-				Integer goodTimes = UrlUtils.domainsAndHits.get(domainStr);
+				Integer goodTimes = UrlUtils.domainsAndNumHits.get(domainStr);
 				if ( (goodTimes != null)
 						&& (badTimes <= (goodTimes + timesBeforeBlock)) )	// If the badTimes are less/equal to the goodTimes PLUS the predefined "bufferZone", do not block this domain.
 					return false;
@@ -994,8 +1041,12 @@ public class ConnSupportUtils
 			if ( bw != null ) {
 				bw.flush();	// Otherwise the "bw" will be flushed only upon closing and the calculation of "hash" and "size" will not work.
 				logger.info("HtmlFile '" + fullPathFileName + "' was downloaded.");
-				HtmlFileUtils.htmlFilesNum.incrementAndGet();
 				htmlFileData.calculateAndSetHashAndSize();
+				FileData newFileData = checkAndHandleDuplicateHash(htmlFileData, pageUrl);
+				if ( newFileData != null )
+					htmlFileData = newFileData;
+				else	// It's not a duplicate.
+					HtmlFileUtils.htmlFilesNum.incrementAndGet();
 			}
 
 			if ( !ArgsUtils.shouldJustDownloadHtmlFiles || isForError ) {

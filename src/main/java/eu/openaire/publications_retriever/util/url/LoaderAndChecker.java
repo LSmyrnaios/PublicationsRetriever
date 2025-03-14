@@ -58,11 +58,6 @@ public class LoaderAndChecker
 	public static AtomicInteger totalNumFailedTasks = new AtomicInteger(0);
 
 
-	// The following are set from the user.
-	public static boolean retrieveDocuments = true;
-	public static boolean retrieveDatasets = true;
-
-
 	public LoaderAndChecker() throws RuntimeException
 	{
 		setCouldRetryRegex();
@@ -130,7 +125,7 @@ public class LoaderAndChecker
 						return false;
 					}
 
-					IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl);
+					IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(retrievedUrl);
 					if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
 						ConnSupportUtils.handleReCrossedDocUrl("null", retrievedUrl, retrievedUrl, retrievedUrl, originalIdUrlMimeTypeTriple, true);
 						return true;
@@ -138,8 +133,8 @@ public class LoaderAndChecker
 
 					boolean isPossibleDocOrDatasetUrl = false;
 					String lowerCaseRetrievedUrl = retrievedUrlToCheck.toLowerCase();
-					if ( (retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
-							|| (retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) )
+					if ( (ArgsUtils.retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
+							|| (ArgsUtils.retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) )
 						isPossibleDocOrDatasetUrl = true;
 
 					try {	// We sent the < null > into quotes to avoid causing NPEs in the thread-safe datastructures that do not support null input.
@@ -223,7 +218,7 @@ public class LoaderAndChecker
 							continue;
 						}	// The "retrievedUrl" might have changed (inside "handleUrlChecks()").
 
-						IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl);
+						IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(retrievedUrl);
 						if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
 							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, originalIdUrlMimeTypeTriple, true);
 							if ( !isSingleIdUrlPair )
@@ -234,8 +229,8 @@ public class LoaderAndChecker
 
 						String lowerCaseRetrievedUrl = retrievedUrl.toLowerCase();
 						// Check if it's a possible-DocUrl, if so, this is the only url which will be checked from this id-group, unless there's a normalization problem.
-						if ( (retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
-							|| (retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) ) {
+						if ( (ArgsUtils.retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
+							|| (ArgsUtils.retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) ) {
 							//logger.debug("Possible docUrl or datasetUrl: " + retrievedUrl);
 							possibleDocOrDatasetUrl = retrievedUrl;
 							break;	// This is the absolute-best-case, we go and connect directly.
@@ -376,7 +371,7 @@ public class LoaderAndChecker
 						return false;
 					}
 
-					IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl);
+					IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(retrievedUrl);
 					if ( originalIdUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
 						ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, originalIdUrlMimeTypeTriple, true);
 						return true;
@@ -385,8 +380,8 @@ public class LoaderAndChecker
 					boolean isPossibleDocOrDatasetUrl = false;    // Used for specific connection settings.
 					String lowerCaseRetrievedUrl = retrievedUrl.toLowerCase();
 					// Check if it's a possible-DocUrl, if so, this info will be used for optimal web-connection later.
-					if ( (retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
-							|| (retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) ) {
+					if ( (ArgsUtils.retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
+							|| (ArgsUtils.retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) ) {
 						//logger.debug("Possible docUrl or datasetUrl: " + retrievedUrl);
 						isPossibleDocOrDatasetUrl = true;
 					}
@@ -464,7 +459,7 @@ public class LoaderAndChecker
 							continue;
 						}
 
-						IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.docOrDatasetUrlsWithIDs.get(retrievedUrl);
+						IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(retrievedUrl);
 						if ( originalIdUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
 							ConnSupportUtils.handleReCrossedDocUrl(retrievedId, retrievedUrl, retrievedUrl, retrievedUrl, originalIdUrlMimeTypeTriple, true);
 							continue;
@@ -473,8 +468,8 @@ public class LoaderAndChecker
 						boolean isPossibleDocOrDatasetUrl = false;    // Used for specific connection settings.
 						String lowerCaseRetrievedUrl = retrievedUrl.toLowerCase();
 						// Check if it's a possible-DocUrl, if so, this info will be used for optimal web-connection later.
-						if ( (retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
-								|| (retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) ) {
+						if ( (ArgsUtils.retrieveDocuments && DOC_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches())
+								|| (ArgsUtils.retrieveDatasets && DATASET_URL_FILTER.matcher(lowerCaseRetrievedUrl).matches()) ) {
 							//logger.debug("Possible docUrl or datasetUrl: " + retrievedUrl);
 							isPossibleDocOrDatasetUrl = true;
 						}
