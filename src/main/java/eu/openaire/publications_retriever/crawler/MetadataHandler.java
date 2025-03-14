@@ -44,9 +44,9 @@ public class MetadataHandler {
         // Depending on the datatype, the regex is formed differently.
         String regex = ".+\\.(?:";
 
-        if ( !LoaderAndChecker.retrieveDatasets )
+        if ( !ArgsUtils.retrieveDatasets )
             regex += LoaderAndChecker.dataset_formats;  // If no datasets retrieved, block these types.
-        else if ( !LoaderAndChecker.retrieveDocuments )
+        else if ( !ArgsUtils.retrieveDocuments )
             regex += "pdf|" + UrlTypeChecker.unsupportedDocFileTypes;  // If no documents retrieved, block these types.
         //else -> no more datatype-dependent additions
 
@@ -104,7 +104,7 @@ public class MetadataHandler {
             }
         }
 
-        if ( !LoaderAndChecker.retrieveDocuments )
+        if ( !ArgsUtils.retrieveDocuments )
             return false;    // There was no definitive handling, nor we want to check for metaDocUrl, go get the internal-links.
 
         // Check if the docLink is provided in a metaTag and connect to it directly.

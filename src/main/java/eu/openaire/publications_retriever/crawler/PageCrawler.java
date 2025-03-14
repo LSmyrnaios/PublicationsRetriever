@@ -120,7 +120,7 @@ public class PageCrawler
 		String pageHtml = htmlResult.getHtmlString();
 		//logger.debug(pageHtml);	// DEBUG!
 
-		if ( LoaderAndChecker.retrieveDocuments && pageDomain.contains("turkjgastroenterol.org") ) {
+		if ( ArgsUtils.retrieveDocuments && pageDomain.contains("turkjgastroenterol.org") ) {
 			SpecialUrlsHandler.extractAndCheckTurkjgastroenterolDocUrl(pageHtml, urlId, sourceUrl, pageUrl, pageDomain);
 			return;
 		}
@@ -184,8 +184,8 @@ public class PageCrawler
             }
 
             lowerCaseLink = urlToCheck.toLowerCase();
-            if ( (LoaderAndChecker.retrieveDocuments && LoaderAndChecker.DOC_URL_FILTER.matcher(lowerCaseLink).matches())
-				|| (LoaderAndChecker.retrieveDatasets && LoaderAndChecker.DATASET_URL_FILTER.matcher(lowerCaseLink).matches()) )
+            if ( (ArgsUtils.retrieveDocuments && LoaderAndChecker.DOC_URL_FILTER.matcher(lowerCaseLink).matches())
+				|| (ArgsUtils.retrieveDatasets && LoaderAndChecker.DATASET_URL_FILTER.matcher(lowerCaseLink).matches()) )
 			{
 				// Some docUrls may be in different domain, so after filtering the urls based on the possible type.. then we can allow to check for links in different domains.
 
@@ -375,7 +375,7 @@ public class PageCrawler
 			if ( hasUnacceptableStructure(el, pageUrl) )
 				continue;
 
-			if ( LoaderAndChecker.retrieveDocuments)	// Currently, these smart-checks are only available for specific docFiles (not for datasets).
+			if ( ArgsUtils.retrieveDocuments)	// Currently, these smart-checks are only available for specific docFiles (not for datasets).
 			{
 				// TODO - Somehow I need to detect if a link has the parameter "?isAllowd=n" or "&isAllowd=n".
 				// In that case the whole page should be discarded as not having any docUrls!
@@ -559,8 +559,8 @@ public class PageCrawler
 		// Remove anchors from possible docUrls and add the remaining part to the list. Non-possibleDocUrls having anchors are rejected (except for hashtag-directories).
 		if ( lowerCaseInternalLink.contains("#") )
 		{
-			if ( (LoaderAndChecker.retrieveDocuments && LoaderAndChecker.DOC_URL_FILTER.matcher(lowerCaseInternalLink).matches())
-					|| (LoaderAndChecker.retrieveDatasets && LoaderAndChecker.DATASET_URL_FILTER.matcher(lowerCaseInternalLink).matches()) ) {
+			if ( (ArgsUtils.retrieveDocuments && LoaderAndChecker.DOC_URL_FILTER.matcher(lowerCaseInternalLink).matches())
+					|| (ArgsUtils.retrieveDatasets && LoaderAndChecker.DATASET_URL_FILTER.matcher(lowerCaseInternalLink).matches()) ) {
 				// There are some docURLs with anchors. We should get the docUrl but remove the anchors to keep them clean and connectable.
 				// Like this: https://www.redalyc.org/pdf/104/10401515.pdf#page=1&zoom=auto,-13,792
 				internalLink = UrlUtils.removeAnchor(internalLink);

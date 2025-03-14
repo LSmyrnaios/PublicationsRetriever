@@ -69,7 +69,7 @@ public class HttpConnUtils
 	// The above regex, assumes file-extensions up to 7-chars long. Rare file-extensions with app to 10 or more characters exist,
 	// but then the risk of identifying irrelevant dot-prepended strings as extensions, increases (some urls end with: "<other chars>.NOTEXTENSIONSTRING").
 
-	public static final Pattern PAGE_MIMETYPE_RULES = Pattern.compile(".*(?:htm|text(?!.*(?:xml|[ct]sv))).*");
+	public static final Pattern PAGE_MIMETYPE_RULES = Pattern.compile(".*(?:htm|text(?!.*" + LoaderAndChecker.dataset_formats + ")).*");
 
 	public static AtomicInteger timesDidOfflineHTTPSredirect = new AtomicInteger(0);
 
@@ -152,7 +152,7 @@ public class HttpConnUtils
 			{
 				String finalMimeType = mimeTypeResult.getMimeType();
 				String category = mimeTypeResult.getCategory();
-				if ( LoaderAndChecker.retrieveDocuments && category.equals("document") ) {
+				if ( ArgsUtils.retrieveDocuments && category.equals("document") ) {
 					logger.info("docUrl found: < " + finalUrlStr + " >");
 					String error = "N/A";
 					String fullPathFileName = category;
@@ -176,7 +176,7 @@ public class HttpConnUtils
 					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, error, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", null, "null", finalMimeType);	// we send the urls, before and after potential redirections.
 					return true;
 				}
-				else if ( LoaderAndChecker.retrieveDatasets && category.equals("dataset") ) {
+				else if ( ArgsUtils.retrieveDatasets && category.equals("dataset") ) {
 					logger.info("datasetUrl found: < " + finalUrlStr + " >");
 					// TODO - handle possible download and improve logging... The dataset might have huge size each. Downloading these, isn't a requirement at the moment.
 					String fullPathFileName = ArgsUtils.shouldDownloadDocFiles ? "It's a dataset-url. The download is not supported." : category;
@@ -198,8 +198,7 @@ public class HttpConnUtils
 					UrlTypeChecker.pagesNotProvidingDocUrls.incrementAndGet();
 					return false;
 				}
-				else if ( (lowerCaseMimeType != null) && PAGE_MIMETYPE_RULES.matcher(lowerCaseMimeType).matches() )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
-					// TODO - Better make a regex for the above checks.. (be careful to respect the "||" and "&&" operators)
+				else if ( (lowerCaseMimeType != null) && (lowerCaseMimeType.length() <= 255)  && PAGE_MIMETYPE_RULES.matcher(lowerCaseMimeType).matches() )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
 					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn, firstHtmlLine, bufferedReader);
 				else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" with mimeType: \"" + mimeType + "\" will not be visited!");

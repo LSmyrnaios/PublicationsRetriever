@@ -3,9 +3,9 @@ package eu.openaire.publications_retriever.test;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.exceptions.DocLinkInvalidException;
+import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.HtmlResult;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
-import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlTypeChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,8 +35,8 @@ public class LinkExtraction {
 	
 	@BeforeAll
 	static void setExampleHtml() {
-		LoaderAndChecker.retrieveDocuments = true;
-		LoaderAndChecker.retrieveDatasets = true;
+		ArgsUtils.retrieveDocuments = true;
+		ArgsUtils.retrieveDatasets = true;
 		ConnSupportUtils.setKnownMimeTypes();
 		UrlTypeChecker.setRuntimeInitializedRegexes();
 		exampleHtml = "<head><head>" +
