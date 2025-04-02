@@ -140,19 +140,8 @@ public class LoaderAndChecker
 					try {	// We sent the < null > into quotes to avoid causing NPEs in the thread-safe datastructures that do not support null input.
 						HttpConnUtils.connectAndCheckMimeType("null", retrievedUrlToCheck, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
 					} catch (Exception e) {
-
-						if ( e instanceof RuntimeException ) {
-							String msg = e.getMessage();
-							if ( (msg != null) && msg.contains(alreadyLoggedMessage) )
-								return false;	// The error has already been logged in better detail.
-						}
-
-						List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
-						String wasUrlValid = list.get(0);
-						String couldRetry = list.get(1);
-						String errorMsg = "Discarded at loading time, as " + list.get(2);
-						UrlUtils.addOutputData("null", retrievedUrlToCheck, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, "N/A", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null", "N/A");
-						return false;
+						handleException("null", urlToCheck, e);
+						return false;	// The error has already been logged in better detail.
 					}
 					return true;
 				});
@@ -291,18 +280,9 @@ public class LoaderAndChecker
 							loggedUrlsOfCurrentId.add(urlToCheck);
 						// Here the runnable was successful in any case.
 					} catch (Exception e) {
+						if ( handleException(retrievedId, urlToCheck, e) )
+							return false;	// The error has already been logged in better detail.
 
-						if ( e instanceof RuntimeException ) {
-							String msg = e.getMessage();
-							if ( (msg != null) && msg.contains(alreadyLoggedMessage) )
-								return false;	// The error has already been logged in better detail.
-						}
-
-						List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
-						String wasUrlValid = list.get(0);
-						String couldRetry = list.get(1);
-						String errorMsg = "Discarded at loading time, as " + list.get(2);
-						UrlUtils.addOutputData(retrievedId, urlToCheck, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, "N/A", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null", "N/A");
 						// This url had connectivity problems.. but the rest might not, go check them out.
 						if ( !isSingleIdUrlPair ) {
 							loggedUrlsOfCurrentId.add(urlToCheck);
@@ -389,18 +369,7 @@ public class LoaderAndChecker
 					try {    // Check if it's a docUrl, if not, it gets crawled.
 						HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
 					} catch (Exception e) {
-
-						if ( e instanceof RuntimeException ) {
-							String msg = e.getMessage();
-							if ( (msg != null) && msg.contains(alreadyLoggedMessage) )
-								return false;	// The error has already been logged in better detail.
-						}
-
-						List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
-						String wasUrlValid = list.get(0);
-						String couldRetry = list.get(1);
-						String errorMsg = "Discarded at loading time, as " + list.get(2);
-						UrlUtils.addOutputData(retrievedId, urlToCheck, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, "N/A", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null", "N/A");
+						handleException(retrievedId, urlToCheck, e);
 						return false;
 					}
 					return true;
@@ -477,18 +446,7 @@ public class LoaderAndChecker
 						try {    // Check if it's a docUrl, if not, it gets crawled.
 							HttpConnUtils.connectAndCheckMimeType(retrievedId, sourceUrl, urlToCheck, urlToCheck, null, true, isPossibleDocOrDatasetUrl);
 						} catch (Exception e) {
-
-							if ( e instanceof RuntimeException ) {
-								String msg = e.getMessage();
-								if ( (msg != null) && msg.contains(alreadyLoggedMessage) )
-									return false;	// The error has already been logged in better detail.
-							}
-
-							List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
-							String wasUrlValid = list.get(0);
-							String couldRetry = list.get(1);
-							String errorMsg = "Discarded at loading time, as " + list.get(2);
-							UrlUtils.addOutputData(retrievedId, urlToCheck, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, "N/A", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null", "N/A");
+							handleException(retrievedId, urlToCheck, e);
 							return false;
 						}
 					}
@@ -529,8 +487,8 @@ public class LoaderAndChecker
 			//logger.debug("sizeOfFutures: " + sizeOfFutures);	// DEBUG!
 			for ( int i = 0; i < sizeOfFutures; ++i ) {
 				try {
-					Boolean value = futures.get(i).get();	// Get and see if an exception is thrown..
-					// Add check for the value, if wanted.. (we don't care at the moment)
+					Boolean value = futures.get(i).get();	// Get and see if an exception is thrown. This blocks the current thread, until the task of the future has finished.
+					// Add check for the result-value, if wanted.. (we don't care at the moment)
 				} catch (ExecutionException ee) {
 					String stackTraceMessage = GenericUtils.getSelectedStackTraceForCausedException(ee, "Task_" + i + " failed with: ", null, 15);	// These can be serious errors like an "out of memory exception" (Java HEAP).
 					logger.error(stackTraceMessage);
@@ -538,6 +496,9 @@ public class LoaderAndChecker
 					numFailedTasks ++;
 				} catch (CancellationException ce) {
 					logger.error("Task_" + i + " was cancelled: " + ce.getMessage());
+					numFailedTasks ++;
+				} catch (InterruptedException ie) {
+					logger.error("Task_" + i + " was interrupted: " + ie.getMessage());
 					numFailedTasks ++;
 				} catch (IndexOutOfBoundsException ioobe) {
 					logger.error("IOOBE for task_" + i + " in the futures-list! " + ioobe.getMessage());
@@ -578,18 +539,9 @@ public class LoaderAndChecker
 					loggedUrlsOfThisId.add(urlToCheck);
 				return true;	// A url was checked and didn't have any problems, return and log the remaining urls.
 			} catch (Exception e) {
+				if ( handleException(retrievedId, urlToCheck, e) )
+					return false;	// The error has already been logged in better detail.
 
-				if ( e instanceof RuntimeException ) {
-					String msg = e.getMessage();
-					if ( (msg != null) && msg.contains(alreadyLoggedMessage) )
-						return false;	// The error has already been logged in better detail.
-				}
-
-				List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
-				String wasUrlValid = list.get(0);
-				String couldRetry = list.get(1);
-				String errorMsg = "Discarded at loading time, in checkRemainingUrls(), as " + list.get(2);
-				UrlUtils.addOutputData(retrievedId, urlToCheck, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, "N/A", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null", "N/A");
 				if ( !isSingleIdUrlPair )
 					loggedUrlsOfThisId.add(urlToCheck);
 				// Try the next url..
@@ -598,7 +550,23 @@ public class LoaderAndChecker
 		return false;
 	}
 
-	
+
+	public static boolean handleException(String retrievedId, String urlToCheck, Exception e)
+	{
+		if ( e instanceof RuntimeException ) {
+			String msg = e.getMessage();
+			if ( (msg != null) && msg.contains(alreadyLoggedMessage) )
+				return true;	// Instruct the caller-method to return immediately.
+		}
+		List<String> list = getWasValidAndCouldRetry(e, urlToCheck);
+		String wasUrlValid = list.get(0);
+		String couldRetry = list.get(1);
+		String errorMsg = "Discarded at loading time, as " + list.get(2);
+		UrlUtils.addOutputData(retrievedId, urlToCheck, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, "N/A", null, true, "true", wasUrlValid, "false", "false", couldRetry, null, "null", "N/A");
+		return false;	// The caller method can return whenever it likes.
+	}
+
+
 	/**
 	 * This method checks if the given url is either of unwantedType or if it's a duplicate in the input, while removing the potential jsessionid from the url.
 	 * It returns the givenUrl without the jsessionidPart if this url is accepted for connection/crawling, otherwise, it returns "null".
