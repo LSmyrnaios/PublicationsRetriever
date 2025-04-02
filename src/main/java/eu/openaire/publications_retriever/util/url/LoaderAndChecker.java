@@ -487,8 +487,8 @@ public class LoaderAndChecker
 			//logger.debug("sizeOfFutures: " + sizeOfFutures);	// DEBUG!
 			for ( int i = 0; i < sizeOfFutures; ++i ) {
 				try {
-					Boolean value = futures.get(i).get();	// Get and see if an exception is thrown..
-					// Add check for the value, if wanted.. (we don't care at the moment)
+					Boolean value = futures.get(i).get();	// Get and see if an exception is thrown. This blocks the current thread, until the task of the future has finished.
+					// Add check for the result-value, if wanted.. (we don't care at the moment)
 				} catch (ExecutionException ee) {
 					String stackTraceMessage = GenericUtils.getSelectedStackTraceForCausedException(ee, "Task_" + i + " failed with: ", null, 15);	// These can be serious errors like an "out of memory exception" (Java HEAP).
 					logger.error(stackTraceMessage);
@@ -496,6 +496,9 @@ public class LoaderAndChecker
 					numFailedTasks ++;
 				} catch (CancellationException ce) {
 					logger.error("Task_" + i + " was cancelled: " + ce.getMessage());
+					numFailedTasks ++;
+				} catch (InterruptedException ie) {
+					logger.error("Task_" + i + " was interrupted: " + ie.getMessage());
 					numFailedTasks ++;
 				} catch (IndexOutOfBoundsException ioobe) {
 					logger.error("IOOBE for task_" + i + " in the futures-list! " + ioobe.getMessage());

@@ -177,6 +177,16 @@ public class UrlUtils
 	}
 
 
+	// TODO - Add a new method: getBasePathStr to take the url-part up to 2 directories deep.
+	// This version should be used for tracking, blocking and machine learning,
+	// since if we use the whole path, then we risk overfitting, and targeting specific publications even.
+	// For example, some pageUrls have this format: "https://domain/baseDir/BaseSubDir/specificPubDir/PubID"
+		// So the current urlPath would be : "https://domain/baseDir/BaseSubDir/specificPubDir/" matching to nearly no other url ever..
+		// Which is useless for machine-learning and blocking-tracking-data.
+		// Instead, we should have this path: "https://domain/baseDir/BaseSubDir/"
+		// However this structure is not always present. Maybe we should only accept the removal of the last dir if it contains only numbers, thus describing a particular object and not a category.
+
+
 	/**
 	 * This method returns the path of the given url.
 	 * @param urlStr
