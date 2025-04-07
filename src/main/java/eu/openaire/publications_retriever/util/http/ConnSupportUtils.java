@@ -408,8 +408,8 @@ public class ConnSupportUtils
 		String alreadyDownloadedFileLocation = fileHashesWithLocations.get(fileHash);
 		if ( alreadyDownloadedFileLocation != null ) {
 			// Delete the new duplicate file and keep the first downloaded one, which was downloaded by a different "sourceUrl".
-			logger.info("The file of url \"" + url + "\" has been already downloaded in location: " + alreadyDownloadedFileLocation);
-			File file = fileData.getFile();
+			logger.debug("The file of url \"" + url + "\" has been already downloaded in location: " + alreadyDownloadedFileLocation);
+			File file = fileData.getFile();	// The current file to be deleted.
 			try {
 				if ( file.exists() ) {
 					try {
@@ -427,12 +427,13 @@ public class ConnSupportUtils
 				else
 					FileUtils.numOfDocFiles.decrementAndGet();
 			}	// In case of HTML-files, no "decrementation" is needed.
+			// Return the file-data which will now point to the initial and identical file. No recalculation of hash and size is needed.
 			fileData.setLocation(alreadyDownloadedFileLocation);
 			fileData.setFile(new File(alreadyDownloadedFileLocation));
 			return fileData;
 		} else {
 			fileHashesWithLocations.put(fileData.getHash(), fileData.getLocation());
-			return null;
+			return null;	// The file is new.
 		}
 	}
 

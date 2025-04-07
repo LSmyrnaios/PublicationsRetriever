@@ -170,7 +170,7 @@ public class HttpConnUtils
 							return true;
 						} catch (FileNotRetrievedException dfnde) {
 							error = docFileNotRetrievedMessage + dfnde.getMessage();
-							fullPathFileName = "N/A";
+							fullPathFileName = "null";
 						}	// We log below and then return.
 					}
 					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, error, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", null, "null", finalMimeType);	// we send the urls, before and after potential redirections.
