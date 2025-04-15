@@ -172,6 +172,8 @@ public class HttpConnUtils
 							error = docFileNotRetrievedMessage + dfnde.getMessage();
 							fullPathFileName = "null";
 						}	// We log below and then return.
+					} else if ( ArgsUtils.shouldJustDownloadHtmlFiles ) {
+						fullPathFileName = "null";
 					}
 					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, error, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", null, "null", finalMimeType);	// we send the urls, before and after potential redirections.
 					return true;
