@@ -169,7 +169,7 @@ public class MetadataHandler {
 
         IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(metaDocUrl);
         if ( originalIdUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
-            ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, metaDocUrl, originalIdUrlMimeTypeTriple, false);
+            ConnSupportUtils.handleReCrossedTargetUrl(urlId, sourceUrl, pageUrl, metaDocUrl, originalIdUrlMimeTypeTriple, false);
             numOfMetaDocUrlsFound.incrementAndGet();
             return true;
         }

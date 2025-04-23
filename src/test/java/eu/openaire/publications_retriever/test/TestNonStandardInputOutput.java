@@ -134,7 +134,7 @@ public class TestNonStandardInputOutput  {
 		args[3] = "-fileNameType";
 		args[4] = "idName";
 		args[5] = "-inputFileFullPath";
-		args[6] = "./testData/idUrlPairs/orderedList500.json";
+		args[6] = "./testData/idUrlPairs/orderedList100.json";
 		main(args);
 	}
 

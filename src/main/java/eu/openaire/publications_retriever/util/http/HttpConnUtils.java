@@ -566,7 +566,7 @@ public class HttpConnUtils
 
 				IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(targetUrl);
 				if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return.
-					ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, targetUrl, originalIdUrlMimeTypeTriple, calledForPageUrl);
+					ConnSupportUtils.handleReCrossedTargetUrl(urlId, sourceUrl, pageUrl, targetUrl, originalIdUrlMimeTypeTriple, calledForPageUrl);
 					throw new AlreadyFoundDocUrlException();
 				}
 
