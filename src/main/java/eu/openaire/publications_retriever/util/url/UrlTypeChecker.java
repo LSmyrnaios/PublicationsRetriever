@@ -45,55 +45,7 @@ public class UrlTypeChecker
 	
 	public static Pattern INTERNAL_LINKS_FILE_FORMAT_FILTER = null;	// This includes filter for url-parameters.
 
-	public static final Pattern SPECIFIC_DOMAIN_FILTER = Pattern.compile("[^/]+://[^/]*(?<=[/.])(?:(?<!drive.)google\\.|goo.gl|gstatic|facebook|fb.me|twitter|(?:meta|xing|baidu|t|x|vk).co|insta(?:gram|paper)|tiktok|youtube|vimeo|linkedin|ebay|bing|(?:amazon|[./]analytics)\\.|s.w.org|wikipedia|myspace|yahoo|mail|pinterest|reddit|tumblr"
-			+ "|www.ccdc.cam.ac.uk|figshare.com/collections/|datadryad.org/stash/dataset/"
-			+ "|evernote|skype|microsoft|adobe|buffer|digg|stumbleupon|addthis|delicious|dailymotion|gostats|blog(?:ger)?|copyright|friendfeed|newsvine|telegram|getpocket"
-			+ "|flipboard|line.me|ok.rudouban|qzone|renren|weibo|doubleclick|bit.ly|github|reviewofbooks|plu.mx"
-			+ "|(?<!files.)wordpress|orcid.org"
-			+ "|auth(?:oriz(?:e|ation)|entication)?\\."
-
-			// Block nearly all the "elsevier.com" urls, as well as the "sciencedirect.com" urls.
-			// The "(linkinghub|api).elsevier.com" urls redirect -automatically or can be redirected manually- to the "sciencedirect.com", where the pdf is provided, BUT they cannot be retrieved.
-			// The "sciencedirect.com" urls provide the pdf BUT! since some time now they require auth-tokens and decoding by javascript methods.
-			// The ideal approach is to acquire an official api-key in order to retrieve the full-text in xml-format. Check: https://dev.elsevier.com/documentation/FullTextRetrievalAPI.wadl
-
-			// The "<...>.pure.elsevier.com" urls give a page which does not contain the docUrl, but a doi-link instead, which leads to another page which contains the docUrl.
-			// The "manuscript.elsevier.com" gives pdfs right away, so it should be allowed.
-			// The "(www|journals).elsevier.com", come mostly from "doi.org"-urls.
-			+ "|(?<!manuscript.)elsevier.com|sciencedirect.com"
-			+ "|(?:static|multimedia|tienda).elsevier."	// Holds generic pdfs with various info about journals etc. or images or unrelated info.
-
-			+ "|arvojournals.org"	// Avoid this problematic domain, which redirects to another domain, but also adds a special token, which cannot be replicated. Also, it has cookies issues.
-			+ "|books.openedition.org"	// Avoid this closed-access sub-domain. (other subdomains, like "journals.openedition.org" are fine).
-			+ "|perfdrive."	// Avoid "robot-check domain". It blocks quickly and redirect us to "validate.perfdrive.com".
-			+ "|services.bepress.com"	// Avoid potential malicious domain (Avast had some urls of this domain in the Blacklist).
-			+ "|(?:careers|shop).|myworkdayjobs.com"
-			+ "|editorialmanager.com"
-
-			// Add domains with a specific blocking-reason, in "capturing-groups", in order to be able to get the matched-group-number and know the exact reason the block occurred.
-
-			+ "|(tandfonline.com|persee.fr|papers.ssrn.com|documentation.ird.fr|library.unisa.edu.au|publications.cnr.it)"	// 1. JavaScript-powered domains.
-			// We could "guess" the pdf-link for some of them, but for "persee.fr" for example, there's also a captcha requirement.
-			// The "tandfonline.com" cannot give even direct "/pdf/" urls, as it gives "HTTP 503 Server Error" or "HTTP 403 Forbidden", which urls appear to work when opened in a Browser.
-
-			+ "|(doaj.org/toc/)"	// 2. Avoid resultPages (containing multiple publication-results).
-			+ "|(dlib.org|saberes.fcecon.unr.edu.ar|eumed.net)"	// 3. Avoid HTML docUrls. These are shown simply inside the html-text of the page. No binary to download.
-			+ "|(rivisteweb.it|wur.nl|remeri.org.mx|cam.ac.uk|scindeks.ceon.rs|egms.de)"	// 4. Avoid pages known to not provide docUrls (just metadata).
-			+ "|(bibliotecadigital.uel.br|cepr.org)"	// 5. Avoid domains requiring login to access docUrls.
-			+ "|(scielosp.org" + docOrDatasetNegativeLookAroundPattern + "|cepr.org|dk.um.si|apospublications.com|jorr.org|rwth-aachen.de|pubmed.ncbi.nlm.nih.gov)"	// 6. Avoid domains which have their DocUrls in larger depth (internalPagesToDocUrls or PreviousOfDocUrls).
-			+ "|(200.17.137.108)"	// 7. Avoid known domains with connectivity problems.
-
-			// Avoid slow urls (taking more than 3secs to connect). This is currently disabled since it was decided to let more pageUrl unblocked.
-			//"handle.net", "doors.doshisha.ac.jp", "opac-ir.lib.osaka-kyoiku.ac.jp"
-			/*
-			// In case these "slow" domain are blocked later, use something like the following when handling them..
-			loggingMessage = "Discarded after matching to domain, known to take long to respond.";
-			logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-			UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, null);
-			longToRespondUrls.incrementAndGet();
-			*/
-
-			+ ")[^/]*/.*");
+	public static Pattern SPECIFIC_DOMAIN_FILTER = null;
 
 	public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile("[^/]+://[\\w.:-]+(?:/[\\w]{2})?(?:/index." + htOrPhpExtensionsPattern + ")?[/]?(?:\\?(?:locale(?:-attribute)?|ln)=[\\w_-]+)?$");	// Exclude plain domains' urls. Use "ISO 639-1" for language-codes (2 letters directory).
 
@@ -137,6 +89,67 @@ public class UrlTypeChecker
 		// We check the above rules, mostly as directories to avoid discarding publications' urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
 		if ( logger.isTraceEnabled() )
 			logger.trace("URL_DIRECTORY_FILTER:\n" + URL_DIRECTORY_FILTER);
+
+		SPECIFIC_DOMAIN_FILTER =
+			Pattern.compile("[^/]+://[^/]*(?<=[/.])(?:(?<!drive.)google\\.|goo.gl|gstatic|facebook|fb.me|twitter|(?:meta|xing|baidu|t|x|vk).co|insta(?:gram|paper)|tiktok|youtube|vimeo|linkedin|ebay|bing|(?:amazon|[./]analytics)\\.|s.w.org|wikipedia|myspace|yahoo|mail|pinterest|reddit|tumblr"
+				+ "|www.ccdc.cam.ac.uk|figshare.com/collections/|datadryad.org/stash/dataset/"
+				+ "|evernote|skype|microsoft|adobe|buffer|digg|stumbleupon|addthis|delicious|dailymotion|gostats|blog(?:ger)?|copyright|friendfeed|newsvine|telegram|getpocket"
+				+ "|flipboard|line.me|ok.rudouban|qzone|renren|weibo|doubleclick|bit.ly|github|reviewofbooks|plu.mx"
+				+ "|(?<!files.)wordpress|orcid.org"
+				+ "|auth(?:oriz(?:e|ation)|entication)?\\."
+
+				// Block nearly all the "elsevier.com" urls, as well as the "sciencedirect.com" urls.
+				// The "(linkinghub|api).elsevier.com" urls redirect -automatically or can be redirected manually- to the "sciencedirect.com", where the pdf is provided, BUT they cannot be retrieved.
+				// The "sciencedirect.com" urls provide the pdf BUT! since some time now they require auth-tokens and decoding by javascript methods.
+				// The ideal approach is to acquire an official api-key in order to retrieve the full-text in xml-format. Check: https://dev.elsevier.com/documentation/FullTextRetrievalAPI.wadl
+
+				// The "<...>.pure.elsevier.com" urls give a page which does not contain the docUrl, but a doi-link instead, which leads to another page which contains the docUrl.
+				// The "manuscript.elsevier.com" gives pdfs right away, so it should be allowed.
+				// The "(www|journals).elsevier.com", come mostly from "doi.org"-urls.
+				+ (ArgsUtils.shouldJustDownloadHtmlFiles	// In this case we want to download the html-pages of these domains. No internal links are accessed, so there is minimal overload.
+					? "" :"|(?<!manuscript.)elsevier.com|sciencedirect.com"
+							+ "|(?:static|multimedia|tienda).elsevier."	// Holds generic pdfs with various info about journals etc. or images or unrelated info.
+							+ "|arvojournals.org"	// Avoid this problematic domain, which redirects to another domain, but also adds a special token, which cannot be replicated. Also, it has cookie-issues.
+							+ "|books.openedition.org"	// Avoid this closed-access sub-domain. (other subdomains, like "journals.openedition.org" are fine).
+					)
+
+				+ "|perfdrive."	// Avoid "robot-check domain". It blocks quickly and redirect us to "validate.perfdrive.com".
+				+ "|services.bepress.com"	// Avoid potential malicious domain (Avast had some urls of this domain in the Blacklist).
+				+ "|(?:careers|shop).|myworkdayjobs.com"
+				+ "|editorialmanager.com"	// Avoid the login-only site of peer-reviews and manuscript-submissions.
+
+				// Add domains with a specific blocking-reason, in "capturing-groups", in order to be able to get the matched-group-number and know the exact reason the block occurred.
+
+				+ "|(tandfonline.com|persee.fr|papers.ssrn.com|documentation.ird.fr|library.unisa.edu.au|publications.cnr.it)"	// 1. JavaScript-powered domains.
+				// We could "guess" the pdf-link for some of them, but for "persee.fr" for example, there's also a captcha requirement.
+				// The "tandfonline.com" cannot give even direct "/pdf/" urls, as it gives "HTTP 503 Server Error" or "HTTP 403 Forbidden", which urls appear to work when opened in a Browser.
+
+				+ "|(doaj.org/toc/)"	// 2. Avoid resultPages (containing multiple publication-results).
+
+				+ (ArgsUtils.shouldJustDownloadHtmlFiles	// In this case we want to download the html-pages of these domains. No internal links are accessed, so there is minimal overload.
+					? "" : "|(dlib.org|saberes.fcecon.unr.edu.ar|eumed.net)"	// 3. Avoid HTML docUrls. These are shown simply inside the html-text of the page. No binary to download.
+							+ "|(rivisteweb.it|wur.nl|remeri.org.mx|cam.ac.uk|scindeks.ceon.rs|egms.de)"	// 4. Avoid pages known to not provide docUrls (just metadata).
+							+ "|(bibliotecadigital.uel.br|cepr.org)"	// 5. Avoid domains requiring login to access docUrls.
+							+ "|(scielosp.org" + docOrDatasetNegativeLookAroundPattern + "|cepr.org|dk.um.si|apospublications.com|jorr.org|rwth-aachen.de|pubmed.ncbi.nlm.nih.gov)"	// 6. Avoid domains which have their DocUrls in larger depth (internalPagesToDocUrls or PreviousOfDocUrls).
+					)
+
+				+ "|(200.17.137.108)"	// 7. Avoid known domains with connectivity problems.
+
+				// Avoid slow urls (taking more than 3secs to connect). This is currently disabled since it was decided to let more pageUrl unblocked.
+				//"handle.net", "doors.doshisha.ac.jp", "opac-ir.lib.osaka-kyoiku.ac.jp"
+				/*
+				// In case these "slow" domain are blocked later, use something like the following when handling them..
+				loggingMessage = "Discarded after matching to domain, known to take long to respond.";
+				logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
+				UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, null);
+				longToRespondUrls.incrementAndGet();
+				*/
+
+				+ ")[^/]*/.*"
+			);
+
+		if ( logger.isTraceEnabled() )
+			logger.trace("SPECIFIC_DOMAIN_FILTER:\n" + SPECIFIC_DOMAIN_FILTER);
 
 		INTERNAL_LINKS_FILE_FORMAT_FILTER =
 				Pattern.compile(".+format=(?:" + (!ArgsUtils.retrieveDatasets ? "xml|" : "") + htOrPhpExtensionsPattern + "|rss|ris|bib|citation_|events_kml).*");
