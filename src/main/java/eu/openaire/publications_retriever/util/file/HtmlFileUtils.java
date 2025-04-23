@@ -29,7 +29,7 @@ public class HtmlFileUtils {
 		} else if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
 			fileName = String.valueOf(HtmlFileUtils.htmlFilesNum.incrementAndGet());
 
-		return FileUtils.getDocFileAndHandleExisting(fileName, ".html", false, contentSize, ArgsUtils.storeHtmlFilesDir, numbersOfDuplicateHtmlFileNames);
+		return FileUtils.getFileAndHandleExisting(fileName, ".html", false, contentSize, ArgsUtils.storeHtmlFilesDir, numbersOfDuplicateHtmlFileNames);
 	}
 
 }

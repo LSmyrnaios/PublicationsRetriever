@@ -62,7 +62,7 @@ public class FileUtils
 	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<>();	// Holds docFileNames with their duplicatesNum.
 	// If we use the above without external synchronization, then the "ConcurrentHashMap" should be used instead.
 
-	public static final boolean shouldLogFullPathName = true;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
+	public static final boolean shouldOutputFullPathName = true;	// Should we log, in the jasonOutputFile, the fullPathName or just the ending fileName?
 	public static int numOfDocFile = 0;	// In the case that we don't care for original docFileNames, the fileNames are produced using an incremental system.
 	public static final String workingDir = System.getProperty("user.dir") + File.separator;
 
@@ -341,7 +341,7 @@ public class FileUtils
 	{
 		FileData fileData;
 		if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.idName) )
-			fileData = getDocFileAndHandleExisting(id, ".pdf", false, contentSize, ArgsUtils.storeDocFilesDir, numbersOfDuplicateDocFileNames);    // TODO - Later, on different fileTypes, take care of the extension properly.
+			fileData = getFileAndHandleExisting(id, ".pdf", false, contentSize, ArgsUtils.storeDocFilesDir, numbersOfDuplicateDocFileNames);    // TODO - Later, on different fileTypes, take care of the extension properly.
 		else if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.originalName) )
 			fileData = getDocFileWithOriginalFileName(docUrl, conn.getHeaderField("Content-Disposition"), contentSize);
 		else
@@ -387,7 +387,7 @@ public class FileUtils
 			}
 			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
 
-			String md5Hash = printHexBinary(md.digest()).toLowerCase();
+			String md5Hash = printHexBinary(md.digest());
 
 			if ( ArgsUtils.shouldUploadFilesToS3 ) {
 				fileData = S3ObjectStore.uploadToS3(docFile.getName(), docFile.getAbsolutePath());
@@ -401,7 +401,7 @@ public class FileUtils
 				} else
 					numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 			} else
-				fileData = new FileData(docFile, md5Hash, bytesCount, ((FileUtils.shouldLogFullPathName) ? docFile.getAbsolutePath() : docFile.getName()));
+				fileData = new FileData(docFile, md5Hash, bytesCount, ((FileUtils.shouldOutputFullPathName) ? docFile.getAbsolutePath() : docFile.getName()));
 
 			// TODO - HOW TO SPOT DUPLICATE-NAMES IN THE S3 MODE?
 			// The local files are deleted after uploaded.. (as they should be)
@@ -490,7 +490,7 @@ public class FileUtils
 			}
 			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
 
-			String md5Hash = printHexBinary(md.digest()).toLowerCase();
+			String md5Hash = printHexBinary(md.digest());
 
 			FileData fileData;
 			if ( ArgsUtils.shouldUploadFilesToS3 ) {
@@ -505,7 +505,7 @@ public class FileUtils
 				} else
 					numOfDocFile --;
 			} else
-				fileData = new FileData(docFile, md5Hash, bytesCount, ((FileUtils.shouldLogFullPathName) ? docFile.getAbsolutePath() : docFile.getName()));
+				fileData = new FileData(docFile, md5Hash, bytesCount, ((FileUtils.shouldOutputFullPathName) ? docFile.getAbsolutePath() : docFile.getName()));
 
 			// TODO - HOW TO SPOT DUPLICATE-NAMES IN THE S3 MODE?
 			// The local files are deleted after uploaded.. (as they should be)
@@ -616,20 +616,19 @@ public class FileUtils
 		
 		//logger.debug("docFileName: " + docFileName);
 
-		return getDocFileAndHandleExisting(docFileName, dotFileExtension, hasUnretrievableDocName, contentSize, ArgsUtils.storeDocFilesDir, numbersOfDuplicateDocFileNames);
+		return getFileAndHandleExisting(docFileName, dotFileExtension, hasUnretrievableDocName, contentSize, ArgsUtils.storeDocFilesDir, numbersOfDuplicateDocFileNames);
 	}
 
 
 	private static final Lock fileNameLock = new ReentrantLock(true);
 
-	public static FileData getDocFileAndHandleExisting(String fileName, String dotFileExtension, boolean hasUnretrievableDocName, int contentSize, String storeFilesDir,
-													   HashMap<String, Integer> numbersOfDuplicateFileNames
-	)
+	public static FileData getFileAndHandleExisting(String fileName, String fileExtension, boolean hasUnretrievableDocName, int contentSize, String storeFilesDir,
+													HashMap<String, Integer> numbersOfDuplicateFileNames)
 			throws FileNotRetrievedException	//, NoSpaceLeftException
 	{
 		String saveDocFileFullPath = storeFilesDir + fileName;
-		if ( ! fileName.endsWith(dotFileExtension) )
-			saveDocFileFullPath += dotFileExtension;
+		if ( ! fileName.endsWith(fileExtension) )
+			saveDocFileFullPath += fileExtension;
 
 		File file = new File(saveDocFileFullPath);
 		FileOutputStream fileOutputStream = null;
@@ -655,7 +654,7 @@ public class FileUtils
 					int lastIndexOfDot = fileName.lastIndexOf(".");
 					if ( lastIndexOfDot != -1 )
 						preExtensionFileName = fileName.substring(0, lastIndexOfDot);
-					fileName = preExtensionFileName + "(" + curDuplicateNum + ")" + dotFileExtension;
+					fileName = preExtensionFileName + "(" + curDuplicateNum + ")" + fileExtension;
 					saveDocFileFullPath = storeFilesDir + fileName;
 					file = new File(saveDocFileFullPath);
 				}
@@ -686,7 +685,7 @@ public class FileUtils
 					fileOutputStream.close();
 				} catch (Exception ignored) {}
 			}
-			String errMsg = "Error when handling the fileName = \"" + fileName + "\" and dotFileExtension = \"" + dotFileExtension + "\"!";
+			String errMsg = "Error when handling the fileName = \"" + fileName + "\" and fileExtension = \"" + fileExtension + "\"!";
 			logger.error(errMsg, e);
 			throw new FileNotRetrievedException(errMsg);
 		} finally {

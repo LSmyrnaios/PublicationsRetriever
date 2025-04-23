@@ -320,7 +320,7 @@ public class MachineLearning
 			IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(predictedDocUrl);
 			if ( originalIdUrlMimeTypeTriple != null ) {	// If we got into an already-found docUrl, log it and return true.
 				logger.info("MachineLearningAlgorithm got a hit for pageUrl: \""+ pageUrl + "\"! Resulted (already found before) docUrl was: \"" + predictedDocUrl + "\"" );	// DEBUG!
-				ConnSupportUtils.handleReCrossedDocUrl(urlId, sourceUrl, pageUrl, predictedDocUrl, originalIdUrlMimeTypeTriple, false);
+				ConnSupportUtils.handleReCrossedTargetUrl(urlId, sourceUrl, pageUrl, predictedDocUrl, originalIdUrlMimeTypeTriple, false);
 				MachineLearning.docUrlsFoundByMLA.incrementAndGet();
 				return true;
 			}

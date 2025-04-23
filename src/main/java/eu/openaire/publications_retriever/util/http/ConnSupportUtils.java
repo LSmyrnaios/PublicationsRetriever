@@ -355,11 +355,11 @@ public class ConnSupportUtils
 	}
 
 
-	public static void handleReCrossedDocUrl(String urlId, String sourceUrl, String pageUrl, String docUrl, IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple, boolean calledForPageUrl) {
-		logger.info("re-crossed docUrl found: < " + docUrl + " >");
+	public static void handleReCrossedTargetUrl(String urlId, String sourceUrl, String pageUrl, String docUrl, IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple, boolean calledForPageUrl) {
+		logger.info("re-crossed targetUrl found: < " + docUrl + " >");
 		reCrossedDocUrls.incrementAndGet();
 		String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, docUrl);
-		String filePath = ((ArgsUtils.shouldDownloadDocFiles ? (alreadyDownloadedFromIDMessage + originalIdUrlMimeTypeTriple.id + alreadyDownloadedFromSourceUrlContinuedMessage) : (alreadyDetectedFromIDMessage + originalIdUrlMimeTypeTriple.id + alreadyDetectedFromSourceUrlContinuedMessage)) + originalIdUrlMimeTypeTriple.url);
+		String filePath = (((ArgsUtils.shouldDownloadDocFiles || ArgsUtils.shouldJustDownloadHtmlFiles) ? (alreadyDownloadedFromIDMessage + originalIdUrlMimeTypeTriple.id + alreadyDownloadedFromSourceUrlContinuedMessage) : (alreadyDetectedFromIDMessage + originalIdUrlMimeTypeTriple.id + alreadyDetectedFromSourceUrlContinuedMessage)) + originalIdUrlMimeTypeTriple.url);
 		UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, docUrl, "N/A", filePath, null, false, "true", "true", "true", wasDirectLink, "true", null, "null", originalIdUrlMimeTypeTriple.mimeType);
 	}
 
@@ -426,7 +426,7 @@ public class ConnSupportUtils
 						FileUtils.numOfDocFile--;
 				else
 					FileUtils.numOfDocFiles.decrementAndGet();
-			}	// In case of HTML-files, no "decrementation" is needed.
+			}	// In case of HTML-files, no "decrementation" is needed, as the incrementation happens after calling this method, not before, like with Doc-files.
 			// Return the file-data which will now point to the initial and identical file. No recalculation of hash and size is needed.
 			fileData.setLocation(alreadyDownloadedFileLocation);
 			fileData.setFile(new File(alreadyDownloadedFileLocation));
@@ -490,7 +490,7 @@ public class ConnSupportUtils
 			FileData newFileData = checkAndHandleDuplicateHash(fileData, docUrl);
 			if ( newFileData != null )
 				return newFileData;
-			// Else, it's no a duplicate.
+			// Else, it's not a duplicate.
 
 			File docFile = fileData.getFile();
 			if ( ArgsUtils.shouldUploadFilesToS3 ) {
@@ -979,8 +979,10 @@ public class ConnSupportUtils
 		}
 		// It may be "-2" in case the "contentSize" was not available.
 
+		boolean shouldWriteHtmlFile = (ArgsUtils.shouldJustDownloadHtmlFiles && !isForError);
+
 		StringBuilder htmlStrB = htmlStrBuilder.get();
-		if ( (htmlStrB == null) && (!ArgsUtils.shouldJustDownloadHtmlFiles || isForError) ) {
+		if ( (htmlStrB == null) && !shouldWriteHtmlFile ) {
 			htmlStrB = new StringBuilder(100_000);	// Initialize and pre-allocate the StringBuilder.
 			htmlStrBuilder.set(htmlStrB);	// Save it for future use by this thread.
 		}
@@ -996,28 +998,28 @@ public class ConnSupportUtils
 
 		FileData htmlFileData = null;
 		String fullPathFileName = null;
-		if ( ArgsUtils.shouldJustDownloadHtmlFiles && !isForError ) {
+		if ( shouldWriteHtmlFile ) {
 			try {
 				htmlFileData = HtmlFileUtils.getFinalHtmlFilePath(urlId, pageUrl, urlMatcher, contentSize);	// This will not be null.
 				fullPathFileName = htmlFileData.getLocation();
 				//} catch (FileNotRetrievedException fnre) {
 			} catch (Exception e) {
 				logger.error("Failed to acquire the \"fullPathFileName\": " + e.getMessage());
-				if ( ArgsUtils.shouldJustDownloadHtmlFiles && ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
+				if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
 					HtmlFileUtils.htmlFilesNum.decrementAndGet();
 				return null;
 			}
 		}
 
 		try (BufferedReader br = ((bufferedReader != null) ? bufferedReader : new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8), bufferSize));
-			 BufferedWriter bw = ((ArgsUtils.shouldJustDownloadHtmlFiles && !isForError) ? new BufferedWriter(new FileWriter(fullPathFileName, StandardCharsets.UTF_8),  bufferSize) : null) )	// Try-with-resources
+			 BufferedWriter bw = (shouldWriteHtmlFile ? new BufferedWriter(new FileWriter(fullPathFileName, StandardCharsets.UTF_8),  bufferSize) : null) )	// Try-with-resources
 		{
 			String inputLine;
 			String htmlSpaceChar = ((bw != null) ? FileUtils.endOfLine : " ");
 
 			// We may have extracted the first response-line in order to determine the content-type, in case no other method succeeded.
 			if ( firstHTMLlineFromDetectedContentType != null ) {
-				if ( !ArgsUtils.shouldJustDownloadHtmlFiles || isForError )
+				if ( !shouldWriteHtmlFile )
 					htmlStrB.append(firstHTMLlineFromDetectedContentType).append(htmlSpaceChar);
 				if ( bw != null ) {
 					bw.write(firstHTMLlineFromDetectedContentType);
@@ -1028,7 +1030,7 @@ public class ConnSupportUtils
 			while ( (inputLine = br.readLine()) != null )
 			{
 				if ( !inputLine.isEmpty() && (inputLine.length() != 1) && !SPACE_ONLY_LINE.matcher(inputLine).matches() ) {	// We check for (inputLine.length() != 1), as some lines contain just an unrecognized byte.
-					if ( !ArgsUtils.shouldJustDownloadHtmlFiles || isForError )
+					if ( !shouldWriteHtmlFile )
 						htmlStrB.append(inputLine).append(htmlSpaceChar);	// Add the "spaceChar" to avoid joining words from different lines.
 					if ( bw != null ) {
 						bw.write(inputLine);
@@ -1050,7 +1052,7 @@ public class ConnSupportUtils
 					HtmlFileUtils.htmlFilesNum.incrementAndGet();
 			}
 
-			if ( !ArgsUtils.shouldJustDownloadHtmlFiles || isForError ) {
+			if ( !shouldWriteHtmlFile ) {
 				String htmlString = ((htmlStrB != null) && htmlStrB.length() != 0) ? htmlStrB.toString() : null;
 				return ((htmlString != null) ? new HtmlResult(htmlString, null) : null);
 			} else
@@ -1058,13 +1060,9 @@ public class ConnSupportUtils
 
 		} catch ( IOException ioe ) {
 			logger.error("IOException when retrieving the HTML-code for pageUrl \"" + pageUrl + "\": " + ioe.getMessage());
-			if ( ArgsUtils.shouldJustDownloadHtmlFiles && ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
-				HtmlFileUtils.htmlFilesNum.decrementAndGet();
 			return null;
 		} catch ( Exception e ) {
 			logger.error("", e);
-			if ( ArgsUtils.shouldJustDownloadHtmlFiles && ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
-				HtmlFileUtils.htmlFilesNum.decrementAndGet();
 			return null;
 		} finally {
 			if ( htmlStrB != null )
