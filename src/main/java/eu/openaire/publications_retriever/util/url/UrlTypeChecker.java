@@ -78,9 +78,12 @@ public class UrlTypeChecker
 				+ "|(?:(?:error)?404(?:_response)?|accessibility|invalid|catalog(?:ue|ar|o)?)\\." + htOrPhpExtensionsPattern
 
 				// Add pages with a specific blocking-reason, in "capturing-groups", in order to be able to get the matched-group-number and know the exact reason the block occurred.
-				+ "|(.*/view/" + docOrDatasetNegativeLookAroundPattern + ")"	// 1. Avoid pages having their DocUrls in larger depth (internalPagesToDocUrls or PreviousOfDocUrls).
-				+ "|(.*sharedsitesession)"	// 2. Avoid urls which contain either "getSharedSiteSession" or "consumeSharedSiteSession" as these cause an infinite loop.
-				+ "|(doi.org/https://doi.org/.*pangaea." + (!ArgsUtils.retrieveDatasets ? "|pangaea.)" : ")")	// 3. Avoid "PANGAEA."-urls with problematic form and non docUrl internal links (yes WITH the "DOT", it's not a domain-name!).
+				+ "|(.*sharedsitesession)"	// 1. Avoid urls which contain either "getSharedSiteSession" or "consumeSharedSiteSession" as these cause an infinite loop.
+
+				+ (ArgsUtils.shouldJustDownloadHtmlFiles	// In this case we want to download the html-pages of these pages. No internal links are accessed.
+					? "" : "|(.*/view/" + docOrDatasetNegativeLookAroundPattern + ")"	// 2. Avoid pages having their DocUrls in larger depth (internalPagesToDocUrls or PreviousOfDocUrls).
+						+ "|(doi.org/https://doi.org/.*pangaea." + (!ArgsUtils.retrieveDatasets ? "|pangaea.)" : ")")	// 3. Avoid "PANGAEA."-urls with problematic form and non docUrl internal links (yes WITH the "DOT", it's not a domain-name!).
+				)
 
 				// The following pattern is the reason we need to set this regex in runtime.
 				+ (!ArgsUtils.retrieveDatasets ? ").*)|(?:bibtext|dc(?:terms)?|[^/]*(?:tei|endnote))$)" : ")).*)")
@@ -107,10 +110,10 @@ public class UrlTypeChecker
 				// The "manuscript.elsevier.com" gives pdfs right away, so it should be allowed.
 				// The "(www|journals).elsevier.com", come mostly from "doi.org"-urls.
 				+ (ArgsUtils.shouldJustDownloadHtmlFiles	// In this case we want to download the html-pages of these domains. No internal links are accessed, so there is minimal overload.
-					? "" :"|(?<!manuscript.)elsevier.com|sciencedirect.com"
-							+ "|(?:static|multimedia|tienda).elsevier."	// Holds generic pdfs with various info about journals etc. or images or unrelated info.
-							+ "|arvojournals.org"	// Avoid this problematic domain, which redirects to another domain, but also adds a special token, which cannot be replicated. Also, it has cookie-issues.
-							+ "|books.openedition.org"	// Avoid this closed-access sub-domain. (other subdomains, like "journals.openedition.org" are fine).
+					? "" : "|(?<!manuscript.)elsevier.com|sciencedirect.com"
+						+ "|(?:static|multimedia|tienda).elsevier."	// Holds generic pdfs with various info about journals etc. or images or unrelated info.
+						+ "|arvojournals.org"	// Avoid this problematic domain, which redirects to another domain, but also adds a special token, which cannot be replicated. Also, it has cookie-issues.
+						+ "|books.openedition.org"	// Avoid this closed-access sub-domain. (other subdomains, like "journals.openedition.org" are fine).
 					)
 
 				+ "|perfdrive."	// Avoid "robot-check domain". It blocks quickly and redirect us to "validate.perfdrive.com".
@@ -177,100 +180,111 @@ public class UrlTypeChecker
 		String wasUrlValid = "N/A";	// Default value to be used, in case the given url matches an unwanted type. We do not know if the url is valid (i.e. if it can be connected and give a non 4XX response) at this point.
 		String groupMatch = null;
 
-		Matcher matcher = URL_DIRECTORY_FILTER.matcher(lowerCaseUrl);
-		if ( matcher.matches() ) {	// This regex also matches with many other rules, which we do not care to individually capture.
-			if (calledForPageUrl ) {	// For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
-				if ( ((groupMatch = matcher.group(1)) != null) && !groupMatch.isEmpty() ) {
-					loggingMessage = "Discarded after matching to a site having its DocUrls in larger depth: '" + groupMatch + "'.";
-					pagesWithLargerCrawlingDepth.incrementAndGet();
-				} else if ( ((groupMatch = matcher.group(2)) != null) && !groupMatch.isEmpty() ) {
-					ConnSupportUtils.blockSharedSiteSessionDomains(pageUrl, null);
-					loggingMessage = "It was discarded after participating in a 'sharedSiteSession-endlessRedirectionPack': '" + groupMatch + "'.";
-					LoaderAndChecker.connProblematicUrls.incrementAndGet();
-				} else if ( ((groupMatch = matcher.group(3)) != null) && !groupMatch.isEmpty() ) {
-					loggingMessage = "Discarded after matching to a 'PANGAEA.' url with invalid form and non-docUrls in their internal links: '" + groupMatch + "'.";
-					pangaeaUrls.incrementAndGet();
-				} else
-					loggingMessage = "Discarded after matching to a directory with problems.";
-				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
-				UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "N/A");
-			}
-			return true;
-		}
-
-		matcher = SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl);
-		if ( matcher.matches() ) {
-			if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
-				if ( ((groupMatch = matcher.group(1)) != null) && !groupMatch.isEmpty() ) {
-					loggingMessage = "Discarded after matching to a JavaScript-using domain, other than the 'sciencedirect.com': '" + groupMatch + "'.";
-					javascriptPageUrls.incrementAndGet();
-				} else if ( ((groupMatch = matcher.group(2)) != null) && !groupMatch.isEmpty() ) {
-					loggingMessage = "Discarded after matching to the Results-directory: 'doaj.org/toc/': '" + groupMatch + "'.";
-					doajResultPageUrls.incrementAndGet();
-				} else if ( ((groupMatch = matcher.group(3)) != null) && !groupMatch.isEmpty() ) {
-					loggingMessage = "Discarded after matching to a site containing the full-text as plain-text inside its HTML: '" + groupMatch + "'.";
-					pagesWithHtmlDocUrls.incrementAndGet();
-				} else if ( ((groupMatch = matcher.group(4)) != null) && !groupMatch.isEmpty() ) {
-					loggingMessage = "Discarded after matching to a domain which doesn't provide docUrls: '" + groupMatch + "'.";
-					pagesNotProvidingDocUrls.incrementAndGet();
-				} else if ( ((groupMatch = matcher.group(5)) != null) && !groupMatch.isEmpty() ) {
-					loggingMessage = "Discarded after matching to a domain which needs login to access docFiles: '" + groupMatch + "'.";
-					pagesRequireLoginToAccessDocFiles.incrementAndGet();
-				} else if ( ((groupMatch = matcher.group(6)) != null) && !groupMatch.isEmpty() ) {
-					loggingMessage = "Discarded after matching to a site having its DocUrls in larger depth: '" + groupMatch + "'.";
-					pagesWithLargerCrawlingDepth.incrementAndGet();
-				} else if ( ((groupMatch = matcher.group(7)) != null) && !groupMatch.isEmpty() ) {
-					loggingMessage = "Discarded after matching to known domains with connectivity problems: '" + groupMatch + "'.";
-					LoaderAndChecker.connProblematicUrls.incrementAndGet();
-				} else
-					loggingMessage = "Discarded after matching to a domain with problems.";
-				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
-				UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "N/A");
-			}
-			return true;
-		}
-
-		matcher = PageCrawler.NON_VALID_DOCUMENT.matcher(lowerCaseUrl);
-		if ( matcher.matches() ) {
-			if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
-				loggingMessage = "Discarded after matching to a url leading to an invalid document!";
-				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
-				UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "N/A");
-				PageCrawler.contentProblematicUrls.incrementAndGet();
-			}
-			return true;
-		}
-
-		matcher = PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl);
-		if ( matcher.matches() ) {
-			if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
-				loggingMessage = "Discarded after matching to a url having only the domain part!";
-				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
-				UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "N/A");
-			}
-			return true;
-		}
-
-		matcher = URL_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl);
-		if ( matcher.matches() ) {
-			if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
-				loggingMessage = "Discarded after matching to a url having an irrelevant extension!";
-				logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
-				UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "N/A");
-			}
-			return true;
-		}
-
-		if ( ArgsUtils.shouldDownloadDocFiles ) {
-			matcher = CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseUrl);
-			if ( matcher.matches() ) {	// TODO - To be removed when these docExtensions get supported for download.
-				if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
-					loggingMessage = "Discarded after matching to a url having an unsupported document extension!";
+		String patternToMatch = URL_DIRECTORY_FILTER.pattern();
+		try {
+			Matcher matcher = URL_DIRECTORY_FILTER.matcher(lowerCaseUrl);
+			if (matcher.matches()) {	// This regex also matches with many other rules, which we do not care to individually capture.
+				if (calledForPageUrl) {	// For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
+					if ( ((groupMatch = matcher.group(1)) != null) && !groupMatch.isEmpty()) {
+						ConnSupportUtils.blockSharedSiteSessionDomains(pageUrl, null);
+						loggingMessage = "It was discarded after participating in a 'sharedSiteSession-endlessRedirectionPack': '" + groupMatch + "'.";
+						LoaderAndChecker.connProblematicUrls.incrementAndGet();
+					} else if ( !ArgsUtils.shouldJustDownloadHtmlFiles && ((groupMatch = matcher.group(2)) != null) && !groupMatch.isEmpty()) {
+						loggingMessage = "Discarded after matching to a site having its DocUrls in larger depth: '" + groupMatch + "'.";
+						pagesWithLargerCrawlingDepth.incrementAndGet();
+					} else if ( !ArgsUtils.shouldJustDownloadHtmlFiles && ((groupMatch = matcher.group(3)) != null) && !groupMatch.isEmpty()) {
+						loggingMessage = "Discarded after matching to a 'PANGAEA.' url with invalid form and non-docUrls in their internal links: '" + groupMatch + "'.";
+						pangaeaUrls.incrementAndGet();
+					} else
+						loggingMessage = "Discarded after matching to a directory with problems.";
 					logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
 					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "N/A");
 				}
 				return true;
 			}
+
+			patternToMatch = SPECIFIC_DOMAIN_FILTER.pattern();
+			matcher = SPECIFIC_DOMAIN_FILTER.matcher(lowerCaseUrl);
+			if ( matcher.matches() ) {
+				if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
+					if ( ((groupMatch = matcher.group(1)) != null) && !groupMatch.isEmpty() ) {
+						loggingMessage = "Discarded after matching to a JavaScript-using domain, other than the 'sciencedirect.com': '" + groupMatch + "'.";
+						javascriptPageUrls.incrementAndGet();
+					} else if ( ((groupMatch = matcher.group(2)) != null) && !groupMatch.isEmpty() ) {
+						loggingMessage = "Discarded after matching to the Results-directory: 'doaj.org/toc/': '" + groupMatch + "'.";
+						doajResultPageUrls.incrementAndGet();
+					} else if ( ((groupMatch = matcher.group(3)) != null) && !groupMatch.isEmpty() ) {
+						loggingMessage = "Discarded after matching to a site containing the full-text as plain-text inside its HTML: '" + groupMatch + "'.";
+						pagesWithHtmlDocUrls.incrementAndGet();
+					} else if ( !ArgsUtils.shouldJustDownloadHtmlFiles && ((groupMatch = matcher.group(4)) != null) && !groupMatch.isEmpty() ) {
+						loggingMessage = "Discarded after matching to a domain which doesn't provide docUrls: '" + groupMatch + "'.";
+						pagesNotProvidingDocUrls.incrementAndGet();
+					} else if ( !ArgsUtils.shouldJustDownloadHtmlFiles && ((groupMatch = matcher.group(5)) != null) && !groupMatch.isEmpty() ) {
+						loggingMessage = "Discarded after matching to a domain which needs login to access docFiles: '" + groupMatch + "'.";
+						pagesRequireLoginToAccessDocFiles.incrementAndGet();
+					} else if ( !ArgsUtils.shouldJustDownloadHtmlFiles && ((groupMatch = matcher.group(6)) != null) && !groupMatch.isEmpty() ) {
+						loggingMessage = "Discarded after matching to a site having its DocUrls in larger depth: '" + groupMatch + "'.";
+						pagesWithLargerCrawlingDepth.incrementAndGet();
+					} else if ( !ArgsUtils.shouldJustDownloadHtmlFiles && ((groupMatch = matcher.group(7)) != null) && !groupMatch.isEmpty() ) {
+						loggingMessage = "Discarded after matching to known domains with connectivity problems: '" + groupMatch + "'.";
+						LoaderAndChecker.connProblematicUrls.incrementAndGet();
+					} else
+						loggingMessage = "Discarded after matching to a domain with problems.";
+					logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "N/A");
+				}
+				return true;
+			}
+
+			patternToMatch = PageCrawler.NON_VALID_DOCUMENT.pattern();
+			matcher = PageCrawler.NON_VALID_DOCUMENT.matcher(lowerCaseUrl);
+			if ( matcher.matches() ) {
+				if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
+					loggingMessage = "Discarded after matching to a url leading to an invalid document!";
+					logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "N/A");
+					PageCrawler.contentProblematicUrls.incrementAndGet();
+				}
+				return true;
+			}
+
+			patternToMatch = PLAIN_DOMAIN_FILTER.pattern();
+			matcher = PLAIN_DOMAIN_FILTER.matcher(lowerCaseUrl);
+			if ( matcher.matches() ) {
+				if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
+					loggingMessage = "Discarded after matching to a url having only the domain part!";
+					logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "N/A");
+				}
+				return true;
+			}
+
+			patternToMatch = URL_FILE_EXTENSION_FILTER.pattern();
+			matcher = URL_FILE_EXTENSION_FILTER.matcher(lowerCaseUrl);
+			if ( matcher.matches() ) {
+				if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
+					loggingMessage = "Discarded after matching to a url having an irrelevant extension!";
+					logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "N/A");
+				}
+				return true;
+			}
+
+			if ( ArgsUtils.shouldDownloadDocFiles ) {
+				patternToMatch = CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.pattern();
+				matcher = CURRENTLY_UNSUPPORTED_DOC_EXTENSION_FILTER.matcher(lowerCaseUrl);
+				if ( matcher.matches() ) {	// TODO - To be removed when these docExtensions get supported for download.
+					if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
+						loggingMessage = "Discarded after matching to a url having an unsupported document extension!";
+						logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
+						UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "N/A");
+					}
+					return true;
+				}
+			}
+		} catch (Exception e) {
+			logger.error("Error when evaluating url \"" + lowerCaseUrl + "\" with regex: " + patternToMatch, e);
+			return true;	// The url is not acceptable.
 		}
 
 		return false;
@@ -283,10 +297,15 @@ public class UrlTypeChecker
 			lowerCaseLink = linkStr.toLowerCase();
 		// If it's not "null", it means we have already done the transformation in the calling method.
 
-		return	shouldNotAcceptPageUrl(null, null, linkStr, lowerCaseLink, false)
-				|| INTERNAL_LINKS_KEYWORDS_FILTER.matcher(lowerCaseLink).matches()
-				|| INTERNAL_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseLink).matches()
-				|| PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseLink).matches();
+		try {
+			return	shouldNotAcceptPageUrl(null, null, linkStr, lowerCaseLink, false)
+					|| INTERNAL_LINKS_KEYWORDS_FILTER.matcher(lowerCaseLink).matches()
+					|| INTERNAL_LINKS_FILE_FORMAT_FILTER.matcher(lowerCaseLink).matches()
+					|| PLAIN_PAGE_EXTENSION_FILTER.matcher(lowerCaseLink).matches();
+		} catch (Exception e) {
+			logger.error("Error when evaluating url \"" + lowerCaseLink + "\" with regexes of \"UrlTypeChecker.shouldNotAcceptInternalLink()\".", e);
+			return true;	// The url is not acceptable.
+		}
 	}
 	
 }
