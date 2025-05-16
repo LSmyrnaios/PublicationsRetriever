@@ -116,7 +116,7 @@
     <dependency>
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>
-      <version>1.19.1</version>
+      <version>1.20.1</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
@@ -152,7 +152,7 @@
     <dependency>
       <groupId>com.github.luben</groupId>
       <artifactId>zstd-jni</artifactId>
-      <version>1.5.7-2</version>
+      <version>1.5.7-3</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.brotli/dec -->
