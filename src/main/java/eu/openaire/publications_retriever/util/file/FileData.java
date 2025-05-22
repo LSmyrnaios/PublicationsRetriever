@@ -70,19 +70,25 @@ public class FileData {
     /**
      * Set this as a separate method (not automatically applied in the contractor), in order to avoid long thread-blocking in the caller method, which downloads and constructs this object inside a synchronized block.
      * */
-    public void calculateAndSetHashAndSize() {
+    public boolean calculateAndSetHashAndSize() {
         if ( this.file == null ) {  // Verify the "docFile" is already set, otherwise we get an NPE.
             logger.warn("The \"file\" was not previously set!");
-            return;
+            return false;
         }
 
         try {
-            this.hash = Files.asByteSource(this.file).hash(Hashing.md5()).toString();	// These hashing functions are deprecated, but just to inform us that MD5 is not secure. Luckily, we use MD5 just to identify duplicate files.
-            //logger.debug("MD5 for file \"" + docFile.getName() + "\": " + this.hash); // DEBUG!
             this.size = java.nio.file.Files.size(Paths.get(this.location));
-            //logger.debug("Size of file \"" + docFile.getName() + "\": " + this.size); // DEBUG!
+            //logger.debug("Size of file \"" + file.getName() + "\": " + this.size); // DEBUG!
+            if ( this.size == 0 ) {
+                logger.warn("The file \"" + this.file.getName() + "\" was empty when calculating its size!");
+                return false; // No point in calculating the hash (which will not be empty btw, just a static hash calculated by the file's headers/metadata, same for any file).
+            }
+            this.hash = Files.asByteSource(this.file).hash(Hashing.md5()).toString();	// These hashing functions are deprecated, but just to inform us that MD5 is not secure. Luckily, we use MD5 just to identify duplicate files.
+            //logger.debug("MD5 for file \"" + file.getName() + "\": " + this.hash); // DEBUG!
+            return true;
         } catch (Exception e) {
             logger.error("Could not retrieve the size " + ((this.hash == null) ? "and the MD5-hash " : "") + "of the file: " + this.location, e);
+            return false;
         }
     }
 

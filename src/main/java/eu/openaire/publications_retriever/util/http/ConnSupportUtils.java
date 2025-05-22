@@ -1044,12 +1044,20 @@ public class ConnSupportUtils
 			if ( bw != null ) {
 				bw.flush();	// Otherwise the "bw" will be flushed only upon closing and the calculation of "hash" and "size" will not work.
 				logger.info("HtmlFile '" + fullPathFileName + "' was downloaded.");
-				htmlFileData.calculateAndSetHashAndSize();
-				FileData newFileData = checkAndHandleDuplicateHash(htmlFileData, pageUrl);
-				if ( newFileData != null )
-					htmlFileData = newFileData;
-				else	// It's not a duplicate.
-					HtmlFileUtils.htmlFilesNum.incrementAndGet();
+				if ( htmlFileData.calculateAndSetHashAndSize() ) {
+					FileData newFileData = checkAndHandleDuplicateHash(htmlFileData, pageUrl);
+					if ( newFileData != null )
+						htmlFileData = newFileData;
+					else	// It's not a duplicate.
+						HtmlFileUtils.htmlFilesNum.incrementAndGet();
+				} else {
+					try {
+						FileDeleteStrategy.FORCE.delete(htmlFileData.getFile());
+					} catch (Exception e) {
+						logger.error("Error when deleting the duplicate file from pageUrl: " + pageUrl, e);
+					}
+					return null;
+				}
 			}
 
 			if ( !shouldWriteHtmlFile ) {
