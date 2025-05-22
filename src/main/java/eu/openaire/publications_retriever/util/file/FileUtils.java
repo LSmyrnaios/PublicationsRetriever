@@ -622,15 +622,15 @@ public class FileUtils
 
 	private static final Lock fileNameLock = new ReentrantLock(true);
 
-	public static FileData getFileAndHandleExisting(String fileName, String fileExtension, boolean hasUnretrievableDocName, int contentSize, String storeFilesDir,
+	public static FileData getFileAndHandleExisting(String fileName, String dotFileExtension, boolean hasUnretrievableDocName, int contentSize, String storeFilesDir,
 													HashMap<String, Integer> numbersOfDuplicateFileNames)
 			throws FileNotRetrievedException	//, NoSpaceLeftException
 	{
-		String saveDocFileFullPath = storeFilesDir + fileName;
-		if ( ! fileName.endsWith(fileExtension) )
-			saveDocFileFullPath += fileExtension;
+		String saveFileFullPath = storeFilesDir + fileName;
+		if ( ! fileName.endsWith(dotFileExtension) )
+			saveFileFullPath += dotFileExtension;
 
-		File file = new File(saveDocFileFullPath);
+		File file = new File(saveFileFullPath);
 		FileOutputStream fileOutputStream = null;
 		Integer curDuplicateNum = 0;
 		String initialFileName = fileName;
@@ -644,20 +644,21 @@ public class FileUtils
 			{
 				if ( (curDuplicateNum = numbersOfDuplicateFileNames.get(fileName)) != null )	// Since this data-structure is accessed inside the SYNCHRONIZED BLOCK, it can simpy be a HashMap without any internal sync, in order to speed it up.
 					curDuplicateNum += 1;
-				else if ( file.exists() )	// If it's not an already-known duplicate (this is the first duplicate-case for this file), go check if it exists in the fileSystem.
+				else if ( file.exists() )	// If it's not an already-known duplicate, check the fileSystem, if this is the first duplicate-case for this file.
 					curDuplicateNum = 1;	// It was "null", after the "ConcurrentHashMap.get()" check.
 				else
 					curDuplicateNum = 0;	// First-time.
 
-				if ( curDuplicateNum > 0 ) {	// Construct final-DocFileName for this file.
+				if ( curDuplicateNum > 0 ) {	// Construct final-DocFileName for this duplicate-name file.
 					String preExtensionFileName = fileName;
 					int lastIndexOfDot = fileName.lastIndexOf(".");
 					if ( lastIndexOfDot != -1 )
 						preExtensionFileName = fileName.substring(0, lastIndexOfDot);
-					fileName = preExtensionFileName + "(" + curDuplicateNum + ")" + fileExtension;
-					saveDocFileFullPath = storeFilesDir + fileName;
-					file = new File(saveDocFileFullPath);
+					fileName = preExtensionFileName + "(" + curDuplicateNum + ")" + dotFileExtension;
+					saveFileFullPath = storeFilesDir + fileName;
+					file = new File(saveFileFullPath);
 				}
+				// else, we use the initial file.
 			}
 
 			fileOutputStream = new FileOutputStream(file);
@@ -685,14 +686,14 @@ public class FileUtils
 					fileOutputStream.close();
 				} catch (Exception ignored) {}
 			}
-			String errMsg = "Error when handling the fileName = \"" + fileName + "\" and fileExtension = \"" + fileExtension + "\"!";
+			String errMsg = "Error when handling the fileName = \"" + fileName + "\" and dotFileExtension = \"" + dotFileExtension + "\"!";
 			logger.error(errMsg, e);
 			throw new FileNotRetrievedException(errMsg);
 		} finally {
 			fileNameLock.unlock();
 		}
 
-		return new FileData(file, saveDocFileFullPath, fileOutputStream);
+		return new FileData(file, saveFileFullPath, fileOutputStream);
 	}
 
 
@@ -804,7 +805,7 @@ public class FileUtils
 	{
 		StringBuilder hexString = new StringBuilder(hashBytes.length);
 		for ( byte b : hashBytes ) {
-			hexString.append(String.format("%02x", b)); // Convert byte to hex and append
+			hexString.append(String.format("%02x", b)); // Convert byte to hex-integer (lowercase) and append
 		}
 		return hexString.toString();
 	}

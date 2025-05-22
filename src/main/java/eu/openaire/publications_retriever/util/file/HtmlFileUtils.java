@@ -17,7 +17,7 @@ public class HtmlFileUtils {
 	public static final AtomicInteger htmlFilesNum = new AtomicInteger(0);
 
 	public static final HashMap<String, Integer> numbersOfDuplicateHtmlFileNames = new HashMap<>();	// Holds htmlFileNames with their duplicatesNum.
-
+	// We do not need to make it a "ConcurrentHashMap", as any read/write operation happens inside thread-"Locked" code.
 
 	public static FileData getFinalHtmlFilePath(String urlId, String pageUrl, Matcher urlMatcher, int contentSize) throws FileNotRetrievedException
 	//, NoSpaceLeftException
