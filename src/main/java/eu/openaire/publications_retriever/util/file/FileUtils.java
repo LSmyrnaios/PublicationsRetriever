@@ -362,39 +362,14 @@ public class FileUtils
 		numOfDocFiles.incrementAndGet();
 
 		File docFile = fileData.getFile();
-		long bytesCount = 0;
 		FileOutputStream fileOutputStream = fileData.getFileOutputStream();
 		int bufferSize = (((contentSize != -2) && contentSize < fiveMb) ? contentSize : fiveMb);
 
 		try ( BufferedInputStream inStream = new BufferedInputStream(inputStream, bufferSize);
 			  BufferedOutputStream outStream = new BufferedOutputStream(((fileOutputStream != null) ? fileOutputStream : new FileOutputStream(docFile)), bufferSize) )
 		{
-			int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);	// It handles the "-2" case.
-			int readByte = -1;
-			long startTime = System.nanoTime();
-			while ( (readByte = inStream.read()) != -1 )
-			{
-				long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
-				if ( (elapsedTime > maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {
-					String errMsg = "Storing docFile from docUrl: \"" + docUrl + "\" is taking over " + TimeUnit.MILLISECONDS.toSeconds(maxStoringWaitingTime) + " seconds (for contentSize: " + (PublicationsRetriever.df.format((double) contentSize / FileUtils.mb)) + " MB)! Aborting..";
-					logger.warn(errMsg);
-					throw new FileNotRetrievedException(errMsg);
-				} else {
-					outStream.write(readByte);
-					md.update((byte) readByte);
-					bytesCount++;
-				}
-			}
-			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
-			if ( bytesCount == 0 ) {	// This will be the case if the "inStream.read()" returns "-1" in the first call.
-				// It's not practical to decrease the potential "duplicate-filename-counter" in this point..
-				// So we will just skip it: for example we will have: filename.pdf, filename(1).pdf [SKIPPED], filename(2).pdf
-				String errMsg = "No data was written to file: " + fileData.getLocation();
-				logger.warn(errMsg);
-				throw new FileNotRetrievedException(errMsg);
-			}
+			long bytesCount = downloadFile(fileData.getLocation(), contentSize, docUrl, md, inStream, outStream);
 			String md5Hash = printHexBinary(md.digest());
-
 			if ( ArgsUtils.shouldUploadFilesToS3 ) {
 				fileData = S3ObjectStore.uploadToS3(docFile.getName(), docFile.getAbsolutePath());
 				if ( fileData != null ) {    // Otherwise, the returned object will be null.
@@ -446,6 +421,39 @@ public class FileUtils
 	}
 
 
+	private static long downloadFile(String fileFullPath, int contentSize, String docUrl, MessageDigest md, BufferedInputStream inStream, BufferedOutputStream outStream)
+			throws IOException, FileNotRetrievedException
+	{
+		int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);	// It handles the "-2" case.
+		int readByte = -1;
+		long bytesCount = 0;
+		long startTime = System.nanoTime();
+		while ( (readByte = inStream.read()) != -1 )
+		{
+			long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
+			if ( (elapsedTime > maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {
+				String errMsg = "Storing docFile from docUrl: \"" + docUrl + "\" is taking over " + TimeUnit.MILLISECONDS.toSeconds(maxStoringWaitingTime) + " seconds (for contentSize: " + (PublicationsRetriever.df.format((double) contentSize / FileUtils.mb)) + " MB)! Aborting..";
+				logger.warn(errMsg);
+				throw new FileNotRetrievedException(errMsg);
+			} else {
+				outStream.write(readByte);
+				md.update((byte) readByte);
+				bytesCount++;
+			}
+		}
+
+		//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
+		if ( bytesCount == 0 ) {	// This will be the case if the "inStream.read()" returns "-1" in the first call.
+			// It's not practical to decrease the potential "duplicate-filename-counter" in this point..
+			// So we will just skip it: for example we will have: filename.pdf, filename(1).pdf [SKIPPED], filename(2).pdf
+			String errMsg = "No data was written to file: " + fileFullPath;
+			logger.warn(errMsg);
+			throw new FileNotRetrievedException(errMsg);
+		}
+		return bytesCount;
+	}
+
+
 	/**
 	 * This method is responsible for storing the docFiles and store them in permanent storage.
 	 * It is synchronized, in order to avoid files' numbering inconsistency.
@@ -472,36 +480,13 @@ public class FileUtils
 		String docFileFullPath = ArgsUtils.storeDocFilesDir + (numOfDocFile++) + ".pdf";	// First use the "numOfDocFile" and then increment it.
 		// TODO - Later, on different fileTypes, take care of the extension properly.
 		File docFile = new File(docFileFullPath);
-		long bytesCount = 0;
 		int bufferSize = (((contentSize != -2) && contentSize < fiveMb) ? contentSize : fiveMb);
 
 		try ( BufferedInputStream inStream = new BufferedInputStream(inputStream, bufferSize);
 			BufferedOutputStream outStream = new BufferedOutputStream(new FileOutputStream(docFile), bufferSize))
 		{
-			int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);	// It handles the "-2" case.
-			int readByte = -1;
-			long startTime = System.nanoTime();
-			while ( (readByte = inStream.read()) != -1 )
-			{
-				long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
-				if ( (elapsedTime > maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {
-					String errMsg = "Storing docFile from docUrl: \"" + docUrl + "\" is taking over " + TimeUnit.MILLISECONDS.toSeconds(maxStoringWaitingTime) + " seconds (for contentSize: " + (PublicationsRetriever.df.format((double) contentSize / FileUtils.mb)) + " MB)! Aborting..";
-					logger.warn(errMsg);
-					throw new FileNotRetrievedException(errMsg);
-				} else {
-					outStream.write(readByte);
-					md.update((byte) readByte);
-					bytesCount++;
-				}
-			}
-			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
-			if ( bytesCount == 0 ) {    // This will be the case if the "inStream.read()" returns "-1" in the first call.
-				String errMsg = "No data was written to file: " + docFileFullPath;
-				logger.warn(errMsg);
-				throw new FileNotRetrievedException(errMsg);
-			}
+			long bytesCount = downloadFile(docFileFullPath, contentSize, docUrl, md, inStream, outStream);
 			String md5Hash = printHexBinary(md.digest());
-
 			FileData fileData;
 			if ( ArgsUtils.shouldUploadFilesToS3 ) {
 				fileData = S3ObjectStore.uploadToS3(docFile.getName(), docFile.getAbsolutePath());
