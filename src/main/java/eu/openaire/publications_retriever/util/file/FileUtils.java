@@ -425,10 +425,11 @@ public class FileUtils
 			throws IOException, FileNotRetrievedException
 	{
 		int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);	// It handles the "-2" case.
-		int readByte = -1;
+		int bytesRead = -1;
+		final byte[] buffer = new byte[65536];	// This is used to reduce the number of iterations of the "while"-loop and every call inside. It does not affect how often the actual-data is read/write to/from streams.
 		long bytesCount = 0;
 		long startTime = System.nanoTime();
-		while ( (readByte = inStream.read()) != -1 )
+		while ( (bytesRead = inStream.read(buffer)) != -1 )
 		{
 			long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
 			if ( (elapsedTime > maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {
@@ -436,15 +437,14 @@ public class FileUtils
 				logger.warn(errMsg);
 				throw new FileNotRetrievedException(errMsg);
 			} else {
-				outStream.write(readByte);
-				md.update((byte) readByte);
-				bytesCount++;
+				outStream.write(buffer, 0, bytesRead);
+				md.update(buffer, 0, bytesRead);
+				bytesCount += bytesRead;
 			}
 		}
-
 		//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
 		if ( bytesCount == 0 ) {	// This will be the case if the "inStream.read()" returns "-1" in the first call.
-			// It's not practical to decrease the potential "duplicate-filename-counter" in this point..
+			// It's not practical to decrease the potential "duplicate-filename-counter" in this point.
 			// So we will just skip it: for example we will have: filename.pdf, filename(1).pdf [SKIPPED], filename(2).pdf
 			String errMsg = "No data was written to file: " + fileFullPath;
 			logger.warn(errMsg);
