@@ -386,7 +386,13 @@ public class FileUtils
 				}
 			}
 			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
-
+			if ( bytesCount == 0 ) {	// This will be the case if the "inStream.read()" returns "-1" in the first call.
+				// It's not practical to decrease the potential "duplicate-filename-counter" in this point..
+				// So we will just skip it: for example we will have: filename.pdf, filename(1).pdf [SKIPPED], filename(2).pdf
+				String errMsg = "No data was written to file: " + fileData.getLocation();
+				logger.warn(errMsg);
+				throw new FileNotRetrievedException(errMsg);
+			}
 			String md5Hash = printHexBinary(md.digest());
 
 			if ( ArgsUtils.shouldUploadFilesToS3 ) {
@@ -463,9 +469,9 @@ public class FileUtils
 			throw new RuntimeException("MD5 HASH ALGO MISSING");
 		}
 
-		File docFile = new File(ArgsUtils.storeDocFilesDir + (numOfDocFile++) + ".pdf");	// First use the "numOfDocFile" and then increment it.
+		String docFileFullPath = ArgsUtils.storeDocFilesDir + (numOfDocFile++) + ".pdf";	// First use the "numOfDocFile" and then increment it.
 		// TODO - Later, on different fileTypes, take care of the extension properly.
-
+		File docFile = new File(docFileFullPath);
 		long bytesCount = 0;
 		int bufferSize = (((contentSize != -2) && contentSize < fiveMb) ? contentSize : fiveMb);
 
@@ -489,7 +495,11 @@ public class FileUtils
 				}
 			}
 			//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
-
+			if ( bytesCount == 0 ) {    // This will be the case if the "inStream.read()" returns "-1" in the first call.
+				String errMsg = "No data was written to file: " + docFileFullPath;
+				logger.warn(errMsg);
+				throw new FileNotRetrievedException(errMsg);
+			}
 			String md5Hash = printHexBinary(md.digest());
 
 			FileData fileData;

@@ -1054,7 +1054,7 @@ public class ConnSupportUtils
 					try {
 						FileDeleteStrategy.FORCE.delete(htmlFileData.getFile());
 					} catch (Exception e) {
-						logger.error("Error when deleting the duplicate file from pageUrl: " + pageUrl, e);
+						logger.error("Error when deleting the html-file from pageUrl: " + pageUrl, e);
 					}
 					return null;
 				}
