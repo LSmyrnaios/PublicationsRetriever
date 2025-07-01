@@ -36,8 +36,9 @@ public class LoaderAndChecker
 	private static final Logger logger = LoggerFactory.getLogger(LoaderAndChecker.class);
 	
 	public static boolean useIdUrlPairs = true;
-	
-	public static final Pattern DOC_URL_FILTER = Pattern.compile(".+(pdf|download|/doc|document|(?:/|[?]|&)file|/fulltext|attachment|/paper|view(?:file|doc)|/get|cgi/viewcontent.cgi\\?|t[ée]l[ée]charger|descargar).*");
+
+	public static final String docAndDownloadKeywords = "(?:pdf|download|/doc|document|(?:/|[?]|&)file|/(?:fulltext|texteint[ée]gral)|attachment|/paper|view(?:file|doc)|/get|cgi/viewcontent.cgi\\?|t[ée]l[ée]charger|descargar)";	// TODO - When adding more file-types, add the related exclusion here, as well.
+	public static final Pattern DOC_URL_FILTER = Pattern.compile(".+" + docAndDownloadKeywords + ".*");
 	// "DOC_URL_FILTER" works for lowerCase Strings (we make sure they are in lowerCase before we check).
 	// Note that we still need to check if it's an alive link and if it's actually a docUrl (though it's mimeType).
 
@@ -626,7 +627,10 @@ public class LoaderAndChecker
 			logger.debug("We will handle the weird case of \"" + retrievedUrl + "\".");
 			return StringUtils.replace(retrievedUrl, "/123456789/", "/20.500.12000/", -1);
 		}
-		
+
+		// Replace potential encoded '&' symbols which cause navigation issues inside the site.
+		retrievedUrl = StringUtils.replace(retrievedUrl, "amp;", "&", -1);
+
 		return retrievedUrl;	// The calling method needs the non-jsessionid-string.
 	}
 	
@@ -702,7 +706,7 @@ public class LoaderAndChecker
 	}
 
 
-	public static Pattern COULD_RETRY_URLS = Pattern.compile("[^/]+://[^/]*(?:sciencedirect|elsevier).com[^/]*/.*");
+	public static Pattern COULD_RETRY_URLS = Pattern.compile("^https?://[^/]*(?:sciencedirect|elsevier).com[^/]*/.*$");
 	// The urls having the aforementioned domains are likely to be specially-handled in future updates, so we want to keep their urls available for retrying.
 
 	public static List<String> getWasValidAndCouldRetry(Exception e, String url)
@@ -737,7 +741,7 @@ public class LoaderAndChecker
 		} else
 			errorMsg = "there is a serious unspecified error.";
 
-		if ( wasUrlValid.equals("true") && (url != null) && COULD_RETRY_URLS.matcher(url).matches() )
+		if ( wasUrlValid.equals("true") && (url != null) && COULD_RETRY_URLS.matcher(url.toLowerCase()).matches() )
 			couldRetry = "true";
 
 		list.add(0, wasUrlValid);

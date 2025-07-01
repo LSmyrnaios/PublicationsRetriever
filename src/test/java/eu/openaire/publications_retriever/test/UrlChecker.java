@@ -826,7 +826,7 @@ public class UrlChecker {
 				continue;
 			}
 
-			if ( UrlTypeChecker.shouldNotAcceptPageUrl(testID, urlToCheck, urlToCheck, urlToCheck.toLowerCase(), true) )
+			if ( (urlToCheck = LoaderAndChecker.handleUrlChecks(testID, urlToCheck)) == null )
 				continue;
 
 /*			String urlPath = UrlUtils.getPathStr(urlToCheck, null);
@@ -921,6 +921,9 @@ public class UrlChecker {
 
 		urlList.add("https://nottingham-repository.worktribe.com/6611020/1/Do Relatively More Efficient Firms Demand Additional Audit Effort (Hours)?");
 		urlList.add("https://nottingham-repository.worktribe.com/6611020/1/Do Relatively More Efficient Firms Demand Additional Audit Effort (Hours)??=123");
+
+		urlList.add("httpS://arxiv.org/abs/2009.11995");	// This is accepted, Java's "UrlConnection" handles it correctly. Also, any browser handles it well too.
+		urlList.add("ftp://ftp.repec.org/opt/ReDIF/RePEc/osi/journl/PDF/InterdisciplinaryManagementResearchIX/IMR9a24.pdf");	// We do not want "ftp"-urls, they are not supported.
 
 		int regex_problematic_urls = 0;
 

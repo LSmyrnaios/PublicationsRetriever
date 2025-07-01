@@ -22,8 +22,7 @@ public class UrlTypeChecker
 	private static final String htOrPhpExtensionsPattern = "(?:[\\w]?ht(?:[\\w]{1,2})?|php[\\d]{0,2})";
 	private static final String mediaExtensionsPattern = "ico|gif|jpg|jpeg|png|wav|mp3|mp4|webm|mkv|mov";
 
-
-	private static final String docOrDatasetKeywords = "(?:file|pdf|document|dataset|article|fulltext)";	// TODO - When adding more file-types, add the related exclusion here, as well.
+	private static final String docOrDatasetKeywords = "(?:" + LoaderAndChecker.docAndDownloadKeywords + "|dataset)";
 	private static final String wordsPattern = "[\\w/_.,-]{0,100}";
 	private static final String docOrDatasetNegativeLookAroundPattern = "(?<!" + wordsPattern + docOrDatasetKeywords + wordsPattern + ")(?!.*" + docOrDatasetKeywords + ".*)";
 	// Note: Up to Java 8, we cannot use the "*" or "+" inside the lookbehind, so we use character-class with limits.
@@ -47,7 +46,7 @@ public class UrlTypeChecker
 
 	public static Pattern SPECIFIC_DOMAIN_FILTER = null;
 
-	public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile("[^/]+://[\\w.:-]+(?:/[\\w]{2})?(?:/index." + htOrPhpExtensionsPattern + ")?[/]?(?:\\?(?:locale(?:-attribute)?|ln)=[\\w_-]+)?$");	// Exclude plain domains' urls. Use "ISO 639-1" for language-codes (2 letters directory).
+	public static final Pattern PLAIN_DOMAIN_FILTER = Pattern.compile("^https?://[\\w.:-]+(?:/[\\w]{2})?(?:/index." + htOrPhpExtensionsPattern + ")?[/]?(?:\\?(?:locale(?:-attribute)?|ln)=[\\w_-]+)?$");	// Exclude plain domains' urls. Use "ISO 639-1" for language-codes (2 letters directory).
 
 	// Counters for certain unwanted domains. We show statistics in the end.
 	public static AtomicInteger javascriptPageUrls = new AtomicInteger(0);
@@ -68,13 +67,13 @@ public class UrlTypeChecker
 	 * */
 	public static void setRuntimeInitializedRegexes() {
 		URL_DIRECTORY_FILTER =
-			Pattern.compile("[^/]+://.*/(?:(?:(?:(?:discover|profile|user|survey|index|media|theme|product|deposit|default|shop|view)/" + docOrDatasetNegativeLookAroundPattern	// Avoid blocking these if the url is likely to give a file.
+			Pattern.compile("^https?://.*/(?:(?:(?:(?:discover|profile|user|survey|index|media|theme|product|deposit|default|shop|view)/" + docOrDatasetNegativeLookAroundPattern	// Avoid blocking these if the url is likely to give a file.
 				+ "|(?:(?:ldap|password)-)?login|ac[c]?ess(?![./]+)|sign[-]?(?:in|out|up)|session|(?:how-to-)?(?:join[^t]|subscr)|authwall|regist(?:er|ration)|submi(?:t|ssion)|(?:post|send|export|(?:wp-)?admin|home|form|career[s]?|company)/|watch|browse|import|bookmark|announcement|feedback|share[^d]|about|(?:[^/]+-)?faq|wiki|news|events|cart|support|(?:site|html)map|documentation|help|license|disclaimer|copyright|(?:site-)?polic(?:y|ies)(?!.*paper)|privacy|terms|law|principles"
 				+ "|(?:my|your|create)?[-]?account|my(?:dspace|selection|cart)|(?:service|help)[-]?desk|settings|fund|aut[h]?or" + docOrDatasetNegativeLookAroundPattern + "|journal/key|(?:journal-)?editor|author:|(?<!ntrs.nasa.gov/(?:api/)?)citation|review|external|facets|statistics|application|selfarchive|permission|ethic(s)?/.*/view/|/view/" + docOrDatasetNegativeLookAroundPattern + "|conta[c]?t|wallet|contribute|donate|our[_-][\\w]+|template|logo|image|photo/|video|advertiser|most-popular|people|(?:the)?press|for-authors|customer-service[s]?|captcha|clipboard|dropdown|widget"
 				+ "|(?:forum|blog|column|row|js|[cr]ss|legal)/"	// These are absolute directory names.	TODO - Should I add the "|citation[s]?" rule ? BUT, The NASA-docUrls include it normally..
 				+ "|(?:(?:advanced[-]?)?search|search/advanced|search-results|(?:[e]?books|journals)(?:-catalog)?|issue|docs|oai|(?:abstracting-)?indexing|online[-]?early|honors|awards|meetings|calendar|diversity|scholarships|invo(?:ice|lved)|errata|classroom|publish(?:-with-us)?|upload|products|forgot|home|ethics|comics|podcast|trends|bestof|booksellers|recommendations|bibliographic|volume[s]?)[/]?$"	// Url ends with these. Note that some of them are likely to be part of a docUrl, for ex. the "/trends/"-dir.
 				+ "|rights[-]?permissions|publication[-]?ethics|advertising|reset[-]?password|\\*/|communit(?:y|ies)"
-				+ "|restricted|noaccess|crawlprevention|error|(?:mis|ab)use|\\?denied|gateway|defaultwebpage|sorryserver|(?<!response_type=)cookie|(?:page-)?not[-]?found"
+				+ "|restricted|noaccess|crawlprevention|error|(?:mis|ab)use|\\?denied|gateway|defaultwebpage|sorryserver|(?<!response_type=)cookie|(?:page[-]?)?not[-]?found"
 				+ "|(?:(?:error)?404(?:_response)?|accessibility|invalid|catalog(?:ue|ar|o)?)\\." + htOrPhpExtensionsPattern
 
 				// Add pages with a specific blocking-reason, in "capturing-groups", in order to be able to get the matched-group-number and know the exact reason the block occurred.
@@ -86,7 +85,7 @@ public class UrlTypeChecker
 				)
 
 				// The following pattern is the reason we need to set this regex in runtime.
-				+ (!ArgsUtils.retrieveDatasets ? ").*)|(?:bibtext|dc(?:terms)?|[^/]*(?:tei|endnote))$)" : ")).*)")
+				+ (!ArgsUtils.retrieveDatasets ? ").*)|(?:bibtext|dc(?:terms)?|[^/]*(?:tei|endnote))$)" : ")).*$)")
 			);
 
 		// We check the above rules, mostly as directories to avoid discarding publications' urls about these subjects. There's "acesso" (single "c") in Portuguese.. Also there's "autore" & "contatto" in Italian.
@@ -94,7 +93,7 @@ public class UrlTypeChecker
 			logger.trace("URL_DIRECTORY_FILTER:\n" + URL_DIRECTORY_FILTER);
 
 		SPECIFIC_DOMAIN_FILTER =
-			Pattern.compile("[^/]+://[^/]*(?<=[/.])(?:(?<!drive.)google\\.|goo.gl|gstatic|facebook|fb.me|twitter|(?:meta|xing|baidu|t|x|vk).co|insta(?:gram|paper)|tiktok|youtube|vimeo|linkedin|ebay|bing|(?:amazon|[./]analytics)\\.|s.w.org|wikipedia|myspace|yahoo|mail|pinterest|reddit|tumblr"
+			Pattern.compile("^https?://[^/]*(?<=[/.])(?:(?<!drive.)google\\.|goo.gl|gstatic|facebook|fb.me|twitter|(?:meta|xing|baidu|t|x|vk).co|insta(?:gram|paper)|tiktok|youtube|vimeo|linkedin|ebay|bing|(?:amazon|[./]analytics)\\.|s.w.org|wikipedia|myspace|yahoo|mail|pinterest|reddit|tumblr"
 				+ "|www.ccdc.cam.ac.uk|figshare.com/collections/|datadryad.org/stash/dataset/"
 				+ "|evernote|skype|microsoft|adobe|buffer|digg|stumbleupon|addthis|delicious|dailymotion|gostats|blog(?:ger)?|copyright|friendfeed|newsvine|telegram|getpocket"
 				+ "|flipboard|line.me|ok.rudouban|qzone|renren|weibo|doubleclick|bit.ly|github|reviewofbooks|plu.mx"
@@ -148,7 +147,7 @@ public class UrlTypeChecker
 				longToRespondUrls.incrementAndGet();
 				*/
 
-				+ ")[^/]*/.*"
+				+ ")[^/]*/.*$"
 			);
 
 		if ( logger.isTraceEnabled() )

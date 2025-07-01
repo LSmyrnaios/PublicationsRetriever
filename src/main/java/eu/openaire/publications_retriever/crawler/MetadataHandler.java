@@ -150,6 +150,9 @@ public class MetadataHandler {
         // Since, it is almost certain that whatever full-text we retrieve from crawling, will be a false-positive as well.
         if ( PageCrawler.NON_VALID_DOCUMENT.matcher(lowerCaseMetaDocUrl).matches() ) {
             logger.warn("The retrieved metaDocUrl ( " + metaDocUrl + " ) is pointing to a false-positive full-text file, avoid crawling the page..!");
+            /*Matcher matcher = PageCrawler.NON_VALID_DOCUMENT.matcher(lowerCaseMetaDocUrl);
+            if ( matcher.matches() )    // TODO - In case we use this test, change temporarily th regex to use "capturing" groups.
+                logger.warn("reason: " + matcher.group(1));*/
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'MetaDocUrlsHandler.checkIfAndHandleMetaDocUrl()' method, as its metaDocUrl is pointing to a false-positive full-text file.", "N/A", null, true, "true", "true", "false", "false", "false", null, "null", "N/A");
             return true;    // This pageUrl was handled. Nothing more can be done.
@@ -157,7 +160,8 @@ public class MetadataHandler {
 
         // Canonnicalize the metaDocUrl before connecting with it, to avoid encoding problems. We assume the metaDocUrl to be a full-url (including the protocol, domain etc.)
         String tempMetaDocUrl = metaDocUrl;
-        if ( (metaDocUrl = LoaderAndChecker.basicURLNormalizer.filter(metaDocUrl)) == null ) {
+        if ( ((metaDocUrl = ConnSupportUtils.getFullyFormedUrl(pageUrl, metaDocUrl, null)) == null)	// Make it a full-URL.
+                || ((metaDocUrl = LoaderAndChecker.basicURLNormalizer.filter(metaDocUrl)) == null) ) {	// Normalize it.
             logger.warn("Could not normalize metaDocUrl: " + tempMetaDocUrl + " , continue by crawling the page..");
             //UrlUtils.duplicateUrls.add(metaDocUrl);   //  TODO - Would this make sense?
             return false;   // Continue crawling the page..

@@ -1293,6 +1293,9 @@ public class ConnSupportUtils
 				}
 			}
 
+			// Replace potential encoded '&' symbols which cause navigation issues inside the site.
+			currentLink = StringUtils.replace(currentLink, "amp;", "&", -1);
+
 			if ( currentLink.startsWith("?") )	// This case is mishandled by the automatic generation, unless we use this custom logic.
 				return (urlBase + currentLink);
 			else
