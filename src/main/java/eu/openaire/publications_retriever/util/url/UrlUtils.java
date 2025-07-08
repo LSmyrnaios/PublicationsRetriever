@@ -74,7 +74,7 @@ public class UrlUtils
     {
         String finalDocOrDatasetUrl = docOrDatasetUrl;
 
-        if ( !finalDocOrDatasetUrl.equals(duplicateUrlIndicator) && !finalDocOrDatasetUrl.equals("N/A") )
+        if ( !finalDocOrDatasetUrl.equals(duplicateUrlIndicator) && !finalDocOrDatasetUrl.equals("null") )
         {
 			if ( !finalDocOrDatasetUrl.equals(unreachableDocOrDatasetUrlIndicator) )
 			{

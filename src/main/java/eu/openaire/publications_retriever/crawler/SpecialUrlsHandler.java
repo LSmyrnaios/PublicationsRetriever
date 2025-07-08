@@ -193,7 +193,7 @@ public class SpecialUrlsHandler
 	{
 		Matcher matcher = Turkjgastroenterol_docUrl_pattern.matcher(pageHtml);
 		if ( !matcher.find() ) {
-			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving the \"turkjgastroenterol\"-pdf-url from its html.", "N/A", pageDomain, true, "true", "true", "false", "false", "false", null, "null", "N/A");
+			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving the \"turkjgastroenterol\"-pdf-url from its html.", "null", pageDomain, true, "true", "true", "false", "false", "false", null, "null", "null");
 			return false;
 		}
 
@@ -202,13 +202,13 @@ public class SpecialUrlsHandler
 			pdfUrl = matcher.group(1);
 		} catch (Exception e) {
 			logger.warn("No pdf-url was found inside the html of page: " + pageUrl, e);
-			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving the \"turkjgastroenterol\"-pdf-url from its html.", "N/A", pageDomain, true, "true", "true", "false", "false", "false", null, "null", "N/A");
+			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving the \"turkjgastroenterol\"-pdf-url from its html.", "null", pageDomain, true, "true", "true", "false", "false", "false", null, "null", "null");
 			PageCrawler.contentProblematicUrls.incrementAndGet();
 			return false;
 		}
 		if ( (pdfUrl == null) || pdfUrl.isEmpty() ) {
 			logger.warn("No pdf-url was found inside the html of page: " + pageUrl);
-			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving the \"turkjgastroenterol\"-pdf-url from its html.", "N/A", pageDomain, true, "true", "true", "false", "false", "false", null, "null", "N/A");
+			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving the \"turkjgastroenterol\"-pdf-url from its html.", "null", pageDomain, true, "true", "true", "false", "false", "false", null, "null", "null");
 			PageCrawler.contentProblematicUrls.incrementAndGet();
 			return false;
 		}
@@ -217,7 +217,7 @@ public class SpecialUrlsHandler
 		if ( ((urlToCheck = ConnSupportUtils.getFullyFormedUrl(pageUrl, pdfUrl, null)) == null)	// Make it a full-URL.
 				|| ((urlToCheck = LoaderAndChecker.basicURLNormalizer.filter(urlToCheck)) == null) ) {	// Normalize it.
 			logger.warn("Could not normalize url: " + pdfUrl);
-			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as the retrievied \"turkjgastroenterol\"-pdf-url had normalization's problems.", "N/A", pageDomain, true, "true", "true", "false", "false", "false", null, "null", "N/A");
+			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as the retrievied \"turkjgastroenterol\"-pdf-url had normalization's problems.", "null", pageDomain, true, "true", "true", "false", "false", "false", null, "null", "null");
 			LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			return false;
 		}
@@ -241,7 +241,7 @@ public class SpecialUrlsHandler
 			String wasValid = list.get(0);
 			String couldRetry = list.get(1);
 			String errorMsg = "Discarded in 'PageCrawler.visit()' method, as there was a problem in checking the retrieved 'turkjgastroenterol'-pdf-url: " + list.get(2);
-			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, "N/A", pageDomain, true, "true", wasValid, "false", "false", couldRetry, null, "null", "N/A");
+			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, errorMsg, "null", pageDomain, true, "true", wasValid, "false", "false", couldRetry, null, "null", "null");
 			return false;
 		}
 

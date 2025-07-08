@@ -143,7 +143,7 @@ public class UrlTypeChecker
 				// In case these "slow" domain are blocked later, use something like the following when handling them..
 				loggingMessage = "Discarded after matching to domain, known to take long to respond.";
 				logger.debug("Url-\"" + retrievedUrl + "\": " + loggingMessage);
-				UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, null);
+				UrlUtils.logOutputData(urlId, retrievedUrl, null, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "null", null, true, "true", wasUrlValid, "false", "false", "false", null, null);
 				longToRespondUrls.incrementAndGet();
 				*/
 
@@ -176,7 +176,7 @@ public class UrlTypeChecker
 		// If it's not "null", it means we have already done the transformation in the calling method.
 
 		String loggingMessage = null;
-		String wasUrlValid = "N/A";	// Default value to be used, in case the given url matches an unwanted type. We do not know if the url is valid (i.e. if it can be connected and give a non 4XX response) at this point.
+		String wasUrlValid = "null";	// Default value to be used, in case the given url matches an unwanted type. We do not know if the url is valid (i.e. if it can be connected and give a non 4XX response) at this point.
 		String groupMatch = null;
 
 		String patternToMatch = URL_DIRECTORY_FILTER.pattern();
@@ -197,7 +197,7 @@ public class UrlTypeChecker
 					} else
 						loggingMessage = "Discarded after matching to a directory with problems.";
 					logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
-					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "N/A");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "null", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "null");
 				}
 				return true;
 			}
@@ -230,7 +230,7 @@ public class UrlTypeChecker
 					} else
 						loggingMessage = "Discarded after matching to a domain with problems.";
 					logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
-					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "N/A");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "null", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "null");
 				}
 				return true;
 			}
@@ -241,7 +241,7 @@ public class UrlTypeChecker
 				if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
 					loggingMessage = "Discarded after matching to a url leading to an invalid document!";
 					logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
-					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "N/A");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "null", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "null");
 					PageCrawler.contentProblematicUrls.incrementAndGet();
 				}
 				return true;
@@ -253,7 +253,7 @@ public class UrlTypeChecker
 				if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
 					loggingMessage = "Discarded after matching to a url having only the domain part!";
 					logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
-					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "N/A");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "null", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "null");
 				}
 				return true;
 			}
@@ -264,7 +264,7 @@ public class UrlTypeChecker
 				if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
 					loggingMessage = "Discarded after matching to a url having an irrelevant extension!";
 					logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
-					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "N/A");
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "null", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "null");
 				}
 				return true;
 			}
@@ -276,7 +276,7 @@ public class UrlTypeChecker
 					if ( calledForPageUrl ) {    // For internal-links we don't want to make further checks nor write results in the output, as further links will be checked for that page..
 						loggingMessage = "Discarded after matching to a url having an unsupported document extension!";
 						logger.debug("Url-\"" + pageUrl + "\": " + loggingMessage);
-						UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "N/A", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "N/A");
+						UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, loggingMessage, "null", null, true, "true", wasUrlValid, "false", "false", "false", null, "null", "null");
 					}
 					return true;
 				}

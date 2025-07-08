@@ -845,7 +845,7 @@ public class UrlChecker {
 				HttpConnUtils.connectAndCheckMimeType(testID, urlToCheck, urlToCheck, urlToCheck, null, true, false);	// Sent the < null > in quotes to avoid an NPE in the concurrent data-structures.
 			} catch (Exception e) {
 				// The problem was logged inside.
-				UrlUtils.addOutputData(testID, urlToCheck, "N/A", UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", "N/A", null, true, "true", "true", "false", "false", "false", null, "null", "N/A");
+				UrlUtils.addOutputData(testID, urlToCheck, "null", UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded at loading time, due to connectivity problems.", "null", null, true, "true", "true", "false", "false", "false", null, "null", "null");
 			}
 		}
 

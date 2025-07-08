@@ -25,11 +25,11 @@ The "booleans" are:
 - "wasDirectLink": it signals whether the url was a document or dataset link itself
 - "couldRetry": it signals whether it could be worth to check the url in the future (in case the sourceUrl gave the docOrDatasetUrl or it resulted in an error which might be eliminated in the future, like a "ConnectionTimeout")
 <br>
-Note: the values to the above "booleans" are Strings: "true", "false" or "N/A", in order to get exported to json.
+Note: the values to the above "booleans" are Strings: "true", "false" or "null", in order to get exported to json.
 <br>
 
 Additional fields:
-- "filePath": The path of the full-text, in case the user specified to download it, "N/A" otherwise.
+- "filePath": The path of the full-text, in case the user specified to download it, "null" otherwise.
 - "error": The error cause, in case a) the connection with the sourceUrl failed, b) there is no fulltext or there were connection issues with the download of the fulltext.
 <br>
 
@@ -39,7 +39,7 @@ Sample JSON-input:
 ```
 Sample JSON-output (with downloading of the full-texts):
 ```
-{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","sourceUrl":"https://zenodo.org/records/884160","pageUrl":"https://zenodo.org/records/884160","docOrDatasetUrl":"https://zenodo.org/records/884160/files/Data_for_Policy_2017_paper_55.pdf","wasUrlChecked":"true","wasUrlValid":"true","wasDocumentOrDatasetAccessible":"true","wasDirectLink":"false","couldRetry":"true","fileHash":"4e38a82fe1182e62b1c752b50f5ea59b","fileSize":"263917","mimeType":"application/pdf","filePath":"/home/labros/PublicationsRetriever/target/../example/sample_output/DocFiles/dedup_wf_001::83872a151fd78b045e62275ca626ec94.pdf","error":"N/A"}
+{"id":"dedup_wf_001::83872a151fd78b045e62275ca626ec94","sourceUrl":"https://zenodo.org/records/884160","pageUrl":"https://zenodo.org/records/884160","docOrDatasetUrl":"https://zenodo.org/records/884160/files/Data_for_Policy_2017_paper_55.pdf","wasUrlChecked":"true","wasUrlValid":"true","wasDocumentOrDatasetAccessible":"true","wasDirectLink":"false","couldRetry":"true","fileHash":"4e38a82fe1182e62b1c752b50f5ea59b","fileSize":"263917","mimeType":"application/pdf","filePath":"/home/labros/PublicationsRetriever/target/../example/sample_output/DocFiles/dedup_wf_001::83872a151fd78b045e62275ca626ec94.pdf","error":"null"}
 ```
 <br>
 

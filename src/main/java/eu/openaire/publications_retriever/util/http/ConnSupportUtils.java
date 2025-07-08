@@ -360,7 +360,7 @@ public class ConnSupportUtils
 		reCrossedDocUrls.incrementAndGet();
 		String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, docUrl);
 		String filePath = (((ArgsUtils.shouldDownloadDocFiles || ArgsUtils.shouldJustDownloadHtmlFiles) ? (alreadyDownloadedFromIDMessage + originalIdUrlMimeTypeTriple.id + alreadyDownloadedFromSourceUrlContinuedMessage) : (alreadyDetectedFromIDMessage + originalIdUrlMimeTypeTriple.id + alreadyDetectedFromSourceUrlContinuedMessage)) + originalIdUrlMimeTypeTriple.url);
-		UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, docUrl, "N/A", filePath, null, false, "true", "true", "true", wasDirectLink, "true", null, "null", originalIdUrlMimeTypeTriple.mimeType);
+		UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, docUrl, "null", filePath, null, false, "true", "true", "true", wasDirectLink, "true", null, "null", originalIdUrlMimeTypeTriple.mimeType);
 	}
 
 	
@@ -1434,7 +1434,7 @@ public class ConnSupportUtils
 			else if ( isSpecialUrl )
 				wasDirectLink = "false";
 			else
-				wasDirectLink = "N/A";
+				wasDirectLink = "null";
 		} else {
 			// This docOrDatasetUrl came from crawling the pageUrl, so we know that it surely did not come directly from the sourceUrl.
 			wasDirectLink = "false";
