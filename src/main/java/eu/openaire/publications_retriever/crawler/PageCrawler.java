@@ -406,8 +406,8 @@ public class PageCrawler
 						throw new DocLinkInvalidException(internalLink);
 					} else {
 						//logger.debug("Found the docLink < " + internalLink + " > from link-type: \"" + linkAttr + "\"");	// DEBUG
-						throw new DocLinkFoundException(internalLink);
 						internalLink = Strings.CS.replace(internalLink, "/view/", "/download/", 1);	// It may be the case, where the provided PDF-link is the view and not the download-url.
+						throw new DocLinkFoundException(internalLink, PageStructureMLA.getPageTagAndClassStructureForElement(el), false);
 					}
 				}
 			}
@@ -463,8 +463,8 @@ public class PageCrawler
 
 			if ( !UrlTypeChecker.shouldNotAcceptInternalLink(internalLink, null) ) {
 				//logger.debug("Found the docLink < " + internalLink + " > from link-text: \"" + linkAttr + "\"");	// DEBUG
-				throw new DocLinkFoundException(internalLink);	// This will be connected and tested by the caller-method.
 				internalLink = Strings.CS.replace(internalLink, "/view/", "/download/", 1);	// It may be the case, where the provided PDF-link is the view and not the download-url.
+				throw new DocLinkFoundException(internalLink, PageStructureMLA.getPageTagAndClassStructureForElement(el), false);	// This will be connected and tested by the caller-method.
 			}
 			throw new DocLinkInvalidException(internalLink);
 		}
