@@ -250,7 +250,7 @@ public class MachineLearning
 	 * @param pageDomain
 	 * @return true / false
 	 */
-	public static boolean predictInternalDocUrl(String urlId, String sourceUrl, String pageUrl, String pageDomain, HashSet<String> currentPageLinks)
+	public static boolean predictInternalDocUrl(String urlId, String sourceUrl, String pageUrl, String pageDomain, HashMap<String, String> pageLinksWithStructure)
 	{
 		if ( domainsBlockedFromMLA.contains(pageDomain) ) {    // Check if this domain is not compatible with the MLA.
 			logger.debug("Avoiding the MLA-prediction for incompatible domain: \"" + pageDomain + "\".");
@@ -311,7 +311,7 @@ public class MachineLearning
 
 			strB.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
 
-			if ( !currentPageLinks.contains(predictedDocUrl) )
+			if ( !pageLinksWithStructure.containsKey(predictedDocUrl) )
 				continue;
 
 			logger.debug("Found a \"predictedDocUrl\" which exists in the \"currentPageLinks\": " + predictedDocUrl);	// DEBUG!

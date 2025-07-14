@@ -1,6 +1,7 @@
 package eu.openaire.publications_retriever.crawler;
 
 import eu.openaire.publications_retriever.exceptions.*;
+import eu.openaire.publications_retriever.machine_learning.PageStructureMLA;
 import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileData;
@@ -21,8 +22,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.net.HttpURLConnection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
@@ -125,12 +128,19 @@ public class PageCrawler
 			return;
 		}
 
-		// Check if this publication is (likely) open-access and then check the docLink is provided in a metaTag and connect to it directly.
-		if ( MetadataHandler.checkAndHandleMetadata(urlId, sourceUrl, pageUrl, pageDomain, pageHtml) )
-			return;	// The sourceUrl is already logged inside the called method.
+		boolean shouldContinueSearchingForDatasets = (ArgsUtils.retrieveDatasets && ArgsUtils.shouldDetectAllDatasetLinks);
+		boolean atLeastOneDocOrDatasetLinkFound = false;
 
-		HashSet<String> currentPageLinks = null;	// We use "HashSet" to avoid duplicates.
-		if ( (currentPageLinks = retrieveInternalLinks(urlId, sourceUrl, pageUrl, pageDomain, pageHtml, pageContentType)) == null )
+		// Check if this publication is (likely) open-access and then check the docLink is provided in a metaTag and connect to it directly.
+		if ( MetadataHandler.checkAndHandleMetadata(urlId, sourceUrl, pageUrl, pageDomain, pageHtml) ) {
+			if ( ! shouldContinueSearchingForDatasets )	// Otherwise, we should continue searching for more datasets.
+				return;	// The sourceUrl is already logged inside the called method.
+			else
+				atLeastOneDocOrDatasetLinkFound = true;
+		}
+
+		HashMap<String, String> pageLinksWithStructure = null;
+		if ( (pageLinksWithStructure = retrieveInternalLinks(urlId, sourceUrl, pageUrl, pageDomain, pageHtml, pageContentType)) == null )
 			return;	// The necessary logging is handled inside.
 
 		String urlToCheck = null;
@@ -141,32 +151,35 @@ public class PageCrawler
 			MachineLearning.totalPagesReachedMLAStage.incrementAndGet();	// Used for M.L.A.'s execution-manipulation.
 			shouldRunPrediction = MachineLearning.shouldRunPrediction();
 			if ( shouldRunPrediction ) {
-				HashSet<String> newPageLinks = new HashSet<>(currentPageLinks.size());	// We use "HashSet" to avoid duplicates.
-				for ( String currentLink : currentPageLinks )
+				HashMap<String, String> newPageLinksWithStructure = new HashMap<>(pageLinksWithStructure.size());
+				for ( Map.Entry<String, String> currentEntry : pageLinksWithStructure.entrySet() )
 				{
+					String currentLink = currentEntry.getKey();
+
 					// Produce fully functional internal links, NOT internal paths or non-normalized (if possible). The M.L.A. will evaluate whether the predictedDocUrls exist in the Set of internal-links.
 					if ( ((urlToCheck = ConnSupportUtils.getFullyFormedUrl(pageUrl, currentLink, null)) == null)	// Make it a full-URL.
 						|| ((urlToCheck = LoaderAndChecker.basicURLNormalizer.filter(urlToCheck)) == null) ) {    // Normalize it.
 						logger.warn("Could not normalize internal url: " + currentLink);
 						continue;
 					}
-					newPageLinks.add(urlToCheck);
+					newPageLinksWithStructure.put(urlToCheck, currentEntry.getValue());
 				}
-				currentPageLinks = newPageLinks;
+				pageLinksWithStructure = newPageLinksWithStructure;
 
-				if ( MachineLearning.predictInternalDocUrl(urlId, sourceUrl, pageUrl, pageDomain, currentPageLinks) )    // Check if we can find the docUrl based on previous runs. (Still in experimental stage)
+				if ( MachineLearning.predictInternalDocUrl(urlId, sourceUrl, pageUrl, pageDomain, pageLinksWithStructure) )    // Check if we can find the docUrl based on previous runs. (Still in experimental stage)
 					return;	// If we were able to find the right path.. and hit a docUrl successfully.. return. The Quadruple is already logged.
 			}
 		}
 
-		HashSet<String> remainingLinks = new HashSet<>(currentPageLinks.size());	// Used later. Initialize with the total num of links (less will actually get stored there, but their num is unknown).
+		HashMap<String, String> remainingLinks = new HashMap<>(pageLinksWithStructure.size());	// Used later. Initialize with the total num of links (which passed the canonicalization-phase) (less will actually get stored there, but their num is unknown).
 		String lowerCaseLink = null;
 		int possibleDocOrDatasetUrlsCounter = 0;
 
 		// Do a fast-loop, try connecting only to a handful of promising links first.
 		// Check if urls inside this page, match to a docUrl or to a datasetUrl regex, if they do, try connecting with them and see if they truly are docUrls. If they are, return.
-		for ( String currentLink : currentPageLinks )
+		for ( Map.Entry<String, String> currentEntry : pageLinksWithStructure.entrySet() )
 		{
+			String currentLink = currentEntry.getKey();
 			if ( !shouldRunPrediction) {	// If we used the MLA for this pageUrl, then this process is already handled for all urls. Otherwise, here we normalize only few links at best.
 				// Produce fully functional internal links, NOT internal paths or non-normalized (if possible). The M.L.A. will evaluate whether the predictedDocUrls exist in the Set of internal-links.
 				if ( ((urlToCheck = ConnSupportUtils.getFullyFormedUrl(pageUrl, currentLink, null)) == null)	// Make it a full-URL.
@@ -179,8 +192,23 @@ public class PageCrawler
 
 			IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(urlToCheck);	// If we got into an already-found docUrl, log it and return.
 			if ( originalIdUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
+
+				// Check if the original Ulr is of the same source as the alreadyFound one.
+				// If so, it means that we just found the same targetUrl twice inside the page (e.g. the metaUrl and an internal-link)
+				if ( shouldContinueSearchingForDatasets
+						&& urlId.equals(originalIdUrlMimeTypeTriple.id) && sourceUrl.equals(originalIdUrlMimeTypeTriple.url) )
+					continue;
+
 				ConnSupportUtils.handleReCrossedTargetUrl(urlId, sourceUrl, pageUrl, urlToCheck, originalIdUrlMimeTypeTriple, false);
+				// The fact that this is an already-found docUrl, does not mean that it was found in a duplicate page. It may be from another domain altogether.
+				PageStructureMLA.addStructureOfDocUrlInMap(pageUrl, currentEntry.getValue());
+
+				if ( ! shouldContinueSearchingForDatasets )
 					return;
+				else {
+					atLeastOneDocOrDatasetLinkFound = true;
+					continue;
+				}
             }
 
             lowerCaseLink = urlToCheck.toLowerCase();
@@ -199,14 +227,23 @@ public class PageCrawler
 
 				if ( (++possibleDocOrDatasetUrlsCounter) > MAX_POSSIBLE_DOC_OR_DATASET_LINKS_TO_CONNECT ) {
 					logger.warn("The maximum limit (" + MAX_POSSIBLE_DOC_OR_DATASET_LINKS_TO_CONNECT + ") of possible doc or dataset links to be connected was reached for pageUrl: \"" + pageUrl + "\". The page was discarded.");
-					handlePageWithNoDocOrDatasetUrls(urlId, sourceUrl, pageUrl, pageDomain, true, false);
+					if ( !atLeastOneDocOrDatasetLinkFound )
+						handlePageWithNoDocOrDatasetUrls(urlId, sourceUrl, pageUrl, pageDomain, true, false);
 					return;
 				}
 
 				//logger.debug("InternalPossibleDocLink to connect with: " + urlToCheck);	// DEBUG!
 				try {
 					if ( HttpConnUtils.connectAndCheckMimeType(urlId, sourceUrl, pageUrl, urlToCheck, null, false, true) )	// We log the docUrl inside this method.
-						return;
+					{
+						PageStructureMLA.addStructureOfDocUrlInMap(pageUrl, currentEntry.getValue());
+						if ( ! shouldContinueSearchingForDatasets )
+							return;
+						else {
+							atLeastOneDocOrDatasetLinkFound = true;
+							continue;
+						}
+					}
 					else {	// It's not a DocUrl.
 						UrlUtils.duplicateUrls.add(urlToCheck);
 						continue;
@@ -238,14 +275,14 @@ public class PageCrawler
 				}
             }
 
-            remainingLinks.add(urlToCheck);	// Add the fully-formed & accepted remaining links into a new hashSet to be iterated.
+            remainingLinks.put(urlToCheck, currentEntry.getValue());	// Add the fully-formed & accepted remaining links into a new hashSet to be iterated.
 		}// end for-loop
 
 		// If we reached here, it means that we couldn't find a docUrl the quick way.. so we have to check some (we exclude lots of them) of the internal links one by one.
 
 		if ( should_check_remaining_links && !remainingLinks.isEmpty() )
-			checkRemainingInternalLinks(urlId, sourceUrl, pageUrl, pageDomain, remainingLinks);
-		else
+			checkRemainingInternalLinks(urlId, sourceUrl, pageUrl, pageDomain, remainingLinks, atLeastOneDocOrDatasetLinkFound);
+		else if ( !atLeastOneDocOrDatasetLinkFound )
 			handlePageWithNoDocOrDatasetUrls(urlId, sourceUrl, pageUrl, pageDomain, false, false);
 	}
 
@@ -274,11 +311,11 @@ public class PageCrawler
 	}
 
 
-	public static HashSet<String> retrieveInternalLinks(String urlId, String sourceUrl, String pageUrl, String pageDomain, String pageHtml, String pageContentType)
+	public static HashMap<String, String> retrieveInternalLinks(String urlId, String sourceUrl, String pageUrl, String pageDomain, String pageHtml, String pageContentType)
 	{
-		HashSet<String> currentPageLinks = null;
+		HashMap<String, String> pageLinksWithStructure = null;
 		try {
-			currentPageLinks = extractInternalLinksFromHtml(pageHtml, pageUrl);
+			pageLinksWithStructure = extractInternalLinksFromHtml(urlId, pageHtml, pageUrl);
 		} catch (RuntimeException re) {
 			String exceptionMessage = re.getMessage();
 			exceptionMessage = ((exceptionMessage == null) ? "No reason was given!" : exceptionMessage);
@@ -314,11 +351,11 @@ public class PageCrawler
 			return null;
 		}
 
-		boolean isNull = (currentPageLinks == null);	// This is the case, only when Jsoup could not extract any link-elements from the html.
+		boolean isNull = (pageLinksWithStructure == null);	// This is the case, only when Jsoup could not extract any link-elements from the html.
 		boolean isEmpty = false;
 
 		if ( !isNull )
-			isEmpty = currentPageLinks.isEmpty();
+			isEmpty = pageLinksWithStructure.isEmpty();
 
 		if ( isNull || isEmpty ) {	// If no links were retrieved (e.g. the pageUrl was some kind of non-page binary content)
 			logger.warn("No " + (isEmpty ? "valid" : "available") + " links were able to be retrieved from pageUrl: \"" + pageUrl + "\". Its contentType is: " + pageContentType);
@@ -329,17 +366,18 @@ public class PageCrawler
 			return null;
 		}
 
-		//logger.debug("Num of links in: \"" + pageUrl + "\" is: " + currentPageLinks.size());
+		//logger.debug("Num of links in: \"" + pageUrl + "\" is: " + pageLinksWithStructure.size());
 
 		//if ( pageUrl.contains(<keyWord> || <url>) )	// In case we want to print internal-links only for specific-pageTypes.
-			//printInternalLinksForDebugging(currentPageLinks);
+			//printInternalLinksForDebugging(pageLinksWithStructure);
 
-		return currentPageLinks;
+		return pageLinksWithStructure;
 	}
 
 
 	/**
 	 * Get the internalLinks using "Jsoup".
+	 * @param urlId
 	 * @param pageHtml
 	 * @param pageUrl
 	 * @return The internalLinks
@@ -348,7 +386,7 @@ public class PageCrawler
 	 * @throws DocLinkInvalidException
 	 * @throws RuntimeException
 	 */
-	public static HashSet<String> extractInternalLinksFromHtml(String pageHtml, String pageUrl) throws DocLinkFoundException, DynamicInternalLinksFoundException, DocLinkInvalidException, DocLinkUnavailableException, RuntimeException
+	public static HashMap<String, String> extractInternalLinksFromHtml(String urlId, String pageHtml, String pageUrl) throws DocLinkFoundException, DynamicInternalLinksFoundException, DocLinkInvalidException, DocLinkUnavailableException, RuntimeException
 	{
 		Document document = Jsoup.parse(pageHtml);
 		Elements elementLinksOnPage = document.select("a, link[href][type*=pdf], form[action]");	// TODO - Add more "types" once other docTypes are accepted.
@@ -358,7 +396,7 @@ public class PageCrawler
 			return null;
 		}
 
-		HashSet<String> urls = new HashSet<>(elementLinksOnPage.size()/2);	// Only some links will be added in the final set.
+		HashMap<String, String> linksWithStructure = new HashMap<>(elementLinksOnPage.size()/2, 10);	// Only some links will be added in the final set.
 		String linkAttr, internalLink;
 		int curNumOfInternalLinks = 0;
 
@@ -369,6 +407,9 @@ public class PageCrawler
 			SpecialUrlsHandler.handleAupOnlinePage(pageUrl, elementLinksOnPage);
 			// The above method will always throw an exception, either a "DocLinkFoundException" or a "DocLinkUnavailableException".
 		}
+
+		// Predict the docLink, by comparing the elements' structure.
+		PageStructureMLA.predictDocOrDatasetLink(pageUrl, elementLinksOnPage);	// It will throw a "DocLinkFoundException", if the docUrl was found.
 
 		for ( Element el : elementLinksOnPage )
 		{
@@ -412,35 +453,48 @@ public class PageCrawler
 				}
 			}
 
-			internalLink = el.attr("href").trim();
-			if ( internalLink.isEmpty() || internalLink.equals("#") ) {
-				// In case there is no "href" attribute inside the "a"-tag, try to extract the rare "data"-like attribute.
-				if ( (internalLink = getInternalDataLink(el)) == null ) {
-					// Check if we have a "form"-tag, if so, then go and check the "action" attribute.
-					internalLink = el.attr("action").trim();
-					if ( internalLink.isEmpty() || internalLink.equals("#")	// If this element is not a "form" or just a "#".
-						|| !LoaderAndChecker.DOC_URL_FILTER.matcher(internalLink.toLowerCase()).matches() )	// If it's a form without a worthy "action".
-						continue;
+			if ( (internalLink = getInternalLink(pageUrl, el)) == null )
+				continue;
 
-					String tempInternalLink;
-					if ( ((tempInternalLink = ConnSupportUtils.getFullyFormedUrl(pageUrl, internalLink, null)) != null)
-							&& UrlTypeChecker.shouldNotAcceptInternalLink(tempInternalLink, null) ) {
-						//logger.debug("Avoiding invalid full-text with context: \"" + linkAttr + "\", internalLink: " + el.attr("href"));	// DEBUG!
-						throw new DocLinkInvalidException(internalLink);
-					} else {
-						//logger.debug("Found the docLink < " + internalLink + " > from link-type: \"" + linkAttr + "\"");	// DEBUG
-						throw new DocLinkFoundException(internalLink);
-					}
-				}
-			}
-
-			if ( (internalLink = gatherInternalLink(internalLink)) != null ) {	// Throws exceptions which go to the caller method.
-				urls.add(internalLink);
+			if ( (internalLink = checkAndGatherInternalLink(internalLink, el)) != null )// Throws exceptions which go to the caller method.
+			{
 				if ( (++curNumOfInternalLinks) > MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE )
 					throw new RuntimeException("Avoid checking more than " + MAX_INTERNAL_LINKS_TO_ACCEPT_PAGE + " internal links which were found in pageUrl \"" + pageUrl + "\".");
+
+				// Get the tag-structure for each accepted link, so that later, if one of them is proved-to-be docUrl, then its structure will be saved for future docUrl identification.
+				linksWithStructure.put(internalLink, PageStructureMLA.getPageTagAndClassStructureForElement(el));
 			}
 		}
-		return urls;
+		return linksWithStructure;
+	}
+
+
+	public static String getInternalLink(String pageUrl, Element el) throws DocLinkFoundException, DocLinkInvalidException
+	{
+		String internalLink = el.attr("href").trim();
+		if ( internalLink.isEmpty() || internalLink.equals("#") ) {
+			// In case there is no "href" attribute inside the "a"-tag, try to extract the rare "data"-like attribute.
+			if ( (internalLink = getInternalDataLink(el)) == null ) {
+				// Check if we have a "form", by checking the "action" attribute.
+				internalLink = el.attr("action").trim();
+				if ( internalLink.isEmpty() || internalLink.equals("#")	// If this element is not a "form" or just a "#".
+						|| (ArgsUtils.retrieveDocuments && !LoaderAndChecker.DOC_URL_FILTER.matcher(internalLink.toLowerCase()).matches())
+						|| (ArgsUtils.retrieveDatasets && !LoaderAndChecker.DATASET_URL_FILTER.matcher(internalLink.toLowerCase()).matches()) )	// If it's a form without a worthy "action".
+					return null;
+
+				// Here we have a "form" link.
+				String tempInternalLink;
+				if ( ((tempInternalLink = ConnSupportUtils.getFullyFormedUrl(pageUrl, internalLink, null)) != null)
+						&& UrlTypeChecker.shouldNotAcceptInternalLink(tempInternalLink, null) ) {
+					//logger.debug("Avoiding invalid full-text with context: \"" + linkAttr + "\", internalLink: " + el.attr("href"));	// DEBUG!
+					throw new DocLinkInvalidException(internalLink);
+				} else {
+					//logger.debug("Found the " + ArgsUtils.targetUrlType + " < " + internalLink + " > from link-type: \"" + linkAttr + "\"");	// DEBUG
+					throw new DocLinkFoundException(internalLink, PageStructureMLA.getPageTagAndClassStructureForElement(el), false);
+				}
+			}
+		}
+		return internalLink;
 	}
 
 
@@ -543,7 +597,7 @@ public class PageCrawler
 	}
 
 
-	public static String gatherInternalLink(String internalLink) throws DynamicInternalLinksFoundException, DocLinkFoundException
+	public static String checkAndGatherInternalLink(String internalLink, Element el) throws DynamicInternalLinksFoundException, DocLinkFoundException
 	{
 		if ( internalLink.equals("/") )
 			return null;
@@ -585,7 +639,7 @@ public class PageCrawler
 			try {
 				pdfLink = pdfLinkMatcher.group(1);
 			} catch (Exception e) { logger.error("", e); }	// Do not "return null;" here, as we want the page-search to stop, not just for this link to not be connected..
-			throw new DocLinkFoundException(pdfLink);    // If it's 'null' or 'empty', we treat it when handling this exception.
+			throw new DocLinkFoundException(pdfLink, PageStructureMLA.getPageTagAndClassStructureForElement(el), false);    // If it's 'null' or 'empty', we treat it when handling this exception.
 		}
 
 		return internalLink;
@@ -612,7 +666,19 @@ public class PageCrawler
 
 		IdUrlMimeTypeTriple originalIdUrlMimeTypeTriple = UrlUtils.resultUrlsWithIDs.get(docLink);
 		if ( originalIdUrlMimeTypeTriple != null ) {    // If we got into an already-found docUrl, log it and return.
+
+			// Check if the original Url is of the same source as the alreadyFound one.
+			// If so, it means that we just found a 2nd targetUrl inside the page (e.g. the metaUrl and an internal-link)
+			// However, this should not happen as the search should have stopped.
+			if ( urlId.equals(originalIdUrlMimeTypeTriple.id) && sourceUrl.equals(originalIdUrlMimeTypeTriple.url) ) {
+				logger.warn("A second targetUrl was found for the same id (" + urlId + ") and sourceUrl(" + sourceUrl + ")!");
+				return true;
+			}
+
 			ConnSupportUtils.handleReCrossedTargetUrl(urlId, sourceUrl, pageUrl, docLink, originalIdUrlMimeTypeTriple, false);
+			PageStructureMLA.addStructureOfDocUrlInMap(pageUrl, dlfe.getPageTagAndClassStructureForElement());
+			if ( dlfe.isPredictedByStructureMLA() )
+				PageStructureMLA.structureValidatedDocLinks.incrementAndGet();
 			return true;
 		}
 
@@ -623,6 +689,10 @@ public class PageCrawler
 				UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as the retrieved DocLink: < " + docLink + " > was not a docUrl.", "null", null, true, "true", "true", "false", "false", "false", null, "null", "null");
 				return false;
 			}
+
+			PageStructureMLA.addStructureOfDocUrlInMap(pageUrl, dlfe.getPageTagAndClassStructureForElement());
+			if ( dlfe.isPredictedByStructureMLA() )
+				PageStructureMLA.structureValidatedDocLinks.incrementAndGet();
 			return true;
 		} catch (Exception e) {	// After connecting to the possibleDocLink.
 			logger.warn("The DocLink < " + docLink + " > was not reached!");	// The specific error has already been written inside the called method.
@@ -637,7 +707,7 @@ public class PageCrawler
 	public static final AtomicInteger timesFoundDocOrDatasetUrlFromRemainingLinks = new AtomicInteger(0);
 	private static final double leastPercentageOfHitsFromRemainingLinks = 0.20;
 
-	public static boolean checkRemainingInternalLinks(String urlId, String sourceUrl, String pageUrl, String pageDomain, HashSet<String> remainingLinks)
+	public static boolean checkRemainingInternalLinks(String urlId, String sourceUrl, String pageUrl, String pageDomain, HashMap<String, String> remainingLinks, boolean atLeastOneDocOrDatasetLinkFound)
 	{
 		int temp_timesCheckedRemainingLinks = timesCheckedRemainingLinks.incrementAndGet();
 		if ( temp_timesCheckedRemainingLinks >= timesToCheckInternalLinksBeforeEvaluate ) {
@@ -646,15 +716,17 @@ public class PageCrawler
 			if ( percentage < leastPercentageOfHitsFromRemainingLinks ) {
 				logger.warn("The percentage of found docUrls from the remaining links is too low ( " + percentage + "% ). Stop checking the remaining-internalLinks for any pageUrl..");
 				should_check_remaining_links = false;
-				handlePageWithNoDocOrDatasetUrls(urlId, sourceUrl, pageUrl, pageDomain, false, false);
+				if ( ! atLeastOneDocOrDatasetLinkFound )
+					handlePageWithNoDocOrDatasetUrls(urlId, sourceUrl, pageUrl, pageDomain, false, false);
 				return false;
 			}
 		}
 
 		int remainingUrlsCounter = 0;
 
-		for ( String currentLink : remainingLinks )    // Here we don't re-check already-checked links, as this is a new list. All the links here are full-normalized-urls.
+		for ( Map.Entry<String, String> currentEntry : remainingLinks.entrySet() )    // Here we don't re-check already-checked links, as this is a new list. All the links here are full-normalized-urls.
 		{
+			String currentLink = currentEntry.getKey();
 			// Make sure we avoid connecting to different domains to save time. We allow to check different domains only after matching to possible-urls in the previous fast-loop.
 			if ( !currentLink.contains(pageDomain)
 				|| UrlUtils.duplicateUrls.contains(currentLink) )
@@ -669,7 +741,8 @@ public class PageCrawler
 
 			if ( (++remainingUrlsCounter) > MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT ) {    // The counter is incremented only on "aboutToConnect" links, so no need to pre-clean the "remainingLinks"-set.
 				logger.warn("The maximum limit (" + MAX_REMAINING_INTERNAL_LINKS_TO_CONNECT + ") of remaining links to be connected was reached for pageUrl: \"" + pageUrl + "\". The page was discarded.");
-				handlePageWithNoDocOrDatasetUrls(urlId, sourceUrl, pageUrl, pageDomain, true, false);
+				if ( ! atLeastOneDocOrDatasetLinkFound )
+					handlePageWithNoDocOrDatasetUrls(urlId, sourceUrl, pageUrl, pageDomain, true, false);
 				return false;
 			}
 
@@ -681,6 +754,7 @@ public class PageCrawler
 				{    // Log this in order to find ways to make these docUrls get found sooner..!
 					//logger.debug("Page \"" + pageUrl + "\", gave the \"remaining\" docOrDatasetUrl \"" + currentLink + "\"");    // DEBUG!!
 					timesFoundDocOrDatasetUrlFromRemainingLinks.incrementAndGet();
+					PageStructureMLA.addStructureOfDocUrlInMap(pageUrl, currentEntry.getValue());
 					return true;
 				} else
 					UrlUtils.duplicateUrls.add(currentLink);
@@ -714,7 +788,8 @@ public class PageCrawler
 			}
 		}// end for-loop
 
-		handlePageWithNoDocOrDatasetUrls(urlId, sourceUrl, pageUrl, pageDomain, false, false);
+		if ( ! atLeastOneDocOrDatasetLinkFound )
+			handlePageWithNoDocOrDatasetUrls(urlId, sourceUrl, pageUrl, pageDomain, false, false);
 		return false;
 	}
 

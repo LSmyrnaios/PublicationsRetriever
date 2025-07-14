@@ -57,6 +57,8 @@ public class ArgsUtils {
 	public static boolean retrieveDocuments = true;
 	public static boolean retrieveDatasets = true;
 
+	public static boolean shouldDetectAllDatasetLinks = true;
+
 
 	public static void parseArgs(String[] mainArgs)
 	{

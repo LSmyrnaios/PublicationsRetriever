@@ -10,15 +10,31 @@ package eu.openaire.publications_retriever.exceptions;
 public class DocLinkFoundException extends Exception
 {
 	private String docLink = null;
-	
-	public DocLinkFoundException(String docLink)
+
+	private String pageTagAndClassStructureForElement = null;
+
+	private boolean predictedByStructureMLA = false;
+
+
+	public DocLinkFoundException(String docLink, String pageTagAndClassStructureForElement, boolean predictedByStructureMLA)
 	{
 		this.docLink = docLink;
+		this.pageTagAndClassStructureForElement = pageTagAndClassStructureForElement;
+		this.predictedByStructureMLA = predictedByStructureMLA;
 	}
-	
+
 	@Override
 	public String getMessage()
 	{
 		return docLink;
 	}
+
+	public String getPageTagAndClassStructureForElement() {
+		return pageTagAndClassStructureForElement;
+	}
+
+	public boolean isPredictedByStructureMLA() {
+		return predictedByStructureMLA;
+	}
+
 }

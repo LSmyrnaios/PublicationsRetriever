@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 
 import static eu.openaire.publications_retriever.util.http.HttpConnUtils.handleConnection;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -95,8 +95,26 @@ public class LinkExtraction {
 		//exampleUrl = "https://www.sciencedirect.com/science/article/pii/0093934X9290124W";
 		//exampleUrl = "https://openaccess.marmara.edu.tr/entities/publication/959ebf2d-4e2f-4f4f-a397-b0c2793170ee";
 		//exampleUrl = "https://www.aup-online.com/content/journals/10.5117/MEM2015.4.JANS";
-		exampleUrl = "https://www.ijcseonline.org/full_paper_view.php?paper_id=4547";
+		//exampleUrl = "https://www.ijcseonline.org/full_paper_view.php?paper_id=4547";
 		//exampleUrl = "https://meetingorganizer.copernicus.org/EGU2020/EGU2020-6296.html";
+		//exampleUrl = "https://www.cell.com/comments/0092-8674(79)90026-6";
+		//exampleUrl = "https://www.vr-elibrary.de/doi/book/10.14220/9783737007535";
+		//exampleUrl = "https://www.euppublishing.com/doi/abs/10.3366/more.2004.41.4.5";
+		//exampleUrl = "https://www.vr-elibrary.de/doi/10.13109/wdor.2010.40.2.244";
+		//exampleUrl = "https://rjpdft.com/AbstractView.aspx?PID=2015-7-3-10";
+		//exampleUrl = "https://journals.lww.com/jwocnonline/Fulltext/2005/11000/Enhancing_Rigor_in_Qualitative_Description.14.aspx";
+		//exampleUrl = "https://www.karger.com/Article/Abstract/291962";
+		//exampleUrl = "https://www.archivestsc.com/jvi.aspx?un=TKDA-33903";
+		//exampleUrl = "https://www.elsevier.es/es-revista-actas-urologicas-espanolas-292-articulo-segunda-neoplasia-tras-el-tratamiento-S0210480611003913";
+		//exampleUrl = "https://hal-insu.archives-ouvertes.fr/insu-00355090";
+		//exampleUrl = "https://doaj.org/article/ad3d3e8d0fc242d198575400c59cd11f";
+		//exampleUrl = "https://riuma.uma.es/xmlui/handle/10630/24721";
+		//exampleUrl = "https://pubmed.ncbi.nlm.nih.gov/7379515/";
+		//exampleUrl = "https://osf.io/2xpq7/";
+		//exampleUrl = "https://openportal.isti.cnr.it/doc?id=people______::4f82377b58548f5a2c910b412841932e";
+		//exampleUrl = "https://ri.conicet.gov.ar/handle/11336/82552";
+		//exampleUrl = "https://doi.pangaea.de/10.1594/PANGAEA.883146";
+		exampleUrl = "https://doi.pangaea.de/10.1594/PANGAEA.902422";
 	}
 
 	
@@ -106,11 +124,11 @@ public class LinkExtraction {
 	{
 		String link;
 		try {
-			HashSet<String> extractedLinksHashSet = getLinksList(exampleHtml, null);
+			HashMap<String, String> extractedLinksHashSet = getLinksList(exampleHtml, null);
 			if ( extractedLinksHashSet == null )
 				return;	// Logging is handled inside..
 
-			link = new ArrayList<>(extractedLinksHashSet).get(0);
+			link = new ArrayList<>(extractedLinksHashSet.keySet()).get(0);
 			logger.info("The single-retrieved internalLink is: \"" + link + "\"");
 			
 		} catch (Exception e) {
@@ -139,11 +157,11 @@ public class LinkExtraction {
 			}
 			else {
 				String html = htmlResult.getHtmlString();
-				HashSet<String> extractedLinksHashSet = getLinksList(html, finalUrl);
+				HashMap<String, String> extractedLinksHashSet = getLinksList(html, finalUrl);
 				if ( extractedLinksHashSet == null )
 					return;	// Logging is handled inside..
 
-				link = new ArrayList<>(extractedLinksHashSet).get(0);
+				link = new ArrayList<>(extractedLinksHashSet.keySet()).get(0);
 				logger.info("The single-retrieved internalLink is: \"" + link + "\"");
 			}
 		} catch (Exception e) {
@@ -161,18 +179,18 @@ public class LinkExtraction {
 	public void testExtractAllLinksFromHtml()
 	{
 		try {
-			HashSet<String> extractedLinksHashSet = getLinksList(exampleHtml, null);
+			HashMap<String, String> extractedLinksHashSet = getLinksList(exampleHtml, null);
 			if ( extractedLinksHashSet == null )
 				return;	// Logging is handled inside..
 
 			int numberOfExtractedLinks = extractedLinksHashSet.size();
 			logger.info("The list of the " + numberOfExtractedLinks + " extracted internalLinks of \"" + exampleUrl + "\" is:");
-			for ( String link: extractedLinksHashSet )
+			for ( String link: extractedLinksHashSet.keySet() )
 				logger.info(link);
 
 			int acceptedLinksCount = 0;
 			logger.info("\n\nThe accepted links from the above are:");
-			for ( String link : extractedLinksHashSet ) {
+			for ( String link : extractedLinksHashSet.keySet() ) {
 				if ( !UrlTypeChecker.shouldNotAcceptInternalLink(link, null) ) {
 					logger.info(link);
 					acceptedLinksCount ++;
@@ -201,18 +219,18 @@ public class LinkExtraction {
 			String html = htmlResult.getHtmlString();
 			//logger.debug("HTML:\n" + html);
 
-			HashSet<String> extractedLinksHashSet = getLinksList(html, finalUrl);
+			HashMap<String, String> extractedLinksHashSet = getLinksList(html, finalUrl);
 			if ( extractedLinksHashSet == null )
 				return;	// Logging is handled inside..
 
 			int numberOfExtractedLinks = extractedLinksHashSet.size();
 			logger.info("The list of the " + numberOfExtractedLinks + " extracted internalLinks of \"" + exampleUrl + "\" is:");
-			for ( String link: extractedLinksHashSet )
+			for ( String link: extractedLinksHashSet.keySet() )
 				logger.info(link);
 
 			int acceptedLinksCount = 0;
 			logger.info("\nThe accepted links from the above are:");
-			for ( String link : extractedLinksHashSet )
+			for ( String link : extractedLinksHashSet.keySet() )
 			{
 				String targetUrl = ConnSupportUtils.getFullyFormedUrl(exampleUrl, link, conn.getURL());
 				if ( targetUrl == null ) {
@@ -233,12 +251,12 @@ public class LinkExtraction {
 	}
 
 
-	private static HashSet<String> getLinksList(String html, String url)
+	private static HashMap<String, String> getLinksList(String html, String url)
 	{
-		HashSet<String> extractedLinksHashSet = null;
+		HashMap<String, String> extractedLinksHashMap = null;
 		try {
-			extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(html, url);
-			if ( extractedLinksHashSet == null || extractedLinksHashSet.size() == 0 )
+			extractedLinksHashMap = PageCrawler.extractInternalLinksFromHtml(null, html, url);
+			if ( extractedLinksHashMap == null || extractedLinksHashMap.size() == 0 )
 				return null;    // Logging is handled inside..
 		} catch (Exception e) {
 			String link = e.getMessage();
@@ -252,7 +270,7 @@ public class LinkExtraction {
 			logger.warn("The \"PageCrawler.extractInternalLinksFromHtml()\" method exited early, so the list with the can-be-extracted links was not returned!");
 			return null;
 		}
-		return extractedLinksHashSet;
+		return extractedLinksHashMap;
 	}
 
 }

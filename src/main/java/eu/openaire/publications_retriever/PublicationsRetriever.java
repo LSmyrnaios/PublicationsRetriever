@@ -3,6 +3,7 @@ package eu.openaire.publications_retriever;
 import eu.openaire.publications_retriever.crawler.MachineLearning;
 import eu.openaire.publications_retriever.crawler.MetadataHandler;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
+import eu.openaire.publications_retriever.machine_learning.PageStructureMLA;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.file.HtmlFileUtils;
@@ -192,6 +193,8 @@ public class PublicationsRetriever
 			else
 				logger.debug("The legacy M.L.A. was not enabled.");
 
+			logger.debug("The Structure-M.L.A. is responsible for the discovery of " + PageStructureMLA.structureValidatedDocLinks.get() + " of the " + ArgsUtils.targetUrlType + "s (" + df.format(PageStructureMLA.structureValidatedDocLinks.get() * 100.0 / UrlUtils.sumOfDocUrlsFound.get()) + "%).");
+			logger.debug("In total, it predicted " + PageStructureMLA.structurePredictedDocLinks.get() + " docLinks, with some of them not leading to a fulltext for various reasons (connection-problem, removed-file, unsupported docType, ect.).");
 		}
 
 		logger.debug("About " + df.format(LoaderAndChecker.connProblematicUrls.get() * 100.0 / inputCheckedUrlNum) + "% (" + LoaderAndChecker.connProblematicUrls.get() + " urls) were pages which had connectivity problems.");

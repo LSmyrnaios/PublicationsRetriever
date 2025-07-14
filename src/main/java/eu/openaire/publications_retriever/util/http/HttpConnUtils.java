@@ -537,7 +537,7 @@ public class HttpConnUtils
 				{
 					if ( responseCode == 300 ) {	// The "Location"-data MAY be provided, inside the html-response, giving the proposed link by the server.
 						// Go and parse the page and select one of the links to redirect to. Assign it to the "location".
-						if ( (location = ConnSupportUtils.getInternalLinkFromHTTP300Page(currentUrl, conn)) == null )
+						if ( (location = ConnSupportUtils.getInternalLinkFromHTTP300Page(urlId, currentUrl, conn)) == null )
 							throw new RuntimeException("No \"link\" was retrieved from the HTTP-300-page: \"" + currentUrl + "\".");
 					}
 					else	// It's unacceptable for codes > 300 to not provide the "location" field.

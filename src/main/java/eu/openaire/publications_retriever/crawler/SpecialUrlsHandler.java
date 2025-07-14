@@ -3,6 +3,7 @@ package eu.openaire.publications_retriever.crawler;
 
 import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.exceptions.DocLinkUnavailableException;
+import eu.openaire.publications_retriever.machine_learning.PageStructureMLA;
 import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
@@ -259,7 +260,7 @@ public class SpecialUrlsHandler
 				String possibleDocUrl = el.attr("action").trim();
 				if ( !possibleDocUrl.isEmpty() ) {
 					//logger.debug(possibleDocUrl);    // DEBUG!
-					throw new DocLinkFoundException(possibleDocUrl);
+					throw new DocLinkFoundException(possibleDocUrl, PageStructureMLA.getPageTagAndClassStructureForElement(el), false);
 				}
 			}
 		}

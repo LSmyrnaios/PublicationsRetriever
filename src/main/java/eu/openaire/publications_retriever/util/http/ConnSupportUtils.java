@@ -581,24 +581,26 @@ public class ConnSupportUtils
 	
 	/**
 	 * This method receives a pageUrl which gave an HTTP-300-code and extracts an internalLink out of the multiple choices provided.
+	 * @param urlId
+	 * @param url
 	 * @param conn
 	 * @return
 	 */
-	public static String getInternalLinkFromHTTP300Page(String url, HttpURLConnection conn)
+	public static String getInternalLinkFromHTTP300Page(String urlId, String url, HttpURLConnection conn)
 	{
 		try {
 			String html = null;
 			HtmlResult htmlResult = null;
-			if ( (htmlResult = ConnSupportUtils.getHtml(conn, null, url, null, false, null, null)) == null ) {
+			if ( (htmlResult = ConnSupportUtils.getHtml(conn, urlId, url, null, false, null, null)) == null ) {
 				logger.warn("Could not retrieve the HTML-code for HTTP300PageUrl: " + url);
 				return null;
 			}
 			html = htmlResult.getHtmlString();
-			HashSet<String> extractedLinksHashSet = PageCrawler.extractInternalLinksFromHtml(html, url);
-			if ( extractedLinksHashSet == null || extractedLinksHashSet.size() == 0 )
+			HashMap<String, String> extractedLinksWithStructure = PageCrawler.extractInternalLinksFromHtml(urlId, html, url);
+			if ( extractedLinksWithStructure == null || extractedLinksWithStructure.isEmpty())
 				return null;	// Logging is handled inside..
 
-			return new ArrayList<>(extractedLinksHashSet).get(0);	// There will be only a couple of urls, so it's not a big deal to gather them all.
+			return new ArrayList<>(extractedLinksWithStructure.keySet()).get(0);	// There will be only a couple of urls, so it's not a big deal to gather them all.
 		} catch ( DocLinkFoundException dlfe) {
 			return dlfe.getMessage();	// Return the DocLink to connect with.
 		} catch (Exception e) {
