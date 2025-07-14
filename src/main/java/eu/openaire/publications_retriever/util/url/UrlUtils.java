@@ -5,7 +5,7 @@ import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -292,7 +292,7 @@ public class UrlUtils
 			return preTemporalIdStr;	// This is expected in many cases. The "afterTemporalIdStr" might not always exist.
 		else {
 			if ( afterTemporalIdStr.startsWith("&", 0) && !preTemporalIdStr.contains("?") )	// The "afterTemporalIdStr" should start with "?", if not (because the "token" was the first param) then..
-				afterTemporalIdStr = StringUtils.replace(afterTemporalIdStr, "&", "?", 1);	// ..replace only the 1st matching character.
+				afterTemporalIdStr = Strings.CS.replace(afterTemporalIdStr, "&", "?", 1);	// ..replace only the 1st matching character.
 
 			return preTemporalIdStr + afterTemporalIdStr;
 		}

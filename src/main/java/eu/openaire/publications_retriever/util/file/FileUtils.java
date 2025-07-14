@@ -446,7 +446,7 @@ public class FileUtils
 		if ( bytesCount == 0 ) {	// This will be the case if the "inStream.read()" returns "-1" in the first call.
 			// It's not practical to decrease the potential "duplicate-filename-counter" in this point.
 			// So we will just skip it: for example we will have: filename.pdf, filename(1).pdf [SKIPPED], filename(2).pdf
-			String errMsg = "No data was written to file: " + fileFullPath;
+			String errMsg = "InputStream was empty when trying to download file: " + fileFullPath;
 			logger.warn(errMsg);
 			throw new FileNotRetrievedException(errMsg);
 		}

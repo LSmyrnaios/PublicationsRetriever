@@ -11,7 +11,7 @@ import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -625,11 +625,11 @@ public class LoaderAndChecker
 		// Note that this is NOT the case for all of the urls containing "/handle/123456789/".. but just for this domain.
 		if ( retrievedUrl.contains("ir.lib.u-ryukyu.ac.jp") && retrievedUrl.contains("/handle/123456789/") ) {
 			logger.debug("We will handle the weird case of \"" + retrievedUrl + "\".");
-			return StringUtils.replace(retrievedUrl, "/123456789/", "/20.500.12000/", -1);
+			return Strings.CS.replace(retrievedUrl, "/123456789/", "/20.500.12000/", -1);
 		}
 
 		// Replace potential encoded '&' symbols which cause navigation issues inside the site.
-		retrievedUrl = StringUtils.replace(retrievedUrl, "amp;", "&", -1);
+		retrievedUrl = Strings.CS.replace(retrievedUrl, "amp;", "&", -1);
 
 		return retrievedUrl;	// The calling method needs the non-jsessionid-string.
 	}

@@ -8,7 +8,7 @@ import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
@@ -102,7 +102,7 @@ public class SpecialUrlsHandler
 	public static String checkAndDowngradeManuscriptElsevierUrl(String manuscriptElsevierUrl)
 	{
 		if ( manuscriptElsevierUrl.contains("manuscript.elsevier.com") ) {
-			manuscriptElsevierUrl = StringUtils.replace(manuscriptElsevierUrl, "https", "http", 1);
+			manuscriptElsevierUrl = Strings.CS.replace(manuscriptElsevierUrl, "https", "http", 1);
 			return manuscriptElsevierUrl;
 		} else
 			return null;
@@ -119,7 +119,7 @@ public class SpecialUrlsHandler
 			if ( idStr == null )
 				return nasaPageUrl;
 
-			String citationPath = StringUtils.replace(nasaPageUrl, nasaBaseDomainPath, "", 1);
+			String citationPath = Strings.CS.replace(nasaPageUrl, nasaBaseDomainPath, "", 1);
 			citationPath = (citationPath.endsWith("/") ? citationPath : citationPath+"/");	// Make sure the "citationPath" has an ending slash.
 
 			return (nasaBaseDomainPath + "api/" + citationPath + "downloads/" + idStr + ".pdf");
@@ -147,7 +147,7 @@ public class SpecialUrlsHandler
 				return frontiersinPageUrl;
 
 			if ( frontiersinPageUrl.endsWith("/full") )
-				return StringUtils.replace(frontiersinPageUrl, "/full", "/pdf");
+				return Strings.CS.replace(frontiersinPageUrl, "/full", "/pdf");
 			else
 				return frontiersinPageUrl + "/pdf";
 		}
@@ -181,7 +181,7 @@ public class SpecialUrlsHandler
 	 */
 	public static String checkAndHandleDergipark(String pageUrl)
 	{
-		return StringUtils.replace(pageUrl, "dergipark.gov.tr", "dergipark.org.tr");
+		return Strings.CS.replace(pageUrl, "dergipark.gov.tr", "dergipark.org.tr");
 	}
 
 	public static Pattern Turkjgastroenterol_docUrl_pattern = Pattern.compile("<div[\\s]*>[\\s]*(/content/files/[^<>]+.pdf)[\\s]*</div>");
@@ -365,28 +365,28 @@ public class SpecialUrlsHandler
 		// Check and remove any subJournal.
 		String subJournal = matcher.group(1);
 		if ( (subJournal != null) && !subJournal.isEmpty() )
-			pageUrl = StringUtils.replace(pageUrl, subJournal, "");
+			pageUrl = Strings.CS.replace(pageUrl, subJournal, "");
 
 		if ( pageUrl.contains("/pdfdirect/") )	// It's already a final-pdf url.
 			return ((pageUrl.contains("download=true")) ? pageUrl : (pageUrl + (pageUrl.contains("?") ? "&" : "?") + "download=true"));
 
 		if ( pageUrl.endsWith("/abstract") )
-			pageUrl = StringUtils.replace(pageUrl, "/abstract", "");
+			pageUrl = Strings.CS.replace(pageUrl, "/abstract", "");
 		else if ( pageUrl.endsWith("/fullpdf") )
-			pageUrl = StringUtils.replace(pageUrl, "/fullpdf", "");
+			pageUrl = Strings.CS.replace(pageUrl, "/fullpdf", "");
 
 		if ( pageUrl.contains("epdf/") )	// It's a script-depending pdf-url which needs transformation.
-			pageUrl = StringUtils.replace(pageUrl, "epdf/", "pdfdirect/", 1);
+			pageUrl = Strings.CS.replace(pageUrl, "epdf/", "pdfdirect/", 1);
 		else if ( pageUrl.contains("pdf/") )	// It's a script-depending pdf-url which needs transformation.
-			pageUrl = StringUtils.replace(pageUrl, "pdf/", "pdfdirect/", 1);
+			pageUrl = Strings.CS.replace(pageUrl, "pdf/", "pdfdirect/", 1);
 		else if ( pageUrl.contains("full/") )
-			pageUrl = StringUtils.replace(pageUrl, "full/", "pdfdirect/", 1);
+			pageUrl = Strings.CS.replace(pageUrl, "full/", "pdfdirect/", 1);
 		else if ( pageUrl.contains("abs/") )
-			pageUrl = StringUtils.replace(pageUrl, "/doi/abs/", "/doi/pdfdirect/", 1);
+			pageUrl = Strings.CS.replace(pageUrl, "/doi/abs/", "/doi/pdfdirect/", 1);
 		else if ( pageUrl.contains("full-xml/") )	// Replace these to their "normal" html pages, from where we can get the PDFs.
-			pageUrl = StringUtils.replace(pageUrl, "/full-xml/", "/full/", 1);
+			pageUrl = Strings.CS.replace(pageUrl, "/full-xml/", "/full/", 1);
 		else
-			pageUrl = StringUtils.replace(pageUrl, "/doi/", "/doi/pdfdirect/", 1);
+			pageUrl = Strings.CS.replace(pageUrl, "/doi/", "/doi/pdfdirect/", 1);
 
 		return ((pageUrl.contains("download=true")) ? pageUrl : (pageUrl + (pageUrl.contains("?") ? "&" : "?") + "download=true"));
 	}
@@ -403,7 +403,7 @@ public class SpecialUrlsHandler
 		if ( pageUrl.contains("/pdf/") )	// It's probably already a docUrl
 			return pageUrl;
 		else if ( pageUrl.contains("/pdfdirect/") )
-			return StringUtils.replace(pageUrl, "/pdfdirect/", "/pdf/", 1);
+			return Strings.CS.replace(pageUrl, "/pdfdirect/", "/pdf/", 1);
 		else
 			return pageUrl;
 	}
@@ -417,7 +417,7 @@ public class SpecialUrlsHandler
 		if ( !pageUrl.contains("scielo.br") )	// We want to transform only urls belonging to this subdomain and has this structure.
 			return null;    // It's from another domain, keep looking..
 
-		return StringUtils.replace(pageUrl, "amp;", "&");
+		return Strings.CS.replace(pageUrl, "amp;", "&");
 	}
 
 
@@ -431,7 +431,7 @@ public class SpecialUrlsHandler
 		if ( matcher.matches() ) {
 			String innerLink = matcher.group(1);
 			if ( (innerLink != null) && !innerLink.isEmpty() )
-				return StringUtils.replace(innerLink, ":/", "://");
+				return Strings.CS.replace(innerLink, ":/", "://");
 			else {
 				logger.warn("Could not extract he inner-link from weird-doi-url: " + weirdDoiUrl);
 				return weirdDoiUrl;    // We could not extract the inner-link, return the original so that we can log it being invalid.

@@ -3,7 +3,7 @@ package eu.openaire.publications_retriever.util.args;
 
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -173,7 +173,7 @@ public class ArgsUtils {
 		if ( !(inputFileFullPath.startsWith(File.separator) || inputFileFullPath.startsWith("~")) )
 		{
 			if ( inputFileFullPath.startsWith("." + File.separator) )	// Remove the starting "dot" + "/" or "\", if exists.
-				inputFileFullPath = StringUtils.replace(inputFileFullPath, "." + File.separator, "", 1);
+				inputFileFullPath = Strings.CS.replace(inputFileFullPath, "." + File.separator, "", 1);
 
 			inputFileFullPath = System.getProperty("user.dir") + File.separator + inputFileFullPath;	// In case the given path starts with "..", then this also works.
 		}

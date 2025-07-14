@@ -1,7 +1,7 @@
 package eu.openaire.publications_retriever.util.url;
 
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -67,10 +67,10 @@ public class DataForOutput
 		 */
 		
 		// Escape backSlash.
-		url = StringUtils.replace(url, "\\", "\\\\", -1);	// http://koara.lib.keio.ac.jp/xoonips/modules/xoonips/detail.php?koara_id=pdf\AN00150430-00000039--001
+		url = Strings.CS.replace(url, "\\", "\\\\", -1);	// http://koara.lib.keio.ac.jp/xoonips/modules/xoonips/detail.php?koara_id=pdf\AN00150430-00000039--001
 		
 		// Escape doubleQuotes and return.
-		return StringUtils.replace(url, "\"", "\\\"", -1);	// https://jual.nipissingu.ca/wp-content/uploads/sites/25/2016/03/v10202.pdf" rel="
+		return Strings.CS.replace(url, "\"", "\\\"", -1);	// https://jual.nipissingu.ca/wp-content/uploads/sites/25/2016/03/v10202.pdf" rel="
 	}
     
     

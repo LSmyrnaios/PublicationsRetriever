@@ -23,7 +23,7 @@ import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStr
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.zstandard.ZstdCompressorInputStream;
 import org.apache.commons.io.FileDeleteStrategy;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -284,8 +284,8 @@ public class ConnSupportUtils
 			}
 
 			// Cleanup the mimeType further, e.g.: < application/pdf' > (with the < ' > in the end): http://www.ccsenet.org/journal/index.php/ijb/article/download/48805/26704
-			plainMimeType = StringUtils.replace(plainMimeType, "'", "", -1);
-			plainMimeType = StringUtils.replace(plainMimeType, "\"", "", -1);
+			plainMimeType = Strings.CS.replace(plainMimeType, "'", "", -1);
+			plainMimeType = Strings.CS.replace(plainMimeType, "\"", "", -1);
 
 			if ( ArgsUtils.retrieveDocuments && knownDocMimeTypes.contains(plainMimeType) )
 				mimeTypeResult = new MimeTypeResult(plainMimeType, "document");
@@ -302,8 +302,8 @@ public class ConnSupportUtils
 						if ( ArgsUtils.retrieveDocuments && contentDisposition.contains(".pdf") )
 							mimeTypeResult = new MimeTypeResult("application/pdf", "document");
 						else {
-							String clearContentDisposition = StringUtils.replace(contentDisposition, "\"", "", -1);
-							clearContentDisposition = StringUtils.replace(clearContentDisposition, "'", "", -1);
+							String clearContentDisposition = Strings.CS.replace(contentDisposition, "\"", "", -1);
+							clearContentDisposition = Strings.CS.replace(clearContentDisposition, "'", "", -1);
 							if ( ArgsUtils.retrieveDatasets && LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
 								mimeTypeResult = new MimeTypeResult(plainMimeType, "dataset");
 						}
@@ -326,8 +326,8 @@ public class ConnSupportUtils
 						if ( ArgsUtils.retrieveDocuments && contentDisposition.toLowerCase().contains(".pdf") )
 							mimeTypeResult = new MimeTypeResult("application/pdf", "document");
 
-						String clearContentDisposition = StringUtils.replace(contentDisposition, "\"", "", -1);
-						clearContentDisposition = StringUtils.replace(clearContentDisposition, "'", "", -1);
+						String clearContentDisposition = Strings.CS.replace(contentDisposition, "\"", "", -1);
+						clearContentDisposition = Strings.CS.replace(clearContentDisposition, "'", "", -1);
 						if ( ArgsUtils.retrieveDatasets && LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
 							mimeTypeResult = new MimeTypeResult(plainMimeType, "dataset");
 					}
@@ -340,8 +340,8 @@ public class ConnSupportUtils
 			if ( ArgsUtils.retrieveDocuments && contentDisposition.contains(".pdf") )
 				mimeTypeResult = new MimeTypeResult("application/pdf", "document");
 			else {
-				String clearContentDisposition = StringUtils.replace(contentDisposition, "\"", "", -1);
-				clearContentDisposition = StringUtils.replace(clearContentDisposition, "'", "", -1);
+				String clearContentDisposition = Strings.CS.replace(contentDisposition, "\"", "", -1);
+				clearContentDisposition = Strings.CS.replace(clearContentDisposition, "'", "", -1);
 				if ( ArgsUtils.retrieveDatasets && LoaderAndChecker.DATASET_URL_FILTER.matcher(clearContentDisposition).matches() )
 					mimeTypeResult = new MimeTypeResult("unspecified", "dataset");
 			}

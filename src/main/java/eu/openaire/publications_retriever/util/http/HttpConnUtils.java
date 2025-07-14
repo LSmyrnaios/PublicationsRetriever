@@ -10,7 +10,7 @@ import eu.openaire.publications_retriever.util.file.FileData;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlTypeChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -300,7 +300,7 @@ public class HttpConnUtils
 				throw new RuntimeException("Avoid reaching 403ErrorCode with url: \"" + resourceURL + "\"!");
 
 			if ( !resourceURL.startsWith("https:", 0) && domainsSupportingHTTPS.contains(domainStr) ) {
-				resourceURL = StringUtils.replace(resourceURL, "http:", "https:", 1);
+				resourceURL = Strings.CS.replace(resourceURL, "http:", "https:", 1);
 				timesDidOfflineHTTPSredirect.incrementAndGet();
 			}
 
@@ -313,7 +313,7 @@ public class HttpConnUtils
 			boolean weirdMetaDocUrlWhichNeedsGET = false;
 			if ( calledForPossibleDocUrl && resourceURL.contains("amp%3B") ) {
 				//logger.debug("Just arrived weirdMetaDocUrl: " + resourceURL);
-				resourceURL = StringUtils.replace(resourceURL, "amp%3B", "", -1);
+				resourceURL = Strings.CS.replace(resourceURL, "amp%3B", "", -1);
 				//logger.debug("After replacement in the weirdMetaDocUrl: " + resourceURL);
 				weirdMetaDocUrlWhichNeedsGET = true;
 			}
