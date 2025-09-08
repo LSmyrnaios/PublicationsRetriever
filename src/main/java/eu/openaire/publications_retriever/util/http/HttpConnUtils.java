@@ -159,31 +159,35 @@ public class HttpConnUtils
 					String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
 					FileData fileData = null;
 					if ( ArgsUtils.shouldDownloadDocFiles ) {
-						if ( foundDetectedContentType ) {	// If we went and detected the pdf from the request-code, then reconnect and proceed with downloading (reasons explained elsewhere).
-							conn = handleConnection(urlId, sourceUrl, pageUrl, finalUrlStr, domainStr, calledForPageUrl, calledForPossibleDocOrDatasetUrl);	// No need to "conn.disconnect()" before, as we are re-connecting to the same domain.
-						}
-						try {
-							fileData = ConnSupportUtils.downloadAndStoreDocFile(conn, urlId, domainStr, finalUrlStr, calledForPageUrl);	// It does not return "null".
-							fullPathFileName = fileData.getLocation();
-							logger.info("DocFile: \"" + fullPathFileName + "\" has been downloaded.");
-							UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, "null", fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", fileData.getSize(), fileData.getHash(), finalMimeType);	// we send the urls, before and after potential redirections.
-							return true;
-						} catch (FileNotRetrievedException dfnde) {
-							error = docFileNotRetrievedMessage + dfnde.getMessage();
-							fullPathFileName = "null";
-						}	// We log below and then return.
+                        try {
+                            if ( foundDetectedContentType ) {   // If we went and detected the pdf from the request-code, then reconnect and proceed with downloading, as the first bytes of the stream where already consumed and need to regain them.
+                                conn = handleConnection(urlId, sourceUrl, pageUrl, finalUrlStr, domainStr, calledForPageUrl, calledForPossibleDocOrDatasetUrl); // No need to "conn.disconnect()" before, as we are re-connecting to the same domain.
+                            }
+                            fileData = ConnSupportUtils.downloadAndStoreDocFile(conn, urlId, domainStr, finalUrlStr, calledForPageUrl); // It does not return "null".
+                            fullPathFileName = fileData.getLocation();
+                            logger.info("DocFile: \"" + fullPathFileName + "\" has been downloaded.");
+                            UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, "null", fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", fileData.getSize(), fileData.getHash(), finalMimeType);
+                            return true;
+                        } catch (Exception e) {
+                            error = docFileNotRetrievedMessage + e.getMessage();
+                            fullPathFileName = "null";
+                            /*if ( e instanceof NoSpaceLeftException )
+                                ConnSupportUtils.spaceAvailable.set(false); // Continue with logging this failure. The next time any thread will go to download, it will halt until the lock is released.
+                            */
+                        }
 					} else if ( ArgsUtils.shouldJustDownloadHtmlFiles ) {
 						fullPathFileName = "null";
 					}
-					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, error, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", null, "null", finalMimeType);	// we send the urls, before and after potential redirections.
-					return true;
+                    // Else we care about docUrls, but not want to download the files: fullPathFileName=category, finalMimeType=<actual_value>
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, error, fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", null, "null", finalMimeType);
+					return true;    // It was found to be a docUrl, even in case of an error in downloading.
 				}
 				else if ( ArgsUtils.retrieveDatasets && category.equals("dataset") ) {
 					logger.info("datasetUrl found: < " + finalUrlStr + " >");
 					// TODO - handle possible download and improve logging... The dataset might have huge size each. Downloading these, isn't a requirement at the moment.
 					String fullPathFileName = ArgsUtils.shouldDownloadDocFiles ? "It's a dataset-url. The download is not supported." : category;
 					String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
-					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, "null", fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", null, "null", finalMimeType);	// we send the urls, before and after potential redirections.
+					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, "null", fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", null, "null", finalMimeType);
 					return true;
 				}
 				else {	// Either "document" or "dataset", but the user specified that he doesn't want it.
@@ -195,7 +199,7 @@ public class HttpConnUtils
 			}
 			else if ( calledForPageUrl ) {	// Visit this url only if this method was called for an inputUrl.
 				if ( finalUrlStr.contains("viewcontent.cgi") ) {	// If this "viewcontent.cgi" isn't a docUrl, then don't check its internalLinks. Check this: "https://docs.lib.purdue.edu/cgi/viewcontent.cgi?referer=&httpsredir=1&params=/context/physics_articles/article/1964/type/native/&path_info="
-					logger.warn("Unwanted pageUrl: \"" + finalUrlStr + "\" will not be visited!");
+					logger.warn("Unwanted pageUrl: \"" + finalUrlStr + "\" will not be visited!");  // We do not want it even when downloading HTMLs.
 					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to a non-" + ArgsUtils.targetUrlType + " with 'viewcontent.cgi'.", "null", null, true, "true", "true", "false", "false", "false", null, "null", "null");
 					UrlTypeChecker.pagesNotProvidingDocUrls.incrementAndGet();
 					return false;
