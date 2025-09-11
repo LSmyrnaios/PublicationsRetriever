@@ -760,7 +760,7 @@ public class ConnSupportUtils
 
 		String html = htmlResult.getHtmlString();
 		int htmlLength = html.length();	// It won't be 0;
-		if ( htmlLength > 10000 )
+		if ( htmlLength > 10000 )   // Avoid parsing too large html-files just to get the error..
 			return null;
 
 		String errorText = Jsoup.parse(html).text();	// The result is already "trimmed".
@@ -1112,30 +1112,30 @@ public class ConnSupportUtils
 		if ( wasConnectedWithHTTPGET ) {
 			DetectedContentType detectedContentType = ConnSupportUtils.extractContentTypeFromResponseBody(conn);
 			if ( detectedContentType != null ) {
-				if ( detectedContentType.detectedContentType.equals("html") ) {
-					if ( calledForPageUrl )	// Do not show logs for dozens of internal-links.. Normally this check is not needed, as the non-possible-docUrl-internal-links are connected only with GET, but maybe a possible-docUrls is connected with GET and it is just a page. Also, later things may change even for internal-links.
-						logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have HTML contentType! Going to visit the page.");
-					mimeType = "text/html";
-					foundDetectedContentType = true;
-					firstHtmlLine = detectedContentType.firstHtmlLine;
-					bufferedReader = detectedContentType.bufferedReader;
-				} else if ( detectedContentType.detectedContentType.equals("pdf") ) {
-					logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have PDF contentType!");
-					mimeType = "application/pdf";
-					calledForPossibleDocUrl = true;	// Important for the re-connection.
-					foundDetectedContentType = true;
-					// The "bufferedReader" has already been closed.
-				} else if ( detectedContentType.detectedContentType.equals("undefined") )
-					logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have UNDEFINED contentType.");
-					// The "bufferedReader" has already been closed.
-				else
-					warnMsg += "\nUnspecified \"detectedContentType\": " + detectedContentType.detectedContentType;
-					// Normally, we should never reach here. The BufferedReader should be null.
-			}
-			else	//  ( detectedContentType == null )
+                switch ( detectedContentType.detectedContentType ) {
+                    case "html" -> {
+                        if ( calledForPageUrl ) // Do not show logs for dozens of internal-links.. Normally this check is not needed, as the non-possible-docUrl-internal-links are connected only with GET, but maybe a possible-docUrls is connected with GET and it is just a page. Also, later things may change even for internal-links.
+                            logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have HTML contentType! Going to visit the page.");
+                        mimeType = "text/html";
+                        foundDetectedContentType = true;
+                        firstHtmlLine = detectedContentType.firstHtmlLine;
+                        bufferedReader = detectedContentType.bufferedReader;
+                    } case "pdf" -> {
+                        logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have PDF contentType!");
+                        mimeType = "application/pdf";
+                        calledForPossibleDocUrl = true; // Important for the re-connection.
+                        foundDetectedContentType = true;
+                        // The "bufferedReader" has already been closed.
+                    } case "undefined" ->
+                        logger.debug("The url with the undeclared content type < " + finalUrlStr + " >, was examined and found to have UNDEFINED contentType.");
+                        // The "bufferedReader" has already been closed.
+                    default ->
+                        warnMsg += "\nUnspecified \"detectedContentType\": " + detectedContentType.detectedContentType;
+                        // Normally, we should never reach here. The BufferedReader should be null.
+                }
+			} else	//  ( detectedContentType == null )
 				warnMsg += "\nCould not retrieve the response-body for url: " + finalUrlStr;
-		}
-		else	// ( connection-method == "HEAD" )
+		} else	// ( connection-method == "HEAD" )
 			warnMsg += "\nThe initial connection was made with the \"HTTP-HEAD\" method, so there is no response-body to use to detect the content-type.";
 
 		if ( !foundDetectedContentType && wasConnectedWithHTTPGET ) {	// If it could be detected (by using the "GET"  method to take the response-body), but it was not, only then go and check if it should be blocked.

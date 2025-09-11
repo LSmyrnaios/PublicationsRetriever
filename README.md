@@ -14,7 +14,7 @@
 A Java-program which retrieves the Document and Dataset Urls from the given Publication-Web-Pages and if wanted, it can also download the full-texts and/or upload them to an **S3 Object Store**.<br>
 Afterwards, these full-text documents are mined (by other pieces of software), in order to enrich a much more complete set of OpenAIRE publications with inference links, in the [**OpenAIRE Graph**](https://graph.openaire.eu/).<br>
 
-This program is used either as a stand-alone download-tool for full-texts and datasets, or as a library for the [UrlsWorker](https://code-repo.d4science.org/lsmyrnaios/UrlsWorker)'s code, of OpenAIRE's "**PDF Aggregation Service**". <br>
+This program can be used either as 1) a stand-alone, a) download-tool for full-texts or html-files and b) retriever for dataset-links, or 2) as a library for the [UrlsWorker](https://code-repo.d4science.org/lsmyrnaios/UrlsWorker)'s code, of OpenAIRE's "**PDF Aggregation Service**". <br>
 
 The **PublicationsRetriever** takes as input the PubPages with their IDs -in JSON format- and gives an output -also in JSON format,
 which contains the IDs, the source and target PubPages, the Document or Dataset Urls, a series of informative booleans, the *MD5* "fileHash", the "fileSize", the "mimeType", "filePath" and "error".<br>
