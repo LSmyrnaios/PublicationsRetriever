@@ -204,9 +204,11 @@ public class HttpConnUtils
 					UrlTypeChecker.pagesNotProvidingDocUrls.incrementAndGet();
 					return false;
 				}
-				else if ( (lowerCaseMimeType != null) && (lowerCaseMimeType.length() <= 255)  && PAGE_MIMETYPE_RULES.matcher(lowerCaseMimeType).matches() )	// The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
-					PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn, firstHtmlLine, bufferedReader);
-				else {
+				else if ( (lowerCaseMimeType != null) && (lowerCaseMimeType.length() <= 255)  && PAGE_MIMETYPE_RULES.matcher(lowerCaseMimeType).matches() ) {   // The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
+                    // If the initial connection occurred with "HTTP-HEAD", make sure we reconnect with "GET", in order to be able to get its content. This may happen if the initialUrl was wrongly identified as a "docUrl" and the download of fulltexts is not enabled (i.e.: just detecting docUrls, or downloading HTML-files).
+                    conn = ConnSupportUtils.checkForHEADConnectionAndReconnectIfNeededWitGET(conn, finalUrlStr, domainStr, true, false);
+                    PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn, firstHtmlLine, bufferedReader);
+                } else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" with mimeType: \"" + mimeType + "\" will not be visited!");
 					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after not matching to a " + ArgsUtils.targetUrlType + " nor to an htm/text-like page.", "null", null, true, "true", "true", "false", "false", "false", null, "null", "null");
 					if ( ConnSupportUtils.countAndBlockDomainAfterTimes(blacklistedDomains, timesDomainsHadInputNotBeingDocNorPage, domainStr, HttpConnUtils.timesToHaveNoDocNorPageInputBeforeBlocked, true) )
@@ -339,26 +341,27 @@ public class HttpConnUtils
 			ConnSupportUtils.setHttpHeaders(conn, domainStr);
 			conn.setInstanceFollowRedirects(false);	// We manage redirects on our own, in order to control redirectsNum, avoid redirecting to unwantedUrls and handling errors.
 
-			boolean useHttpGetMethod = false;
+			boolean useHttpGetMethod = (calledForPageUrl && !calledForPossibleDocUrl)	// For just-webPages, we want to use "GET" in order to download the html-content and either search (& download) inside for fulltexts or store the html to a file.
+				|| (calledForPossibleDocUrl && ArgsUtils.shouldDownloadDocFiles)	// For docUrls, only if we should download them.
+                || weirdMetaDocUrlWhichNeedsGET	// If we have a weirdMetaDocUrl-case then we need "GET".
+                || domainsWithUnsupportedHeadMethod.contains(domainStr)	// If the domain doesn't support "HEAD", then we only do "GET".
+                || domainStr.contains("meetingorganizer.copernicus.org");   // This domain has pdf-urls which are discovered (via their ContentType) only when using "GET".;
 
-			if ( (calledForPageUrl && !calledForPossibleDocUrl)	// For just-webPages, we want to use "GET" in order to download the content.
-				|| (calledForPossibleDocUrl && ArgsUtils.shouldDownloadDocFiles)	// For docUrls, if we should download them.
-				|| weirdMetaDocUrlWhichNeedsGET	// If we have a weirdMetaDocUrl-case then we need "GET".
-				|| domainsWithUnsupportedHeadMethod.contains(domainStr)	// If the domain doesn't support "HEAD", then we only do "GET".
-				|| domainStr.contains("meetingorganizer.copernicus.org") )	// This domain has pdf-urls which are discovered (via their ContentType) only when using "GET".
-			{
+            // NOTE: In case we have "calledForPageUrl=true", "calledForPossibleDocUrl=True" and "ArgsUtils.shouldDownloadDocFiles=false",
+            //          the "HEAD"-method will be used, as expected, for optimization purposes i.e.: just wanting to log the url as a "docUrl"-one, without downloading the fulltext-file.
+            //          BUT, there is a possibility that the url is not a DocUrl and we are about to reach the "visit()"-method with "HEAD", thus resulting in content-retrieval-error.
+            //          That's when a "GET"-reconnection occurs.
+
+			if ( useHttpGetMethod ) {
 				conn.setRequestMethod("GET");	// Go directly with "GET".
 				conn.setConnectTimeout(maxConnGETWaitingTime);
 				conn.setReadTimeout(maxConnGETWaitingTime);
-				useHttpGetMethod = true;
 			} else {
 				conn.setRequestMethod("HEAD");	// Else, try "HEAD" (it may be either a domain that supports "HEAD", or a new domain, for which we have no info yet).
 				conn.setConnectTimeout(maxConnHEADWaitingTime);
 				conn.setReadTimeout(maxConnHEADWaitingTime);
 			}
-
 			ConnSupportUtils.applyPolitenessDelay(domainStr);
-
 			conn.connect();	// Else, first connect and if there is no error, log this domain as the last one.
 
 			if ( (responseCode = conn.getResponseCode()) == -1 )
@@ -382,9 +385,7 @@ public class HttpConnUtils
 					conn.setConnectTimeout(maxConnHEADWaitingTime);
 					conn.setReadTimeout(maxConnHEADWaitingTime);
 				}
-
 				ConnSupportUtils.applyPolitenessDelay(domainStr);
-
 				conn.connect();	// Else, first connect and if there is no error, log this domain as the last one.
 
 				if ( conn.getResponseCode() == -1 )
@@ -408,7 +409,6 @@ public class HttpConnUtils
 				conn.setInstanceFollowRedirects(false);
 
 				ConnSupportUtils.applyPolitenessDelay(domainStr);
-
 				conn.connect();
 				//logger.debug("responseCode for \"" + resourceURL + "\", after setting conn-method to: \"" + conn.getRequestMethod() + "\" is: " + conn.getResponseCode());
 
@@ -430,7 +430,6 @@ public class HttpConnUtils
 					conn.setInstanceFollowRedirects(false);
 
 					ConnSupportUtils.applyPolitenessDelay(domainStr);
-
 					conn.connect();	// Else, first connect and if there is no error, log this domain as the last one.
 
 					if ( (conn.getResponseCode()) == -1 )

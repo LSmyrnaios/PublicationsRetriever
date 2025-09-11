@@ -283,6 +283,7 @@ public class ConnSupportUtils
 				}
 			}
 
+            // Here the "plainMimeType" won't be null.
 			// Cleanup the mimeType further, e.g.: < application/pdf' > (with the < ' > in the end): http://www.ccsenet.org/journal/index.php/ijb/article/download/48805/26704
 			plainMimeType = Strings.CS.replace(plainMimeType, "'", "", -1);
 			plainMimeType = Strings.CS.replace(plainMimeType, "\"", "", -1);
@@ -438,6 +439,24 @@ public class ConnSupportUtils
 	}
 
 
+    public static HttpURLConnection checkForHEADConnectionAndReconnectIfNeededWitGET(HttpURLConnection conn, String url, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
+            throws Exception
+    {
+        if ( conn.getRequestMethod().equals("HEAD") ) {    // If the connection happened with "HEAD" we have to re-connect with "GET" to download the docFile.
+            // No call of "conn.disconnect()" here, as we will connect to the same server.
+            conn = HttpConnUtils.openHttpConnection(url, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // The provided params guarantee a "GET"-request.
+            int responseCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP response), inside openHttpConnection().
+            // Only a final-url will reach here, so no redirect should occur (thus, we don't check for it).
+            if ( responseCode!= 200 ) { // If we have unwanted/error codes.
+                String errorMessage = onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode, calledForPageUrl, conn);
+                throw new RuntimeException(errorMessage);
+            }
+            return conn;
+        } else
+            return conn;
+    }
+
+
 	/**
 	 * This method first checks which "HTTP METHOD" was used to connect to the docUrl.
 	 * If this docUrl was connected using "GET" (i.e. when this docURL was fast-found as a possibleDocUrl), just write the data to the disk.
@@ -456,17 +475,11 @@ public class ConnSupportUtils
 	{
 		boolean reconnected = false;
 		try {
-			if ( conn.getRequestMethod().equals("HEAD") ) {    // If the connection happened with "HEAD" we have to re-connect with "GET" to download the docFile.
-				// No call of "conn.disconnect()" here, as we will connect to the same server.
-				conn = HttpConnUtils.openHttpConnection(docUrl, domainStr, false, true);
-				reconnected = true;
-				int responseCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP response), inside openHttpConnection().
-				// Only a final-url will reach here, so no redirect should occur (thus, we don't check for it).
-				if ( (responseCode < 200) || (responseCode >= 400) ) {    // If we have unwanted/error codes.
-					String errorMessage = onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode, calledForPageUrl, conn);
-					throw new FileNotRetrievedException(errorMessage);
-				}	// No redirection should exist in this re-connection with another HTTP-Method.
-			}
+            HttpURLConnection newConn = checkForHEADConnectionAndReconnectIfNeededWitGET(conn, docUrl, domainStr, false, true);
+            if ( !newConn.equals(conn) ) {
+                reconnected = true;
+                conn = newConn;
+            }
 
 			// Check if we should abort the download based on its content-size.
 			int contentSize = 0;
@@ -696,10 +709,12 @@ public class ConnSupportUtils
 		InputStream inputStream = null;
 		try {
 			inputStream = (isForError ? conn.getErrorStream() : conn.getInputStream());
-			if ( isForError && (inputStream == null) )	// Only the "getErrorStream" may return null.
-				return null;
+			if ( isForError && (inputStream == null) ) {    // Only the "getErrorStream" may return null.
+                logger.error("The \"getErrorStream\" dod not return a stream!");
+                return null;
+            }
 		} catch (Exception e) {
-			logger.error("", e);
+			logger.error("Error when acquiring the " + (isForError ? "Error" : "") + "InputStream!", e);
 			return null;
 		}
 		// Determine the potential encoding
