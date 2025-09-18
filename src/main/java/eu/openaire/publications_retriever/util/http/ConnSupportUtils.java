@@ -1000,7 +1000,8 @@ public class ConnSupportUtils
 
 		StringBuilder htmlStrB = htmlStrBuilder.get();
 		if ( (htmlStrB == null) && !shouldWriteHtmlFile ) {
-			htmlStrB = new StringBuilder(100_000);	// Initialize and pre-allocate the StringBuilder.
+            // Initialize and pre-allocate the StringBuilder. When retrieving HTML-files, this is only used for error-pages which are significantly smaller than regular ones.
+			htmlStrB = new StringBuilder((ArgsUtils.shouldJustDownloadHtmlFiles ? 10_000 : 100_000));
 			htmlStrBuilder.set(htmlStrB);	// Save it for future use by this thread.
 		}
 
