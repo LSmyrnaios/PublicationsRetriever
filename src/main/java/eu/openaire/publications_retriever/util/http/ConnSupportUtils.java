@@ -422,13 +422,19 @@ public class ConnSupportUtils
 			} catch (Exception e1) {
 				logger.error("Error when checking if the duplicate file exists, from url: " + url, e1);
 			}
+
+            // This file was duplicate and was deleted. Decrement the related counters.
 			if ( ArgsUtils.shouldDownloadDocFiles ) {	// Instead of HTML-files.
 				if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
 						FileUtils.numOfDocFile--;
 				else
 					FileUtils.numOfDocFiles.decrementAndGet();
-			}	// In case of HTML-files, no "decrementation" is needed, as the incrementation happens after calling this method, not before, like with Doc-files.
-			// Return the file-data which will now point to the initial and identical file. No recalculation of hash and size is needed.
+			}
+            // In case of HTML-files, unless the "numberName"-filename is used, no "decrementation" is needed, as the incrementation happens after calling this method, not before, like with Doc-files.
+            else if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
+                HtmlFileUtils.htmlFilesNum.decrementAndGet();
+
+            // Return the file-data which will now point to the initial and identical file. No recalculation of hash and size is needed.
 			fileData.setLocation(alreadyDownloadedFileLocation);
 			fileData.setFile(new File(alreadyDownloadedFileLocation));
 			return fileData;
@@ -1019,6 +1025,7 @@ public class ConnSupportUtils
 		if ( shouldWriteHtmlFile ) {
 			try {
 				htmlFileData = HtmlFileUtils.getFinalHtmlFilePath(urlId, pageUrl, urlMatcher, contentSize);	// This will not be null.
+                // In case we use "numberName" for the filename, the above method increments the counter.
 				fullPathFileName = htmlFileData.getLocation();
 				//} catch (FileNotRetrievedException fnre) {
 			} catch (Exception e) {
@@ -1033,13 +1040,13 @@ public class ConnSupportUtils
 			 BufferedWriter bw = (shouldWriteHtmlFile ? new BufferedWriter(new FileWriter(fullPathFileName, StandardCharsets.UTF_8),  bufferSize) : null) )	// Try-with-resources
 		{
 			String inputLine;
-			String htmlSpaceChar = ((bw != null) ? FileUtils.endOfLine : " ");
+			final String htmlSpaceChar = " "; // This is used to separate individual lines when loading the html in memory, as each line returned by the FileReader, does not include an "ending character".
 
 			// We may have extracted the first response-line in order to determine the content-type, in case no other method succeeded.
 			if ( firstHTMLlineFromDetectedContentType != null ) {
 				if ( !shouldWriteHtmlFile )
 					htmlStrB.append(firstHTMLlineFromDetectedContentType).append(htmlSpaceChar);
-				if ( bw != null ) {
+				else {
 					bw.write(firstHTMLlineFromDetectedContentType);
 					bw.newLine();
 				}
@@ -1050,7 +1057,7 @@ public class ConnSupportUtils
 				if ( !inputLine.isEmpty() && (inputLine.length() != 1) && !SPACE_ONLY_LINE.matcher(inputLine).matches() ) {	// We check for (inputLine.length() != 1), as some lines contain just an unrecognized byte.
 					if ( !shouldWriteHtmlFile )
 						htmlStrB.append(inputLine).append(htmlSpaceChar);	// Add the "spaceChar" to avoid joining words from different lines.
-					if ( bw != null ) {
+					else {
 						bw.write(inputLine);
 						bw.newLine();
 					}
@@ -1059,21 +1066,23 @@ public class ConnSupportUtils
 			}
 			//logger.debug("Chars in html: " + String.valueOf(htmlStrB.length()));	// DEBUG!
 
-			if ( bw != null ) {
+			if ( shouldWriteHtmlFile ) {
 				bw.flush();	// Otherwise the "bw" will be flushed only upon closing and the calculation of "hash" and "size" will not work.
 				logger.info("HtmlFile '" + fullPathFileName + "' was downloaded.");
 				if ( htmlFileData.calculateAndSetHashAndSize() ) {
 					FileData newFileData = checkAndHandleDuplicateHash(htmlFileData, pageUrl);
-					if ( newFileData != null )
+					if ( newFileData != null )  // It's a duplicate.
 						htmlFileData = newFileData;
-					else	// It's not a duplicate.
+					else if ( ! ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )   // Increment if it hasn't been already.
 						HtmlFileUtils.htmlFilesNum.incrementAndGet();
-				} else {
+				} else {    // There was a problem with the hash and/or size of this file.
 					try {
 						FileDeleteStrategy.FORCE.delete(htmlFileData.getFile());
 					} catch (Exception e) {
 						logger.error("Error when deleting the html-file from pageUrl: " + pageUrl, e);
 					}
+                    if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
+                        HtmlFileUtils.htmlFilesNum.decrementAndGet();
 					return null;
 				}
 			}
@@ -1083,12 +1092,21 @@ public class ConnSupportUtils
 				return ((htmlString != null) ? new HtmlResult(htmlString, null) : null);
 			} else
 				return new HtmlResult(null, htmlFileData);	// Make sure we return a "null" on empty string, to better handle the case in the caller-method.
-
-		} catch ( IOException ioe ) {
-			logger.error("IOException when retrieving the HTML-code for pageUrl \"" + pageUrl + "\": " + ioe.getMessage());
-			return null;
 		} catch ( Exception e ) {
-			logger.error("", e);
+            if ( e instanceof IOException )
+                logger.error("IOException when retrieving the HTML-code for pageUrl \"" + pageUrl + "\": " + e.getMessage());
+            else
+                logger.error("Could not retrieve the html-code for pageUrl \"" + pageUrl + "\"!", e);
+
+            if ( shouldWriteHtmlFile ) {    // Delete the potentially half-created file.
+                try {
+                    FileDeleteStrategy.FORCE.delete(htmlFileData.getFile());
+                } catch (Exception e1) {
+                    logger.error("Error when deleting the html-file from pageUrl: " + pageUrl, e1);
+                }
+            }
+            if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
+                HtmlFileUtils.htmlFilesNum.decrementAndGet();
 			return null;
 		} finally {
 			if ( htmlStrB != null )
