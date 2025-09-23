@@ -656,7 +656,8 @@ public class FileUtils
 				// else, we use the initial file.
 			}
 
-			fileOutputStream = new FileOutputStream(file);
+            if ( !dotFileExtension.equals(".html") )
+			    fileOutputStream = new FileOutputStream(file);
 			if ( curDuplicateNum > 0 )	// After the file is created successfully, from the above outputStream-initialization, add the new duplicate-num in our HashMap.
 				numbersOfDuplicateFileNames.put(initialFileName, curDuplicateNum);    // We should add the new "curDuplicateNum" for the original fileName, only if the new file can be created.
 
