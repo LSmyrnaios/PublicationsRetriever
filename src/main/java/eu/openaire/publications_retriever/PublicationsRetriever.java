@@ -236,6 +236,8 @@ public class PublicationsRetriever
 		logger.debug("The number of offline-redirects to HTTPS (reducing the online-redirection-overhead), was: " + HttpConnUtils.timesDidOfflineHTTPSredirect.get());
 		logger.debug("The number of offline-redirects to slash-ending url (reducing the online-redirection-overhead), was: " + HttpConnUtils.timesDidOfflineSlashRedirect.get());
 
+		logger.debug("The number of contentTypes which were extracted from the body of http-responses was: " + ConnSupportUtils.numContentTypeExtractedFromPageContent.get());
+
 		logger.debug("The number of domains blocked due to an \"SSL Exception\", was: " + HttpConnUtils.numOfDomainsBlockedDueToSSLException.get());
 		logger.debug("The number of domains blocked in total, during runtime, was: " + HttpConnUtils.blacklistedDomains.size());
 		logger.debug("The number of paths blocked -due to HTTP 403- in total, was: " + ConnSupportUtils.domainsMultimapWithPaths403BlackListed.values().size());

@@ -206,7 +206,7 @@ public class HttpConnUtils
 				}
 				else if ( (lowerCaseMimeType != null) && (lowerCaseMimeType.length() <= 255)  && PAGE_MIMETYPE_RULES.matcher(lowerCaseMimeType).matches() ) {   // The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
                     // If the initial connection occurred with "HTTP-HEAD", make sure we reconnect with "GET", in order to be able to get its content. This may happen if the initialUrl was wrongly identified as a "docUrl" and the download of fulltexts is not enabled (i.e.: just detecting docUrls, or downloading HTML-files).
-                    conn = ConnSupportUtils.checkForHEADConnectionAndReconnectIfNeededWitGET(conn, finalUrlStr, domainStr, true, false);
+                    conn = ConnSupportUtils.checkForHEADConnectionAndReconnectIfNeededWithGET(conn, finalUrlStr, domainStr, true, false);
                     PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn, firstHtmlLine, bufferedReader);
                 } else {
 					logger.warn("Non-pageUrl: \"" + finalUrlStr + "\" with mimeType: \"" + mimeType + "\" will not be visited!");
