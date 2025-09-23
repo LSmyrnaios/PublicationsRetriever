@@ -57,7 +57,7 @@ public class ConnSupportUtils
 
 	public static final Pattern DATASET_MIME_TYPE = Pattern.compile("(?:application|binary)/" + LoaderAndChecker.dataset_formats);
 
-	public static final Pattern HTML_STRING_MATCH = Pattern.compile("^(?:[\\s]*<(?:!doctype\\s)?html).*");
+	public static final Pattern HTML_STRING_INDICATOR = Pattern.compile("^[\\s]*<(?:!doctype\\s)?html");
 	public static final Pattern RESPONSE_BODY_UNWANTED_MATCH = Pattern.compile("^(?:[\\s]+|[\\s]*<(?:\\?xml|!--).*)");	// TODO - Avoid matching to "  <?xml>sddfs<html[...]" (as some times the whole page-code is a single line)
 
 	public static final Pattern SPACE_ONLY_LINE = Pattern.compile("^[\\s]+$");	// For full-HTML-extraction.
@@ -1214,7 +1214,6 @@ public class ConnSupportUtils
 			return null;
 
 		int bufferSize = (((contentSize != -2) && contentSize < FileUtils.fiveMb) ? contentSize : FileUtils.fiveMb);
-
 		BufferedReader br = null;
 		try {
 			br = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8), bufferSize);
@@ -1238,7 +1237,7 @@ public class ConnSupportUtils
 
 			String lowerCaseInputLine = inputLine.toLowerCase();
 			//logger.debug(lowerCaseInputLine + "\nLength of line: "  + lowerCaseInputLine.length());	// DEBUG!
-			if ( HTML_STRING_MATCH.matcher(lowerCaseInputLine).matches() )
+			if ( HTML_STRING_INDICATOR.matcher(lowerCaseInputLine).find() )
 				return new DetectedContentType("html", inputLine, br);
 			else {
 				try {
