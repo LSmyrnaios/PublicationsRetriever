@@ -421,7 +421,7 @@ public class FileUtils
 	}
 
 
-	private static long downloadFile(String fileFullPath, int contentSize, String docUrl, MessageDigest md, BufferedInputStream inStream, BufferedOutputStream outStream)
+	public static long downloadFile(String fileFullPath, int contentSize, String docUrl, MessageDigest md, BufferedInputStream inStream, BufferedOutputStream outStream)
 			throws IOException, FileNotRetrievedException
 	{
 		int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);	// It handles the "-2" case.
@@ -797,7 +797,7 @@ public class FileUtils
 	/**
 	 * Convert hash bytes to hexadecimal string.
 	 * */
-	private static String printHexBinary(byte[] hashBytes)
+	public static String printHexBinary(byte[] hashBytes)
 	{
 		StringBuilder hexString = new StringBuilder(hashBytes.length);
 		for ( byte b : hashBytes ) {

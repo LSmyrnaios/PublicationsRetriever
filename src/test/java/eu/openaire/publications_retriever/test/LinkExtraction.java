@@ -4,7 +4,6 @@ import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.exceptions.DocLinkInvalidException;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
-import eu.openaire.publications_retriever.util.file.HtmlResult;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.url.UrlTypeChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
@@ -150,20 +149,20 @@ public class LinkExtraction {
 		try {
 			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl, null), true, false);
 			String finalUrl = conn.getURL().toString();
-			HtmlResult htmlResult = null;
-			if ( (htmlResult = ConnSupportUtils.getHtml(conn, null, finalUrl, null, false, null, null)) == null ) {
+            String html;
+			if ( (html = ConnSupportUtils.getHtmlString(conn, finalUrl, null, false, null)) == null ) {
 				logger.error("Could not retrieve the HTML-code for pageUrl: " + finalUrl);
-				link = null;
-			}
-			else {
-				String html = htmlResult.getHtmlString();
-				HashMap<String, String> extractedLinksHashSet = getLinksList(html, finalUrl);
-				if ( extractedLinksHashSet == null )
-					return;	// Logging is handled inside..
-
-				link = new ArrayList<>(extractedLinksHashSet.keySet()).get(0);
-				logger.info("The single-retrieved internalLink is: \"" + link + "\"");
-			}
+                link = null;
+			} else {
+                //logger.debug("HTML:\n" + html);
+                HashMap<String, String> extractedLinksHashSet = getLinksList(html, finalUrl);
+                if ( extractedLinksHashSet == null )
+                    link = null;
+                else {
+                    link = new ArrayList<>(extractedLinksHashSet.keySet()).get(0);
+                    logger.info("The single-retrieved internalLink is: \"" + link + "\"");
+                }
+            }
 		} catch (Exception e) {
 			logger.error("", e);
 			link = null;
@@ -211,12 +210,11 @@ public class LinkExtraction {
 		try {
 			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl, null), true, false);
 			String finalUrl = conn.getURL().toString();
-			HtmlResult htmlResult = null;
-			if ( (htmlResult = ConnSupportUtils.getHtml(conn, null, finalUrl, null, false, null, null)) == null ) {
-				logger.error("Could not retrieve the HTML-code for pageUrl: " + finalUrl);
-				return;
-			}
-			String html = htmlResult.getHtmlString();
+            String html;
+            if ( (html = ConnSupportUtils.getHtmlString(conn, finalUrl, null, false, null)) == null ) {
+                logger.error("Could not retrieve the HTML-code for pageUrl: " + finalUrl);
+                return;
+            }
 			//logger.debug("HTML:\n" + html);
 
 			HashMap<String, String> extractedLinksHashSet = getLinksList(html, finalUrl);

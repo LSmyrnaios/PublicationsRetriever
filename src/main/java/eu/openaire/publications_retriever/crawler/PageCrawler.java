@@ -5,7 +5,6 @@ import eu.openaire.publications_retriever.machine_learning.PageStructureMLA;
 import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileData;
-import eu.openaire.publications_retriever.util.file.HtmlResult;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
@@ -105,22 +104,27 @@ public class PageCrawler
 		}
 
 		// Take the html from the page and in case we want to save it permanently, write it into a file.
-		HtmlResult htmlResult = null;
-		if ( (htmlResult = ConnSupportUtils.getHtml(conn, urlId, pageUrl, bufferedReader, false, urlMatcher, firstHTMLlineFromDetectedContentType)) == null ) {
+        if ( ArgsUtils.shouldJustDownloadHtmlFiles ) {
+            ConnSupportUtils.closeBufferedReader(bufferedReader);	// This page's content-type was auto-detected, and the process fails before re-requesting the conn-inputStream, then make sure we close the last one.
+            FileData htmlFileData;
+            if ((htmlFileData = ConnSupportUtils.getAndDownloadHtmlFile(conn, urlId, pageUrl, false, urlMatcher, firstHTMLlineFromDetectedContentType)) == null) {
+                logger.warn("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
+                UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", "null", null, true, "true", "true", "false", "false", "true", null, "null", "null");
+                LoaderAndChecker.connProblematicUrls.incrementAndGet();
+                // The "bufferedReader" is closed inside the above method.  TODO <<<<<<<<<<<<<<<<<<<---- !!!!!
+            } else
+                UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, "null", "null", htmlFileData.getLocation(), null, true, "true", "true", "null", "null", "true", htmlFileData.getSize(), htmlFileData.getHash(), "text/html");
+            return;
+        }
+
+        String pageHtml = null;
+		if ( (pageHtml = ConnSupportUtils.getHtmlString(conn, pageUrl, bufferedReader, false, firstHTMLlineFromDetectedContentType)) == null ) {
 			logger.warn("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
 			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", "null", null, true, "true", "true", "false", "false", "true", null, "null", "null");
 			LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			// The "bufferedReader" is closed inside the above method.
 			return;
 		}
-
-		if ( ArgsUtils.shouldJustDownloadHtmlFiles ) {
-			FileData htmlFileData = htmlResult.getHtmlFileData();
-			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, "null", "null", htmlFileData.getLocation(), null, true, "true", "true", "null", "null", "true", htmlFileData.getSize(), htmlFileData.getHash(), "text/html");
-			return;
-		}
-
-		String pageHtml = htmlResult.getHtmlString();
 		//logger.debug(pageHtml);	// DEBUG!
 
 		if ( ArgsUtils.retrieveDocuments && pageDomain.contains("turkjgastroenterol.org") ) {
