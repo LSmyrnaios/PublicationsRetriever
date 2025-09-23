@@ -38,6 +38,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -1119,6 +1120,9 @@ public class ConnSupportUtils
 			}
 		}
 	}
+
+
+    public static final AtomicLong numContentTypeExtractedFromPageContent = new AtomicLong(0);
 
 
 	/**
