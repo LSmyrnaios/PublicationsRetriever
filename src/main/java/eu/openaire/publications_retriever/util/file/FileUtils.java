@@ -782,7 +782,7 @@ public class FileUtils
 				continue;
 			}
 			
-			retrievedLineStr = StringUtils.remove(retrievedLineStr, "\"");
+			retrievedLineStr = Strings.CS.remove(retrievedLineStr, "\"");
 			
 			//logger.debug("Loaded from inputFile: " + retrievedLineStr);	// DEBUG!
 
