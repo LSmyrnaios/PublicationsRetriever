@@ -11,7 +11,7 @@ import eu.openaire.publications_retriever.util.url.DataForOutput;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
 import org.apache.commons.io.FileDeleteStrategy;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
