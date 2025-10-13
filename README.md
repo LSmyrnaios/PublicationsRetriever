@@ -2,7 +2,7 @@
 
 ## CI Workflows
 ### Github Actions
-[Maven CI](https://github.com/LSmyrnaios/PublicationsRetriever/actions/workflows/maven.yml): ![Build Status](https://github.com/LSmyrnaios/PublicationsRetriever/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)<br>
+[Maven CI](https://github.com/LSmyrnaios/PublicationsRetriever/actions/workflows/maven.yml): ![Build Status](https://github.com/LSmyrnaios/PublicationsRetriever/actions/workflows/maven.yml/badge.svg?branch=master)<br>
 [CodeQL](https://github.com/LSmyrnaios/PublicationsRetriever/actions/workflows/codeql-analysis.yml): [![CodeQL](https://github.com/LSmyrnaios/PublicationsRetriever/actions/workflows/codeql-analysis.yml/badge.svg?branch=master)](https://github.com/LSmyrnaios/PublicationsRetriever/actions/workflows/codeql-analysis.yml)<br>
 [Github pages](https://github.com/LSmyrnaios/PublicationsRetriever/actions/workflows/pages/pages-build-deployment): [![pages-build-deployment](https://github.com/LSmyrnaios/PublicationsRetriever/actions/workflows/pages/pages-build-deployment/badge.svg?branch=master)](https://github.com/LSmyrnaios/PublicationsRetriever/actions/workflows/pages/pages-build-deployment)
 ### [Jenkins](https://jenkins-dnet.d4science.org/job/PublicationsRetriever/): [![Build Status](https://jenkins-dnet.d4science.org/buildStatus/icon?job=PublicationsRetriever)](https://jenkins-dnet.d4science.org/job/PublicationsRetriever/)

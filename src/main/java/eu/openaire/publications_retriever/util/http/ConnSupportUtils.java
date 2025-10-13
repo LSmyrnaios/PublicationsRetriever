@@ -1024,7 +1024,7 @@ public class ConnSupportUtils
         }
 
         try ( BufferedInputStream bis = new BufferedInputStream(inputStream, bufferSize);
-              BufferedOutputStream bos =  new BufferedOutputStream(new FileOutputStream(fullPathFileName),  bufferSize) )
+              BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(fullPathFileName),  bufferSize) )
         {
             // We may have extracted the first response-line in order to determine the content-type, in case no other method succeeded.
             if ( firstHTMLlineFromDetectedContentType != null ) {
