@@ -356,7 +356,8 @@ public class FileUtils
 			md = MessageDigest.getInstance("MD5");
 		} catch (Exception e) {
 			logger.error("Failed to get instance for MD5 hash-algorithm!", e);
-			throw new RuntimeException("MD5 HASH ALGO MISSING");
+            try{inputStream.close();} catch(Exception ignore){}
+            throw new RuntimeException("MD5 HASH ALGO MISSING");
 		}
 
 		numOfDocFiles.incrementAndGet();
@@ -417,7 +418,11 @@ public class FileUtils
 
 				throw new FileNotRetrievedException(e.getMessage());
 			}
-		}
+		} finally {
+            try {   // In case the initialization of the "BufferedInputStream" failed, we need to manually close the "inputStream", as it will NOT be auto-closed..
+                inputStream.close();
+            } catch (IOException ignored) {}
+        }
 	}
 
 
@@ -474,6 +479,7 @@ public class FileUtils
 			md = MessageDigest.getInstance("MD5");
 		} catch (Exception e) {
 			logger.error("Failed to get instance for MD5 hash-algorithm!", e);
+            try{inputStream.close();} catch(Exception ignore){}
 			throw new RuntimeException("MD5 HASH ALGO MISSING");
 		}
 
@@ -535,7 +541,11 @@ public class FileUtils
 
 				throw new FileNotRetrievedException(e.getMessage());
 			}
-		}
+		} finally {
+            try {   // In case the initialization of the "BufferedInputStream" failed, we need to manually close the "inputStream", as it will NOT be auto-closed..
+                inputStream.close();
+            } catch (IOException ignored) {}
+        }
 	}
 
 

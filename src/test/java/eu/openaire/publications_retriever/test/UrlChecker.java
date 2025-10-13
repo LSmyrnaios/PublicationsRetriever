@@ -788,7 +788,8 @@ public class UrlChecker {
 			logger.info(url);
 
 		ArgsUtils.retrieveDocuments = true;
-		ArgsUtils.retrieveDatasets = true;
+		ArgsUtils.retrieveDatasets = false;
+		ArgsUtils.shouldDetectAllDatasetLinks = false;
 
 		// Set some needed data.
 		ConnSupportUtils.setKnownMimeTypes();

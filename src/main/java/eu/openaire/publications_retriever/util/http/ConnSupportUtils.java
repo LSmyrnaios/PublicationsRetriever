@@ -729,7 +729,7 @@ public class ConnSupportUtils
 			String url = conn.getURL().toString();
 			/*if ( logger.isTraceEnabled() )
 				logger.trace("Url \"" + url + "\" has content-encoding: " + encoding);*/
-			InputStream compressedInputStream = getCompressedInputStream(inputStream, encoding, url, isForError);
+			InputStream compressedInputStream = getCompressedInputStream(inputStream, encoding, url);
 			if ( compressedInputStream == null ) {
 				try {
 					inputStream.close();
@@ -738,28 +738,24 @@ public class ConnSupportUtils
 			}
 			inputStream = compressedInputStream;
 		}
-
 		return inputStream;
 	}
 
 
-	public static InputStream getCompressedInputStream(InputStream inputStream, String encoding, String url, boolean isForError)
+	public static InputStream getCompressedInputStream(InputStream inputStream, String encoding, String url)
 	{
 		InputStream compressedInputStream;
-		String lowercaseEncoding = encoding.toLowerCase();
 		try {
-			if ( lowercaseEncoding.equals("gzip") )
-				compressedInputStream = new GzipCompressorInputStream(inputStream);
-			else if ( lowercaseEncoding.equals("deflate") )
-				compressedInputStream = new DeflateCompressorInputStream(inputStream);
-			else if ( lowercaseEncoding.equals("br") )
-				compressedInputStream = new BrotliCompressorInputStream(inputStream);
-			else if ( lowercaseEncoding.equals("zstd") )
-				compressedInputStream = new ZstdCompressorInputStream(inputStream);
-			else {
-				logger.warn("An unsupported \"content-encoding\" (" + encoding + ") was received from url: " + url);
-				return null;
-			}
+            switch ( encoding.toLowerCase() ) {
+                case "gzip" -> compressedInputStream = new GzipCompressorInputStream(inputStream);
+                case "deflate" -> compressedInputStream = new DeflateCompressorInputStream(inputStream);
+                case "br" -> compressedInputStream = new BrotliCompressorInputStream(inputStream);
+                case "zstd" -> compressedInputStream = new ZstdCompressorInputStream(inputStream);
+                default -> {
+                    logger.warn("An unsupported \"content-encoding\" (" + encoding + ") was received from url: " + url);
+                    return null;
+                }
+            }
 		} catch (IOException ioe) {
 			String exMsg = ioe.getMessage();
 			if ( exMsg.startsWith("Input is not in the") )
@@ -987,7 +983,7 @@ public class ConnSupportUtils
 	public static ThreadLocal<StringBuilder> htmlStrBuilder = new ThreadLocal<StringBuilder>();	// Every Thread has its own variable.
 
 
-    public static FileData getAndDownloadHtmlFile(HttpURLConnection conn, String urlId, String pageUrl, boolean isForError, Matcher urlMatcher, String firstHTMLlineFromDetectedContentType)
+    public static FileData downloadHtmlFile(HttpURLConnection conn, String urlId, String pageUrl, boolean isForError, Matcher urlMatcher, String firstHTMLlineFromDetectedContentType)
     {
         int contentSize = 0;
         if ( (contentSize = getContentSize(conn, false, isForError)) == -1 ) {	// "Unacceptable size"-code..
@@ -1014,6 +1010,7 @@ public class ConnSupportUtils
             logger.error("Failed to acquire the \"fullPathFileName\": " + e.getMessage());
             if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
                 HtmlFileUtils.htmlFilesNum.decrementAndGet();
+            try {inputStream.close();} catch (IOException ignored) {}
             return null;
         }
 
@@ -1022,6 +1019,7 @@ public class ConnSupportUtils
             md = MessageDigest.getInstance("MD5");
         } catch (Exception e) {
             logger.error("Failed to get instance for MD5 hash-algorithm!", e);
+            try {inputStream.close();} catch (IOException ignored) {}
             throw new RuntimeException("MD5 HASH ALGO MISSING");
         }
 
@@ -1031,7 +1029,6 @@ public class ConnSupportUtils
             // We may have extracted the first response-line in order to determine the content-type, in case no other method succeeded.
             if ( firstHTMLlineFromDetectedContentType != null ) {
                 // Convert the string-line, along with a new-line-char to a byte-string and write it.
-                byte[] lineByteArray = (firstHTMLlineFromDetectedContentType + FileUtils.endOfLine).getBytes(StandardCharsets.UTF_8);
                 bos.write((firstHTMLlineFromDetectedContentType + FileUtils.endOfLine).getBytes(StandardCharsets.UTF_8));
                 bos.flush();
             }
@@ -1066,11 +1063,9 @@ public class ConnSupportUtils
                 HtmlFileUtils.htmlFilesNum.decrementAndGet();
             return null;
         } finally {
-            try {
+            try {   // In case the initialization of the "BufferedInputStream" failed, we need to manually close the "inputStream", as it will NOT be auto-closed..
                 inputStream.close();
-            } catch (IOException ioe) {
-                // Ignore.
-            }
+            } catch (IOException ignored) {}
         }
     }
 
@@ -1129,12 +1124,10 @@ public class ConnSupportUtils
 			return null;
 		} finally {
             htmlStrB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating.
-			try {
+			try {   // In case the "inputStream" was initialized before the "try"-block, and the initialization of the "BufferedReader" failed, we need to manually close the "inputStream".
 				if ( inputStream != null )
 					inputStream.close();
-			} catch (IOException ioe) {
-				// Ignore.
-			}
+			} catch (IOException ignored) {}
 		}
 	}
 

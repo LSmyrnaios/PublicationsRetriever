@@ -15,7 +15,6 @@ import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.net.CookieStore;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -23,7 +22,6 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
