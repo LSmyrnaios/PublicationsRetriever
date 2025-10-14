@@ -5,6 +5,7 @@ import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.exceptions.DocLinkUnavailableException;
 import eu.openaire.publications_retriever.machine_learning.PageStructureMLA;
 import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
+import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
@@ -37,39 +38,40 @@ public class SpecialUrlsHandler
 	public static String checkAndHandleSpecialUrls(String resourceUrl) throws RuntimeException
 	{
 		String updatedUrl = null;
+        // Do not perform docUrl transformations in case we want to download the html-files. Only perform general url-transformations to bypass connectivity problems.
 
-		if ( (updatedUrl = checkAndGetEuropepmcDocUrl(resourceUrl)) != null ) {
+		if ( !ArgsUtils.shouldJustDownloadHtmlFiles && (updatedUrl = checkAndGetEuropepmcDocUrl(resourceUrl)) != null ) {
 			//logger.debug("Europepmc-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		} else if ( (updatedUrl = checkAndDowngradeManuscriptElsevierUrl(resourceUrl)) != null ) {
 			//logger.debug("ManuscriptElsevier-URL: " + resourceUrl + " to acceptable-Url: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
-		} else if ( (updatedUrl = checkAndGetNasaDocUrl(resourceUrl)) != null ) {
+		} else if ( !ArgsUtils.shouldJustDownloadHtmlFiles && (updatedUrl = checkAndGetNasaDocUrl(resourceUrl)) != null ) {
 			//logger.debug("Nasa-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
-		} else if ( (updatedUrl = checkAndGetFrontiersinDocUrl(resourceUrl)) != null ) {
+		} else if ( !ArgsUtils.shouldJustDownloadHtmlFiles && (updatedUrl = checkAndGetFrontiersinDocUrl(resourceUrl)) != null ) {
 			//logger.debug("Frontiersin-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
-		} else if ( (updatedUrl = checkAndHandlePsyarxiv(resourceUrl)) != null ) {
+		} else if ( !ArgsUtils.shouldJustDownloadHtmlFiles && (updatedUrl = checkAndHandlePsyarxivDocUrl(resourceUrl)) != null ) {
 			//logger.debug("Psyarxiv-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
-		} else if ( (updatedUrl = checkAndHandleIjcseonlinePage(resourceUrl)) != null ) {
+		} else if ( !ArgsUtils.shouldJustDownloadHtmlFiles && (updatedUrl = checkAndHandleIjcseonlineDocUrl(resourceUrl)) != null ) {
 			//logger.debug("Ijcseonline-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
-		} else if ( (updatedUrl = checkAndHandleIeeeExplorer(resourceUrl)) != null ) {
+		} else if ( !ArgsUtils.shouldJustDownloadHtmlFiles && (updatedUrl = checkAndHandleIeeeExplorerDocUrl(resourceUrl)) != null ) {
 			//logger.debug("IeeeExplorer-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
-		} else if ( (updatedUrl = checkAndHandleOSFurls(resourceUrl)) != null ) {
+		} else if ( !ArgsUtils.shouldJustDownloadHtmlFiles && (updatedUrl = checkAndHandleOSFdocUrl(resourceUrl)) != null ) {
 			//logger.debug("OSF-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
-		} else if ( (updatedUrl = checkAndHandleWileyUrls(resourceUrl)) != null ) {
+		} else if ( !ArgsUtils.shouldJustDownloadHtmlFiles && (updatedUrl = checkAndHandleWileyDocUrl(resourceUrl)) != null ) {
 			//logger.debug("Wiley-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 			// The following in nte ready yet..
-		/*} else if ( (updatedUrl = checkAndHandleEmbopressUrls(resourceUrl)) != null ) {
+		/*} else if ( !ArgsUtils.shouldJustDownloadHtmlFiles && (updatedUrl = checkAndHandleEmbopressDocUrl(resourceUrl)) != null ) {
 			//logger.debug("Embopress-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;*/
-		} else if ( (updatedUrl = checkAndHandleScieloUrls(resourceUrl)) != null ) {
+		} else if ( (updatedUrl = checkAndHandleScieloUrl(resourceUrl)) != null ) {
 			//logger.debug("Scielo-PageURL: " + resourceUrl + " to possible-docUrl: " + updatedUrl);	// DEBUG!
 			resourceUrl = updatedUrl;
 		} else if ( (updatedUrl = checkAndHandleDoiUrlsWithInnerLinks(resourceUrl)) != null ) {
@@ -162,7 +164,7 @@ public class SpecialUrlsHandler
 	 * Thia is a dynamic javascript domain.
 	 * @return
 	 */
-	public static String checkAndHandlePsyarxiv(String pageUrl) {
+	public static String checkAndHandlePsyarxivDocUrl(String pageUrl) {
 		if ( pageUrl.contains("psyarxiv.com") ) {
 			if ( !pageUrl.contains("/download") )
 				return (pageUrl + (pageUrl.endsWith("/") ? "download" : "/download"));	// Add a "/download" in the end. That will indicate we are asking for the docUrl.
@@ -176,7 +178,7 @@ public class SpecialUrlsHandler
 	///////// dergipark.gov.tr ///////////////////////
 	// http://dergipark.gov.tr/beuscitech/issue/40162/477737
 	/**
-	 * This domain has been transferred to dergipark.org.tr. In 2021 the old domain will be inaccessible at some poit.
+	 * This domain has been transferred to dergipark.org.tr. In 2021 the old domain will be inaccessible at some point.
 	 * @param pageUrl
 	 * @return
 	 */
@@ -251,7 +253,7 @@ public class SpecialUrlsHandler
 
 
 	/////////// aup-online.com ////////////////////
-	public static void handleAupOnlinePage(String pageUrl, Elements elementLinksOnPage) throws DocLinkFoundException, DocLinkUnavailableException
+	public static void handleAupOnlineDocUrl(String pageUrl, Elements elementLinksOnPage) throws DocLinkFoundException, DocLinkUnavailableException
 	{
 		// This domain gives the fulltext-urls inside the "action" attribute of a "form"-element.
 		// We handle these elements for every domain, but, this one gives a false-positive ".../download" url, which causes this method to exit early and not reach the desired form-element.
@@ -282,7 +284,7 @@ public class SpecialUrlsHandler
 	 *
 	 * In case the given url is not a pdf-page-url or if we have an error, this method returns the pageUrl it received.
 	 * */
-	public static String checkAndHandleIjcseonlinePage(String pageUrl)
+	public static String checkAndHandleIjcseonlineDocUrl(String pageUrl)
 	{
 		if ( ! pageUrl.contains("www.ijcseonline.org") )
 			return null;    // It's from another domain, keep looking..
@@ -312,7 +314,7 @@ public class SpecialUrlsHandler
 
 	//////////  ieeexplore.ieee.org   /////////////////
 	// https://ieeexplore.ieee.org/document/8924293 --> https://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&arnumber=8924293
-	public static String checkAndHandleIeeeExplorer(String pageUrl) {
+	public static String checkAndHandleIeeeExplorerDocUrl(String pageUrl) {
 		if ( pageUrl.contains("ieeexplore.ieee.org") ) {
 			if ( pageUrl.contains("/stampPDF/") ) {	// It's probably already a docUrl
 				return pageUrl;
@@ -329,7 +331,7 @@ public class SpecialUrlsHandler
 
 	//////////  osf.io   /////////////////
 	// https://osf.io/2xpq7 --> https://osf.io/2xpq7/download
-	public static String checkAndHandleOSFurls(String pageUrl)
+	public static String checkAndHandleOSFdocUrl(String pageUrl)
 	{
 		if ( !pageUrl.contains("://osf.io") )	// We want to transform only urls belonging to the top-level-domain.
 			return null;    // It's from another domain, keep looking..
@@ -352,7 +354,7 @@ public class SpecialUrlsHandler
 	// Also:
 	// https://onlinelibrary.wiley.com/doi/10.1111/polp.12377 --> https://onlinelibrary.wiley.com/doi/epdf/10.1111/polp.12377 (page with the pdf in view and a download button)
 	// -->
-	public static String checkAndHandleWileyUrls(String pageUrl)
+	public static String checkAndHandleWileyDocUrl(String pageUrl)
 	{
 		Matcher matcher = ONLINELIBRARY_WILEY.matcher(pageUrl);
 		if ( !matcher.matches() ) {
@@ -396,7 +398,7 @@ public class SpecialUrlsHandler
 	//////////  www.embopress.org   /////////////////
 	// https://www.embopress.org/doi/pdfdirect/10.1038/msb.2012.46?download=true --> https://www.embopress.org/doi/pdf/10.1038/msb.2012.46?download=true
 	// DocUrls of Wiley, sometimes redirect to "www.embopress.org", while maintaining similar structure (instead of "/pdfdirect/", they use "/pdf/").
-	public static String checkAndHandleEmbopressUrls(String pageUrl)
+	public static String checkAndHandleEmbopressDocUrl(String pageUrl)
 	{
 		if ( !pageUrl.contains("://www.embopress.org") )	// We want to transform only urls belonging to the top-level-domain.
 			return null;    // It's from another domain, keep looking..
@@ -413,7 +415,7 @@ public class SpecialUrlsHandler
 	// https://www.scielo.br/j/bjb/a/64jBbrbZ8hG3fvhy6d6nczj/?amp;format=pdf&lang=en   --> REPLACE THE PROBLEMATIC "amp;" with "&".
 	// https://www.scielo.br/j/bjb/a/64jBbrbZ8hG3fvhy6d6nczj/?&format=pdf&lang=en
 	// We can remove it, instead of replacing it, as the result is a bit odd, yet valid. BUT, better replace it for consistency.
-	public static String checkAndHandleScieloUrls(String pageUrl)
+	public static String checkAndHandleScieloUrl(String pageUrl)
 	{
 		if ( !pageUrl.contains("scielo.br") )	// We want to transform only urls belonging to this subdomain and has this structure.
 			return null;    // It's from another domain, keep looking..

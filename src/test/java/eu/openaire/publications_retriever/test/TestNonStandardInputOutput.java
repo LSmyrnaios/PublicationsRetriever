@@ -40,7 +40,7 @@ public class TestNonStandardInputOutput  {
 	// TODO - Add an extra cmd-argument to define the "upper-limit" of the number of records to process from a file.
 	// Thus, we will have a single 5000 or 10000 records file and process only the first N records, instead of having multiple files of smaller length.
 
-	private static final File inputFile = new File(testingDirectory + testInputFile);
+	private static File inputFile = new File(testingDirectory + testInputFile);
 	private static File outputFile = new File(testingDirectory + "results_" + testInputFile);	// This can change if the user gives the inputFile as a cmd-arg.
 
 
@@ -314,6 +314,7 @@ public class TestNonStandardInputOutput  {
 						i++;	// The following methods need the increased < i >
 						path = ArgsUtils.inputFileFullPath.substring(0, i);
 						inputFileName = ArgsUtils.inputFileFullPath.substring(i);
+                        inputFile = new File(path + inputFileName);
 						break;
 					}
 				}

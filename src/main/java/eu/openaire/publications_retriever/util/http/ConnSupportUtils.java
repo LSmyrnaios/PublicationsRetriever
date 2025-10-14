@@ -1476,7 +1476,7 @@ public class ConnSupportUtils
 	public static String getWasDirectLink(String sourceUrl, String pageUrl, boolean calledForPageUrl, String finalUrlStr) {
 		String wasDirectLink;
 		if ( calledForPageUrl ) {
-			boolean isSpecialUrl = (!ArgsUtils.shouldJustDownloadHtmlFiles && HttpConnUtils.isSpecialUrl.get());
+			boolean isSpecialUrl = HttpConnUtils.isSpecialUrl.get();
 			if ( (!isSpecialUrl && ( pageUrl.equals(finalUrlStr) || ConnSupportUtils.haveOnlyProtocolDifference(pageUrl, finalUrlStr) ))
 					|| sourceUrl.equals(finalUrlStr) || ConnSupportUtils.haveOnlyProtocolDifference(sourceUrl, finalUrlStr))	// Or if it was not a "specialUrl" and the pageUrl is the same as the docUrl.
 				wasDirectLink = "true";
