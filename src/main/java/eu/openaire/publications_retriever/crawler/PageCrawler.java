@@ -408,7 +408,7 @@ public class PageCrawler
 		// The internal link might be half-link, or it may have normalization issues. That's ok, it is made whole and normalized later, if needed.
 
 		if ( pageUrl.contains("aup-online.com") ) {
-			SpecialUrlsHandler.handleAupOnlinePage(pageUrl, elementLinksOnPage);
+			SpecialUrlsHandler.handleAupOnlineDocUrl(pageUrl, elementLinksOnPage);
 			// The above method will always throw an exception, either a "DocLinkFoundException" or a "DocLinkUnavailableException".
 		}
 
