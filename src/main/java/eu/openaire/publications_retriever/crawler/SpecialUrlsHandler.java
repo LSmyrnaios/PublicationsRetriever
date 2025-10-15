@@ -84,12 +84,14 @@ public class SpecialUrlsHandler
 	}
 
 
+    private static final Pattern EUROPEMC_FILTER = Pattern.compile("https?://europepmc.org/a(?:rticle|bstract)s?/pmc.*");   // It accepts a lowercase-url
+
 	/////////// europepmc.org ////////////////////
 	public static String checkAndGetEuropepmcDocUrl(String europepmcUrl)
 	{
-		if ( europepmcUrl.contains("europepmc.org") && !europepmcUrl.contains("ptpmcrender.fcgi") )	// The "ptpmcrender.fcgi" indicates that this is already a "europepmc"-docUrl.
+        if ( EUROPEMC_FILTER.matcher(europepmcUrl.toLowerCase()).matches() )
 		{
-			// Offline-redirect to the docUrl.
+            // Some of these urls end with "?pdf=render" and auto-redirect to to the final docUrl. But we can redirect-them offline and avoid these online redirections as well.
 			String idStr = UrlUtils.getDocIdStr(europepmcUrl, null);
 			if ( idStr != null )
 				return (europepmcPageUrlBasePath + (!idStr.startsWith("PMC", 0) ? "PMC"+idStr : idStr) + "&blobtype=pdf");    // TODO - Investigate some 404-failures (THE DOC-URLS belong to diff domain)
