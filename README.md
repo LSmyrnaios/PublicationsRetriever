@@ -97,7 +97,7 @@ arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
     and change the ***appender-ref***, from ***File*** to ***Console***.<br>
 - Run ``mvn clean install -U`` to create the new ***JAR*** file.<br>
 - Execute the program with the following command:<br>
-**``java -jar publications_retriever-1.3-SNAPSHOT.jar arg2:'<dataType: document | dataset | all>' arg3:'-[downloadDocFiles|downloadJustHtmlFiles]' arg4:'-fileNameType' arg5:'numberName' arg6:'-firstFileNum' arg7:'NUM' arg8:'-docFilesStorage' arg9:'storageDir' arg10:'-inputDataUrl' arg11: 'inputUrl' arg12: '-numOfThreads' arg13: <NUM>``**
+**``java -jar publications_retriever-1.3-SNAPSHOT.jar arg2 retrieveDataType arg3:'<dataType: document | dataset | all>' arg4:'-[downloadDocFiles|downloadJustHtmlFiles]' arg5:'-fileNameType' arg6:'numberName' arg7:'-firstFileNum' arg8:'NUM' arg9:'-docFilesStorage' arg10:'storageDir' arg11:'-inputDataUrl' arg12: 'inputUrl'``**
 <br><br>
 *You can use the argument '-inputFileFullPath' to define the inputFile, instead of the stdin-redirection. That way, the progress percentage will appear in the logging file.*
 <br><br>
@@ -115,7 +115,6 @@ arg11:'storageDir' < stdIn:'inputJsonFile' > stdOut:'outputJsonFile'``**<br>
     If the *storageDir* is equal to **"S3ObjectStore"** , then the program uploads the DocFiles to an S3 storage (see the **note** below).
     The absence of this argument will cause the program to use a pre-defined storageDir which is: "*./docFiles*".
 - **-inputDataUrl** and **inputUrl** will tell the program to use the given *URL* to retrieve the inputFile, instead of having it locally stored and redirect the *Standard Input Stream*.
-- **-numOfThreads** and **NUM** will tell the program to use *NUM* number of worker-threads.
 <br><br>
   The order of the program's arguments matters only **per pair**. For example, the argument **'storageDir'**, has to be placed always after the **'-docFilesStorage''** argument.
   <br><br>

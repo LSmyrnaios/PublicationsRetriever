@@ -95,16 +95,7 @@ public class PublicationsRetriever
 		if ( MachineLearning.useMLA )
 			new MachineLearning();
 
-		if ( ArgsUtils.workerThreadsCount == 0 ) {	// If the user did not provide the "workerThreadsCount", then get the available number from the system.
-			int availableThreads = Runtime.getRuntime().availableProcessors();
-			availableThreads *= ArgsUtils.threadsMultiplier;
-
-			// If the domains of the urls in the inputFile, are in "uniform distribution" (each one of them to be equally likely to appear in any place), then the more threads the better (triple the computer's number)
-			// Else, if there are far lees domains and/or closely placed inside the inputFile.. then use only the number of threads provided by the computer, since the "politenessDelay" will block them more than the I/O would ever do..
-			ArgsUtils.workerThreadsCount = availableThreads;	// Due to I/O, blocking the threads all the time, more threads handle the workload faster..
-		}
-		logger.info("Use " + ArgsUtils.workerThreadsCount + " worker-threads.");
-		executor = Executors.newFixedThreadPool(ArgsUtils.workerThreadsCount);
+        executor = Executors.newVirtualThreadPerTaskExecutor();
 
 		try {
 			new LoaderAndChecker();
@@ -243,7 +234,6 @@ public class PublicationsRetriever
 		logger.debug("The number of paths blocked -due to HTTP 403- in total, was: " + ConnSupportUtils.domainsMultimapWithPaths403BlackListed.values().size());
 
 		calculateAndPrintElapsedTime(startTime, Instant.now(), null);
-		logger.debug("Used " + ArgsUtils.workerThreadsCount + " worker threads.");
 
 		if ( logger.isDebugEnabled() )
 		{

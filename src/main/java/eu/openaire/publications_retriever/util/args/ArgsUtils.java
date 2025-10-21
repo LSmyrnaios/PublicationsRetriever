@@ -42,10 +42,7 @@ public class ArgsUtils {
 
 	public static String targetUrlType = "docOrDatasetUrl";	// docUrl, documentUrl, docOrDatasetUrl ; this is set by the args-parser, and it's used only when outputting data, not inside the program.
 
-	public static int workerThreadsCount = 0;
-	public static int threadsMultiplier = 2;	// Use *3 without downloading docFiles and when having the domains to appear in uniform distribution in the inputFile. Use *2 when downloading.
-
-	private static final String usageMessage = "\nUsage: java -jar publications_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all> -inputFileFullPath inputFile [-downloadDocFiles(OPTIONAL) | -downloadJustHtmlFiles(OPTIONAL)] -fileNameType(OPTIONAL) <nameType: originalName | idName | numberName> -firstFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' -inputDataUrl(OPTIONAL) 'inputUrl' -numOfThreads(OPTIONAL) 'threadsNum' < 'input' > 'output'";
+	private static final String usageMessage = "\nUsage: java -jar publications_retriever-<VERSION>.jar -retrieveDataType <dataType: document | dataset | all> -inputFileFullPath inputFile [-downloadDocFiles(OPTIONAL) | -downloadJustHtmlFiles(OPTIONAL)] -fileNameType(OPTIONAL) <nameType: originalName | idName | numberName> -firstFileNum(OPTIONAL) 'num' -docFilesStorage(OPTIONAL) 'storageDir' -inputDataUrl(OPTIONAL) 'inputUrl' < 'input' > 'output'";
 
 	private static boolean firstNumGiven = false;
 
@@ -62,8 +59,8 @@ public class ArgsUtils {
 
 	public static void parseArgs(String[] mainArgs)
 	{
-		if ( mainArgs.length > 15 ) {
-			String errMessage = "\"PublicationsRetriever\" expected only up to 15 arguments, while you gave: " + mainArgs.length + "!" + usageMessage;
+		if ( mainArgs.length > 12 ) {
+			String errMessage = "\"PublicationsRetriever\" expected only up to 12 arguments, while you gave: " + mainArgs.length + "!" + usageMessage;
 			logger.error(errMessage);
 			System.err.println(errMessage);
 			System.exit(-1);
@@ -108,10 +105,6 @@ public class ArgsUtils {
 						inputDataUrl = mainArgs[i];
 						inputFromUrl = true;
 						logger.info("Using the inputFile from the URL: " + inputDataUrl);
-						break;
-					case "-numOfThreads":
-						i++;
-						handleNumThreads(mainArgs[i]);
 						break;
 					default:	// log & ignore the argument
 						String errMessage = "Argument: \"" + mainArgs[i] + "\" was not expected!" + usageMessage;
@@ -265,20 +258,6 @@ public class ArgsUtils {
 			System.exit(-22);
 		} else
 			storeHtmlFilesDir = htmlStorageDir + (!htmlStorageDir.endsWith(File.separator) ? File.separator : "");
-	}
-
-
-	private static void handleNumThreads(String workerCountString)
-	{
-		try {
-			workerThreadsCount = initialNumOfFile = Integer.parseInt(workerCountString);    // We use both variables in statistics.
-			if ( workerThreadsCount < 1 ) {
-				logger.warn("The \"workerThreadsCount\" given was less than < 1 > (" + workerThreadsCount + "), continuing with < 1 > instead..");
-				workerThreadsCount = 1;
-			}
-		} catch (NumberFormatException nfe) {
-			logger.error("Invalid \"workerThreadsCount\" was given: \"" + workerCountString + "\".\tContinue by using the system's available threads multiplied by " + threadsMultiplier);
-		}
 	}
 
 
