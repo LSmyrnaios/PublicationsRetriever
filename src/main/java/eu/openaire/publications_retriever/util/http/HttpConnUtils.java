@@ -34,18 +34,23 @@ public class HttpConnUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(HttpConnUtils.class);
 
-	public static final Set<String> domainsWithUnsupportedHeadMethod = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+	public static final Set<String> domainsWithUnsupportedHeadMethod = Collections.newSetFromMap(new ConcurrentHashMap<>());
 	static {	// Add domains which were manually observed to act strangely and cannot be detected automatically at run-time.
 		domainsWithUnsupportedHeadMethod.add("os.zhdk.cloud.switch.ch");	// This domain returns "HTTP-403-ERROR" when it does not support the "HEAD" method, at least when checking an actual file.
 		// More domains are automatically detected and added to this Set.
 	}
 
-	public static final Set<String> domainsWithUnsupportedAcceptLanguageParameter = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+	public static final Set<String> domainsWithUnsupportedAcceptLanguageParameter = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-	public static final Set<String> blacklistedDomains = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());	// Domains with which we don't want to connect again.
+	public static final Set<String> blacklistedDomains = Collections.newSetFromMap(new ConcurrentHashMap<>());	// Domains with which we don't want to connect again.
+	// TODO - This could be a ConcurrentHashMap having the domains as keys, and the reason as the value.
+	// Then, each time we block a url belonging to a blacklistedDomain, we can display the reason that domain was blocked.
+	// We also can create an endpoint in the Worker to return the blacklist-reason, given a specific domain.
+	// That way, we can know instantly the WHY, without searching through old log files..
+	// Use coded reasons-categories, from a predefined ENUM, to avoid confusion and high memory-usage.
 
-	public static final ConcurrentHashMap<String, Integer> timesDomainsHadInputNotBeingDocNorPage = new ConcurrentHashMap<String, Integer>();
-	public static final ConcurrentHashMap<String, Integer> timesDomainsReturnedNoType = new ConcurrentHashMap<String, Integer>();	// Domain which returned no content-type not content disposition in their response and amount of times they did.
+	public static final ConcurrentHashMap<String, Integer> timesDomainsHadInputNotBeingDocNorPage = new ConcurrentHashMap<>();
+	public static final ConcurrentHashMap<String, Integer> timesDomainsReturnedNoType = new ConcurrentHashMap<>();	// Domain which returned no content-type not content disposition in their response and amount of times they did.
 
 	public static AtomicInteger numOfDomainsBlockedDueToSSLException = new AtomicInteger(0);
 
@@ -60,9 +65,9 @@ public class HttpConnUtils
 	public static int maxAllowedContentSize = 536_870_912;	// 512 Mb | More than that can indicate a big pdf with no text, but full of images. This should be configurable (so not final).
 	private static final boolean shouldNOTacceptGETmethodForUncategorizedInternalLinks = true;
 
-	public static final Set<String> domainsSupportingHTTPS = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+	public static final Set<String> domainsSupportingHTTPS = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-	public static final Set<String> domainsWithSlashRedirect = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+	public static final Set<String> domainsWithSlashRedirect = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 
 	public static final Pattern ENDING_WITH_SLASH_OR_EXTENSION_FILTER = Pattern.compile(".*(?:(?:/|\\.[^.?&/_-]{1,7})(?:\\?.+)?|\\?.+)$");
@@ -75,7 +80,7 @@ public class HttpConnUtils
 
 	public static AtomicInteger timesDidOfflineSlashRedirect = new AtomicInteger(0);
 
-	public static ThreadLocal<Boolean> isSpecialUrl = new ThreadLocal<Boolean>();	// Every Thread has its own variable. This variable is used only in non-failure cases.
+	public static ThreadLocal<Boolean> isSpecialUrl = new ThreadLocal<>();	// Every Thread has its own variable. This variable is used only in non-failure cases.
 
 	public static final String docFileNotRetrievedMessage = FileNotRetrievedException.class.getSimpleName() + " was thrown before the docFile could be stored. ";  // Get the class-name programmatically, in order to easily spot the error if the exception-name changes.
 
@@ -157,13 +162,13 @@ public class HttpConnUtils
 					String error = "null";
 					String fullPathFileName = category;
 					String wasDirectLink = ConnSupportUtils.getWasDirectLink(sourceUrl, pageUrl, calledForPageUrl, finalUrlStr);
-					FileData fileData = null;
+					FileData fileData;
 					if ( ArgsUtils.shouldDownloadDocFiles ) {
                         try {
                             if ( foundDetectedContentType ) {   // If we went and detected the pdf from the request-code, then reconnect and proceed with downloading, as the first bytes of the stream where already consumed and need to regain them.
                                 conn = handleConnection(urlId, sourceUrl, pageUrl, finalUrlStr, domainStr, calledForPageUrl, calledForPossibleDocOrDatasetUrl); // No need to "conn.disconnect()" before, as we are re-connecting to the same domain.
                             }
-                            fileData = ConnSupportUtils.downloadAndStoreDocFile(conn, urlId, domainStr, finalUrlStr, calledForPageUrl); // It does not return "null".
+                            fileData = ConnSupportUtils.downloadAndStoreDocFile(conn, urlId, domainStr, finalUrlStr); // It does not return "null".
                             fullPathFileName = fileData.getLocation();
                             logger.info("DocFile: \"" + fullPathFileName + "\" has been downloaded.");
                             UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, finalUrlStr, "null", fullPathFileName, null, true, "true", "true", "true", wasDirectLink, "true", fileData.getSize(), fileData.getHash(), finalMimeType);
@@ -291,7 +296,7 @@ public class HttpConnUtils
 									throws RuntimeException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException
     {
 		HttpURLConnection conn = null;
-		int responseCode = 0;
+		int responseCode;
 
 		try {
 			if ( blacklistedDomains.contains(domainStr) )
@@ -333,7 +338,7 @@ public class HttpConnUtils
                 }
             }
 
-			URL url = new URL(resourceURL);
+			URL url = URI.create(resourceURL).toURL();
 			conn = (HttpURLConnection) url.openConnection();
 			ConnSupportUtils.setHttpHeaders(conn, domainStr);
 			conn.setInstanceFollowRedirects(false);	// We manage redirects on our own, in order to control redirectsNum, avoid redirecting to unwantedUrls and handling errors.
@@ -440,40 +445,42 @@ public class HttpConnUtils
 		} catch (Exception e) {
 			if ( conn != null )
 				conn.disconnect();
-			if ( e instanceof UnknownHostException ) {
-				logger.warn("A new \"Unknown Network\" Host was found and blacklisted: \"" + domainStr + "\"");
-				blacklistedDomains.add(domainStr);	//Log it to never try connecting with it again.
-				throw new DomainBlockedException(domainStr);
-			}
-			else if ( e instanceof SocketTimeoutException ) {
-				logger.warn("Url: \"" + resourceURL + "\" failed to respond on time!");
-				ConnSupportUtils.onTimeoutException(domainStr);	// May throw a "DomainBlockedException", which will be thrown before the "ConnTimeoutException".
-				throw new ConnTimeoutException();
-			}
-			else if ( e instanceof ConnectException ) {
-				String eMsg = e.getMessage();
-				if ( (eMsg != null) && eMsg.toLowerCase().contains("timeout") ) {	// If it's a "connection timeout" type of exception, treat it like it.
-					ConnSupportUtils.onTimeoutException(domainStr);	// Can throw a "DomainBlockedException", which will be thrown before the "ConnTimeoutException".
-					throw new ConnTimeoutException();
-				}
-				throw new RuntimeException(eMsg);
-			}
-			else if ( e instanceof SSLException ) {
-				// TODO - For "SSLProtocolException", see more about it's possible handling here: https://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0/14884941#14884941
-				// TODO - Maybe we should make another list where only urls in https, from these domains, would be blocked.
-				blacklistedDomains.add(domainStr);
-				numOfDomainsBlockedDueToSSLException.incrementAndGet();
-				logger.warn("No Secure connection was able to be negotiated with the domain: \"" + domainStr + "\", so it was blocked. Exception message: " + e.getMessage());
-				throw new DomainBlockedException(domainStr);
-			}
-			else if ( e instanceof SocketException ) {
-				String errorMsg = e.getMessage();
-				if ( errorMsg != null )
-					errorMsg = "\"" + errorMsg + "\". This SocketException was received after trying to connect with the domain: \"" + domainStr + "\"";
-
-				// We don't block the domain, since this is temporary.
-				throw new RuntimeException(errorMsg);
-			}
+            switch (e) {
+                case UnknownHostException _ -> {
+                    logger.warn("A new \"Unknown Network\" Host was found and blacklisted: \"" + domainStr + "\"");
+                    blacklistedDomains.add(domainStr);    //Log it to never try connecting with it again.
+                    throw new DomainBlockedException(domainStr);    //Log it to never try connecting with it again.
+                }
+                case SocketTimeoutException _ -> {
+                    logger.warn("Url: \"" + resourceURL + "\" failed to respond on time!");
+                    ConnSupportUtils.onTimeoutException(domainStr);    // May throw a "DomainBlockedException", which will be thrown before the "ConnTimeoutException".
+                    throw new ConnTimeoutException();    // May throw a "DomainBlockedException", which will be thrown before the "ConnTimeoutException".
+                }
+                case ConnectException _ -> {
+                    String eMsg = e.getMessage();
+                    if ( (eMsg != null) && eMsg.toLowerCase().contains("timeout") ) {   // If it's a "connection timeout" type of exception, treat it like it.
+                        ConnSupportUtils.onTimeoutException(domainStr);    // Can throw a "DomainBlockedException", which will be thrown before the "ConnTimeoutException".
+                        throw new ConnTimeoutException();
+                    }
+                    throw new RuntimeException(eMsg);
+                }
+                case SSLException _ -> {
+                    // TODO - For "SSLProtocolException", see more about it's possible handling here: https://stackoverflow.com/questions/7615645/ssl-handshake-alert-unrecognized-name-error-since-upgrade-to-java-1-7-0/14884941#14884941
+                    // TODO - Maybe we should make another list where only urls in https, from these domains, would be blocked.
+                    blacklistedDomains.add(domainStr);
+                    numOfDomainsBlockedDueToSSLException.incrementAndGet();
+                    logger.warn("No Secure connection was able to be negotiated with the domain: \"" + domainStr + "\", so it was blocked. Exception message: " + e.getMessage());
+                    throw new DomainBlockedException(domainStr);
+                }
+                case SocketException _ -> {
+                    String errorMsg = e.getMessage();
+                    if ( errorMsg != null )
+                        errorMsg = "\"" + errorMsg + "\". This SocketException was received after trying to connect with the domain: \"" + domainStr + "\"";
+                    // We don't block the domain, since this is temporary.
+                    throw new RuntimeException(errorMsg);
+                }
+                default -> {}
+            }
 
 			logger.error("", e);
 			throw new RuntimeException(e.getMessage());
@@ -507,8 +514,8 @@ public class HttpConnUtils
 	{
 		int curRedirectsNum = 0;
 		int maxRedirects = 0;
-		String initialUrl = null;
-		String urlType = null;	// Used for logging.
+		String initialUrl;
+		String urlType;	// Used for logging.
 		
 		if ( calledForPageUrl ) {
 			maxRedirects = maxRedirectsForPageUrls;
@@ -537,7 +544,7 @@ public class HttpConnUtils
 				{
 					if ( responseCode == 300 ) {	// The "Location"-data MAY be provided, inside the html-response, giving the proposed link by the server.
 						// Go and parse the page and select one of the links to redirect to. Assign it to the "location".
-						if ( (location = ConnSupportUtils.getInternalLinkFromHTTP300Page(urlId, currentUrl, conn)) == null )
+						if ( (location = ConnSupportUtils.getInternalLinkFromHTTP300Page(currentUrl, conn)) == null )
 							throw new RuntimeException("No \"link\" was retrieved from the HTTP-300-page: \"" + currentUrl + "\".");
 					}
 					else	// It's unacceptable for codes > 300 to not provide the "location" field.

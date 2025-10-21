@@ -56,7 +56,7 @@ public class MetadataHandler {
     }
 
 
-    public static Pattern LOCALHOST_DOMAIN_REPLACEMENT_PATTERN = Pattern.compile("://(?:localhost|127.0.0.1)(?:\\:[\\d]+)?");
+    public static Pattern LOCALHOST_DOMAIN_REPLACEMENT_PATTERN = Pattern.compile("://(?:localhost|127.0.0.1)(?:\\:\\d+)?");
 
     public static AtomicInteger numOfProhibitedAccessPagesFound = new AtomicInteger(0);
     public static AtomicInteger numOfMetaDocUrlsFound = new AtomicInteger(0);
@@ -83,7 +83,7 @@ public class MetadataHandler {
         // We cannot make the HTML lower-case, or we will make the metaDocUrls invalid.
         // So the REGEXes have to be case-insensitive..!
 
-        String metaAccessRights = null;
+        String metaAccessRights;
         if ( (metaAccessRights = getMetaAccessRightsFromHTML(pageHtml)) == null ) { // This is mostly the case when the page does not include any info about "access rights". It may or may not provide access to the docUrl.
             if ( logger.isTraceEnabled() )
                 logger.trace("Could not retrieve the metaAccessRights for url \"" + pageUrl + "\", continue by checking the metaDocUrl..");

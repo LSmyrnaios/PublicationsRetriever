@@ -37,7 +37,7 @@ public class UrlUtils
 
 	public static AtomicInteger sumOfDocUrlsFound = new AtomicInteger(0);
 
-	public static final Set<String> duplicateUrls = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+	public static final Set<String> duplicateUrls = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 	public static final ConcurrentHashMap<String, IdUrlMimeTypeTriple> resultUrlsWithIDs = new ConcurrentHashMap<>();	// Null keys are allowed (in case they are not available in the input).
 
@@ -226,7 +226,7 @@ public class UrlUtils
 		if ( urlMatcher.matches() )
 			return urlMatcher;
 		else {
-			logger.warn("Unexpected URL_TRIPLE's (" + urlMatcher.toString() + ") mismatch for url: \"" + urlStr + "\"");
+			logger.warn("Unexpected URL_TRIPLE's (" + urlMatcher + ") mismatch for url: \"" + urlStr + "\"");
 			return null;
 		}
 	}
@@ -311,8 +311,7 @@ public class UrlUtils
 			return null;
 		}
 
-		String noAnchorUrl = null;
-
+		String noAnchorUrl;
 		Matcher anchorMatcher = ANCHOR_FILTER.matcher(urlStr);
 		if ( !anchorMatcher.matches() )
 			return urlStr;

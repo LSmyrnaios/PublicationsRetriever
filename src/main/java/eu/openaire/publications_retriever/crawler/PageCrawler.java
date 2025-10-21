@@ -44,8 +44,8 @@ public class PageCrawler
 
 	public static final Pattern JAVASCRIPT_CODE_PDF_LINK = Pattern.compile(".*\"pdfUrl\":\"([^\"]+)\".*");	// TODO - Check if this case is common, in order to handle it.
 
-	public static final ConcurrentHashMap<String, Integer> timesDomainNotGivingInternalLinks = new ConcurrentHashMap<String, Integer>();
-	public static final ConcurrentHashMap<String, Integer> timesDomainNotGivingDocUrls = new ConcurrentHashMap<String, Integer>();
+	public static final ConcurrentHashMap<String, Integer> timesDomainNotGivingInternalLinks = new ConcurrentHashMap<>();
+	public static final ConcurrentHashMap<String, Integer> timesDomainNotGivingDocUrls = new ConcurrentHashMap<>();
 
 	public static final int timesToGiveNoInternalLinksBeforeBlocked = 200;
 	public static final int timesToGiveNoDocUrlsBeforeBlocked = 100;
@@ -117,7 +117,7 @@ public class PageCrawler
             return;
         }
 
-        String pageHtml = null;
+        String pageHtml;
 		if ( (pageHtml = ConnSupportUtils.getHtmlString(conn, pageUrl, bufferedReader, false, firstHTMLlineFromDetectedContentType)) == null ) {
 			logger.warn("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
 			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", "null", null, true, "true", "true", "false", "false", "true", null, "null", "null");
@@ -143,11 +143,11 @@ public class PageCrawler
 				atLeastOneDocOrDatasetLinkFound = true;
 		}
 
-		HashMap<String, String> pageLinksWithStructure = null;
+		HashMap<String, String> pageLinksWithStructure;
 		if ( (pageLinksWithStructure = retrieveInternalLinks(urlId, sourceUrl, pageUrl, pageDomain, pageHtml, pageContentType)) == null )
 			return;	// The necessary logging is handled inside.
 
-		String urlToCheck = null;
+		String urlToCheck;
 		boolean shouldRunPrediction = false;
 
 		// Check if we want to use AND if so, if we should run, the MLA.
@@ -176,7 +176,7 @@ public class PageCrawler
 		}
 
 		HashMap<String, String> remainingLinks = new HashMap<>(pageLinksWithStructure.size());	// Used later. Initialize with the total num of links (which passed the canonicalization-phase) (less will actually get stored there, but their num is unknown).
-		String lowerCaseLink = null;
+		String lowerCaseLink;
 		int possibleDocOrDatasetUrlsCounter = 0;
 
 		// Do a fast-loop, try connecting only to a handful of promising links first.
@@ -317,9 +317,9 @@ public class PageCrawler
 
 	public static HashMap<String, String> retrieveInternalLinks(String urlId, String sourceUrl, String pageUrl, String pageDomain, String pageHtml, String pageContentType)
 	{
-		HashMap<String, String> pageLinksWithStructure = null;
+		HashMap<String, String> pageLinksWithStructure;
 		try {
-			pageLinksWithStructure = extractInternalLinksFromHtml(urlId, pageHtml, pageUrl);
+			pageLinksWithStructure = extractInternalLinksFromHtml(pageHtml, pageUrl);
 		} catch (RuntimeException re) {
 			String exceptionMessage = re.getMessage();
 			exceptionMessage = ((exceptionMessage == null) ? "No reason was given!" : exceptionMessage);
@@ -380,17 +380,17 @@ public class PageCrawler
 
 
 	/**
-	 * Get the internalLinks using "Jsoup".
-	 * @param urlId
-	 * @param pageHtml
-	 * @param pageUrl
-	 * @return The internalLinks
-	 * @throws DocLinkFoundException
-	 * @throws DynamicInternalLinksFoundException
-	 * @throws DocLinkInvalidException
-	 * @throws RuntimeException
-	 */
-	public static HashMap<String, String> extractInternalLinksFromHtml(String urlId, String pageHtml, String pageUrl) throws DocLinkFoundException, DynamicInternalLinksFoundException, DocLinkInvalidException, DocLinkUnavailableException, RuntimeException
+     * Get the internalLinks using "Jsoup".
+     *
+     * @param pageHtml
+     * @param pageUrl
+     * @return The internalLinks
+     * @throws DocLinkFoundException
+     * @throws DynamicInternalLinksFoundException
+     * @throws DocLinkInvalidException
+     * @throws RuntimeException
+     */
+	public static HashMap<String, String> extractInternalLinksFromHtml(String pageHtml, String pageUrl) throws DocLinkFoundException, DynamicInternalLinksFoundException, DocLinkInvalidException, DocLinkUnavailableException, RuntimeException
 	{
 		Document document = Jsoup.parse(pageHtml);
 		Elements elementLinksOnPage = document.select("a, link[href][type*=pdf], form[action]");	// TODO - Add more "types" once other docTypes are accepted.
@@ -558,7 +558,7 @@ public class PageCrawler
 
 	private static boolean hasUnacceptableStructure(Element element, String pageUrl)
 	{
-		// Exclude links which have the class "state-published" and have a different domain, than the pageUrl.
+		// Exclude links which have the class "state-published" and have a different domain than the pageUrl.
 		if ( element.className().trim().equals("state-published") ) {	// The  equality will fail if the className does not exist.
 			String internalLink = element.attr("href").trim();
 			if ( internalLink.startsWith("http", 0) ) {	// This check covers the case were the "internalLink" may be empty.

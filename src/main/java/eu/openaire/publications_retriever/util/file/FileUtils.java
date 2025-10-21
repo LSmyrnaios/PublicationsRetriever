@@ -289,8 +289,8 @@ public class FileUtils
 	public static IdUrlTuple getDecodedJson(String jsonLine)
 	{
 		// Get ID and url and put them in the HashMap
-		String idStr = null;
-		String urlStr = null;
+		String idStr;
+		String urlStr;
 		try {
 			JSONObject jObj = new JSONObject(jsonLine); // Construct a JSONObject from the retrieved jsonLine.
 			idStr = jObj.get("id").toString();
@@ -398,27 +398,8 @@ public class FileUtils
 			numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved.
 			// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
 			// So the empty file may exist, but we will also get the "FileNotFoundException".
-			try {
-				if ( docFile.exists() ) {
-					try {
-						FileDeleteStrategy.FORCE.delete(docFile);
-					} catch (Exception e1) {
-						logger.error("Error when deleting the half-created file from docUrl: " + docUrl, e1);
-					}
-				}
-			} catch (Exception e2) {
-				logger.error("Error when checking if there is a half-created file from docUrl: " + docUrl, e2);
-			}
-
-			if ( e instanceof FileNotRetrievedException )
-				throw (FileNotRetrievedException) e;
-			else {
-				if ( ! (e instanceof IOException) )
-					logger.error("", e);
-
-				throw new FileNotRetrievedException(e.getMessage());
-			}
-		} finally {
+            return checkAndThrowDocFileException(docUrl, contentSize, docFile, e);
+        } finally {
             try {   // In case the initialization of the "BufferedInputStream" failed, we need to manually close the "inputStream", as it will NOT be auto-closed..
                 inputStream.close();
             } catch (IOException ignored) {}
@@ -426,7 +407,7 @@ public class FileUtils
 	}
 
 
-	public static long downloadFile(String fileFullPath, int contentSize, String docUrl, MessageDigest md, BufferedInputStream inStream, BufferedOutputStream outStream)
+    public static long downloadFile(String fileFullPath, int contentSize, String docUrl, MessageDigest md, BufferedInputStream inStream, BufferedOutputStream outStream)
 			throws IOException, FileNotRetrievedException
 	{
 		int maxStoringWaitingTime = getMaxStoringWaitingTime(contentSize);	// It handles the "-2" case.
@@ -521,32 +502,43 @@ public class FileUtils
 			numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 			// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
 			// So the empty file may exist, but we will also get the "FileNotFoundException".
-			try {
-				if ( docFile.exists() ) {
-					try {
-						FileDeleteStrategy.FORCE.delete(docFile);
-					} catch (Exception e1) {
-						logger.error("Error when deleting the half-created file from docUrl: " + docUrl, e1);
-					}
-				}
-			} catch (Exception e2) {
-				logger.error("Error when checking if there is a half-created file from docUrl: " + docUrl, e2);
-			}
-
-			if ( e instanceof FileNotRetrievedException )
-				throw (FileNotRetrievedException) e;
-			else {
-				if ( ! (e instanceof IOException) )
-					logger.error("", e);
-
-				throw new FileNotRetrievedException(e.getMessage());
-			}
-		} finally {
+            return checkAndThrowDocFileException(docUrl, contentSize, docFile, e);
+        } finally {
             try {   // In case the initialization of the "BufferedInputStream" failed, we need to manually close the "inputStream", as it will NOT be auto-closed..
                 inputStream.close();
             } catch (IOException ignored) {}
         }
 	}
+
+
+    private static FileData checkAndThrowDocFileException(String docUrl, int contentSize, File docFile, Exception e) throws FileNotRetrievedException, NoSpaceLeftException {
+        try {
+            if ( docFile.exists() ) {
+                try {
+                    FileDeleteStrategy.FORCE.delete(docFile);
+                } catch (Exception e1) {
+                    logger.error("Error when deleting the half-created file from docUrl: " + docUrl, e1);
+                }
+            }
+        } catch (Exception e2) {
+            logger.error("Error when checking if there is a half-created file from docUrl: " + docUrl, e2);
+        }
+
+        if ( e instanceof FileNotRetrievedException )
+            throw (FileNotRetrievedException) e;
+        else {
+            if ( e instanceof FileNotFoundException) {    // This may be thrown in case the file cannot be created.
+                String msg = e.getMessage();    // This kind of exception is thrown, among other reasons, when there is no space on the device.
+                if ( (msg != null) && msg.contains("(No space left on device)") ) {
+                    String fileName = docFile.getName();
+                    throw new NoSpaceLeftException("No space left, when downloading file: " + fileName + " with advertised size: " + contentSize);
+                }
+            } else if ( ! (e instanceof IOException) )
+                logger.error("", e);
+
+            throw new FileNotRetrievedException(e.getMessage());
+        }
+    }
 
 
 	/**
@@ -768,7 +760,7 @@ public class FileUtils
 	 */
 	public static Collection<String> getNextUrlBatchTest()
 	{
-		Collection<String> urlGroup = new HashSet<String>(jsonBatchSize);
+		Collection<String> urlGroup = new HashSet<>(jsonBatchSize);
 		
 		// Take a batch of <jsonBatchSize> urls from the file..
 		// If we are at the end and there are less than <jsonBatchSize>.. take as many as there are..

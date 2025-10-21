@@ -6,7 +6,6 @@ import com.google.common.collect.SetMultimap;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
 import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
 import eu.openaire.publications_retriever.exceptions.DocLinkInvalidException;
-import eu.openaire.publications_retriever.exceptions.DocLinkUnavailableException;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
@@ -63,7 +62,7 @@ public class PageStructureMLA {
 	}
 
 
-	public static void predictDocOrDatasetLink(String pageUrl, Elements elementLinksOnPage) throws DocLinkFoundException, DocLinkUnavailableException, DocLinkInvalidException
+	public static void predictDocOrDatasetLink(String pageUrl, Elements elementLinksOnPage) throws DocLinkFoundException, DocLinkInvalidException
 	{
 		// Before trying to extract the internal-links and evaluate them, let's check whether we have any docUrl-structure-info for this page-path.
 		// If we do, then let's try to locate the docUrl in this page, based on previous location-data.

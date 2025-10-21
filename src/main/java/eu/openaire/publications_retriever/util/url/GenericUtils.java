@@ -7,7 +7,7 @@ import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URL;
+import java.net.URI;
 
 public class GenericUtils {
 
@@ -17,7 +17,7 @@ public class GenericUtils {
     public static boolean checkInternetConnectivity()
     {
         try {
-            new URL("https://www.google.com/").openConnection().connect();
+            URI.create("https://www.google.com/").toURL().openConnection().connect();
             logger.info("The internet connection is successful.");
             return true;
         } catch (Exception e) {

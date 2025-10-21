@@ -54,7 +54,7 @@ public class DataForOutput
 	 * This method, escapes the <backSlashes> and the <doubleQuotes> from the sourceUrl and the pageUrl (in case it is the same).
 	 * When we read from jsonObjects, the string returns unescaped.
 	 * Now, there are libraries for escaping and unescaping chars, like "org.apache.commons.text.StringEscapeUtils".
-	 * But they can't handle the case where you want this: \"   to be this: \\\"   as they think you are already satisfied what what you have.
+	 * But they can't handle the case where you want this: \"   to be this: \\\"   as they think you are already satisfied what you have.
 	 * Tha might be true in general.. just not when you want to have a valid-jason-output.
 	 * @param url
 	 * @return

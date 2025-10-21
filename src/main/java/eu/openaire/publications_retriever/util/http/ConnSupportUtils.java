@@ -72,9 +72,9 @@ public class ConnSupportUtils
 	public static final int minPolitenessDelay = 3000;	// 3 sec
 	public static final int maxPolitenessDelay = 7000;	// 7 sec
 
-	public static final ConcurrentHashMap<String, Integer> timesDomainsReturned5XX = new ConcurrentHashMap<String, Integer>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
-	public static final ConcurrentHashMap<String, Integer> timesDomainsHadTimeoutEx = new ConcurrentHashMap<String, Integer>();
-	public static final ConcurrentHashMap<String, Integer> timesPathsReturned403 = new ConcurrentHashMap<String, Integer>();
+	public static final ConcurrentHashMap<String, Integer> timesDomainsReturned5XX = new ConcurrentHashMap<>();	// Domains that have returned HTTP 5XX Error Code, and the amount of times they did.
+	public static final ConcurrentHashMap<String, Integer> timesDomainsHadTimeoutEx = new ConcurrentHashMap<>();
+	public static final ConcurrentHashMap<String, Integer> timesPathsReturned403 = new ConcurrentHashMap<>();
 	
 	public static final SetMultimap<String, String> domainsMultimapWithPaths403BlackListed = Multimaps.synchronizedSetMultimap(HashMultimap.create());	// Holds multiple values for any key, if a domain(key) has many different paths (values) for which there was a 403 errorCode.
 	
@@ -96,8 +96,8 @@ public class ConnSupportUtils
 	public static final String alreadyDetectedFromSourceUrlContinuedMessage = " and SourceUrl=";
 
 
-	public static final Set<String> knownDocMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-	public static final Set<String> knownDatasetMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+	public static final Set<String> knownDocMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<>());
+	public static final Set<String> knownDatasetMimeTypes = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 	public static final ConcurrentHashMap<String, DomainConnectionData> domainsWithConnectionData = new ConcurrentHashMap<>();
 
@@ -249,7 +249,7 @@ public class ConnSupportUtils
 	public static MimeTypeResult hasDocOrDatasetMimeType(String urlStr, String mimeType, String contentDisposition, HttpURLConnection conn, boolean calledForPageUrl, boolean calledForPossibleDocOrDatasetUrl)
 	{
 		MimeTypeResult mimeTypeResult = null;
-		String lowerCaseUrl = null;
+		String lowerCaseUrl;
 
 		if ( mimeType != null )
 		{	// The "mimeType" here is in lowercase
@@ -383,7 +383,7 @@ public class ConnSupportUtils
 			return null;	// If it contains garbage, it may cause a "ReDoS"-attack, when being processed by "MIME_TYPE_FILTER"-regex.
 		}
 		
-		String plainMimeType = null;
+		String plainMimeType;
 		Matcher mimeMatcher = MIME_TYPE_FILTER.matcher(mimeType);
 		if ( mimeMatcher.matches() ) {
 			try {
@@ -466,19 +466,19 @@ public class ConnSupportUtils
 
 
 	/**
-	 * This method first checks which "HTTP METHOD" was used to connect to the docUrl.
-	 * If this docUrl was connected using "GET" (i.e. when this docURL was fast-found as a possibleDocUrl), just write the data to the disk.
-	 * If it was connected using "HEAD", then, before we can store the data to the disk, we connect again, this time with "GET" in order to download the data.
-	 * It returns the docFileName which was produced for this docUrl.
-	 * @param conn
-	 * @param id
-	 * @param domainStr
-	 * @param docUrl
-	 * @param calledForPageUrl
-	 * @return
-	 * @throws FileNotRetrievedException
-	 */
-	public static FileData downloadAndStoreDocFile(HttpURLConnection conn, String id, String domainStr, String docUrl, boolean calledForPageUrl)
+     * This method first checks which "HTTP METHOD" was used to connect to the docUrl.
+     * If this docUrl was connected using "GET" (i.e. when this docURL was fast-found as a possibleDocUrl), just write the data to the disk.
+     * If it was connected using "HEAD", then, before we can store the data to the disk, we connect again, this time with "GET" in order to download the data.
+     * It returns the docFileName which was produced for this docUrl.
+     *
+     * @param conn
+     * @param id
+     * @param domainStr
+     * @param docUrl
+     * @return
+     * @throws FileNotRetrievedException
+     */
+	public static FileData downloadAndStoreDocFile(HttpURLConnection conn, String id, String domainStr, String docUrl)
 			throws FileNotRetrievedException
 	{
 		boolean reconnected = false;
@@ -601,13 +601,13 @@ public class ConnSupportUtils
 
 	
 	/**
-	 * This method receives a pageUrl which gave an HTTP-300-code and extracts an internalLink out of the multiple choices provided.
-	 * @param urlId
-	 * @param url
-	 * @param conn
-	 * @return
-	 */
-	public static String getInternalLinkFromHTTP300Page(String urlId, String url, HttpURLConnection conn)
+     * This method receives a pageUrl which gave an HTTP-300-code and extracts an internalLink out of the multiple choices provided.
+     *
+     * @param url
+     * @param conn
+     * @return
+     */
+	public static String getInternalLinkFromHTTP300Page(String url, HttpURLConnection conn)
 	{
 		try {
 			String html;
@@ -615,11 +615,11 @@ public class ConnSupportUtils
 				logger.warn("Could not retrieve the HTML-code for HTTP300PageUrl: " + url);
 				return null;
 			}
-			HashMap<String, String> extractedLinksWithStructure = PageCrawler.extractInternalLinksFromHtml(urlId, html, url);
+			HashMap<String, String> extractedLinksWithStructure = PageCrawler.extractInternalLinksFromHtml(html, url);
 			if ( extractedLinksWithStructure == null || extractedLinksWithStructure.isEmpty())
 				return null;	// Logging is handled inside..
 
-			return new ArrayList<>(extractedLinksWithStructure.keySet()).get(0);	// There will be only a couple of urls, so it's not a big deal to gather them all.
+			return new ArrayList<>(extractedLinksWithStructure.keySet()).getFirst();	// There will be only a couple of urls, so it's not a big deal to gather them all.
 		} catch ( DocLinkFoundException dlfe) {
 			return dlfe.getMessage();	// Return the DocLink to connect with.
 		} catch (Exception e) {
@@ -891,7 +891,7 @@ public class ConnSupportUtils
 	}
 
 
-	public static final Set<String> domainsNotBlockableAfterTimes = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+	public static final Set<String> domainsNotBlockableAfterTimes = Collections.newSetFromMap(new ConcurrentHashMap<>());
 	// These domains have some non-giving pageUrls, some dataset-giving pages and some document-giving ones. So we avoid blocking them, in case 500 consecutive pages do not give full--texts.
 	static {
 		// All of these domains are manually checked for their quality and consistency.
@@ -980,12 +980,12 @@ public class ConnSupportUtils
 	}
 
 
-	public static ThreadLocal<StringBuilder> htmlStrBuilder = new ThreadLocal<StringBuilder>();	// Every Thread has its own variable.
+	public static ThreadLocal<StringBuilder> htmlStrBuilder = new ThreadLocal<>();	// Every Thread has its own variable.
 
 
     public static FileData downloadHtmlFile(HttpURLConnection conn, String urlId, String pageUrl, boolean isForError, Matcher urlMatcher, String firstHTMLlineFromDetectedContentType)
     {
-        int contentSize = 0;
+        int contentSize;
         if ( (contentSize = getContentSize(conn, false, isForError)) == -1 ) {	// "Unacceptable size"-code..
             if ( !isForError )	// It's expected to have ZERO-length most times, and thus the extraction cannot continue. Do not show a message. It's rare that we get an error-message anyway.
                 logger.warn("Aborting HTML-extraction for pageUrl: " + pageUrl);
@@ -993,14 +993,14 @@ public class ConnSupportUtils
         }
         // It may be "-2" in case the "contentSize" was not available.
 
-        int bufferSize = 0;
+        int bufferSize;
         InputStream inputStream = checkEncodingAndGetInputStream(conn, isForError);
         if ( inputStream == null )	// The error is already logged inside.
             return null;
         bufferSize = (((contentSize != -2) && (contentSize < FileUtils.mb)) ? contentSize : FileUtils.mb);
 
-        FileData htmlFileData = null;
-        String fullPathFileName = null;
+        FileData htmlFileData;
+        String fullPathFileName;
         try {
             htmlFileData = HtmlFileUtils.getFinalHtmlFilePath(urlId, pageUrl, urlMatcher, contentSize);	// This will not be null.
             // In case we use "numberName" for the filename, the above method increments the counter.
@@ -1072,7 +1072,7 @@ public class ConnSupportUtils
 
     public static String getHtmlString(HttpURLConnection conn, String pageUrl, BufferedReader bufferedReader, boolean isForError, String firstHTMLlineFromDetectedContentType)
 	{
-		int contentSize = 0;
+		int contentSize;
 		if ( (contentSize = getContentSize(conn, false, isForError)) == -1 ) {	// "Unacceptable size"-code..
 			if ( !isForError )	// It's expected to have ZERO-length most times, and thus the extraction cannot continue. Do not show a message. It's rare that we get an error-message anyway.
 				logger.warn("Aborting HTML-extraction for pageUrl: " + pageUrl);
@@ -1291,7 +1291,7 @@ public class ConnSupportUtils
 	 */
 	public static int getContentSize(HttpURLConnection conn, boolean calledForFullTextDownload, boolean isForError)
 	{
-		int contentSize = 0;
+		int contentSize;
 		try {
 			contentSize = Integer.parseInt(conn.getHeaderField("Content-Length"));
 			if ( (contentSize <= 0) || (contentSize > HttpConnUtils.maxAllowedContentSize) ) {
@@ -1335,7 +1335,7 @@ public class ConnSupportUtils
 		try {
 			if ( urlBase == null ) {
 				if ( pageUrl != null )
-					urlBase = new URL(pageUrl);
+					urlBase = URI.create(pageUrl).toURL();
 				else {
 					logger.error("No urlBase to produce a fully-formedUrl for internal-link: " + currentLink);
 					return null;
@@ -1348,7 +1348,7 @@ public class ConnSupportUtils
 			if ( currentLink.startsWith("?") )	// This case is mishandled by the automatic generation, unless we use this custom logic.
 				return (urlBase + currentLink);
 			else
-				return new URL(urlBase, currentLink).toString();	// Return the TargetUrl.
+				return urlBase.toURI().resolve(currentLink).toString();	// Return the TargetUrl.
 		} catch (Exception e) {
 			logger.error("Error when producing fully-formedUrl for internal-link: " + currentLink, e.getMessage());
 			return null;
@@ -1439,7 +1439,7 @@ public class ConnSupportUtils
 				throw new RuntimeException("Could not acquire the InputStream!");
 
 			// Check if we should abort the download based on its content-size.
-			int contentSize = 0;
+			int contentSize;
 			if ( (contentSize = getContentSize(conn, true, false)) == -1 )	// "Unacceptable size"-code..
 				throw new FileNotRetrievedException("The HTTP-reported size of this file was unacceptable!");
 			// It may be "-2", in case it was not retrieved..

@@ -107,7 +107,7 @@ public class S3ObjectStore {
         }
 
         if ( shouldShowAllS3Buckets ) {
-            List<Bucket> buckets = null;
+            List<Bucket> buckets;
             try {
                 buckets = minioClient.listBuckets();
                 logger.debug("The buckets in the S3 ObjectStore are:");

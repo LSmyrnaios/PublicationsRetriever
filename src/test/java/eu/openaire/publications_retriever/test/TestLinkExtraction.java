@@ -24,9 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * This class contains unit-testing for internalLinks-extraction.
  * @author Lampros Smyrnaios
  */
-public class LinkExtraction {
+public class TestLinkExtraction {
 	
-	private static final Logger logger = LoggerFactory.getLogger(LinkExtraction.class);
+	private static final Logger logger = LoggerFactory.getLogger(TestLinkExtraction.class);
 	
 	private static String exampleHtml;
 	private static String exampleUrl;
@@ -113,7 +113,8 @@ public class LinkExtraction {
 		//exampleUrl = "https://openportal.isti.cnr.it/doc?id=people______::4f82377b58548f5a2c910b412841932e";
 		//exampleUrl = "https://ri.conicet.gov.ar/handle/11336/82552";
 		//exampleUrl = "https://doi.pangaea.de/10.1594/PANGAEA.883146";
-		exampleUrl = "https://doi.pangaea.de/10.1594/PANGAEA.902422";
+		//exampleUrl = "https://doi.pangaea.de/10.1594/PANGAEA.902422";
+        exampleUrl = "https://dash.harvard.edu/entities/publication/73120378-c27d-6bd4-e053-0100007fdf3b";
 	}
 
 	
@@ -121,23 +122,19 @@ public class LinkExtraction {
 	@Test
 	public void testExtractOneLinkFromHtml()
 	{
-		String link;
+		String link = null;
 		try {
 			HashMap<String, String> extractedLinksHashSet = getLinksList(exampleHtml, null);
 			if ( extractedLinksHashSet == null )
 				return;	// Logging is handled inside..
 
-			link = new ArrayList<>(extractedLinksHashSet.keySet()).get(0);
+			link = new ArrayList<>(extractedLinksHashSet.keySet()).getFirst();
 			logger.info("The single-retrieved internalLink is: \"" + link + "\"");
 			
 		} catch (Exception e) {
 			logger.error("", e);
-			link = null;
-			assertEquals("retrievedLink", link);
 		}
-		
-		if ( link == null )
-			assertEquals("retrievedLink", link);
+        assertEquals("retrievedLink", link);
 	}
 	
 	
@@ -159,7 +156,7 @@ public class LinkExtraction {
                 if ( extractedLinksHashSet == null )
                     link = null;
                 else {
-                    link = new ArrayList<>(extractedLinksHashSet.keySet()).get(0);
+                    link = new ArrayList<>(extractedLinksHashSet.keySet()).getFirst();
                     logger.info("The single-retrieved internalLink is: \"" + link + "\"");
                 }
             }
@@ -251,9 +248,9 @@ public class LinkExtraction {
 
 	private static HashMap<String, String> getLinksList(String html, String url)
 	{
-		HashMap<String, String> extractedLinksHashMap = null;
+		HashMap<String, String> extractedLinksHashMap;
 		try {
-			extractedLinksHashMap = PageCrawler.extractInternalLinksFromHtml(null, html, url);
+			extractedLinksHashMap = PageCrawler.extractInternalLinksFromHtml(html, url);
 			if ( extractedLinksHashMap == null || extractedLinksHashMap.size() == 0 )
 				return null;    // Logging is handled inside..
 		} catch (Exception e) {

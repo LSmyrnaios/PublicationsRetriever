@@ -284,7 +284,7 @@ public class PublicationsRetriever
 		long secs = (long)Math.floor(timeElapsedSecs);	// 0
 		long remainingMillis = (long)((timeElapsedSecs - secs) * 1000);	// (0.006 - 0) / 1000 = 0.006 * 1000 = 6
 		
-		String millisMessage = "";
+		String millisMessage;
 		if ( (secs > 0) && (remainingMillis > 0) )
 			millisMessage = " and " + remainingMillis + " milliseconds.";
 		else

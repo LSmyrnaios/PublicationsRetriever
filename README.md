@@ -72,8 +72,8 @@ If you want to run it with distributed execution on multiple VMs, you may give a
 ## Install & Run (using MAVEN)
 
 ### Requirements
-- Java 17
-- Maven
+- Java 25
+- Maven 3.8.7
 
 ### Procedure
 

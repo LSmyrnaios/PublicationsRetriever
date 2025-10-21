@@ -190,7 +190,7 @@ public class LoaderAndChecker
 					String bestNonDocNonDatasetUrl = null;	// Best-case url
 					String nonDoiUrl = null;	// Url which is not a best case, but it's not a slow-doi url either.
 					String neutralUrl = null;	// Just a neutral url.
-					String urlToCheck = null;
+					String urlToCheck;
 
 					Set<String> retrievedUrlsOfCurrentId = finalLoadedIdUrlPairs.get(retrievedId);
 
@@ -713,31 +713,35 @@ public class LoaderAndChecker
 		String wasUrlValid = "true";
 		String couldRetry = "false";
 		String errorMsg;
-
-		if ( e instanceof RuntimeException ) {	// This check also covers the: (e != null) check.
-			String message = e.getMessage();
-			if ( message != null) {
-				if ( INVALID_URL_HTTP_STATUS.matcher(message).matches() ) {
-					wasUrlValid = "false";
-					errorMsg = "the url is invalid and lead to http-client-error.";
-				} else if ( COULD_RETRY_HTTP_STATUS.matcher(message).matches() ) {
-					couldRetry = "true";    // 	We could retry at a later time, since some errors might be temporal.
-					errorMsg = "the url had a non-fatal http-error.";
-				} else
-					errorMsg = "there is a serious unspecified error.";
-			} else
-				errorMsg = "there is an unspecified runtime error.";
-		} else if ( e instanceof ConnTimeoutException ) {
-			couldRetry = "true";
-			errorMsg = "the url had a connection-timeout.";
-		} else if ( e instanceof DomainWithUnsupportedHEADmethodException ) {	// This should never get caught here normally.
-			couldRetry = "true";
-			errorMsg = "the url does not support HEAD method for checking most of the internal links.";
-		} else if ( e instanceof DomainBlockedException ) {
-			couldRetry = "true";	// We could retry it in the future.
-			errorMsg = "the url had its initial or redirected domain blocked.";
-		} else
-			errorMsg = "there is a serious unspecified error.";
+        switch (e) {
+            case RuntimeException _ -> {
+                String message = e.getMessage();
+                if (message != null) {
+                    if (INVALID_URL_HTTP_STATUS.matcher(message).matches()) {
+                        wasUrlValid = "false";
+                        errorMsg = "the url is invalid and lead to http-client-error.";
+                    } else if (COULD_RETRY_HTTP_STATUS.matcher(message).matches()) {
+                        couldRetry = "true";    // 	We could retry at a later time, since some errors might be temporal.
+                        errorMsg = "the url had a non-fatal http-error.";
+                    } else
+                        errorMsg = "there is a serious unspecified error.";
+                } else
+                    errorMsg = "there is an unspecified runtime error.";
+            }
+            case ConnTimeoutException _ -> {
+                couldRetry = "true";
+                errorMsg = "the url had a connection-timeout.";
+            }
+            case DomainWithUnsupportedHEADmethodException _ -> {
+                couldRetry = "true";
+                errorMsg = "the url does not support HEAD method for checking most of the internal links.";
+            }
+            case DomainBlockedException _ -> {
+                couldRetry = "true";    // We could retry it in the future.
+                errorMsg = "the url had its initial or redirected domain blocked.";
+            }
+            case null, default -> errorMsg = "there is a serious unspecified error.";
+        }
 
 		if ( wasUrlValid.equals("true") && (url != null) && COULD_RETRY_URLS.matcher(url.toLowerCase()).matches() )
 			couldRetry = "true";

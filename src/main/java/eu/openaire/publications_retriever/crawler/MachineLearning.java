@@ -55,17 +55,17 @@ public class MachineLearning
 	 */
 	public static final SetMultimap<String, String> successPathsHashMultiMap = Multimaps.synchronizedSetMultimap(HashMultimap.create());	// Holds multiple values for any key, if a docPagePath(key) has many different docUrlPaths(values) for doc links.
 
-	public static final ConcurrentHashMap<String, String> successDocPathsExtensionHashMap = new ConcurrentHashMap<String, String>();
+	public static final ConcurrentHashMap<String, String> successDocPathsExtensionHashMap = new ConcurrentHashMap<>();
 
 	public static AtomicInteger docUrlsFoundByMLA = new AtomicInteger(0);
 	// If we later want to show statistics, we should take into account only the number of the urls to which the MLA was tested against, not all the urls in the inputFile.
 
-	private static final Set<String> domainsBlockedFromMLA = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+	private static final Set<String> domainsBlockedFromMLA = Collections.newSetFromMap(new ConcurrentHashMap<>());
 	static {	// These domains are not compatible with the MLA.
 		domainsBlockedFromMLA.add("sciencedirect.com");
 	}
 
-	private static final ConcurrentHashMap<String, Integer> timesDomainsFailedInMLA = new ConcurrentHashMap<String, Integer>();
+	private static final ConcurrentHashMap<String, Integer> timesDomainsFailedInMLA = new ConcurrentHashMap<>();
 	private static final int timesToFailBeforeBlockedFromMLA = 10;
 
 	private static final List<Double> successRateList = Collections.synchronizedList(new ArrayList<>());
@@ -155,7 +155,7 @@ public class MachineLearning
 		// Take the Matcher to retrieve the extension and remove it from the docID, also keep it stored elsewhere so that we can use it in prediction later.
 		Matcher extensionMatcher = FileUtils.EXTENSION_PATTERN.matcher(docUrlID);
 		if ( extensionMatcher.find() ) {
-			String extension = null;
+			String extension;
 			if ( (extension = extensionMatcher.group(0)) != null )	// Keep info about the docUrl, if it has a PDF-extension ending or not..
 				MachineLearning.successDocPathsExtensionHashMap.put(docUrlPath, extension);	// If the map previously contained a mapping for the key, the old value is replaced.
 			//logger.debug("extension: " + extension);	// DEBUG!
@@ -287,8 +287,8 @@ public class MachineLearning
 
 		MachineLearning.pageUrlsCheckedWithMLA.incrementAndGet();
 
-		String predictedDocUrl = null;
-		String extension = null;
+		String predictedDocUrl;
+		String extension;
 
 		StringBuilder strB = new StringBuilder(300);	// Initialize it here each time for thread-safety.
 
@@ -343,8 +343,10 @@ public class MachineLearning
 			logger.warn("Domain: \"" + pageDomain + "\" was blocked from being accessed again by the MLA, after proved to be incompatible " + timesToFailBeforeBlockedFromMLA + " times.");
 
 			// This domain was blocked, remove current non-needed paths-data. Note that we can't remove all of this domain's paths, since there is no mapping between a domain and its paths.
-			for ( String docPath : successPathsHashMultiMap.get(pagePath) )
-				successDocPathsExtensionHashMap.remove(docPath);
+			for ( String docPath : successPathsHashMultiMap.get(pagePath) ) {
+                if ( docPath != null )
+                    successDocPathsExtensionHashMap.remove(docPath);
+            }
 			successPathsHashMultiMap.removeAll(pagePath);
 		}
 		return false;	// We can't find its docUrl.. so we return false and continue by crawling this page.

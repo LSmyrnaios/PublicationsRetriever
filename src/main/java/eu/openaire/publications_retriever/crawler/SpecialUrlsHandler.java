@@ -37,7 +37,7 @@ public class SpecialUrlsHandler
 
 	public static String checkAndHandleSpecialUrls(String resourceUrl) throws RuntimeException
 	{
-		String updatedUrl = null;
+		String updatedUrl;
         // Do not perform docUrl transformations in case we want to download the html-files. Only perform general url-transformations to bypass connectivity problems.
 
 		if ( !ArgsUtils.shouldJustDownloadHtmlFiles && (updatedUrl = checkAndGetEuropepmcDocUrl(resourceUrl)) != null ) {
@@ -91,7 +91,7 @@ public class SpecialUrlsHandler
 	{
         if ( EUROPEMC_FILTER.matcher(europepmcUrl.toLowerCase()).matches() )
 		{
-            // Some of these urls end with "?pdf=render" and auto-redirect to to the final docUrl. But we can redirect-them offline and avoid these online redirections as well.
+            // Some of these urls end with "?pdf=render" and auto-redirect to the final docUrl. But we can redirect-them offline and avoid these online redirections as well.
 			String idStr = UrlUtils.getDocIdStr(europepmcUrl, null);
 			if ( idStr != null )
 				return (europepmcPageUrlBasePath + (!idStr.startsWith("PMC", 0) ? "PMC"+idStr : idStr) + "&blobtype=pdf");    // TODO - Investigate some 404-failures (THE DOC-URLS belong to diff domain)
@@ -294,7 +294,7 @@ public class SpecialUrlsHandler
 		if ( ! pageUrl.contains("pdf_paper_view.php") )
 			return pageUrl;
 
-		String pdfFileName = null;
+		String pdfFileName;
 		try {
 			Matcher matcher = IJCSEONLINE_PDF_FILENAME.matcher(pageUrl);
 			if ( !matcher.matches() )
