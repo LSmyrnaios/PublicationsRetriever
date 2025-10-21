@@ -329,7 +329,7 @@ public class HttpConnUtils
 				weirdMetaDocUrlWhichNeedsGET = true;
 			}
 
-            isSpecialUrl.set(false);    // Reset its value (from the previous record).
+            isSpecialUrl.set(false);    // Reset its value (from the previous record that used this thread).
             if ( calledForPageUrl || calledForPossibleDocUrl ) {
                 String changedUrl = SpecialUrlsHandler.checkAndHandleSpecialUrls(resourceURL);	// May throw a "RuntimeException".
                 if ( !changedUrl.equals(resourceURL) ) {

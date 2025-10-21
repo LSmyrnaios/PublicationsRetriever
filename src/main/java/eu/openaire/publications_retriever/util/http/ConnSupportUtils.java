@@ -1349,8 +1349,8 @@ public class ConnSupportUtils
 			if ( currentLink.startsWith("?") )	// This case is mishandled by the automatic generation, unless we use this custom logic.
 				return (urlBase + currentLink);
 			else
-				return urlBase.toURI().resolve(currentLink).toString();	// Return the TargetUrl.
-		} catch (Exception e) {
+                return new URL(urlBase, currentLink).toString();	// Return the TargetUrl. Converting to Java-25-code causes issues with "internal-link" encoding..
+        } catch (Exception e) {
 			logger.error("Error when producing fully-formedUrl for internal-link: " + currentLink, e.getMessage());
 			return null;
 		}
@@ -1478,10 +1478,11 @@ public class ConnSupportUtils
 		String wasDirectLink;
 		if ( calledForPageUrl ) {
 			boolean isSpecialUrl = HttpConnUtils.isSpecialUrl.get();
+            HttpConnUtils.isSpecialUrl.remove();    // Avoid the case when the next task finds a recrossed-url without connecting to it, thus not resetting the value of "isSpecialUrl" to false.
 			if ( (!isSpecialUrl && ( pageUrl.equals(finalUrlStr) || ConnSupportUtils.haveOnlyProtocolDifference(pageUrl, finalUrlStr) ))
 					|| sourceUrl.equals(finalUrlStr) || ConnSupportUtils.haveOnlyProtocolDifference(sourceUrl, finalUrlStr))	// Or if it was not a "specialUrl" and the pageUrl is the same as the docUrl.
 				wasDirectLink = "true";
-			else if ( isSpecialUrl )
+			else if ( isSpecialUrl )    // We did an offline redirect to bypass problematic landing-pages or time-consuming scrapping, so it's not a direct link.
 				wasDirectLink = "false";
 			else
 				wasDirectLink = "null";

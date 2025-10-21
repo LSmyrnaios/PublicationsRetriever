@@ -94,7 +94,7 @@ public class SpecialUrlsHandler
             // Some of these urls end with "?pdf=render" and auto-redirect to the final docUrl. But we can redirect-them offline and avoid these online redirections as well.
 			String idStr = UrlUtils.getDocIdStr(europepmcUrl, null);
 			if ( idStr != null )
-				return (europepmcPageUrlBasePath + (!idStr.startsWith("PMC", 0) ? "PMC"+idStr : idStr) + "&blobtype=pdf");    // TODO - Investigate some 404-failures (THE DOC-URLS belong to diff domain)
+				return (europepmcPageUrlBasePath + (!idStr.startsWith("PMC", 0) ? "PMC"+idStr : idStr) + "&blobtype=pdf");
 			else
 				return europepmcUrl;
 		}
