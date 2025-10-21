@@ -511,7 +511,9 @@ public class FileUtils
 	}
 
 
-    private static FileData checkAndThrowDocFileException(String docUrl, int contentSize, File docFile, Exception e) throws FileNotRetrievedException, NoSpaceLeftException {
+    private static FileData checkAndThrowDocFileException(String docUrl, int contentSize, File docFile, Exception e)
+            throws FileNotRetrievedException//, NoSpaceLeftException
+    {
         try {
             if ( docFile.exists() ) {
                 try {
@@ -527,13 +529,13 @@ public class FileUtils
         if ( e instanceof FileNotRetrievedException )
             throw (FileNotRetrievedException) e;
         else {
-            if ( e instanceof FileNotFoundException) {    // This may be thrown in case the file cannot be created.
+            /*if ( e instanceof FileNotFoundException) {    // This may be thrown in case the file cannot be created.
                 String msg = e.getMessage();    // This kind of exception is thrown, among other reasons, when there is no space on the device.
                 if ( (msg != null) && msg.contains("(No space left on device)") ) {
                     String fileName = docFile.getName();
                     throw new NoSpaceLeftException("No space left, when downloading file: " + fileName + " with advertised size: " + contentSize);
                 }
-            } else if ( ! (e instanceof IOException) )
+            } else*/ if ( ! (e instanceof IOException) )
                 logger.error("", e);
 
             throw new FileNotRetrievedException(e.getMessage());
