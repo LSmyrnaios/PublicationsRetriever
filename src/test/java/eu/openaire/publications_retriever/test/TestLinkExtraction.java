@@ -1,23 +1,23 @@
 package eu.openaire.publications_retriever.test;
 
 import eu.openaire.publications_retriever.crawler.PageCrawler;
-import eu.openaire.publications_retriever.exceptions.DocLinkFoundException;
-import eu.openaire.publications_retriever.exceptions.DocLinkInvalidException;
+import eu.openaire.publications_retriever.exceptions.*;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.url.UrlTypeChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
 import org.junit.jupiter.api.BeforeAll;
+//import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import static eu.openaire.publications_retriever.util.http.HttpConnUtils.handleConnection;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**
@@ -118,7 +118,6 @@ public class TestLinkExtraction {
 	}
 
 	
-	//@Disabled
 	@Test
 	public void testExtractOneLinkFromHtml()
 	{
@@ -126,19 +125,19 @@ public class TestLinkExtraction {
 		try {
 			HashMap<String, String> extractedLinksHashSet = getLinksList(exampleHtml, null);
 			if ( extractedLinksHashSet == null )
-				return;	// Logging is handled inside..
-
+				throw new RuntimeException("No links were extracted from html!");	// Logging is handled inside..
+            else if ( extractedLinksHashSet.isEmpty() )
+                return;
 			link = new ArrayList<>(extractedLinksHashSet.keySet()).getFirst();
 			logger.info("The single-retrieved internalLink is: \"" + link + "\"");
-			
 		} catch (Exception e) {
 			logger.error("", e);
 		}
-        assertEquals("retrievedLink", link);
 	}
-	
-	
-	@Test
+
+
+    //@Disabled
+    @Test
 	public void testExtractOneLinkFromUrl()
 	{
 		// This is actually a test of how link-extraction from an HTTP-300-page works.
@@ -149,28 +148,22 @@ public class TestLinkExtraction {
             String html;
 			if ( (html = ConnSupportUtils.getHtmlString(conn, finalUrl, null, false, null)) == null ) {
 				logger.error("Could not retrieve the HTML-code for pageUrl: " + finalUrl);
-                link = null;
 			} else {
                 //logger.debug("HTML:\n" + html);
                 HashMap<String, String> extractedLinksHashSet = getLinksList(html, finalUrl);
                 if ( extractedLinksHashSet == null )
-                    link = null;
-                else {
-                    link = new ArrayList<>(extractedLinksHashSet.keySet()).getFirst();
-                    logger.info("The single-retrieved internalLink is: \"" + link + "\"");
-                }
+                    throw new RuntimeException("No links were extracted from url: " + exampleUrl);	// Logging is handled inside..
+                else if ( extractedLinksHashSet.isEmpty() )
+                    return;
+                link = new ArrayList<>(extractedLinksHashSet.keySet()).getFirst();
+                logger.info("The single-retrieved internalLink is: \"" + link + "\"");
             }
 		} catch (Exception e) {
 			logger.error("", e);
-			link = null;
 		}
-		
-		if ( link == null )
-			assertEquals("retrievedLink", link);
 	}
 	
 	
-	//@Disabled
 	@Test
 	public void testExtractAllLinksFromHtml()
 	{
@@ -202,21 +195,21 @@ public class TestLinkExtraction {
 	
 	//@Disabled
 	@Test
-	public void testExtractAllLinksFromUrl()
-	{
+	public void testExtractAllLinksFromUrl() throws AlreadyFoundDocUrlException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException, IOException {
 		try {
 			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl, null), true, false);
 			String finalUrl = conn.getURL().toString();
             String html;
             if ( (html = ConnSupportUtils.getHtmlString(conn, finalUrl, null, false, null)) == null ) {
-                logger.error("Could not retrieve the HTML-code for pageUrl: " + finalUrl);
-                return;
+                String errorMsg = "Could not retrieve the HTML-code for pageUrl: " + finalUrl;
+                logger.error(errorMsg);
+                throw new RuntimeException(errorMsg);
             }
 			//logger.debug("HTML:\n" + html);
 
 			HashMap<String, String> extractedLinksHashSet = getLinksList(html, finalUrl);
 			if ( extractedLinksHashSet == null )
-				return;	// Logging is handled inside..
+				throw new RuntimeException("No links could be extracted from html!");	// Logging is handled inside..
 
 			int numberOfExtractedLinks = extractedLinksHashSet.size();
 			logger.info("The list of the " + numberOfExtractedLinks + " extracted internalLinks of \"" + exampleUrl + "\" is:");
@@ -242,13 +235,14 @@ public class TestLinkExtraction {
 
 		} catch (Exception e) {
 			logger.error("", e);
+            throw e;
 		}
 	}
 
 
 	private static HashMap<String, String> getLinksList(String html, String url)
 	{
-		HashMap<String, String> extractedLinksHashMap;
+		HashMap<String, String> extractedLinksHashMap = new HashMap<>();
 		try {
 			extractedLinksHashMap = PageCrawler.extractInternalLinksFromHtml(html, url);
 			if ( extractedLinksHashMap == null || extractedLinksHashMap.size() == 0 )
@@ -263,7 +257,7 @@ public class TestLinkExtraction {
 				logger.warn("A invalid docLink was found: " + link);
 			}
 			logger.warn("The \"PageCrawler.extractInternalLinksFromHtml()\" method exited early, so the list with the can-be-extracted links was not returned!");
-			return null;
+			return extractedLinksHashMap;
 		}
 		return extractedLinksHashMap;
 	}
