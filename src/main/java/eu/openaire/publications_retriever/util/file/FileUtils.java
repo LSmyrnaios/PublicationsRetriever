@@ -619,7 +619,7 @@ public class FileUtils
 	}
 
 
-	private static final Lock fileNameLock = new ReentrantLock(true);
+	private static final Lock fileNameLock = new ReentrantLock(true);   // Here keep the "fairness" as we do not want to time out our inputStreams for some unlucky threads.
 
 	public static FileData getFileAndHandleExisting(String fileName, String dotFileExtension, boolean hasUnretrievableDocName, int contentSize, String storeFilesDir,
 													HashMap<String, Integer> numbersOfDuplicateFileNames)

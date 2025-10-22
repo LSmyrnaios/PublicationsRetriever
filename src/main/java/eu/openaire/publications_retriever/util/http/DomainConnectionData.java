@@ -10,7 +10,7 @@ public class DomainConnectionData {
 
     int timesConnected; // This is just for statistics, at the moment.
 
-    final Lock lock = new ReentrantLock(true);  // This lock is locking the threads on each domain.
+    final Lock lock = new ReentrantLock(false);  // This lock is locking the threads on each domain. Fairness does not matter here, it just adds overhead to the thousands Virtual Threads.
 
     public DomainConnectionData() {
         this.timesConnected = 1;
