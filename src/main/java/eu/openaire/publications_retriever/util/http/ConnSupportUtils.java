@@ -548,13 +548,9 @@ public class ConnSupportUtils
 	public static void applyPolitenessDelay(String domainStr)
 	{
 		// Consider only the last three parts of a domain, not all, otherwise, a sub-sub-domain might connect simultaneously with another sub-sub-domain.
-		domainStr = UrlUtils.getTopThreeLevelDomain(domainStr);
-
-		DomainConnectionData domainConnectionData = domainsWithConnectionData.get(domainStr);
-		if ( domainConnectionData == null ) {	// If it is the 1st time connecting.
-			domainsWithConnectionData.put(domainStr, new DomainConnectionData());
-			return;
-		}
+        DomainConnectionData domainConnectionData = domainsWithConnectionData.putIfAbsent(UrlUtils.getTopThreeLevelDomain(domainStr), new DomainConnectionData());
+        if ( domainConnectionData == null )
+            return; // First occurrence, no need to apply a delay.
 
 		long elapsedTimeSinceLastConnection;
 		domainConnectionData.lock.lock();// Threads trying to connect with the same domain, should sleep one AFTER the other, to avoid coming back after sleep at the same time, in the end..
