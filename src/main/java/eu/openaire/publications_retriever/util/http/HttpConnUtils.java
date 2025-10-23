@@ -54,10 +54,11 @@ public class HttpConnUtils
 
 	public static AtomicInteger numOfDomainsBlockedDueToSSLException = new AtomicInteger(0);
 
-	public static final int maxConnGETWaitingTime = 15_000;	// Max time (in ms) to wait for a connection, using "HTTP GET".
-	public static final int maxConnHEADWaitingTime = 10_000;	// Max time (in ms) to wait for a connection, using "HTTP HEAD".
+	public static final int maxConnectWaitingTime = 5_000;  // Max time (in ms) to wait for a hand-shake with the server (without any other data being transfered).
+	public static final int maxConnHEADWaitingTime = 8_000;    // Max time (in ms) to wait for a response, using "HTTP HEAD".
+    public static final int maxConnGETWaitingTime = 15_000; // Max time (in ms) to wait for a response, using "HTTP GET".
 
-	private static final int maxRedirectsForPageUrls = 7;// The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
+    private static final int maxRedirectsForPageUrls = 7;   // The usual redirect times for doi.org urls is 3, though some of them can reach even 5 (if not more..)
 	private static final int maxRedirectsForInternalLinks = 2;	// Internal-DOC-Links shouldn't take more than 2 redirects.
 
 	private static final int timesToHaveNoDocNorPageInputBeforeBlocked = 10;
@@ -209,7 +210,7 @@ public class HttpConnUtils
 					UrlTypeChecker.pagesNotProvidingDocUrls.incrementAndGet();
 					return false;
 				}
-				else if ( (lowerCaseMimeType != null) && (lowerCaseMimeType.length() <= 255)  && PAGE_MIMETYPE_RULES.matcher(lowerCaseMimeType).matches() ) {   // The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
+				else if ( (lowerCaseMimeType != null) && (lowerCaseMimeType.length() <= 255) && PAGE_MIMETYPE_RULES.matcher(lowerCaseMimeType).matches() ) {   // The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
                     // If the initial connection occurred with "HTTP-HEAD", make sure we reconnect with "GET", in order to be able to get its content. This may happen if the initialUrl was wrongly identified as a "docUrl" and the download of fulltexts is not enabled (i.e.: just detecting docUrls, or downloading HTML-files).
                     conn = ConnSupportUtils.checkForHEADConnectionAndReconnectIfNeededWithGET(conn, finalUrlStr, domainStr, true, false);
                     PageCrawler.visit(urlId, sourceUrl, finalUrlStr, mimeType, conn, firstHtmlLine, bufferedReader);
@@ -356,11 +357,11 @@ public class HttpConnUtils
 
 			if ( useHttpGetMethod ) {
 				conn.setRequestMethod("GET");	// Go directly with "GET".
-				conn.setConnectTimeout(maxConnGETWaitingTime);
+				conn.setConnectTimeout(maxConnectWaitingTime);
 				conn.setReadTimeout(maxConnGETWaitingTime);
 			} else {
 				conn.setRequestMethod("HEAD");	// Else, try "HEAD" (it may be either a domain that supports "HEAD", or a new domain, for which we have no info yet).
-				conn.setConnectTimeout(maxConnHEADWaitingTime);
+				conn.setConnectTimeout(maxConnectWaitingTime);
 				conn.setReadTimeout(maxConnHEADWaitingTime);
 			}
 			ConnSupportUtils.applyPolitenessDelay(domainStr);
@@ -380,11 +381,11 @@ public class HttpConnUtils
 
 				if ( useHttpGetMethod ) {
 					conn.setRequestMethod("GET");	// Go directly with "GET".
-					conn.setConnectTimeout(maxConnGETWaitingTime);
+					conn.setConnectTimeout(maxConnectWaitingTime);
 					conn.setReadTimeout(maxConnGETWaitingTime);
 				} else {
 					conn.setRequestMethod("HEAD");	// Else, try "HEAD" (it may be either a domain that supports "HEAD", or a new domain, for which we have no info yet).
-					conn.setConnectTimeout(maxConnHEADWaitingTime);
+					conn.setConnectTimeout(maxConnectWaitingTime);
 					conn.setReadTimeout(maxConnHEADWaitingTime);
 				}
 				ConnSupportUtils.applyPolitenessDelay(domainStr);
@@ -406,7 +407,7 @@ public class HttpConnUtils
 				conn = (HttpURLConnection) url.openConnection();
 				ConnSupportUtils.setHttpHeaders(conn, domainStr);
 				conn.setRequestMethod("GET");	// To reach here, it means that the HEAD method is unsupported.
-				conn.setConnectTimeout(maxConnGETWaitingTime);
+				conn.setConnectTimeout(maxConnectWaitingTime);
 				conn.setReadTimeout(maxConnGETWaitingTime);
 				conn.setInstanceFollowRedirects(false);
 
@@ -427,7 +428,7 @@ public class HttpConnUtils
 					conn = (HttpURLConnection) url.openConnection();
 					ConnSupportUtils.setHttpHeaders(conn, domainStr);
 					conn.setRequestMethod("GET");	// To reach here, it means that the HEAD method is unsupported.
-					conn.setConnectTimeout(maxConnGETWaitingTime);
+					conn.setConnectTimeout(maxConnectWaitingTime);
 					conn.setReadTimeout(maxConnGETWaitingTime);
 					conn.setInstanceFollowRedirects(false);
 

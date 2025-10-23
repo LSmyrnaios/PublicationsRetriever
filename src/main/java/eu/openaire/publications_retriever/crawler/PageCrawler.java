@@ -105,13 +105,12 @@ public class PageCrawler
 
 		// Take the html from the page and in case we want to save it permanently, write it into a file.
         if ( ArgsUtils.shouldJustDownloadHtmlFiles ) {
-            ConnSupportUtils.closeBufferedReader(bufferedReader);	// This page's content-type was auto-detected, and the process fails before re-requesting the conn-inputStream, then make sure we close the last one.
+            ConnSupportUtils.closeBufferedReader(bufferedReader);	// If this page's content-type was auto-detected, and the process fails before re-requesting the conn-inputStream, then make sure we close the last one.
             FileData htmlFileData;
-            if ((htmlFileData = ConnSupportUtils.downloadHtmlFile(conn, urlId, pageUrl, false, urlMatcher, firstHTMLlineFromDetectedContentType)) == null) {
+            if ( (htmlFileData = ConnSupportUtils.downloadHtmlFile(conn, urlId, pageUrl, false, urlMatcher, firstHTMLlineFromDetectedContentType)) == null ) {
                 logger.warn("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
                 UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", "null", null, true, "true", "true", "false", "false", "true", null, "null", "null");
                 LoaderAndChecker.connProblematicUrls.incrementAndGet();
-                // The "bufferedReader" is closed inside the above method.  TODO <<<<<<<<<<<<<<<<<<<---- !!!!!
             } else
                 UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, "null", "null", htmlFileData.getLocation(), null, true, "true", "true", "null", "null", "true", htmlFileData.getSize(), htmlFileData.getHash(), "text/html");
             return;

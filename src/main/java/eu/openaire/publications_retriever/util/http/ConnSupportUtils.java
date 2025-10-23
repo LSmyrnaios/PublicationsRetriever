@@ -456,13 +456,12 @@ public class ConnSupportUtils
             conn = HttpConnUtils.openHttpConnection(url, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // The provided params guarantee a "GET"-request.
             int responseCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP response), inside openHttpConnection().
             // Only a final-url will reach here, so no redirect should occur (thus, we don't check for it).
-            if ( responseCode!= 200 ) { // If we have unwanted/error codes.
+            if ( responseCode != 200 ) { // If we have unwanted/error codes.
                 String errorMessage = onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode, calledForPageUrl, conn);
                 throw new RuntimeException(errorMessage);
             }
-            return conn;
-        } else
-            return conn;
+        }
+        return conn;
     }
 
 
@@ -652,7 +651,6 @@ public class ConnSupportUtils
 			if ( calledForPageUrl && (errorStatusCode != 404) && (errorStatusCode != 410) ) {
 				String errorText = getErrorMessageFromResponseBody(conn, urlStr);
 				if ( errorText != null ) {
-
 					if ( domainStr.contains("doi.org") && errorText.contains("Not a DOI") ) {
 						logger.warn("Found a \"doi.org\" url with an invalid DOI: " + urlStr);
 						// In this case it is highly likely that the "DOI" in the url is a DOI-LINK.
@@ -1002,7 +1000,6 @@ public class ConnSupportUtils
             htmlFileData = HtmlFileUtils.getFinalHtmlFilePath(urlId, pageUrl, urlMatcher, contentSize);	// This will not be null.
             // In case we use "numberName" for the filename, the above method increments the counter.
             fullPathFileName = htmlFileData.getLocation();
-            //} catch (FileNotRetrievedException fnre) {
         } catch (Exception e) {
             logger.error("Failed to acquire the \"fullPathFileName\": " + e.getMessage());
             if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
