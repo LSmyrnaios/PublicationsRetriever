@@ -123,6 +123,7 @@ public class PublicationsRetriever
 			} catch (SecurityException se) {
 				logger.error("Could not shutdown the threads in any way..!", se);
 			}
+			Thread.currentThread().interrupt(); // Preserve the "interrupted"-status for this thread.
 		}
 
 		showStatistics(startTime);
@@ -257,61 +258,38 @@ public class PublicationsRetriever
 
 	public static void calculateAndPrintElapsedTime(Instant startTime, Instant finishTime, String customMessage)
 	{
-		/*
-		Calculating time using the following method-example.
-			2904506 millis
-			secs = millis / 1000 = 2904506 / 1000 = 2904.506 secs = 2904secs + 506millis
-			remaining millis = 506
-			mins = secs / 60 = 2904 / 60 = 48.4 mins = 48mins + (0.4 * 60) secs = 48 mins + 24 secs
-			remaining secs = 24
-		Elapsed time --> "48 minutes, 24 seconds and 506 milliseconds."
-		 */
-		
 		long timeElapsedMillis = Duration.between(startTime, finishTime).toMillis();
-		
-		// Millis - Secs
-		double timeElapsedSecs = (double)timeElapsedMillis / 1000;	// 0.006
-		long secs = (long)Math.floor(timeElapsedSecs);	// 0
-		long remainingMillis = (long)((timeElapsedSecs - secs) * 1000);	// (0.006 - 0) / 1000 = 0.006 * 1000 = 6
-		
-		String millisMessage;
-		if ( (secs > 0) && (remainingMillis > 0) )
-			millisMessage = " and " + remainingMillis + " milliseconds.";
-		else
-			millisMessage = timeElapsedMillis + " milliseconds.";
-		
-		// Secs - Mins
-		double timeElapsedMins = (double)secs / 60;
-		long mins = (long)Math.floor(timeElapsedMins);
-		long remainingSeconds = (long)((timeElapsedMins - mins) * 60);
-		
-		String secondsMessage = "";
-		if ( remainingSeconds > 0 )
-			secondsMessage = remainingSeconds + " seconds";
-		
-		// Mins - Hours
-		double timeElapsedHours = (double)mins / 60;
-		long hours = (long)Math.floor(timeElapsedHours);
-		long remainingMinutes = (long)((timeElapsedHours - hours) * 60);
-		
-		String minutesMessage = "";
-		if ( remainingMinutes > 0 )
-			minutesMessage = remainingMinutes + " minutes, ";
-		
-		// Hours - Days
-		double timeElapsedDays = (double)hours / 24;
-		long days = (long)Math.floor(timeElapsedDays);
-		long remainingHours = (long)((timeElapsedDays - days) * 24);
-		
-		String hoursMessage = "";
-		if ( remainingHours > 0 )
-			hoursMessage = remainingHours + " hours, ";
-		
-		String daysMessage = "";
-		if ( days > 0 )
-			daysMessage = days + " days, ";
-		
-		logger.info(((customMessage != null) ? customMessage : "The program finished after: ") + daysMessage + hoursMessage + minutesMessage + secondsMessage + millisMessage);
+		Duration duration = Duration.ofMillis(timeElapsedMillis);
+		long days = duration.toDays();
+		duration = duration.minusDays(days);
+		long hours = duration.toHours();
+		duration = duration.minusHours(hours);
+		long minutes = duration.toMinutes();
+		duration = duration.minusMinutes(minutes);
+		long seconds = duration.toSeconds();
+        duration = duration.minusSeconds(seconds);
+		long milliseconds = duration.toMillis();
+
+		StringBuilder message = new StringBuilder(100);
+        message.append((customMessage != null) ? customMessage : "The program finished after: ");
+		if ( days > 0 ) {
+			message.append(days).append(" days, ");
+		}
+		if ( hours > 0 ) {
+			message.append(hours).append(" hours, ");
+		}
+		if ( minutes > 0 ) {
+			message.append(minutes).append(" minutes, ");
+		}
+		if ( seconds > 0 ) {
+			message.append(seconds).append(" seconds");
+		}
+		if ( milliseconds > 0 ) {
+			if ( seconds > 0 )
+				message.append(" and ");
+			message.append(milliseconds).append(" milliseconds");
+		}
+		logger.info(message.toString());
 	}
 
 
