@@ -84,7 +84,7 @@ public class HttpConnUtils
 
 	public static AtomicInteger timesDidOfflineSlashRedirect = new AtomicInteger(0);
 
-	public static ThreadLocal<Boolean> isSpecialUrl = new ThreadLocal<>();	// Every Thread has its own variable. This variable is used only in non-failure cases.
+	public static ThreadLocal<Boolean> isSpecialUrl = ThreadLocal.withInitial(() -> false); // Every Thread has its own variable. This variable is used only in non-failure cases.
 
 	public static final String docFileNotRetrievedMessage = FileNotRetrievedException.class.getSimpleName() + " was thrown before the docFile could be stored. ";  // Get the class-name programmatically, in order to easily spot the error if the exception-name changes.
 
