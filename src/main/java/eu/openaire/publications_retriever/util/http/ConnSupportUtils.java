@@ -649,7 +649,7 @@ public class ConnSupportUtils
 			errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received: HTTP " + errorStatusCode + " Client Error.";
 			// Get the error-response-body:
 			if ( calledForPageUrl && (errorStatusCode != 404) && (errorStatusCode != 410) ) {
-				String errorText = getErrorMessageFromResponseBody(conn, urlStr);
+				String errorText = getErrorMessageFromResponseBody(conn, urlStr);   // The "HTTP-GET" method was used, so a stream could exist.
 				if ( errorText != null ) {
 					if ( domainStr.contains("doi.org") && errorText.contains("Not a DOI") ) {
 						logger.warn("Found a \"doi.org\" url with an invalid DOI: " + urlStr);
@@ -688,7 +688,7 @@ public class ConnSupportUtils
 				on5XXerrorCode(errorStatusCode, domainStr);
 			} else {	// Unknown Error (including non-handled: 1XX and the weird one: 999 (used for example on Twitter), responseCodes).
 				errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received unexpected responseCode: " + errorStatusCode;
-				if ( calledForPageUrl ) {
+				if ( calledForPageUrl ) {   // The "HTTP-GET" method was used, so a stream could exist.
 					String errorText = getErrorMessageFromResponseBody(conn, urlStr);
 					if ( errorText != null )
 						errorLogMessage += " Error-text: " + errorText;
@@ -703,7 +703,7 @@ public class ConnSupportUtils
 		}
 		return errorLogMessage;
 	}
-	
+
 
 	public static InputStream checkEncodingAndGetInputStream(HttpURLConnection conn, boolean isForError)
 	{
@@ -711,7 +711,7 @@ public class ConnSupportUtils
 		try {
 			inputStream = (isForError ? conn.getErrorStream() : conn.getInputStream());
 			if ( isForError && (inputStream == null) ) {    // Only the "getErrorStream" may return null.
-                logger.error("The \"getErrorStream\" did not return a stream!");
+                logger.warn("The \"getErrorStream\" did not return a stream!"); // This is normal for some domains, still we want to get notified.
                 return null;
             }
 		} catch (Exception e) {
@@ -1433,7 +1433,7 @@ public class ConnSupportUtils
 				throw new RuntimeException("Could not acquire the InputStream!");
 
 			// Check if we should abort the download based on its content-size.
-			int contentSize;
+			int contentSize;    // We use "calledFOrFullTextDOwnload = true" bellow, in order to use a higher limit for the input.
 			if ( (contentSize = getContentSize(conn, true, false)) == -1 )	// "Unacceptable size"-code..
 				throw new FileNotRetrievedException("The HTTP-reported size of this file was unacceptable!");
 			// It may be "-2", in case it was not retrieved..
