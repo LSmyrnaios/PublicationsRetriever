@@ -107,7 +107,7 @@ public class PageCrawler
         if ( ArgsUtils.shouldJustDownloadHtmlFiles ) {
             ConnSupportUtils.closeBufferedReader(bufferedReader);	// If this page's content-type was auto-detected, and the process fails before re-requesting the conn-inputStream, then make sure we close the last one.
             FileData htmlFileData;
-            if ( (htmlFileData = ConnSupportUtils.downloadHtmlFile(conn, urlId, pageUrl, false, urlMatcher, firstHTMLlineFromDetectedContentType)) == null ) {
+            if ( (htmlFileData = ConnSupportUtils.downloadHtmlFile(conn, urlId, pageUrl, urlMatcher, firstHTMLlineFromDetectedContentType)) == null ) {
                 logger.warn("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
                 UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", "null", null, true, "true", "true", "false", "false", "true", null, "null", "null");
                 LoaderAndChecker.connProblematicUrls.incrementAndGet();

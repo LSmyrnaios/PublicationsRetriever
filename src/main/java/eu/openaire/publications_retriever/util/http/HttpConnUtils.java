@@ -7,6 +7,7 @@ import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.models.MimeTypeResult;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileData;
+import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.url.LoaderAndChecker;
 import eu.openaire.publications_retriever.util.url.UrlTypeChecker;
 import eu.openaire.publications_retriever.util.url.UrlUtils;
@@ -63,7 +64,9 @@ public class HttpConnUtils
 
 	private static final int timesToHaveNoDocNorPageInputBeforeBlocked = 10;
 
-	public static int maxAllowedContentSize = 536_870_912;	// 512 Mb | More than that can indicate a big pdf with no text, but full of images. This should be configurable (so not final).
+	public static int maxAllowedFulltextContentSize = 536_870_912;  // 512 Mb | More than that can indicate a big pdf with no text, but full of images. This should be configurable (so not final).
+	public static int maxAllowedHtmlContentSize = FileUtils.fiveMb; // 5 Mb | More than that can indicate a big html with excessive text and elements that is likely not a publication-page. This should be configurable (so not final).
+
 	private static final boolean shouldNOTacceptGETmethodForUncategorizedInternalLinks = true;
 
 	public static final Set<String> domainsSupportingHTTPS = Collections.newSetFromMap(new ConcurrentHashMap<>());

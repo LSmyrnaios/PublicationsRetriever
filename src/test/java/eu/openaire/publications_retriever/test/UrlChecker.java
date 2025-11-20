@@ -791,11 +791,6 @@ public class UrlChecker {
 		ArgsUtils.retrieveDatasets = false;
 		ArgsUtils.shouldDetectAllDatasetLinks = false;
 
-		// Set some needed data.
-		ConnSupportUtils.setKnownMimeTypes();
-		UrlTypeChecker.setRuntimeInitializedRegexes();
-		LoaderAndChecker.setCouldRetryRegex();
-
 		ArgsUtils.fileNameType = ArgsUtils.fileNameTypeEnum.idName;
 
 		ArgsUtils.shouldDownloadDocFiles = true;
@@ -811,6 +806,12 @@ public class UrlChecker {
 			ArgsUtils.storeDocFilesDir = FileUtils.workingDir + "testDocFiles" + File.separator;
 			FileUtils.handleStoreFilesDirectory(ArgsUtils.storeDocFilesDir, ArgsUtils.shouldDeleteOlderDocFiles , true);
 		}
+
+        // Set some needed data.
+        ConnSupportUtils.setKnownMimeTypes();
+        UrlTypeChecker.setRuntimeInitializedRegexes();
+        LoaderAndChecker.setCouldRetryRegex();	// TODO - MAYBE THIS SHOULD HAPPEN INSIDE "UrlTypeChecker.setRuntimeInitializedRegexes(); " ?
+
 
 		String testID = "testID";
 

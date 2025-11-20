@@ -711,7 +711,7 @@ public class ConnSupportUtils
 		try {
 			inputStream = (isForError ? conn.getErrorStream() : conn.getInputStream());
 			if ( isForError && (inputStream == null) ) {    // Only the "getErrorStream" may return null.
-                logger.error("The \"getErrorStream\" dod not return a stream!");
+                logger.error("The \"getErrorStream\" did not return a stream!");
                 return null;
             }
 		} catch (Exception e) {
@@ -978,18 +978,17 @@ public class ConnSupportUtils
 	public static ThreadLocal<StringBuilder> htmlStrBuilder = new ThreadLocal<>();	// Every Thread has its own variable.
 
 
-    public static FileData downloadHtmlFile(HttpURLConnection conn, String urlId, String pageUrl, boolean isForError, Matcher urlMatcher, String firstHTMLlineFromDetectedContentType)
+    public static FileData downloadHtmlFile(HttpURLConnection conn, String urlId, String pageUrl, Matcher urlMatcher, String firstHTMLlineFromDetectedContentType)
     {
         int contentSize;
-        if ( (contentSize = getContentSize(conn, false, isForError)) == -1 ) {	// "Unacceptable size"-code..
-            if ( !isForError )	// It's expected to have ZERO-length most times, and thus the extraction cannot continue. Do not show a message. It's rare that we get an error-message anyway.
-                logger.warn("Aborting HTML-extraction for pageUrl: " + pageUrl);
+        if ( (contentSize = getContentSize(conn, false, false)) == -1 ) {   // "Unacceptable size"-code..
+            logger.warn("Aborting HTML-download for pageUrl: " + pageUrl);
             return null;
         }
         // It may be "-2" in case the "contentSize" was not available.
 
         int bufferSize;
-        InputStream inputStream = checkEncodingAndGetInputStream(conn, isForError);
+        InputStream inputStream = checkEncodingAndGetInputStream(conn, false);
         if ( inputStream == null )	// The error is already logged inside.
             return null;
         bufferSize = (((contentSize != -2) && (contentSize < FileUtils.mb)) ? contentSize : FileUtils.mb);
@@ -1272,7 +1271,7 @@ public class ConnSupportUtils
 	}
 
 
-	private static final int maxAllowedContentSizeMB = (HttpConnUtils.maxAllowedContentSize / FileUtils.mb);
+	private static final int maxAllowedContentSizeMB = (HttpConnUtils.maxAllowedFulltextContentSize / FileUtils.mb);
 
 	
 	/**
@@ -1288,7 +1287,8 @@ public class ConnSupportUtils
 		int contentSize;
 		try {
 			contentSize = Integer.parseInt(conn.getHeaderField("Content-Length"));
-			if ( (contentSize <= 0) || (contentSize > HttpConnUtils.maxAllowedContentSize) ) {
+            long maxSize = (calledForFullTextDownload ? HttpConnUtils.maxAllowedFulltextContentSize : HttpConnUtils.maxAllowedHtmlContentSize);
+			if ( (contentSize <= 0) || (contentSize > maxSize) ) {
 				if ( !isForError )	// In case of an error, we expect it to be < 0 > most of the time. Do not show a message, but return that it's not acceptable to continue acquiring the content.
 					logger.warn((calledForFullTextDownload ? "DocUrl: \"" : "Url: \"") + conn.getURL().toString() + "\" had a non-acceptable contentSize: " + contentSize + ". The maxAllowed one is: " + maxAllowedContentSizeMB + " MB.");
 				return -1;
