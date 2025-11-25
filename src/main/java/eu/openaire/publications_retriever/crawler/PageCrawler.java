@@ -82,7 +82,7 @@ public class PageCrawler
 	// Example of docUrl having the "review" keyword: https://jag.journalagent.com/tkd/pdfs/TKDA-33903-INVITED_REVIEW-ASLAN.pdf
 
 
-	public static void visit(String urlId, String sourceUrl, String pageUrl, String pageContentType, HttpResponse<InputStream> response, String firstHTMLlineFromDetectedContentType, BufferedReader bufferedReader) throws NoSpaceLeftException
+	public static void visit(String urlId, String sourceUrl, String pageUrl, String pageContentType, HttpResponse<InputStream> response, String firstHTMLlineFromDetectedContentType, BufferedReader bufferedReader)// throws NoSpaceLeftException
 	{
 		logger.debug("Visiting pageUrl: \"" + pageUrl + "\", from id: \"" + urlId + "\".");
 
