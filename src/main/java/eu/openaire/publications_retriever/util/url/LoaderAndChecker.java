@@ -10,6 +10,7 @@ import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
+import eu.openaire.publications_retriever.util.http.HttpClientUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
 import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
@@ -93,7 +94,6 @@ public class LoaderAndChecker
 		boolean isFirstRun = true;
 		int batchCount = 0;
 
-		CookieStore cookieStore = HttpConnUtils.cookieManager.getCookieStore();
 		List<Callable<Boolean>> callableTasks = new ArrayList<>(FileUtils.jsonBatchSize);
 
 		// Start loading and checking urls.
@@ -145,14 +145,14 @@ public class LoaderAndChecker
 					return true;
 				});
 			}// end for-loop
-			executeTasksAndHandleResults(callableTasks, batchCount, cookieStore);
+			executeTasksAndHandleResults(callableTasks, batchCount);
 		}// end while-loop
 	}
 
 	
 	/**
 	 * This method loads the id-url pairs from the input file in memory, in packs.
-	 * Then, it groups them per ID and selects the best url -after checks- of each-ID to connect-with and retrieve the docUrl.
+	 * Then, it groups them per ID and selects the best url -after checks- of each-ID to connect-with and retrieve the docUrls
 	 * @throws RuntimeException if no input-urls were retrieved.
 	 */
 	public static void loadAndCheckIdUrlPairs() throws RuntimeException
@@ -161,7 +161,6 @@ public class LoaderAndChecker
 		boolean isFirstRun = true;
 		int batchCount = 0;
 
-		CookieStore cookieStore = HttpConnUtils.cookieManager.getCookieStore();	// This cookie store is a reference to the one used throughout the execution.
 		List<Callable<Boolean>> callableTasks = new ArrayList<>(FileUtils.jsonBatchSize);
 
 		// Start loading and checking urls.
@@ -296,7 +295,7 @@ public class LoaderAndChecker
 					return wasSuccessful;
 				});
 			}// end id-for-loop
-			executeTasksAndHandleResults(callableTasks, batchCount, cookieStore);
+			executeTasksAndHandleResults(callableTasks, batchCount);
 		}// end loading-while-loop
 	}
 
@@ -311,8 +310,6 @@ public class LoaderAndChecker
 		HashMultimap<String, String> loadedIdUrlPairs;
 		boolean isFirstRun = true;
 		int batchCount = 0;
-
-		CookieStore cookieStore = HttpConnUtils.cookieManager.getCookieStore();	// This cookie store is a reference to the one used throughout the execution.
 
 		List<Callable<Boolean>> callableTasks = new ArrayList<>(FileUtils.jsonBatchSize);
 
@@ -374,7 +371,7 @@ public class LoaderAndChecker
 					return true;
 				});
 			}// end pairs-for-loop
-			executeTasksAndHandleResults(callableTasks, batchCount, cookieStore);
+			executeTasksAndHandleResults(callableTasks, batchCount);
 		}// end loading-while-loop
 	}
 
@@ -390,7 +387,6 @@ public class LoaderAndChecker
 		boolean isFirstRun = true;
 		int batchCount = 0;
 
-		CookieStore cookieStore = HttpConnUtils.cookieManager.getCookieStore();
 		List<Callable<Boolean>> callableTasks = new ArrayList<>(FileUtils.jsonBatchSize);
 
 		// Start loading and checking urls.
@@ -452,12 +448,12 @@ public class LoaderAndChecker
 					return true;
 				});
 			}// end for-id-loop
-			executeTasksAndHandleResults(callableTasks, batchCount, cookieStore);
+			executeTasksAndHandleResults(callableTasks, batchCount);
 		}// end loading-while-loop
 	}
 
 
-	public static void executeTasksAndHandleResults(List<Callable<Boolean>> callableTasks, int batchCount, CookieStore cookieStore)
+	public static void executeTasksAndHandleResults(List<Callable<Boolean>> callableTasks, int batchCount)
 	{
 		int numFailedTasks = invokeAllTasksAndWait(callableTasks);
 		if ( numFailedTasks == -1 ) {
@@ -470,6 +466,7 @@ public class LoaderAndChecker
 		}
 
 		callableTasks.clear();
+        CookieStore cookieStore = HttpClientUtils.cookieManager.getCookieStore();
 		logger.debug("The number of cookies is: " + cookieStore.getCookies().size());
 		boolean cookiesDeleted = cookieStore.removeAll();
 		logger.debug(cookiesDeleted ? "The cookies where removed!" : "No cookies where removed!");

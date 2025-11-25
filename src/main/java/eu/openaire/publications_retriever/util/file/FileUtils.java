@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.HttpURLConnection;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -336,18 +336,18 @@ public class FileUtils
 
 	public static final AtomicInteger numOfDocFiles = new AtomicInteger(0);
 
-	public static FileData storeDocFileWithIdOrOriginalFileName(HttpURLConnection conn, String docUrl, String id, int contentSize) throws FileNotRetrievedException
-			//, NoSpaceLeftException
+	public static FileData storeDocFileWithIdOrOriginalFileName(HttpResponse<InputStream> response, String docUrl, String id, int contentSize) throws FileNotRetrievedException
+			, NoSpaceLeftException
 	{
 		FileData fileData;
 		if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.idName) )
 			fileData = getFileAndHandleExisting(id, ".pdf", false, contentSize, ArgsUtils.storeDocFilesDir, numbersOfDuplicateDocFileNames);    // TODO - Later, on different fileTypes, take care of the extension properly.
 		else if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.originalName) )
-			fileData = getDocFileWithOriginalFileName(docUrl, conn.getHeaderField("Content-Disposition"), contentSize);
+			fileData = getDocFileWithOriginalFileName(docUrl, response.headers().firstValue("Content-Disposition").orElse(null), contentSize);
 		else
 			throw new FileNotRetrievedException("The 'fileNameType' was invalid: " + ArgsUtils.fileNameType);
 
-		InputStream inputStream = ConnSupportUtils.checkEncodingAndGetInputStream(conn, false);
+		InputStream inputStream = ConnSupportUtils.checkEncodingAndGetInputStream(response, false);
 		if ( inputStream == null )
 			throw new FileNotRetrievedException("Could not acquire the inputStream!");
 
@@ -444,14 +444,14 @@ public class FileUtils
 	 * This method is responsible for storing the docFiles and store them in permanent storage.
 	 * It is synchronized, in order to avoid files' numbering inconsistency.
 	 *
-	 * @param conn
+	 * @param response
 	 * @param docUrl
 	 * @param contentSize
 	 * @throws FileNotRetrievedException
 	 */
-	public static synchronized FileData storeDocFileWithNumberName(HttpURLConnection conn, String docUrl, int contentSize) throws FileNotRetrievedException
-	{
-		InputStream inputStream = ConnSupportUtils.checkEncodingAndGetInputStream(conn, false);
+	public static synchronized FileData storeDocFileWithNumberName(HttpResponse<InputStream> response, String docUrl, int contentSize) throws FileNotRetrievedException//, NoSpaceLeftException
+    {
+		InputStream inputStream = ConnSupportUtils.checkEncodingAndGetInputStream(response, false);
 		if ( inputStream == null )
 			throw new FileNotRetrievedException("Could not acquire the inputStream!");
 

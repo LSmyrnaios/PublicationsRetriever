@@ -13,7 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
+import java.io.InputStream;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -116,7 +117,7 @@ public class TestLinkExtraction {
 		//exampleUrl = "https://doi.pangaea.de/10.1594/PANGAEA.902422";
         exampleUrl = "https://dash.harvard.edu/entities/publication/73120378-c27d-6bd4-e053-0100007fdf3b";
 	}
-
+	
 	
 	@Test
 	public void testExtractOneLinkFromHtml()
@@ -143,10 +144,10 @@ public class TestLinkExtraction {
 		// This is actually a test of how link-extraction from an HTTP-300-page works.
 		String link;
 		try {
-			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl, null), true, false);
-			String finalUrl = conn.getURL().toString();
+			HttpResponse<InputStream> response = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl, null), true, false);
+			String finalUrl = response.uri().toString();
             String html;
-			if ( (html = ConnSupportUtils.getHtmlString(conn, finalUrl, null, false, null)) == null ) {
+			if ( (html = ConnSupportUtils.getHtmlString(response, finalUrl, null, false, null)) == null ) {
 				logger.error("Could not retrieve the HTML-code for pageUrl: " + finalUrl);
 			} else {
                 //logger.debug("HTML:\n" + html);
@@ -195,12 +196,12 @@ public class TestLinkExtraction {
 	
 	//@Disabled
 	@Test
-	public void testExtractAllLinksFromUrl() throws AlreadyFoundDocUrlException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException, IOException {
+	public void testExtractAllLinksFromUrl() throws AlreadyFoundDocUrlException, ConnTimeoutException, DomainBlockedException, DomainWithUnsupportedHEADmethodException, IOException, InterruptedException {
 		try {
-			HttpURLConnection conn = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl, null), true, false);
-			String finalUrl = conn.getURL().toString();
+			HttpResponse<InputStream> response = handleConnection(null, exampleUrl, exampleUrl, exampleUrl, UrlUtils.getDomainStr(exampleUrl, null), true, false);
+			String finalUrl = response.uri().toString();
             String html;
-            if ( (html = ConnSupportUtils.getHtmlString(conn, finalUrl, null, false, null)) == null ) {
+            if ( (html = ConnSupportUtils.getHtmlString(response, finalUrl, null, false, null)) == null ) {
                 String errorMsg = "Could not retrieve the HTML-code for pageUrl: " + finalUrl;
                 logger.error(errorMsg);
                 throw new RuntimeException(errorMsg);
@@ -220,9 +221,9 @@ public class TestLinkExtraction {
 			logger.info("\nThe accepted links from the above are:");
 			for ( String link : extractedLinksHashSet.keySet() )
 			{
-				String targetUrl = ConnSupportUtils.getFullyFormedUrl(exampleUrl, link, conn.getURL());
+				String targetUrl = ConnSupportUtils.getFullyFormedUrl(exampleUrl, link, response.uri().toURL());
 				if ( targetUrl == null ) {
-					logger.debug("Could not create target url for resourceUrl: " + conn.getURL().toString() + " having location: " + link);
+					logger.debug("Could not create target url for resourceUrl: " + response.uri().toString() + " having location: " + link);
 					continue;
 				}
 				if ( !UrlTypeChecker.shouldNotAcceptInternalLink(targetUrl, null) ) {

@@ -20,7 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
-import java.net.HttpURLConnection;
+import java.io.InputStream;
+import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -107,7 +108,7 @@ public class PageCrawler
         if ( ArgsUtils.shouldJustDownloadHtmlFiles ) {
             ConnSupportUtils.closeBufferedReader(bufferedReader);	// If this page's content-type was auto-detected, and the process fails before re-requesting the conn-inputStream, then make sure we close the last one.
             FileData htmlFileData;
-            if ( (htmlFileData = ConnSupportUtils.downloadHtmlFile(conn, urlId, pageUrl, urlMatcher, firstHTMLlineFromDetectedContentType)) == null ) {
+            if ( (htmlFileData = ConnSupportUtils.downloadHtmlFile(response, urlId, pageUrl, urlMatcher, firstHTMLlineFromDetectedContentType)) == null ) {
                 logger.warn("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
                 UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", "null", null, true, "true", "true", "false", "false", "true", null, "null", "null");
                 LoaderAndChecker.connProblematicUrls.incrementAndGet();
@@ -117,7 +118,7 @@ public class PageCrawler
         }
 
         String pageHtml;
-		if ( (pageHtml = ConnSupportUtils.getHtmlString(conn, pageUrl, bufferedReader, false, firstHTMLlineFromDetectedContentType)) == null ) {
+		if ( (pageHtml = ConnSupportUtils.getHtmlString(response, pageUrl, bufferedReader, false, firstHTMLlineFromDetectedContentType)) == null ) {
 			logger.warn("Could not retrieve the HTML-code for pageUrl: " + pageUrl);
 			UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "Discarded in 'PageCrawler.visit()' method, as there was a problem retrieving its HTML-code. Its contentType is: '" + pageContentType + "'.", "null", null, true, "true", "true", "false", "false", "true", null, "null", "null");
 			LoaderAndChecker.connProblematicUrls.incrementAndGet();

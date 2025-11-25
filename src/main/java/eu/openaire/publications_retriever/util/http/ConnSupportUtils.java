@@ -28,9 +28,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
@@ -106,25 +107,30 @@ public class ConnSupportUtils
 	public static String acceptLanguage = "en-US,en;q=0.5";
 
 
-	public static void setHttpHeaders(HttpURLConnection conn, String domainStr)
+	public static void setHttpHeaders(HttpRequest.Builder conn, String domainStr)
 	{
-		conn.setRequestProperty("User-Agent", userAgent);
-		conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
-		conn.setRequestProperty("Accept-Encoding", "gzip, deflate, br, zstd");	// TODO - In case we use other user-agents than "Firefox" (in a rotating way), then make sure they support "zstd" encoding as well, if not, then it should not be used for them.
-		//conn.setRequestProperty("TE", "trailers");	// TODO - Investigate the "transfer-encoding" header.
+		// TODO - Rotate User-Agents and other headers to look like the request is coming from different computers and browsers,
+		// from the same network (as we cannot change the IP, unless we use multiple proxies and rotate them too).
+		// The rotation should happen at reasonable intervals, for example when we go to the next batch.
+		// Since only then it will be believable that the IP was assigned to someone else and that person has a different type of computer.
+		// https://www.scrapehero.com/how-to-fake-and-rotate-user-agents-using-python-3/
+
+		conn.header("User-Agent", userAgent);
+		conn.header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
+		conn.header("Accept-Encoding", "gzip, deflate, br, zstd");	// TODO - In case we use other user-agents than "Firefox" (in a rotating way), then make sure they support "zstd" encoding as well, if not, then it should not be used for them.
+		//conn.header("TE", "trailers");	// TODO - Investigate the "transfer-encoding" header.
 
 		if ( !HttpConnUtils.domainsWithUnsupportedAcceptLanguageParameter.contains(domainStr) )
-			conn.setRequestProperty("Accept-Language", acceptLanguage);
+			conn.header("Accept-Language", acceptLanguage);
 
-		conn.setRequestProperty("DNT", "1");
-		conn.setRequestProperty("Connection", "keep-alive");
-		conn.setRequestProperty("Sec-Fetch-Dest", "document");
-		conn.setRequestProperty("Sec-Fetch-Mode", "navigate");
-		conn.setRequestProperty("Sec-Fetch-Site", "cross-site");
-		conn.setRequestProperty("Upgrade-Insecure-Requests", "1");
-		conn.setRequestProperty("Pragma", "no-cache");
-		conn.setRequestProperty("Cache-Control", "no-cache");
-		conn.setRequestProperty("Host", domainStr);
+		conn.header("DNT", "1");
+		conn.header("Sec-Fetch-Dest", "document");
+		conn.header("Sec-Fetch-Mode", "navigate");
+		conn.header("Sec-Fetch-Site", "cross-site");
+		conn.header("Upgrade-Insecure-Requests", "1");
+		conn.header("Pragma", "no-cache");
+		conn.header("Cache-Control", "no-cache");
+        // The HttpClient manages the "Connection" and "Host" headers automatically.
 	}
 
 
@@ -247,7 +253,7 @@ public class ConnSupportUtils
 	 * @param calledForPossibleDocOrDatasetUrl)
 	 * @return boolean
 	 */
-	public static MimeTypeResult hasDocOrDatasetMimeType(String urlStr, String mimeType, String contentDisposition, HttpURLConnection conn, boolean calledForPageUrl, boolean calledForPossibleDocOrDatasetUrl)
+	public static MimeTypeResult hasDocOrDatasetMimeType(String urlStr, String mimeType, String contentDisposition, HttpResponse<InputStream> response, boolean calledForPageUrl, boolean calledForPossibleDocOrDatasetUrl)
 	{
 		MimeTypeResult mimeTypeResult = null;
 		String lowerCaseUrl;
@@ -256,8 +262,8 @@ public class ConnSupportUtils
 		{	// The "mimeType" here is in lowercase
 			if ( mimeType.contains("system.io.fileinfo") ) {	// Check this out: "http://www.esocialsciences.org/Download/repecDownload.aspx?fname=Document110112009530.6423303.pdf&fcategory=Articles&AId=2279&fref=repec", ιt has: "System.IO.FileInfo".
 				// In this case, we want first to try the "Content-Disposition", as it's more trustworthy. If that's not available, use the urlStr as the last resort.
-				if ( conn != null ) {    // Just to be sure we avoid an NPE.
-					contentDisposition = conn.getHeaderField("Content-Disposition");
+				if ( response != null ) {    // Just to be sure we avoid an NPE.
+					contentDisposition = response.headers().firstValue("Content-Disposition").orElse(null);
 					// The "contentDisposition" will be definitely "null", since "mimeType != null" and so, the "contentDisposition" will not have been retrieved by the caller method.
 					if ( (contentDisposition != null) ) {
 						contentDisposition = contentDisposition.toLowerCase();
@@ -298,7 +304,7 @@ public class ConnSupportUtils
 				mimeTypeResult = new MimeTypeResult(plainMimeType, "dataset");
 			else if ( POSSIBLE_DOC_OR_DATASET_MIME_TYPE.matcher(plainMimeType).matches() )
 			{
-				contentDisposition = conn.getHeaderField("Content-Disposition");
+				contentDisposition = response.headers().firstValue("Content-Disposition").orElse(null);
 				if ( (contentDisposition != null) ) {
 					contentDisposition = contentDisposition.toLowerCase();
 					if ( !contentDisposition.equals("attachment") )    // It may be "attachment" but also be a pdf.. but we have to check if the "pdf" exists inside the url-string.
@@ -323,8 +329,8 @@ public class ConnSupportUtils
 			}	// TODO - When we will accept more docTypes, match it also against other docTypes, not just "pdf".
 			else {	// This url is going to be classified as a "page", so do one last check, if the content-disposition refers to a doc-file.
 				// The domain "bib.irb.hr" and possibly others as well, classify their full-texts as "html-pages" in the "content-type", but their "Content-Disposition" says there's a "filename.pdf", which is true.
-				if ( conn != null ) {    // Just to be sure we avoid an NPE.
-					contentDisposition = conn.getHeaderField("Content-Disposition");    // The "contentDisposition" will be definitely "null", since "mimeType != null" and so, the "contentDisposition" will not have been retrieved by the caller method.
+				if ( response != null ) {    // Just to be sure we avoid an NPE.
+					contentDisposition = response.headers().firstValue("Content-Disposition").orElse(null);    // The "contentDisposition" will be definitely "null", since "mimeType != null" and so, the "contentDisposition" will not have been retrieved by the caller method.
 					if ( contentDisposition != null )
 					{
 						if ( ArgsUtils.retrieveDocuments && contentDisposition.toLowerCase().contains(".pdf") )
@@ -448,20 +454,20 @@ public class ConnSupportUtils
 	}
 
 
-    public static HttpURLConnection checkForHEADConnectionAndReconnectIfNeededWithGET(HttpURLConnection conn, String url, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
+    public static HttpResponse<InputStream> checkForHEADConnectionAndReconnectIfNeededWithGET(HttpResponse<InputStream> response, String url, String domainStr, boolean calledForPageUrl, boolean calledForPossibleDocUrl)
             throws Exception
     {
-        if ( conn.getRequestMethod().equals("HEAD") ) {    // If the connection happened with "HEAD" we have to re-connect with "GET" to download the docFile.
-            // No call of "conn.disconnect()" here, as we will connect to the same server.
-            conn = HttpConnUtils.openHttpConnection(url, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // The provided params guarantee a "GET"-request.
-            int responseCode = conn.getResponseCode();    // It's already checked for -1 case (Invalid HTTP response), inside openHttpConnection().
+        if ( response.request().method().equals("HEAD") ) {    // If the connection happened with "HEAD" we have to re-connect with "GET" to download the docFile.
+            response.body().close();
+            response = HttpConnUtils.openHttpConnection(url, domainStr, calledForPageUrl, calledForPossibleDocUrl);    // The provided params guarantee a "GET"-request.
+            int responseCode = response.statusCode();
             // Only a final-url will reach here, so no redirect should occur (thus, we don't check for it).
             if ( responseCode != 200 ) { // If we have unwanted/error codes.
-                String errorMessage = onErrorStatusCode(conn.getURL().toString(), domainStr, responseCode, calledForPageUrl, conn);
+                String errorMessage = onErrorStatusCode(response.uri().toString(), domainStr, responseCode, calledForPageUrl, response);
                 throw new RuntimeException(errorMessage);
             }
         }
-        return conn;
+        return response;
     }
 
 
@@ -471,36 +477,39 @@ public class ConnSupportUtils
      * If it was connected using "HEAD", then, before we can store the data to the disk, we connect again, this time with "GET" in order to download the data.
      * It returns the docFileName which was produced for this docUrl.
      *
-     * @param conn
+     * @param response
      * @param id
      * @param domainStr
      * @param docUrl
      * @return
      * @throws FileNotRetrievedException
      */
-	public static FileData downloadAndStoreDocFile(HttpURLConnection conn, String id, String domainStr, String docUrl)
+	public static FileData downloadAndStoreDocFile(HttpResponse<InputStream> response, String id, String domainStr, String docUrl)
 			throws FileNotRetrievedException
 	{
-		boolean reconnected = false;
+        boolean reconnected = false;
+        HttpResponse<InputStream> finalResponse = null;
 		try {
-            HttpURLConnection newConn = checkForHEADConnectionAndReconnectIfNeededWithGET(conn, docUrl, domainStr, false, true);
-            if ( !newConn.equals(conn) ) {
+            HttpResponse<InputStream> newResponse = checkForHEADConnectionAndReconnectIfNeededWithGET(response, docUrl, domainStr, false, true);
+            if ( !newResponse.equals(response) ) {
                 reconnected = true;
-                conn = newConn;
-            }
+                finalResponse = newResponse;
+            } else
+                finalResponse = response;
+
 
 			// Check if we should abort the download based on its content-size.
-			int contentSize = 0;
-			if ( (contentSize = getContentSize(conn, true, false)) == -1 )	// "Unacceptable size"-code..
+            int contentSize = 0;
+			if ( (contentSize = getContentSize(finalResponse, true, false)) == -1 )	// "Unacceptable size"-code..
 				throw new FileNotRetrievedException("The HTTP-reported size of this file was unacceptable!");
 			// It may be "-2", in case it was not retrieved..
 
 			// Write the downloaded bytes to the docFile and return the docFileName.
 			FileData fileData =  null;
 			if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.numberName) )
-				fileData = FileUtils.storeDocFileWithNumberName(conn, docUrl, contentSize);
+				fileData = FileUtils.storeDocFileWithNumberName(finalResponse, docUrl, contentSize);
 			else
-				fileData = FileUtils.storeDocFileWithIdOrOriginalFileName(conn, docUrl, id, contentSize);
+				fileData = FileUtils.storeDocFileWithIdOrOriginalFileName(finalResponse, docUrl, id, contentSize);
 
 			if ( fileData == null ) {
 				String errMsg = "The file could not be " + (ArgsUtils.shouldUploadFilesToS3 ? "uploaded to S3" : "downloaded") + " from the docUrl " + docUrl;
@@ -530,8 +539,12 @@ public class ConnSupportUtils
 			logger.error("", e);
 			throw new FileNotRetrievedException(e.getMessage());
 		} finally {
-			if ( reconnected )	// Otherwise the given-previous connection will be closed by the calling method.
-				conn.disconnect();
+			if ( reconnected ) {    // Otherwise the given-previous connection will be closed by the calling method.
+                try (InputStream _ = finalResponse.body()) {
+                } catch (IOException e) {
+                    logger.warn("Could not close response body stream", e);
+                }
+            }
 		}
 	}
 
@@ -600,14 +613,14 @@ public class ConnSupportUtils
      * This method receives a pageUrl which gave an HTTP-300-code and extracts an internalLink out of the multiple choices provided.
      *
      * @param url
-     * @param conn
+     * @param response
      * @return
      */
-	public static String getInternalLinkFromHTTP300Page(String url, HttpURLConnection conn)
+	public static String getInternalLinkFromHTTP300Page(String url, HttpResponse<InputStream> response)
 	{
 		try {
 			String html;
-			if ( (html = ConnSupportUtils.getHtmlString(conn, url, null, false, null)) == null ) {
+			if ( (html = ConnSupportUtils.getHtmlString(response, url, null, false, null)) == null ) {
 				logger.warn("Could not retrieve the HTML-code for HTTP300PageUrl: " + url);
 				return null;
 			}
@@ -631,11 +644,11 @@ public class ConnSupportUtils
 	 * @param domainStr
 	 * @param errorStatusCode
 	 * @param calledForPageUrl
-	 * @param conn
+	 * @param response
 	 * @return
 	 * @throws DomainBlockedException
 	 */
-	public static String onErrorStatusCode(String urlStr, String domainStr, int errorStatusCode, boolean calledForPageUrl, HttpURLConnection conn) throws DomainBlockedException
+	public static String onErrorStatusCode(String urlStr, String domainStr, int errorStatusCode, boolean calledForPageUrl, HttpResponse<InputStream> response) throws DomainBlockedException
 	{
 		if ( (errorStatusCode == 500) && domainStr.contains("handle.net") ) {    // Don't take the 500 of "handle.net", into consideration, it returns many times 500, where it should return 404.. so treat it like a 404.
 			//logger.warn("\"handle.com\" returned 500 where it should return 404.. so we will treat it like a 404.");    // See an example: "https://hdl.handle.net/10655/10123".
@@ -649,7 +662,7 @@ public class ConnSupportUtils
 			errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received: HTTP " + errorStatusCode + " Client Error.";
 			// Get the error-response-body:
 			if ( calledForPageUrl && (errorStatusCode != 404) && (errorStatusCode != 410) ) {
-				String errorText = getErrorMessageFromResponseBody(conn, urlStr);   // The "HTTP-GET" method was used, so a stream could exist.
+				String errorText = getErrorMessageFromResponseBody(response, urlStr);   // The "HTTP-GET" method was used, so a stream could exist.
 				if ( errorText != null ) {
 					if ( domainStr.contains("doi.org") && errorText.contains("Not a DOI") ) {
 						logger.warn("Found a \"doi.org\" url with an invalid DOI: " + urlStr);
@@ -667,7 +680,7 @@ public class ConnSupportUtils
 			if ( errorStatusCode == 403 )
 				on403ErrorCode(urlStr, domainStr, calledForPageUrl);	// The "DomainBlockedException" will go up-method by its own, if thrown inside this one.
 			else if ( errorStatusCode == 429 ) {
-				String retryAfterTime = conn.getHeaderField("Retry-After");	// Get the "Retry-After" header, if it exists.
+				String retryAfterTime = response.headers().firstValue("Retry-After").orElse(null);	// Get the "Retry-After" header, if it exists.
 				if ( retryAfterTime != null ) {
 					errorLogMessage += " | Retry-After:" + retryAfterTime;
 					// TODO - Add this domain in a special hashMap, having the retry-after time as a value.
@@ -689,7 +702,7 @@ public class ConnSupportUtils
 			} else {	// Unknown Error (including non-handled: 1XX and the weird one: 999 (used for example on Twitter), responseCodes).
 				errorLogMessage = "Url: \"" + urlStr + "\" seems to be unreachable. Received unexpected responseCode: " + errorStatusCode;
 				if ( calledForPageUrl ) {   // The "HTTP-GET" method was used, so a stream could exist.
-					String errorText = getErrorMessageFromResponseBody(conn, urlStr);
+					String errorText = getErrorMessageFromResponseBody(response, urlStr);
 					if ( errorText != null )
 						errorLogMessage += " Error-text: " + errorText;
 				}
@@ -705,12 +718,12 @@ public class ConnSupportUtils
 	}
 
 
-	public static InputStream checkEncodingAndGetInputStream(HttpURLConnection conn, boolean isForError)
+	public static InputStream checkEncodingAndGetInputStream(HttpResponse<InputStream> response, boolean isForError)
 	{
 		InputStream inputStream = null;
 		try {
-			inputStream = (isForError ? conn.getErrorStream() : conn.getInputStream());
-			if ( isForError && (inputStream == null) ) {    // Only the "getErrorStream" may return null.
+			inputStream = response.body();
+			if ( isForError && (inputStream == null) ) {    // Only the "errorStream" may return null.
                 logger.warn("The \"getErrorStream\" did not return a stream!"); // This is normal for some domains, still we want to get notified.
                 return null;
             }
@@ -719,9 +732,9 @@ public class ConnSupportUtils
 			return null;
 		}
 		// Determine the potential encoding
-		String encoding = conn.getHeaderField("content-encoding");
+		String encoding = response.headers().firstValue("content-encoding").orElse(null);
 		if ( encoding != null ) {
-			String url = conn.getURL().toString();
+			String url = response.uri().toString();
 			/*if ( logger.isTraceEnabled() )
 				logger.trace("Url \"" + url + "\" has content-encoding: " + encoding);*/
 			InputStream compressedInputStream = getCompressedInputStream(inputStream, encoding, url);
@@ -764,9 +777,9 @@ public class ConnSupportUtils
 	}
 
 
-	public static String getErrorMessageFromResponseBody(HttpURLConnection conn, String url)
+	public static String getErrorMessageFromResponseBody(HttpResponse<InputStream> response, String url)
 	{
-		String html = getHtmlString(conn, url, null, true, null);
+		String html = getHtmlString(response, url, null, true, null);
         if ( (html == null) || (html.length() > 10_000) )	// The length won't be 0;
             return null;    // Avoid parsing too large html-files just to get the error-msg..
 
@@ -978,17 +991,17 @@ public class ConnSupportUtils
 	public static ThreadLocal<StringBuilder> htmlStrBuilder = new ThreadLocal<>();	// Every Thread has its own variable.
 
 
-    public static FileData downloadHtmlFile(HttpURLConnection conn, String urlId, String pageUrl, Matcher urlMatcher, String firstHTMLlineFromDetectedContentType)
+    public static FileData downloadHtmlFile(HttpResponse<InputStream> response, String urlId, String pageUrl, Matcher urlMatcher, String firstHTMLlineFromDetectedContentType)
     {
         int contentSize;
-        if ( (contentSize = getContentSize(conn, false, false)) == -1 ) {   // "Unacceptable size"-code..
+        if ( (contentSize = getContentSize(response, false, false)) == -1 ) {   // "Unacceptable size"-code..
             logger.warn("Aborting HTML-download for pageUrl: " + pageUrl);
             return null;
         }
         // It may be "-2" in case the "contentSize" was not available.
 
         int bufferSize;
-        InputStream inputStream = checkEncodingAndGetInputStream(conn, false);
+        InputStream inputStream = checkEncodingAndGetInputStream(response, false);
         if ( inputStream == null )	// The error is already logged inside.
             return null;
         bufferSize = (((contentSize != -2) && (contentSize < FileUtils.mb)) ? contentSize : FileUtils.mb);
@@ -1063,10 +1076,10 @@ public class ConnSupportUtils
     }
 
 
-    public static String getHtmlString(HttpURLConnection conn, String pageUrl, BufferedReader bufferedReader, boolean isForError, String firstHTMLlineFromDetectedContentType)
+    public static String getHtmlString(HttpResponse<InputStream> response, String pageUrl, BufferedReader bufferedReader, boolean isForError, String firstHTMLlineFromDetectedContentType)
 	{
 		int contentSize;
-		if ( (contentSize = getContentSize(conn, false, isForError)) == -1 ) {	// "Unacceptable size"-code..
+		if ( (contentSize = getContentSize(response, false, isForError)) == -1 ) {	// "Unacceptable size"-code..
 			if ( !isForError )	// It's expected to have ZERO-length most times, and thus the extraction cannot continue. Do not show a message. It's rare that we get an error-message anyway.
 				logger.warn("Aborting HTML-extraction for pageUrl: " + pageUrl);
 			ConnSupportUtils.closeBufferedReader(bufferedReader);	// This page's content-type was auto-detected, and the process fails before re-requesting the conn-inputStream, then make sure we close the last one.
@@ -1084,7 +1097,7 @@ public class ConnSupportUtils
 		int bufferSize = 0;
 		InputStream inputStream = null;
 		if ( bufferedReader == null ) {
-			inputStream = checkEncodingAndGetInputStream(conn, isForError);
+			inputStream = checkEncodingAndGetInputStream(response, isForError);
 			if ( inputStream == null )	// The error is already logged inside.
 				return null;
 			bufferSize = (((contentSize != -2) && (contentSize < FileUtils.mb)) ? contentSize : FileUtils.mb);
@@ -1132,13 +1145,13 @@ public class ConnSupportUtils
 	 *
 	 * @param finalUrlStr
 	 * @param domainStr
-	 * @param conn
+	 * @param response
 	 * @param calledForPageUrl
 	 * @return
 	 * @throws DomainBlockedException
 	 * @throws RuntimeException
 	 */
-	public static ArrayList<Object> detectContentTypeFromResponseBody(String finalUrlStr, String domainStr, HttpURLConnection conn, boolean calledForPageUrl)
+	public static ArrayList<Object> detectContentTypeFromResponseBody(String finalUrlStr, String domainStr, HttpResponse<InputStream> response, boolean calledForPageUrl)
 			throws Exception
 	{
 		String warnMsg = "No ContentType nor ContentDisposition, were able to be retrieved from url: " + finalUrlStr;
@@ -1148,10 +1161,10 @@ public class ConnSupportUtils
 		BufferedReader bufferedReader = null;
 		boolean calledForPossibleDocUrl = false;
 
-        conn = checkForHEADConnectionAndReconnectIfNeededWithGET(conn, finalUrlStr, domainStr, true, true); // Set params to "true" to force connecting with "GET".
+        response = checkForHEADConnectionAndReconnectIfNeededWithGET(response, finalUrlStr, domainStr, true, true); // Set params to "true" to force connecting with "GET".
 
 		// Try to detect the content type.
-        DetectedContentType detectedContentType = ConnSupportUtils.extractContentTypeFromResponseBody(conn);
+        DetectedContentType detectedContentType = ConnSupportUtils.extractContentTypeFromResponseBody(response);
         if ( detectedContentType != null ) {
             switch ( detectedContentType.detectedContentType ) {
                 case "html" -> {
@@ -1204,19 +1217,19 @@ public class ConnSupportUtils
 	 * TODO - The only "problem" is that after the "inputStream" closes, it cannot be opened again. So, we cannot parse the HTML afterwards nor download the pdf.
 	 * TODO - I guess it's fine to just re-connect but we should search for a way to reset the stream without the overhead of re-connecting.. (keeping the first line and using it later is the solution I use, but only for the html-type, since the pdf-download reads bytes and not lines)
 	 * The "br.reset()" is not supported, since the given input-stream does not support the "mark" operation.
-	 * @param conn
+	 * @param response
 	 * @return "html", "pdf", "undefined", null
 	 */
-	public static DetectedContentType extractContentTypeFromResponseBody(HttpURLConnection conn)
+	public static DetectedContentType extractContentTypeFromResponseBody(HttpResponse<InputStream> response)
 	{
 		int contentSize = 0;
-		if ( (contentSize = getContentSize(conn, false, false)) == -1) {	// "Unacceptable size"-code..
-			logger.warn("Aborting content-extraction for pageUrl: " + conn.getURL().toString());
+		if ( (contentSize = getContentSize(response, false, false)) == -1) {	// "Unacceptable size"-code..
+			logger.warn("Aborting content-extraction for pageUrl: " + response.uri().toString());
 			return null;
 		}
 		// It may be "-2" in case the "contentSize" was not available.
 
-		InputStream inputStream = checkEncodingAndGetInputStream(conn, false);
+		InputStream inputStream = checkEncodingAndGetInputStream(response, false);
 		if ( inputStream == null )
 			return null;
 
@@ -1275,30 +1288,32 @@ public class ConnSupportUtils
 
 	
 	/**
-	 * This method returns the ContentSize of the content of an HttpURLConnection.
-	 * @param conn
-	 * @param calledForFullTextDownload
-	 * @param isForError
-	 * @return contentSize
-	 * @throws NumberFormatException
-	 */
-	public static int getContentSize(HttpURLConnection conn, boolean calledForFullTextDownload, boolean isForError)
+     * This method returns the ContentSize of the content of an HttpResponse.
+     *
+     * @param response
+     * @param calledForFullTextDownload
+     * @param isForError
+     * @return contentSize
+     * @throws NumberFormatException
+     */
+	public static int getContentSize(HttpResponse<InputStream> response, boolean calledForFullTextDownload, boolean isForError)
 	{
-		int contentSize;
+		long contentSize;
 		try {
-			contentSize = Integer.parseInt(conn.getHeaderField("Content-Length"));
+			contentSize = response.headers().firstValueAsLong("Content-Length").orElse(-2);
+            if ( contentSize == -2 ) {
+                if ( calledForFullTextDownload && logger.isTraceEnabled() )	// It's not useful to show a logging-message otherwise.
+                    logger.trace("No \"Content-Length\" was retrieved from docUrl: \"" + response.uri().toString() + "\"! We will store the docFile anyway..");	// No action is needed.
+                return -2;	// The content size could not be retrieved.
+            }
             long maxSize = (calledForFullTextDownload ? HttpConnUtils.maxAllowedFulltextContentSize : HttpConnUtils.maxAllowedHtmlContentSize);
 			if ( (contentSize <= 0) || (contentSize > maxSize) ) {
 				if ( !isForError )	// In case of an error, we expect it to be < 0 > most of the time. Do not show a message, but return that it's not acceptable to continue acquiring the content.
-					logger.warn((calledForFullTextDownload ? "DocUrl: \"" : "Url: \"") + conn.getURL().toString() + "\" had a non-acceptable contentSize: " + contentSize + ". The maxAllowed one is: " + maxAllowedContentSizeMB + " MB.");
+					logger.warn((calledForFullTextDownload ? "DocUrl: \"" : "Url: \"") + response.uri().toString() + "\" had a non-acceptable contentSize: " + contentSize + ". The maxAllowed one is: " + maxAllowedContentSizeMB + " MB.");
 				return -1;
 			}
-			//logger.debug("Content-length of \"" + conn.getURL().toString() + "\" is: " + contentSize);	// DEBUG!
-			return contentSize;
-		} catch (NumberFormatException nfe) {	// This is also thrown if the "contentLength"-field does not exist inside the headers-list.
-			if ( calledForFullTextDownload && logger.isTraceEnabled() )	// It's not useful to show a logging-message otherwise.
-				logger.trace("No \"Content-Length\" was retrieved from docUrl: \"" + conn.getURL().toString() + "\"! We will store the docFile anyway..");	// No action is needed.
-			return -2;	// The content size could not be retrieved.
+			//logger.debug("Content-length of \"" + response.uri().toString() + "\" is: " + contentSize);	// DEBUG!
+			return (int) contentSize;
 		} catch ( Exception e ) {
 			logger.error("", e);
 			return -2;	// The content size could not be retrieved.
@@ -1418,8 +1433,8 @@ public class ConnSupportUtils
 
 		InputStream inputStream = null;
 		try {
-			HttpURLConnection conn = HttpConnUtils.handleConnection(null, ArgsUtils.inputDataUrl, ArgsUtils.inputDataUrl, ArgsUtils.inputDataUrl, null, true, true);
-			String mimeType = conn.getHeaderField("Content-Type");
+			HttpResponse<InputStream> response = HttpConnUtils.handleConnection(null, ArgsUtils.inputDataUrl, ArgsUtils.inputDataUrl, ArgsUtils.inputDataUrl, null, true, true);
+			String mimeType = response.headers().firstValue("Content-Type").orElse(null);
 			if ( (mimeType == null) || !mimeType.toLowerCase().contains("json") ) {
 				String errorMessage = "The mimeType of the url was either null or a non-json: " + mimeType;
 				logger.error(errorMessage);
@@ -1428,13 +1443,13 @@ public class ConnSupportUtils
 				System.exit(56);
 			}
 
-			inputStream = ConnSupportUtils.checkEncodingAndGetInputStream(conn, false);
+			inputStream = ConnSupportUtils.checkEncodingAndGetInputStream(response, false);
 			if ( inputStream == null )
 				throw new RuntimeException("Could not acquire the InputStream!");
 
 			// Check if we should abort the download based on its content-size.
 			int contentSize;    // We use "calledFOrFullTextDOwnload = true" bellow, in order to use a higher limit for the input.
-			if ( (contentSize = getContentSize(conn, true, false)) == -1 )	// "Unacceptable size"-code..
+			if ( (contentSize = getContentSize(response, true, false)) == -1 )	// "Unacceptable size"-code..
 				throw new FileNotRetrievedException("The HTTP-reported size of this file was unacceptable!");
 			// It may be "-2", in case it was not retrieved..
 			int bufferSize = (((contentSize != -2) && contentSize < FileUtils.fiveMb) ? contentSize : FileUtils.fiveMb);
@@ -1498,17 +1513,17 @@ public class ConnSupportUtils
 	}
 
 
-	public static void printConnectionDebugInfo(HttpURLConnection conn, boolean shouldShowFullHeaders)
+	public static void printConnectionDebugInfo(HttpResponse<InputStream> response, boolean shouldShowFullHeaders)
 	{
-		if ( conn == null ) {
+		if ( response == null ) {
 			logger.warn("The given connection instance was null..");
 			return;
 		}
 		logger.debug("Connection debug info:\nURL: < {} >,\nContentType: \"{}\". ContentDisposition: \"{}\", HTTP-method: \"{}\"",
-				conn.getURL().toString(), conn.getContentType(), conn.getHeaderField("Content-Disposition"), conn.getRequestMethod());
+				response.uri().toString(), response.headers().firstValue("Content-Type").orElse(""), response.headers().firstValue("Content-Disposition").orElse(""), response.request().method());
 		if ( shouldShowFullHeaders ) {
 			StringBuilder sb = new StringBuilder(1000).append("Headers:\n");	// This StringBuilder is thread-safe as a local-variable.
-			Map<String, List<String>> headers = conn.getHeaderFields();
+			Map<String, List<String>> headers = response.headers().map();
 			for ( String headerKey : headers.keySet() )
 				for ( String headerValue : headers.get(headerKey) )
 					sb.append(headerKey).append(" : ").append(headerValue).append("\n");

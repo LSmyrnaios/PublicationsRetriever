@@ -17,7 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.net.HttpURLConnection;
+import java.io.InputStream;
+import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Set;
@@ -865,8 +866,8 @@ public class UrlChecker {
 		String url = "http://ajcmi.umsha.ac.ir/";
 
 		try {
-			HttpURLConnection conn = HttpConnUtils.handleConnection(null, url, url, url, null, true, false);
-			DetectedContentType detConType = ConnSupportUtils.extractContentTypeFromResponseBody(conn);
+			HttpResponse<InputStream> response = HttpConnUtils.handleConnection(null, url, url, url, null, true, false);
+			DetectedContentType detConType = ConnSupportUtils.extractContentTypeFromResponseBody(response);
 
 			if ( detConType == null ) {
 				logger.error("Error when extracting the content..");
