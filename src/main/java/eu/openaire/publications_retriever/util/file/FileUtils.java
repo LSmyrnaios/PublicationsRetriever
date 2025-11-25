@@ -40,12 +40,12 @@ import static org.apache.commons.io.FileUtils.deleteDirectory;
 public class FileUtils
 {
 	private static final Logger logger = LoggerFactory.getLogger(FileUtils.class);
-	
+
 	private static Scanner inputScanner = null;
 	private static PrintStream printStream = null;
-	
+
 	public static long numOfLines = 0;	// Only the main thread accesses it.
-	
+
 	public static int jsonBatchSize = 3000;	// Do not set it as "final", since other apps using this program might want to set their own limit.
 
 	private static StringBuilder stringToBeWritten = null;	// It will be assigned and pre-allocated only if the "WriteToFile()" method is called.
@@ -58,7 +58,7 @@ public class FileUtils
 
 
 	public static final List<DataForOutput> dataForOutput = Collections.synchronizedList(new ArrayList<>(jsonBatchSize));
-	
+
 	public static final HashMap<String, Integer> numbersOfDuplicateDocFileNames = new HashMap<>();	// Holds docFileNames with their duplicatesNum.
 	// If we use the above without external synchronization, then the "ConcurrentHashMap" should be used instead.
 
@@ -68,9 +68,9 @@ public class FileUtils
 
 	public static int unretrievableDocNamesNum = 0;	// Num of docFiles for which we were not able to retrieve their docName.
 	public static final Pattern FILENAME_FROM_CONTENT_DISPOSITION_FILTER = Pattern.compile(".*filename[*]?=(?:.*[\"'])?([^\"^;]+)[\";]*.*");
-	
+
 	public static final int MAX_FILENAME_LENGTH = 250;	// TODO - Find a way to get the current-system's MAX-value.
-	
+
 	public static String fullInputFilePath = null;	// Used when the MLA is enabled, and we want to count the number of lines in the inputFile, in order to optimize the M.L.A.'s execution.
 
 	public static int duplicateIdUrlEntries = 0;
@@ -83,7 +83,7 @@ public class FileUtils
 	public FileUtils(InputStream input, OutputStream output)
 	{
 		FileUtils.inputScanner = new Scanner(input, utf8Charset);
-		
+
 		if ( MachineLearning.useMLA ) {	// In case we are using the MLA, go get the numOfLines to be used.
 			if ( numOfLines == 0 ) {	// If the inputFile was not given as an argument, but as the stdin, instead.
 				numOfLines = getInputNumOfLines();
@@ -163,11 +163,11 @@ public class FileUtils
 		}
 	}
 
-	
+
 	public static long getInputNumOfLines()
 	{
 		long lineCount = 0;
-		
+
 		// Create a new file to write the input-data.
 		// Since the input-stream is not reusable.. we cant count the line AND use the data..
 		// (the data will be consumed and the program will exit with error since no data will be read from the inputFile).
@@ -177,7 +177,7 @@ public class FileUtils
 			extension = ".json";
 		else
 			extension = ".csv";	// This is just a guess, it may be a ".tsv" as well or sth else. There is no way to know what type of file was assigned in the "System.in".
-		
+
 		// Make sure we create a new distinct file which will not replace any other existing file. This new file will get deleted in the end.
 		int fileNum = 1;
 		fullInputFilePath = baseFileName + extension;
@@ -186,19 +186,19 @@ public class FileUtils
 			fullInputFilePath = baseFileName + (fileNum++) + extension;
 			file = new File(fullInputFilePath);
 		}
-		
+
 		try {
 			printStream = new PrintStream(Files.newOutputStream(file.toPath()), false, utf8Charset);
-			
+
 			while ( inputScanner.hasNextLine() ) {
 				printStream.print(inputScanner.nextLine());
 				printStream.print(endOfLine);
 				lineCount ++;
 			}
-			
+
 			printStream.close();
 			inputScanner.close();
-			
+
 			// Assign the new input-file from which the data will be read for the rest of the program's execution.
 			inputScanner = new Scanner(Files.newInputStream(Paths.get(fullInputFilePath)));
 		} catch (Exception e) {
@@ -206,14 +206,14 @@ public class FileUtils
 			FileUtils.closeIO();
 			System.exit(-10);	// The inputFile (stream) is already partly-consumed, no point to continue.
 		}
-		
+
 		if ( FileUtils.skipFirstRow && (lineCount != 0) )
 			return (lineCount -1);
 		else
 			return lineCount;
 	}
-	
-	
+
+
 	/**
 	 * This method returns the number of (non-heading, non-empty) lines we have read from the inputFile.
 	 * @return loadedUrls
@@ -248,7 +248,7 @@ public class FileUtils
 			idAndUrlMappedInput.clear();	// Clear it from its elements (without deallocating the memory), before gathering the next batch.
 
 		int curBeginning = FileUtils.fileIndex;
-		
+
 		while ( inputScanner.hasNextLine() && (FileUtils.fileIndex < (curBeginning + jsonBatchSize)) )
 		{// While (!EOF) and inside the current url-batch, iterate through lines.
 
@@ -279,8 +279,8 @@ public class FileUtils
 
 		return idAndUrlMappedInput;
 	}
-	
-	
+
+
 	/**
 	 * This method decodes a Jason String into its members.
 	 * @param jsonLine String
@@ -308,8 +308,8 @@ public class FileUtils
 
 		return new IdUrlTuple(idStr, urlStr);
 	}
-	
-	
+
+
 	/**
 	 * This function writes new "quadruplesToBeLogged"(id-sourceUrl-docUrl-comment) in the output file.
 	 * Each time it's finished writing, it flushes the write-stream and clears the "quadrupleToBeLoggedList".
@@ -323,13 +323,13 @@ public class FileUtils
 		{
 			stringToBeWritten.append(data.toJsonString()).append(endOfLine);
 		}
-		
+
 		printStream.print(stringToBeWritten);
 		printStream.flush();
-		
+
 		stringToBeWritten.setLength(0);	// Reset the buffer (the same space is still used, no reallocation is made).
 		logger.debug("Finished writing " + FileUtils.dataForOutput.size() + " quadruples to the outputFile.");
-		
+
 		FileUtils.dataForOutput.clear();	// Clear the list to put the new <jsonBatchSize> values. The backing array used by List is not de-allocated. Only the String-references contained get GC-ed.
 	}
 
@@ -337,7 +337,7 @@ public class FileUtils
 	public static final AtomicInteger numOfDocFiles = new AtomicInteger(0);
 
 	public static FileData storeDocFileWithIdOrOriginalFileName(HttpResponse<InputStream> response, String docUrl, String id, int contentSize) throws FileNotRetrievedException
-			, NoSpaceLeftException
+			//, NoSpaceLeftException
 	{
 		FileData fileData;
 		if ( ArgsUtils.fileNameType.equals(ArgsUtils.fileNameTypeEnum.idName) )
