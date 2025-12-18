@@ -718,7 +718,7 @@ public class ConnSupportUtils
 	}
 
 
-	public static InputStream checkEncodingAndGetInputStream(HttpResponse<InputStream> response, boolean isForError)
+    public static InputStream checkEncodingAndGetInputStream(HttpResponse<InputStream> response, boolean isForError)
 	{
 		InputStream inputStream = null;
 		try {
@@ -1088,10 +1088,10 @@ public class ConnSupportUtils
 		// It may be "-2" in case the "contentSize" was not available.
 
 		StringBuilder htmlStrB = htmlStrBuilder.get();
-		if ( (htmlStrB == null) ) {
+		if ( htmlStrB == null ) {
             // Initialize and pre-allocate the StringBuilder. When retrieving HTML-files, this is only used for error-pages which are significantly smaller than regular ones.
 			htmlStrB = new StringBuilder((ArgsUtils.shouldJustDownloadHtmlFiles ? 10_000 : 100_000));
-			htmlStrBuilder.set(htmlStrB);	// Save it for future use by this thread.
+			htmlStrBuilder.set(htmlStrB);	// Save it for future use by this thread, for example when performing redirects with 300-code (location in-page-url) or retrieving an error-body.
 		}
 
 		int bufferSize = 0;

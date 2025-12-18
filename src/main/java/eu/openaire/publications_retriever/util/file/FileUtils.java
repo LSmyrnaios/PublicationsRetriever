@@ -586,9 +586,14 @@ public class FileUtils
 		// If we couldn't get the fileName from the "Content-Disposition", try getting it from the url.
 		if ( docFileName == null )
 			docFileName = UrlUtils.getDocIdStr(docUrl, null);	// Extract the docID as the fileName from docUrl.
-		
+
 		if ( (docFileName != null) && !docFileName.isEmpty() )	// Re-check as the value might have changed.
 		{
+			// The "DocIdStr" is guaranteed to not have forwarded-slashes.
+			// But theoretically, it could have back-slashes and if the app runs on Windows, it could cause a "missing internal directories error".
+			if ( File.separator.equals("\\") )
+				docFileName = Strings.CS.replace(docFileName, File.separator, "_");
+
 			if ( !docFileName.endsWith(dotFileExtension) )
 				docFileName += dotFileExtension;
 			
