@@ -48,6 +48,7 @@ public class HttpConnUtils
 	}
 
 	public static final Set<String> domainsWithUnsupportedAcceptLanguageParameter = Collections.newSetFromMap(new ConcurrentHashMap<>());
+	public static final Set<String> domainsWithUnsupportedNewerHTTPVersion = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 	public static final Set<String> blacklistedDomains = Collections.newSetFromMap(new ConcurrentHashMap<>());	// Domains with which we don't want to connect again.
 	// TODO - This could be a ConcurrentHashMap having the domains as keys, and the reason as the value.
@@ -371,17 +372,37 @@ public class HttpConnUtils
 
 			ConnSupportUtils.applyPolitenessDelay(domainStr);
 			HttpClient client = HttpClientUtils.getHttpClient();
-			HttpRequest request = requestBuilder.build();
-			response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+			HttpRequest request;
+
+			boolean useHttp1_1 = domainsWithUnsupportedNewerHTTPVersion.contains(domainStr);
+			if ( useHttp1_1 )
+				request = requestBuilder.version(HttpClient.Version.HTTP_1_1).build();
+			else
+				request = requestBuilder.build();	// This is the case also for newly accessed domains.
+
+			try {
+				response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+			} catch (ProtocolException pe) {
+				final String prohibitedUpgradeError = "Prohibited header name 'upgrade'";
+				String exMsg = pe.getMessage();
+				if ( (exMsg != null) && exMsg.contains(prohibitedUpgradeError) ) {
+					logger.warn("Received '" + prohibitedUpgradeError + "' error for domain '" + domainStr + "'. Retrying with HTTP/1.1 for url: " + resourceURL);
+					useHttp1_1 = true;
+					domainsWithUnsupportedNewerHTTPVersion.add(domainStr);
+					request = requestBuilder.version(HttpClient.Version.HTTP_1_1).build();
+					response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+				} else
+					throw pe;
+			}
 
 			int responseCode = response.statusCode();
-
 			if ( responseCode == 406 )	// It's possible that the server does not support the "Accept-Language" parameter. Try again without it.
 			{
 				logger.warn("The server \"" + domainStr + "\" probably does not support the \"Accept-Language\" parameter. Going to reconnect without it");
 				domainsWithUnsupportedAcceptLanguageParameter.add(domainStr);	// Take note that this domain does not support it..
 
 				requestBuilder = HttpRequest.newBuilder(URI.create(resourceURL));
+				if ( useHttp1_1 ) requestBuilder.version(HttpClient.Version.HTTP_1_1);
 				ConnSupportUtils.setHttpHeaders(requestBuilder, domainStr);
 
 				if ( useHttpGetMethod ) {
@@ -404,6 +425,7 @@ public class HttpConnUtils
 					throw new DomainWithUnsupportedHEADmethodException();
 
 				requestBuilder = HttpRequest.newBuilder(URI.create(resourceURL));
+				if ( useHttp1_1 ) requestBuilder.version(HttpClient.Version.HTTP_1_1);
 				ConnSupportUtils.setHttpHeaders(requestBuilder, domainStr);
 				requestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
 				requestBuilder.timeout(maxConnGETWaitingTime);
@@ -421,6 +443,7 @@ public class HttpConnUtils
 					domainsWithUnsupportedAcceptLanguageParameter.add(domainStr);	// Take note that this domain does not support it..
 
 					requestBuilder = HttpRequest.newBuilder(URI.create(resourceURL));
+					if ( useHttp1_1 ) requestBuilder.version(HttpClient.Version.HTTP_1_1);
 					ConnSupportUtils.setHttpHeaders(requestBuilder, domainStr);
 					requestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
 					requestBuilder.timeout(maxConnGETWaitingTime);

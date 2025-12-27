@@ -74,6 +74,7 @@ public class GenericUtils {
         HttpConnUtils.domainsWithSlashRedirect.clear();
         HttpConnUtils.domainsWithUnsupportedHeadMethod.clear();
         HttpConnUtils.domainsWithUnsupportedAcceptLanguageParameter.clear();
+        HttpConnUtils.domainsWithUnsupportedNewerHTTPVersion.clear();
 
         // Other data.
         ConnSupportUtils.domainsWithConnectionData.clear();
