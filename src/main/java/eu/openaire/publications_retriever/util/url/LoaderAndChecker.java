@@ -18,10 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.CookieStore;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
@@ -476,9 +473,10 @@ public class LoaderAndChecker
 
 	public static int invokeAllTasksAndWait(List<Callable<Boolean>> callableTasks)
 	{
+		long timeout = (callableTasks.size() * HttpConnUtils.maxConnGETWaitingTime.toMillis() * 4);
 		int numFailedTasks = 0;
 		try {	// Invoke all the tasks and wait for them to finish before moving to the next batch.
-			List<Future<Boolean>> futures = PublicationsRetriever.executor.invokeAll(callableTasks);
+			List<Future<Boolean>> futures = PublicationsRetriever.executor.invokeAll(callableTasks, timeout, TimeUnit.MILLISECONDS);
 			int sizeOfFutures = futures.size();
 			//logger.debug("sizeOfFutures: " + sizeOfFutures);	// DEBUG!
 			for ( int i = 0; i < sizeOfFutures; ++i ) {
@@ -494,6 +492,7 @@ public class LoaderAndChecker
 					logger.error("Task_" + i + " was cancelled: " + ce.getMessage());
 					numFailedTasks ++;
 				} catch (InterruptedException ie) {
+					Thread.currentThread().interrupt();
 					logger.error("Task_" + i + " was interrupted: " + ie.getMessage());
 					numFailedTasks ++;
 				} catch (IndexOutOfBoundsException ioobe) {
@@ -501,6 +500,7 @@ public class LoaderAndChecker
 				}
 			}
 		} catch (InterruptedException ie) {	// In this case, any unfinished tasks are cancelled.
+			Thread.currentThread().interrupt();
 			logger.warn("The main thread was interrupted when waiting for the current batch's worker-tasks to finish: " + ie.getMessage());
 		} catch (Exception e) {
 			logger.error("", e);
@@ -549,6 +549,9 @@ public class LoaderAndChecker
 
 	public static boolean handleException(String retrievedId, String urlToCheck, Exception e)
 	{
+		if ( Thread.currentThread().isInterrupted() || (e instanceof InterruptedException) || (e.getCause() instanceof InterruptedException) || ((e.getMessage() != null) && e.getMessage().contains("interrupted")) )
+			return true;
+
 		if ( e instanceof RuntimeException ) {
 			String msg = e.getMessage();
 			if ( (msg != null) && msg.contains(alreadyLoggedMessage) )

@@ -395,6 +395,10 @@ public class FileUtils
 
 			return fileData;	// It may be null.
 		} catch (Exception e) {
+			if ( e instanceof InterruptedException || e instanceof InterruptedIOException) {
+				Thread.currentThread().interrupt();
+				logger.error("Thread was interrupted when downloading file from url: " + response.uri().toString());
+			}
 			numOfDocFiles.decrementAndGet();	// Revert number, as this docFile was not retrieved.
 			// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
 			// So the empty file may exist, but we will also get the "FileNotFoundException".
@@ -499,6 +503,10 @@ public class FileUtils
 
 			return fileData;	// It may be null.
 		} catch (Exception e) {
+			if ( e instanceof InterruptedException || e instanceof InterruptedIOException) {
+				Thread.currentThread().interrupt();
+				logger.error("Thread was interrupted when downloading file from url: " + response.uri().toString());
+			}
 			numOfDocFile --;	// Revert number, as this docFile was not retrieved. In case of delete-failure, this file will just be overwritten, except if it's the last one.
 			// When creating the above FileOutputStream, the file may be created as an "empty file", like a zero-byte file, when there is a "No space left on device" error.
 			// So the empty file may exist, but we will also get the "FileNotFoundException".

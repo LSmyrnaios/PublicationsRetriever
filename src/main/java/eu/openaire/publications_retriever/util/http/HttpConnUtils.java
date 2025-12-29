@@ -246,6 +246,9 @@ public class HttpConnUtils
 				LoaderAndChecker.connProblematicUrls.incrementAndGet();
 			throw e;
 		} catch (Exception e) {
+			if ( e instanceof InterruptedException ) {
+				Thread.currentThread().interrupt();
+			}
 			if ( calledForPageUrl ) {	// Log this error only for docPages.
 				logger.warn("Could not handle connection for \"" + resourceURL + "\"!");
 				LoaderAndChecker.connProblematicUrls.incrementAndGet();
@@ -496,7 +499,11 @@ public class HttpConnUtils
                     // We don't block the domain, since this is temporary.
                     throw new RuntimeException(errorMsg);
                 }
-                default -> {
+				case InterruptedException _ -> {
+					Thread.currentThread().interrupt();
+					throw new RuntimeException("Thread was interrupted, so could not continue with url: " + resourceURL);
+				}
+				default -> {
                     String errorMsg = "Error when connecting with url: " + resourceURL;
                     logger.error(errorMsg, e);
                     throw new RuntimeException(errorMsg + "\n" + e.getMessage());
@@ -610,7 +617,7 @@ public class HttpConnUtils
 					//logger.debug("Found a non-slash-ended to slash-ended url redirection: " + currentUrl + " --> " + targetUrl);	// DEBUG!s
 				}
 
-                try (InputStream _ = response.body() ) {    // Effectively closes the previous stream.
+                try (InputStream _ = response.body()) {    // Effectively closes the previous stream.
                 } catch (IOException ignored) {}
 				response = HttpConnUtils.openHttpConnection(targetUrl, targetDomainStr, calledForPageUrl, calledForPossibleDocUrl);
 

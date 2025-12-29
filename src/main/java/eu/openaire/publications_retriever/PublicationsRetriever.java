@@ -118,12 +118,12 @@ public class PublicationsRetriever
 		} catch (SecurityException se) {
 			logger.error("Could not shutdown the threads in any way..!", se);
 		} catch (InterruptedException ie) {
+			Thread.currentThread().interrupt(); // Preserve the "interrupted"-status for this thread.
 			try {
 				PublicationsRetriever.executor.shutdownNow();
 			} catch (SecurityException se) {
 				logger.error("Could not shutdown the threads in any way..!", se);
 			}
-			Thread.currentThread().interrupt(); // Preserve the "interrupted"-status for this thread.
 		}
 
 		showStatistics(startTime);

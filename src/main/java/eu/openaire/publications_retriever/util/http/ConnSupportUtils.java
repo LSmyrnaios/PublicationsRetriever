@@ -586,21 +586,9 @@ public class ConnSupportUtils
 			try {
 				Thread.sleep(finalPolitenessDelay);    // Avoid server-overloading for the same domain.
 			} catch (InterruptedException ie) {
-				Instant newCurrentTime = Instant.now();
-				try {
-					elapsedTimeSinceLastConnection = Duration.between(currentTime, newCurrentTime).toMillis();
-				} catch (Exception e) {
-					logger.warn("An exception was thrown when tried to obtain the time elapsed from the last time the \"currentTime\" was updated: " + e.getMessage());
-					domainConnectionData.updateAndUnlock(newCurrentTime);	// Update the time and connect.
-					return;
-				}
-				if ( elapsedTimeSinceLastConnection < minPolitenessDelay ) {
-					finalPolitenessDelay -= elapsedTimeSinceLastConnection;
-					try {
-						Thread.sleep(finalPolitenessDelay);
-					} catch (InterruptedException ignored) {}
-				}
-			}	// At this point, if both sleeps were interrupted, some time has already passed, so it's ok to connect to the same domain.
+				Thread.currentThread().interrupt();
+				throw new RuntimeException("Thread was interrupted while performing a politeness-delay for domain: " + domainStr);
+			}
 			currentTime = Instant.now();	// Update, after the sleep.
 		} //else
 			//logger.debug("NO SLEEP NEEDED, elapsedTime: " + elapsedTimeSinceLastConnection + " > " + minPolitenessDelay + " | domain: " + domainStr);	// DEBUG!
@@ -1056,7 +1044,10 @@ public class ConnSupportUtils
         } catch ( Exception e ) {
             if ( e instanceof IOException )
                 logger.error("IOException when retrieving the HTML-code for pageUrl \"" + pageUrl + "\": " + e.getMessage());
-            else
+			else if ( e instanceof InterruptedException ) {
+				Thread.currentThread().interrupt();
+				logger.error("Thread was interrupted when retrieving the HTML-code for pageUrl: " + pageUrl);
+			} else
                 logger.error("Could not retrieve the html-code for pageUrl \"" + pageUrl + "\"!", e);
 
             try {

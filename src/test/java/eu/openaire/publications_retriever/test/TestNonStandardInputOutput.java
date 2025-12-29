@@ -263,6 +263,7 @@ public class TestNonStandardInputOutput  {
 		} catch (SecurityException se) {
 			logger.error("Could not shutdown the threads in any way..!", se);
 		} catch (InterruptedException ie) {
+			Thread.currentThread().interrupt();
 			try {
 				PublicationsRetriever.executor.shutdownNow();
 			} catch (SecurityException se) {
