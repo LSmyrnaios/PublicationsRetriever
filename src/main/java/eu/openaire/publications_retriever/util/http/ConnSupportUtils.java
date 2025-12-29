@@ -1115,8 +1115,16 @@ public class ConnSupportUtils
 			if ( firstHTMLlineFromDetectedContentType != null )
                 htmlStrB.append(firstHTMLlineFromDetectedContentType).append(htmlSpaceChar);
 
+			long startTime = System.currentTimeMillis();
 			while ( (inputLine = br.readLine()) != null )
 			{
+				if ( ((System.currentTimeMillis() - startTime) > 30_000) ) {	// 30 seconds timeout
+					logger.warn("Reading the html is taking too long (over 30 seconds)! Aborting url: " + pageUrl);
+					if ( htmlStrB.length() < 5000 )
+						return null;	// If we have less than 1000 chars, then skip content-extraction.
+					else	// Go ahead with the HTML lines already downloaded.
+						break;
+				}
 				if ( !inputLine.isEmpty() && (inputLine.length() != 1) && !SPACE_ONLY_LINE.matcher(inputLine).matches() ) {	// We check for (inputLine.length() != 1), as some lines contain just an unrecognized byte.
 					htmlStrB.append(inputLine).append(htmlSpaceChar);	// Add the "spaceChar" to avoid joining words from different lines.
 					//logger.debug(inputLine);	// DEBUG!
@@ -1242,9 +1250,15 @@ public class ConnSupportUtils
 			br = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8), bufferSize);
 			String inputLine;
 
+			long startTime = System.currentTimeMillis();
 			// Skip empty lines in the beginning of the HTML-code
 			while ( ((inputLine = br.readLine()) != null) && (inputLine.isEmpty() || (inputLine.length() == 1) || RESPONSE_BODY_UNWANTED_MATCH.matcher(inputLine).matches()) )	// https://repositorio.uam.es/handle/10486/687988
-			{	/* No action inside */	}	// https://bv.fapesp.br/pt/publicacao/96198/homogeneous-gaussian-profile-p-type-emitters-updated-param/		http://naosite.lb.nagasaki-u.ac.jp/dspace/handle/10069/29792
+			{
+				if ( ((System.currentTimeMillis() - startTime) > 10_000) ) {	// 10 seconds timeout
+					logger.warn("Reading the html (for contentType-check) is taking too long (over 10 seconds)! Aborting url: " + response.uri().toString());
+					return null;
+				}
+			}	// https://bv.fapesp.br/pt/publicacao/96198/homogeneous-gaussian-profile-p-type-emitters-updated-param/		http://naosite.lb.nagasaki-u.ac.jp/dspace/handle/10069/29792
 
 			// For DEBUGing..
 			/*while ( ((inputLine = br.readLine()) != null) && !(inputLine.isEmpty() || inputLine.length() == 1 || RESPONSE_BODY_UNWANTED_MATCH.matcher(inputLine).matches()) )
