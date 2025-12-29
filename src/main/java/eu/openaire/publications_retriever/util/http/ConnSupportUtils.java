@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.ProtocolException;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpRequest;
@@ -716,7 +717,7 @@ public class ConnSupportUtils
                 return null;
             }
 		} catch (Exception e) {
-			logger.error("Error when acquiring the " + (isForError ? "Error" : "") + "InputStream!", e);
+            logger.error("Error when acquiring the " + (isForError ? "Error" : "") + "InputStream!", e);
 			return null;
 		}
 		// Determine the potential encoding
@@ -754,11 +755,22 @@ public class ConnSupportUtils
             }
 		} catch (IOException ioe) {
 			String exMsg = ioe.getMessage();
-			if ( exMsg.startsWith("Input is not in the") )
+			if ( exMsg.startsWith("Input is not in the") ) {
 				logger.warn(exMsg + " | http-published-encoding: " + encoding + " | url: " + url);
 				// Some urls do not return valid html-either way.
-			else
+				// TODO - Try using the initial input-stream?
+				//return inputStream;
+			} else {
 				logger.error("Could not acquire the compressorInputStream for encoding: " + encoding + " | url: " + url, ioe);
+				try {
+					if ( ioe.getCause().getCause().getCause() instanceof ProtocolException ) {
+						String domainStr = UrlUtils.getDomainStr(url, null);
+						if ( domainStr != null )
+							HttpConnUtils.domainsWithUnsupportedNewerHTTPVersion.add(domainStr);
+					}
+				} catch (NullPointerException ignored) {}
+				//return null;
+			}
 			return null;
 		}
 		return compressedInputStream;

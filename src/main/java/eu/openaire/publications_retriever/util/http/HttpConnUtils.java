@@ -211,6 +211,8 @@ public class HttpConnUtils
 					logger.warn("Unwanted pageUrl: \"" + finalUrlStr + "\" will not be visited!");  // We do not want it even when downloading HTMLs.
 					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after matching to a non-" + ArgsUtils.targetUrlType + " with 'viewcontent.cgi'.", "null", null, true, "true", "true", "false", "false", "false", null, "null", "null");
 					UrlTypeChecker.pagesNotProvidingDocUrls.incrementAndGet();
+					if ( bufferedReader != null )
+						bufferedReader.close();
 					return false;
 				}
 				else if ( (lowerCaseMimeType != null) && (lowerCaseMimeType.length() <= 255) && PAGE_MIMETYPE_RULES.matcher(lowerCaseMimeType).matches() ) {   // The content-disposition is non-usable in the case of pages.. it's probably not provided anyway.
@@ -222,6 +224,8 @@ public class HttpConnUtils
 					UrlUtils.addOutputData(urlId, sourceUrl, pageUrl, UrlUtils.unreachableDocOrDatasetUrlIndicator, "It was discarded in 'HttpConnUtils.connectAndCheckMimeType()', after not matching to a " + ArgsUtils.targetUrlType + " nor to an htm/text-like page.", "null", null, true, "true", "true", "false", "false", "false", null, "null", "null");
 					if ( ConnSupportUtils.countAndBlockDomainAfterTimes(blacklistedDomains, timesDomainsHadInputNotBeingDocNorPage, domainStr, HttpConnUtils.timesToHaveNoDocNorPageInputBeforeBlocked, true) )
 						logger.warn("Domain: \"" + domainStr + "\" was blocked after having no Doc nor Pages in the input more than " + HttpConnUtils.timesToHaveNoDocNorPageInputBeforeBlocked + " times.");
+					if ( bufferedReader != null )
+						bufferedReader.close();
 				}	// We log the quadruple here, as there is connection-kind-of problem here.. it's just us considering it an unwanted case. We don't throw "DomainBlockedException()", as we don't handle it for inputUrls (it would also log the quadruple twice with diff comments).
 			}
 		} catch (AlreadyFoundDocUrlException afdue) {	// An already-found docUrl was discovered during redirections.

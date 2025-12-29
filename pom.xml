@@ -90,14 +90,14 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
-      <version>1.5.22</version>
+      <version>1.5.23</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-classic -->
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.5.22</version>
+      <version>1.5.23</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -175,7 +175,7 @@
     <dependency>
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
-      <version>20250517</version>
+      <version>20251224</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/io.minio/minio -->
