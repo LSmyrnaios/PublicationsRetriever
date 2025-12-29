@@ -382,17 +382,23 @@ public class HttpConnUtils
 
 			try {
 				response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
-			} catch (ProtocolException pe) {
-				final String prohibitedUpgradeError = "Prohibited header name 'upgrade'";
-				String exMsg = pe.getMessage();
-				if ( (exMsg != null) && exMsg.contains(prohibitedUpgradeError) ) {
-					logger.warn("Received '" + prohibitedUpgradeError + "' error for domain '" + domainStr + "'. Retrying with HTTP/1.1 for url: " + resourceURL);
+			} catch (IOException ioe) {
+				String exMsg = ioe.getMessage();
+				if ( !useHttp1_1 && (
+						((exMsg != null) && (
+							exMsg.contains("Prohibited header name 'upgrade'")
+							|| exMsg.contains("RST_STREAM") || exMsg.contains("MAX_FRAME_SIZE")
+							|| exMsg.contains("GOAWAY") || exMsg.contains("HTTP/2") || exMsg.contains("stream")
+						))
+						|| ioe instanceof ProtocolException ) )
+				{
+					logger.warn("Received '" + exMsg + "' error for domain '" + domainStr + "'. Retrying with HTTP/1.1 for url: " + resourceURL);
 					useHttp1_1 = true;
 					domainsWithUnsupportedNewerHTTPVersion.add(domainStr);
 					request = requestBuilder.version(HttpClient.Version.HTTP_1_1).build();
 					response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 				} else
-					throw pe;
+					throw ioe;
 			}
 
 			int responseCode = response.statusCode();
