@@ -396,6 +396,7 @@ public class HttpConnUtils
 							exMsg.contains("Prohibited header name 'upgrade'")
 							|| exMsg.contains("RST_STREAM") || exMsg.contains("MAX_FRAME_SIZE")
 							|| exMsg.contains("GOAWAY") || exMsg.contains("HTTP/2") || exMsg.contains("stream")
+							|| exMsg.contains("HTTP/1.1 header parser received no bytes")
 						))
 						|| ioe instanceof ProtocolException ) )
 				{
