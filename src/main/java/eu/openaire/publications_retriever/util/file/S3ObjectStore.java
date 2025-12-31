@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.InterruptedIOException;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
@@ -161,7 +162,11 @@ public class S3ObjectStore {
             // Luckily, we use unique file-names.
 
         } catch (Exception e) {
-            logger.error("Could not upload the file \"" + fileObjKeyName + "\" to the S3 ObjectStore, exception: " + e.getMessage(), e);
+            if ( e instanceof InterruptedIOException) {
+                Thread.currentThread().interrupt();
+                logger.error("Thread was interrupted when uploading file \"" + fileObjKeyName + "\" to the S3 ObjectStore!");
+            } else
+                logger.error("Could not upload the file \"" + fileObjKeyName + "\" to the S3 ObjectStore, exception: " + e.getMessage(), e);
             return null;
         }
 

@@ -1054,12 +1054,12 @@ public class ConnSupportUtils
 
             return htmlFileData;	// Make sure we return a "null" on empty string, to better handle the case in the caller-method.
         } catch ( Exception e ) {
-            if ( e instanceof IOException )
-                logger.error("IOException when retrieving the HTML-code for pageUrl \"" + pageUrl + "\": " + e.getMessage());
-			else if ( e instanceof InterruptedException ) {
+			if ( e instanceof InterruptedIOException ) {
 				Thread.currentThread().interrupt();
 				logger.error("Thread was interrupted when retrieving the HTML-code for pageUrl: " + pageUrl);
-			} else
+			} else if ( e instanceof IOException )
+                logger.error("IOException when retrieving the HTML-code for pageUrl \"" + pageUrl + "\": " + e.getMessage());
+			else
                 logger.error("Could not retrieve the html-code for pageUrl \"" + pageUrl + "\"!", e);
 
             try {
@@ -1134,9 +1134,12 @@ public class ConnSupportUtils
 
             return !htmlStrB.isEmpty() ? htmlStrB.toString() : null;
 		} catch ( Exception e ) {
-            if ( e instanceof IOException )
+			if ( e instanceof InterruptedIOException ) {
+				Thread.currentThread().interrupt();
+				logger.error("Thread was interrupted when retrieving the HTML-code for pageUrl: " + pageUrl);
+			} else if ( e instanceof IOException )
                 logger.error("IOException when retrieving the HTML-code for pageUrl \"" + pageUrl + "\": " + e.getMessage());
-            else
+			else
                 logger.error("Could not retrieve the html-code for pageUrl \"" + pageUrl + "\"!", e);
 			return null;
 		} finally {
@@ -1286,7 +1289,10 @@ public class ConnSupportUtils
 					return new DetectedContentType("undefined", inputLine, null);
 			}
 		} catch (Exception e) {
-			if ( e instanceof IOException )
+			if ( e instanceof InterruptedIOException ) {
+				Thread.currentThread().interrupt();
+				logger.error("Thread was interrupted when retrieving the HTML-code to perform contentType-check for url: " + response.uri().toString());
+			} else if ( e instanceof IOException )
 				logger.error("IOException when retrieving the HTML-code: " + e.getMessage());
 			else
 				logger.error("", e);

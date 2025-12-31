@@ -473,7 +473,7 @@ public class LoaderAndChecker
 
 	public static int invokeAllTasksAndWait(List<Callable<Boolean>> callableTasks)
 	{
-		long timeout = (callableTasks.size() * HttpConnUtils.maxConnGETWaitingTime.toMillis() * 4);
+		long timeout = (callableTasks.size() * HttpConnUtils.maxConnGETWaitingTime.toSeconds() * 15);
 		int numFailedTasks = 0;
 		try {	// Invoke all the tasks and wait for them to finish before moving to the next batch.
 			List<Future<Boolean>> futures = PublicationsRetriever.executor.invokeAll(callableTasks, timeout, TimeUnit.MILLISECONDS);

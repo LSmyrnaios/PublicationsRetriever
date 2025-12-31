@@ -418,11 +418,10 @@ public class FileUtils
 		int bytesRead = -1;
 		final byte[] buffer = new byte[65536];	// This is used to reduce the number of iterations of the "while"-loop and every call inside. It does not affect how often the actual-data is read/write to/from streams.
 		long bytesCount = 0;
-		long startTime = System.nanoTime();
+		long startTime = System.currentTimeMillis();
 		while ( (bytesRead = inStream.read(buffer)) != -1 )
 		{
-			long elapsedTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
-			if ( (elapsedTime > maxStoringWaitingTime) || (elapsedTime == Long.MIN_VALUE) ) {
+			if ( (System.currentTimeMillis() - startTime) > maxStoringWaitingTime ) {
 				String errMsg = "Storing docFile from docUrl: \"" + docUrl + "\" is taking over " + TimeUnit.MILLISECONDS.toSeconds(maxStoringWaitingTime) + " seconds (for contentSize: " + (PublicationsRetriever.df.format((double) contentSize / FileUtils.mb)) + " MB)! Aborting..";
 				logger.warn(errMsg);
 				throw new FileNotRetrievedException(errMsg);
