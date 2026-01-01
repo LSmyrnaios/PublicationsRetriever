@@ -108,6 +108,7 @@ public class LoaderAndChecker
 			for ( String retrievedUrl : loadedUrlGroup )
 			{
 				callableTasks.add(() -> {
+					if ( Thread.currentThread().isInterrupted() ) return false;
 					String retrievedUrlToCheck = retrievedUrl;	// This is used because: "local variables referenced from a lambda expression must be final or effectively final".
 
 					if ( (retrievedUrlToCheck = handleUrlChecks("null", retrievedUrlToCheck)) == null )
@@ -181,6 +182,7 @@ public class LoaderAndChecker
 				HashMultimap<String, String> finalLoadedIdUrlPairs = loadedIdUrlPairs;
 
 				callableTasks.add(() -> {
+					if ( Thread.currentThread().isInterrupted() ) return false;
 					boolean goToNextId = false;
 					String possibleDocOrDatasetUrl = null;
 					String bestNonDocNonDatasetUrl = null;	// Best-case url
@@ -195,6 +197,7 @@ public class LoaderAndChecker
 
 					for ( String retrievedUrl : retrievedUrlsOfCurrentId )
 					{
+						if ( Thread.currentThread().isInterrupted() ) return false;
 						String checkedUrl = retrievedUrl;
 						if ( (retrievedUrl = handleUrlChecks(retrievedId, retrievedUrl)) == null ) {
 							if ( !isSingleIdUrlPair )
@@ -328,6 +331,7 @@ public class LoaderAndChecker
 			for ( Map.Entry<String,String> pair : pairs )
 			{
 				callableTasks.add(() -> {
+					if ( Thread.currentThread().isInterrupted() ) return false;
 					String retrievedId = pair.getKey();
 					String retrievedUrl = pair.getValue();
 
@@ -407,6 +411,7 @@ public class LoaderAndChecker
 				callableTasks.add(() -> {
 					for ( String retrievedUrl : retrievedUrlsOfCurrentId )
 					{
+						if ( Thread.currentThread().isInterrupted() ) return false;
 						if ( (retrievedUrl = handleUrlChecks(retrievedId, retrievedUrl)) == null ) {
 							continue;
 						}    // The "retrievedUrl" might have changed (inside "handleUrlChecks()").
@@ -473,15 +478,16 @@ public class LoaderAndChecker
 
 	public static int invokeAllTasksAndWait(List<Callable<Boolean>> callableTasks)
 	{
-		long timeout = (callableTasks.size() * HttpConnUtils.maxConnGETWaitingTime.toSeconds() * 15);
+		long timeout = Math.max((long)(callableTasks.size() * HttpConnUtils.maxConnGETWaitingTime.toSeconds() * 0.2), 600); // Ensure at least 10 minutes
 		int numFailedTasks = 0;
+		boolean batchTimedOutLogged = false;
 		try {	// Invoke all the tasks and wait for them to finish before moving to the next batch.
-			List<Future<Boolean>> futures = PublicationsRetriever.executor.invokeAll(callableTasks, timeout, TimeUnit.MILLISECONDS);
+			List<Future<Boolean>> futures = PublicationsRetriever.executor.invokeAll(callableTasks, timeout, TimeUnit.SECONDS);
 			int sizeOfFutures = futures.size();
 			//logger.debug("sizeOfFutures: " + sizeOfFutures);	// DEBUG!
 			for ( int i = 0; i < sizeOfFutures; ++i ) {
 				try {
-					Boolean value = futures.get(i).get();	// Get and see if an exception is thrown. This blocks the current thread, until the task of the future has finished.
+					Boolean value = futures.get(i).get(timeout, TimeUnit.SECONDS);	// Get and see if an exception is thrown. This blocks the current thread, until the task of the future has finished.
 					// Add check for the result-value, if wanted.. (we don't care at the moment)
 				} catch (ExecutionException ee) {
 					String stackTraceMessage = GenericUtils.getSelectedStackTraceForCausedException(ee, "Task_" + i + " failed with: ", null, 15);	// These can be serious errors like an "out of memory exception" (Java HEAP).
@@ -489,11 +495,18 @@ public class LoaderAndChecker
 					System.err.println(stackTraceMessage);
 					numFailedTasks ++;
 				} catch (CancellationException ce) {
+					if ( !batchTimedOutLogged ) {
+						logger.warn("The batch processing timed out! Tasks are being cancelled.");
+						batchTimedOutLogged = true;
+					}
 					logger.error("Task_" + i + " was cancelled: " + ce.getMessage());
 					numFailedTasks ++;
 				} catch (InterruptedException ie) {
 					Thread.currentThread().interrupt();
 					logger.error("Task_" + i + " was interrupted: " + ie.getMessage());
+					numFailedTasks ++;
+				} catch (TimeoutException te) {
+					logger.error("Task_" + i + " was timed out: " + te.getMessage());
 					numFailedTasks ++;
 				} catch (IndexOutOfBoundsException ioobe) {
 					logger.error("IOOBE for task_" + i + " in the futures-list! " + ioobe.getMessage());
@@ -522,6 +535,7 @@ public class LoaderAndChecker
 	{
 		for ( String urlToCheck : retrievedUrlsOfThisId )
 		{
+			if ( Thread.currentThread().isInterrupted() ) return false;
 			// Check this url -before and after normalization- against the logged urls of this ID.
 			if ( loggedUrlsOfThisId.contains(urlToCheck)
 				|| ( ((urlToCheck = basicURLNormalizer.filter(urlToCheck)) != null) && loggedUrlsOfThisId.contains(urlToCheck) ) )
