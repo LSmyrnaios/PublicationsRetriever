@@ -1,7 +1,7 @@
 package eu.openaire.publications_retriever.test;
 
 import eu.openaire.publications_retriever.PublicationsRetriever;
-import eu.openaire.publications_retriever.crawler.MachineLearning;
+import eu.openaire.publications_retriever.machine_learning.MachineLearning;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;

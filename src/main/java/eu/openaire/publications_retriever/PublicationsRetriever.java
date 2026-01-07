@@ -1,8 +1,8 @@
 package eu.openaire.publications_retriever;
 
-import eu.openaire.publications_retriever.crawler.MachineLearning;
 import eu.openaire.publications_retriever.crawler.MetadataHandler;
 import eu.openaire.publications_retriever.crawler.PageCrawler;
+import eu.openaire.publications_retriever.machine_learning.MachineLearning;
 import eu.openaire.publications_retriever.machine_learning.PageStructureMLA;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;

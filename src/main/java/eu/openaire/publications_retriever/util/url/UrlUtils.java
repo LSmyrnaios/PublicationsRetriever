@@ -1,6 +1,7 @@
 package eu.openaire.publications_retriever.util.url;
 
-import eu.openaire.publications_retriever.crawler.MachineLearning;
+//import com.google.common.collect.HashMultimap;
+import eu.openaire.publications_retriever.machine_learning.MachineLearning;
 import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
 import eu.openaire.publications_retriever.util.file.FileUtils;

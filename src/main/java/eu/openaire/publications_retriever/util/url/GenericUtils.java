@@ -1,6 +1,7 @@
 package eu.openaire.publications_retriever.util.url;
 
 import eu.openaire.publications_retriever.crawler.PageCrawler;
+import eu.openaire.publications_retriever.machine_learning.PageStructureMLA;
 import eu.openaire.publications_retriever.util.file.FileUtils;
 import eu.openaire.publications_retriever.util.http.ConnSupportUtils;
 import eu.openaire.publications_retriever.util.http.HttpConnUtils;
@@ -68,6 +69,7 @@ public class GenericUtils {
         // Clear tracking data of successful detections and downloads.
         UrlUtils.resultUrlsWithIDs.clear();
         ConnSupportUtils.fileHashesWithLocations.clear();
+        PageStructureMLA.pagePathWithDocOrDatasetUrlStructure.clear();
 
         // Domain additional data, which does not contribute in blocking the domains, but they do contribute in performance.
         HttpConnUtils.domainsSupportingHTTPS.clear();

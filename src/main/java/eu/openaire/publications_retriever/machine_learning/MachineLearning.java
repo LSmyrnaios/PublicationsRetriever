@@ -1,4 +1,4 @@
-package eu.openaire.publications_retriever.crawler;
+package eu.openaire.publications_retriever.machine_learning;
 
 
 import com.google.common.collect.HashMultimap;

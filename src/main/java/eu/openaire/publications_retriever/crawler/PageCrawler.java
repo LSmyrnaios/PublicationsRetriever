@@ -1,6 +1,7 @@
 package eu.openaire.publications_retriever.crawler;
 
 import eu.openaire.publications_retriever.exceptions.*;
+import eu.openaire.publications_retriever.machine_learning.MachineLearning;
 import eu.openaire.publications_retriever.machine_learning.PageStructureMLA;
 import eu.openaire.publications_retriever.models.IdUrlMimeTypeTriple;
 import eu.openaire.publications_retriever.util.args.ArgsUtils;
