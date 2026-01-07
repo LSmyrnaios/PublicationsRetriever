@@ -38,8 +38,7 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -565,36 +564,36 @@ public class ConnSupportUtils
         if ( domainConnectionData == null )
             return; // First occurrence, no need to apply a delay.
 
-		long elapsedTimeSinceLastConnection;
-		domainConnectionData.lock.lock();// Threads trying to connect with the same domain, should sleep one AFTER the other, to avoid coming back after sleep at the same time, in the end..
-		Instant currentTime = Instant.now();
-		try {
-			elapsedTimeSinceLastConnection = Duration.between(domainConnectionData.lastTimeConnected, currentTime).toMillis();
-		} catch (Exception e) {
-			logger.warn("An exception was thrown when tried to obtain the time elapsed from the last time the domain connected: " + e.getMessage());
-			domainConnectionData.updateAndUnlock(currentTime);
-			return;
-		}
+		domainConnectionData.lock.lock();
+        try {
+            Instant currentTime = Instant.now();
+            long elapsedTimeSinceLastConnection;
+            try {
+                elapsedTimeSinceLastConnection = Duration.between(domainConnectionData.lastTimeConnected, currentTime).toMillis();
+            } catch (Exception e) {
+                logger.warn("An exception was thrown when tried to obtain the time elapsed from the last time the domain connected: " + e.getMessage());
+                domainConnectionData.lastTimeConnected = currentTime;
+                domainConnectionData.timesConnected ++;
+                return;
+            }
 
-		if ( elapsedTimeSinceLastConnection < minPolitenessDelay ) {
-			long finalPolitenessDelay = getRandomNumber(minPolitenessDelay, maxPolitenessDelay) - elapsedTimeSinceLastConnection;
+            if ( elapsedTimeSinceLastConnection < minPolitenessDelay ) {
+                long finalPolitenessDelay = getRandomNumber(minPolitenessDelay, maxPolitenessDelay) - elapsedTimeSinceLastConnection;
 
-			// Apply the following for testing. Otherwise, it's more efficient to use the above method.
-			//long randomPolitenessDelay = getRandomNumber(minPolitenessDelay, maxPolitenessDelay);
-			//long finalPolitenessDelay = randomPolitenessDelay - elapsedTimeSinceLastConnection;	// This way we avoid reaching the upper limit while preventing underflow (in case we applied the difference in the parameters of "getRandomNumber()").
-			//logger.debug("WILL SLEEP for " + finalPolitenessDelay + " | randomNumber was " + randomPolitenessDelay + ", elapsedTime was: " + elapsedTimeSinceLastConnection + " | domain: " + domainStr);	// DEBUG!
-
-			try {
-				Thread.sleep(finalPolitenessDelay);    // Avoid server-overloading for the same domain.
-			} catch (InterruptedException ie) {
-				Thread.currentThread().interrupt();
-				throw new RuntimeException("Thread was interrupted while performing a politeness-delay for domain: " + domainStr);
-			}
-			currentTime = Instant.now();	// Update, after the sleep.
-		} //else
-			//logger.debug("NO SLEEP NEEDED, elapsedTime: " + elapsedTimeSinceLastConnection + " > " + minPolitenessDelay + " | domain: " + domainStr);	// DEBUG!
-
-		domainConnectionData.updateAndUnlock(currentTime);
+                try {
+                    Thread.sleep(finalPolitenessDelay);    // Avoid server-overloading for the same domain.
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Thread was interrupted while performing a politeness-delay for domain: " + domainStr);
+                }
+                currentTime = Instant.now();	// Update, after the sleep.
+            }
+            
+            domainConnectionData.lastTimeConnected = currentTime;
+            domainConnectionData.timesConnected ++;
+        } finally {
+            domainConnectionData.lock.unlock();
+        }
 	}
 
 	
@@ -1106,6 +1105,15 @@ public class ConnSupportUtils
 			bufferSize = (((contentSize != -2) && (contentSize < FileUtils.mb)) ? contentSize : FileUtils.mb);
 		}
 
+		Thread currentThread = Thread.currentThread();
+		ScheduledFuture<?> timeoutTask = null;
+		try {
+			timeoutTask = FileUtils.timeoutExecutor.schedule(currentThread::interrupt, 30, TimeUnit.SECONDS);
+		} catch (RejectedExecutionException ree) {
+			logger.error("Watchdog thread was not scheduled for execution. Will avoid to download html-file from pageUrl: " + pageUrl);
+			return null;
+		}
+
 		try (BufferedReader br = ((bufferedReader != null) ? bufferedReader : new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8), bufferSize)))
 		{
 			String inputLine;
@@ -1115,27 +1123,20 @@ public class ConnSupportUtils
 			if ( firstHTMLlineFromDetectedContentType != null )
                 htmlStrB.append(firstHTMLlineFromDetectedContentType).append(htmlSpaceChar);
 
-			long startTime = System.currentTimeMillis();
 			while ( (inputLine = br.readLine()) != null )
 			{
-				if ( ((System.currentTimeMillis() - startTime) > 30_000) ) {	// 30 seconds timeout
-					logger.warn("Reading the html is taking too long (over 30 seconds)! Aborting url: " + pageUrl);
-					if ( htmlStrB.length() < 5000 )
-						return null;	// If we have less than 1000 chars, then skip content-extraction.
-					else	// Go ahead with the HTML lines already downloaded.
-						break;
-				}
+				if ( Thread.interrupted() )
+					throw new InterruptedException();
+
 				if ( !inputLine.isEmpty() && (inputLine.length() != 1) && !SPACE_ONLY_LINE.matcher(inputLine).matches() ) {	// We check for (inputLine.length() != 1), as some lines contain just an unrecognized byte.
 					htmlStrB.append(inputLine).append(htmlSpaceChar);	// Add the "spaceChar" to avoid joining words from different lines.
-					//logger.debug(inputLine);	// DEBUG!
 				}
 			}
-			//logger.debug("Chars in html: " + String.valueOf(htmlStrB.length()));	// DEBUG!
 
             return !htmlStrB.isEmpty() ? htmlStrB.toString() : null;
 		} catch ( Exception e ) {
-			if ( e instanceof InterruptedIOException ) {
-				Thread.currentThread().interrupt();
+			if ( e instanceof InterruptedIOException || e instanceof InterruptedException) {	// The "InterruptedException" is thrown when the watchdog-thread interrupts this thread.
+				currentThread.interrupt();
 				logger.error("Thread was interrupted when retrieving the HTML-code for pageUrl: " + pageUrl);
 			} else if ( e instanceof IOException )
                 logger.error("IOException when retrieving the HTML-code for pageUrl \"" + pageUrl + "\": " + e.getMessage());
@@ -1143,6 +1144,7 @@ public class ConnSupportUtils
                 logger.error("Could not retrieve the html-code for pageUrl \"" + pageUrl + "\"!", e);
 			return null;
 		} finally {
+			timeoutTask.cancel(false);
             htmlStrB.setLength(0);	// Reset "StringBuilder" WITHOUT re-allocating.
 			try {   // In case the "inputStream" was initialized before the "try"-block, and the initialization of the "BufferedReader" failed, we need to manually close the "inputStream".
 				if ( inputStream != null )
@@ -1249,34 +1251,33 @@ public class ConnSupportUtils
 
 		int bufferSize = (((contentSize != -2) && contentSize < FileUtils.fiveMb) ? contentSize : FileUtils.fiveMb);
 		BufferedReader br = null;
+
+		Thread currentThread = Thread.currentThread();
+		ScheduledFuture<?> timeoutTask = null;
+		try {
+			timeoutTask = FileUtils.timeoutExecutor.schedule(currentThread::interrupt, 10, TimeUnit.SECONDS);
+		} catch (RejectedExecutionException ree) {
+			logger.error("Watchdog thread was not scheduled for execution. Will avoid to extract content-type from url: " + response.uri().toString());
+			return null;
+		}
+
 		try {
 			br = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8), bufferSize);
 			String inputLine;
 
-			long startTime = System.currentTimeMillis();
 			// Skip empty lines in the beginning of the HTML-code
 			while ( ((inputLine = br.readLine()) != null) && (inputLine.isEmpty() || (inputLine.length() == 1) || RESPONSE_BODY_UNWANTED_MATCH.matcher(inputLine).matches()) )	// https://repositorio.uam.es/handle/10486/687988
 			{
-				if ( ((System.currentTimeMillis() - startTime) > 10_000) ) {	// 10 seconds timeout
-					logger.warn("Reading the html (for contentType-check) is taking too long (over 10 seconds)! Aborting url: " + response.uri().toString());
-					return null;
-				}
-			}	// https://bv.fapesp.br/pt/publicacao/96198/homogeneous-gaussian-profile-p-type-emitters-updated-param/		http://naosite.lb.nagasaki-u.ac.jp/dspace/handle/10069/29792
-
-			// For DEBUGing..
-			/*while ( ((inputLine = br.readLine()) != null) && !(inputLine.isEmpty() || inputLine.length() == 1 || RESPONSE_BODY_UNWANTED_MATCH.matcher(inputLine).matches()) )
-			{ logger.debug(inputLine + "\nLength of line: " + inputLine.length());
-				logger.debug(Arrays.toString(inputLine.chars().toArray()));
-			}*/
+				// Loop will be interrupted by the watchdog if it hangs.
+				if ( Thread.interrupted() )
+					throw new InterruptedException();
+			}
 
 			// Check if the stream ended before we could find an "accepted" line.
 			if ( inputLine == null )
 				return null;
 
-			//logger.debug("First actual line of RequestBody: " + inputLine);	// DEBUG!
-
 			String lowerCaseInputLine = inputLine.toLowerCase();
-			//logger.debug(lowerCaseInputLine + "\nLength of line: "  + lowerCaseInputLine.length());	// DEBUG!
 			if ( HTML_STRING_INDICATOR.matcher(lowerCaseInputLine).find() )
 				return new DetectedContentType("html", inputLine, br);
 			else {
@@ -1289,9 +1290,9 @@ public class ConnSupportUtils
 					return new DetectedContentType("undefined", inputLine, null);
 			}
 		} catch (Exception e) {
-			if ( e instanceof InterruptedIOException ) {
-				Thread.currentThread().interrupt();
-				logger.error("Thread was interrupted when retrieving the HTML-code to perform contentType-check for url: " + response.uri().toString());
+			if ( e instanceof InterruptedIOException || e instanceof InterruptedException) {	// The "InterruptedException" is thrown when the watchdog-thread interrupts this thread.
+				currentThread.interrupt();
+				logger.warn("Thread was interrupted when retrieving the HTML-code to perform contentType-check for url: " + response.uri().toString());
 			} else if ( e instanceof IOException )
 				logger.error("IOException when retrieving the HTML-code: " + e.getMessage());
 			else
@@ -1303,6 +1304,8 @@ public class ConnSupportUtils
 				} catch (IOException ignored) {}
 			}
 			return null;
+		} finally {
+			timeoutTask.cancel(false);
 		}
 	}
 

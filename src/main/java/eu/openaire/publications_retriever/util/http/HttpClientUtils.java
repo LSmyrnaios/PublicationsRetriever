@@ -15,6 +15,10 @@ public class HttpClientUtils {
     private static final Duration maxConnectWaitingTime = Duration.ofSeconds(5);  // Max time to wait for a hand-shake with the server.
 
     static {
+        // Set connection pool properties to avoid keeping idle connections for too long.
+        // This helps in cleaning up "zombie" connections from the pool's perspective.
+        System.setProperty("jdk.httpclient.keepalive.timeout", "60");   // 60 seconds
+
         cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER);
         CookieHandler.setDefault(cookieManager);
 

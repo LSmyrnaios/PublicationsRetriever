@@ -24,7 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -78,6 +78,13 @@ public class FileUtils
 	private static final String utf8Charset = StandardCharsets.UTF_8.toString();
 
 	public static final Pattern EXTENSION_PATTERN = Pattern.compile("(\\.[^._-]+)$");
+
+	// A dedicated scheduler to enforce read-timeouts on downloads, preventing "zombie" connections from blocking threads indefinitely.
+	public static final ScheduledExecutorService timeoutExecutor = Executors.newScheduledThreadPool(2, r -> {
+		Thread t = Executors.defaultThreadFactory().newThread(r);
+		t.setDaemon(true);
+		return t;
+	});
 
 
 	public FileUtils(InputStream input, OutputStream output)
@@ -418,19 +425,41 @@ public class FileUtils
 		int bytesRead = -1;
 		final byte[] buffer = new byte[65536];	// This is used to reduce the number of iterations of the "while"-loop and every call inside. It does not affect how often the actual-data is read/write to/from streams.
 		long bytesCount = 0;
-		long startTime = System.currentTimeMillis();
-		while ( (bytesRead = inStream.read(buffer)) != -1 )
-		{
-			if ( (System.currentTimeMillis() - startTime) > maxStoringWaitingTime ) {
-				String errMsg = "Storing docFile from docUrl: \"" + docUrl + "\" is taking over " + TimeUnit.MILLISECONDS.toSeconds(maxStoringWaitingTime) + " seconds (for contentSize: " + (PublicationsRetriever.df.format((double) contentSize / FileUtils.mb)) + " MB)! Aborting..";
-				logger.warn(errMsg);
-				throw new FileNotRetrievedException(errMsg);
-			} else {
+
+		// Schedule a task to interrupt this thread if the download takes too long.
+		// This is necessary because "inStream.read()" can block indefinitely if the server stops sending data (zombie connection),
+		// and the standard HttpClient timeout only applies to the connection/headers phase.
+		Thread currentThread = Thread.currentThread();
+		ScheduledFuture<?> timeoutTask = null;
+		try {
+			timeoutTask = timeoutExecutor.schedule(currentThread::interrupt, maxStoringWaitingTime, TimeUnit.MILLISECONDS);
+		} catch (RejectedExecutionException ree) {
+			String errMsg = "Watchdog thread was not scheduled for execution. Will avoid to download docFile from docUrl: " + docUrl;
+			logger.error(errMsg);
+			throw new FileNotRetrievedException(errMsg);
+		}
+
+		try {
+			while ( (bytesRead = inStream.read(buffer)) != -1) {
+				if ( Thread.interrupted() ) {	// Check if the thread has been interrupted by the watchdog.
+					throw new InterruptedException("Download interrupted by watchdog timer.");
+				}
 				outStream.write(buffer, 0, bytesRead);
 				md.update(buffer, 0, bytesRead);
 				bytesCount += bytesRead;
 			}
+		} catch (InterruptedIOException | InterruptedException ie) {
+			currentThread.interrupt();
+			String errMsg = "Storing docFile from docUrl: \"" + docUrl + "\" is taking over " + TimeUnit.MILLISECONDS.toSeconds(maxStoringWaitingTime) + " seconds (for contentSize: " + (PublicationsRetriever.df.format((double) contentSize / FileUtils.mb)) + " MB)! Aborting..";
+			logger.warn(errMsg);
+			throw new FileNotRetrievedException(errMsg);
+ 		} finally {
+			// If the download finishes (successfully or with exception), cancel the timeout task so it doesn't interrupt the thread later.
+			timeoutTask.cancel(false);
+			// Note: If the interrupt happened, the thread's interrupted status might still be set or cleared depending on where exactly it was caught.
+			// The caller methods (storeDocFile...) handle InterruptedIOException/InterruptedException correctly.
 		}
+
 		//logger.debug("Elapsed time for storing: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime));
 		if ( bytesCount == 0 ) {	// This will be the case if the "inStream.read()" returns "-1" in the first call.
 			// It's not practical to decrease the potential "duplicate-filename-counter" in this point.
